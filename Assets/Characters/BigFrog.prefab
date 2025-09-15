@@ -2625,15 +2625,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ece8f4d025e68364d996cab09d67e713, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 25.00497
+      value: 5.03
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ece8f4d025e68364d996cab09d67e713, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.1
+      value: 1.00449
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ece8f4d025e68364d996cab09d67e713, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 26.24145
+      value: -3.41
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ece8f4d025e68364d996cab09d67e713, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2673,7 +2673,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: ece8f4d025e68364d996cab09d67e713, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: ece8f4d025e68364d996cab09d67e713, type: 3}
       propertyPath: m_TagString
@@ -2885,9 +2885,9 @@ MonoBehaviour:
   idealMinDistance: 4
   minRepositionTime: 3
   maxRepositionTime: 5
-  rushdownCooldownMax: 10
-  rushdownCooldownMin: 2
-  attackRange: 7
+  rushdownCooldownMax: 1e+10
+  rushdownCooldownMin: 1e+9
+  attackRange: 2
   agent: {fileID: 0}
   targetVariableName: Target
   isInEngageRangeVarName: IsInEngageRange
@@ -2947,7 +2947,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 1.8
-  m_Radius: 0.3
+  m_Radius: 0.4
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
@@ -3075,10 +3075,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4e2e9b9871020a4bab2f91829b6bcf7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  equippedItems:
-  - {fileID: 0}
   activeItemIndex: 0
   itemSocketR: {fileID: 7940891873079811835}
+  activeItem: {fileID: 0}
   handController: {fileID: 0}
   playerCamera: {fileID: 0}
   pickupRadius: 3
