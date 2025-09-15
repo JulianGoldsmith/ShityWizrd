@@ -1,0 +1,260 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!181963792 &2655988077585873504
+Preset:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PhysicsHandController
+  m_TargetType:
+    m_NativeTypeID: 114
+    m_ManagedTypePPtr: {fileID: 11500000, guid: e6748e234547ce44aba12ec989d79541, type: 3}
+    m_ManagedTypeFallback: 
+  m_Properties:
+  - target: {fileID: 0}
+    propertyPath: m_Enabled
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_EditorHideFlags
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_EditorClassIdentifier
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: leftHand.physicsProxy
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: leftHand.handTarget
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: leftHand.shoulder
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: leftHand.stableShoulder
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: leftHand.previousTargetPosition.x
+    value: -4.7877336
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: leftHand.previousTargetPosition.y
+    value: 1.8039682
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: leftHand.previousTargetPosition.z
+    value: -15.513315
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rightHand.physicsProxy
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rightHand.handTarget
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rightHand.shoulder
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rightHand.stableShoulder
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rightHand.previousTargetPosition.x
+    value: -4.215831
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rightHand.previousTargetPosition.y
+    value: 1.8039682
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rightHand.previousTargetPosition.z
+    value: -15.331856
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: stableShoulderRig
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: shoulderSwayInfluence
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: positionSpringStrength
+    value: 400
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: positionSpringDamper
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rotationSpringStrength
+    value: 10000
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: rotationSpringDamper
+    value: 20
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: handOffsetFromShoulder.x
+    value: -0.4
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: handOffsetFromShoulder.y
+    value: -0.05
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: handOffsetFromShoulder.z
+    value: 0.5
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: handRotationOffset.x
+    value: -31.9
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: handRotationOffset.y
+    value: 9.05
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: handRotationOffset.z
+    value: 38.3
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: cameraTrans
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.size
+    value: 3
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[0].time
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[0].value
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[0].inSlope
+    value: 3.504897
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[0].outSlope
+    value: 3.504897
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[0].tangentMode
+    value: 34
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[0].weightedMode
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[0].inWeight
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[0].outWeight
+    value: 0.33333334
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[1].time
+    value: 0.21220073
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[1].value
+    value: 0.74374175
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[1].inSlope
+    value: 1.2534058
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[1].outSlope
+    value: 1.2534058
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[1].tangentMode
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[1].weightedMode
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[1].inWeight
+    value: 0.33333334
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[1].outWeight
+    value: 0.08182937
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[2].time
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[2].value
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[2].inSlope
+    value: 0.3252837
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[2].outSlope
+    value: 0.3252837
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[2].tangentMode
+    value: 34
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[2].weightedMode
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[2].inWeight
+    value: 0.33333334
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_Curve.Array.data[2].outWeight
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_PreInfinity
+    value: 2
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_PostInfinity
+    value: 2
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: forceRelativeToDistance.m_RotationOrder
+    value: 4
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: maxDistance
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: maxStrengthMultiplier
+    value: 100
+    objectReference: {fileID: 0}
+  m_ExcludedProperties: []
+  m_CoupledType:
+    m_NativeTypeID: 0
+    m_ManagedTypePPtr: {fileID: 0}
+    m_ManagedTypeFallback: 
+  m_CoupledProperties: []

@@ -1,0 +1,151 @@
+{
+    "entryPointControllerNodeGuid": "a540e6ec-9da9-482d-a712-d6d418669f44",
+    "nodes": [
+        {
+            "guid": "a540e6ec-9da9-482d-a712-d6d418669f44",
+            "position": {
+                "x": 8.571427345275879,
+                "y": 0.05445176362991333,
+                "z": 15.716617584228516
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "c9615fe4-577b-4b8a-97b6-aa970130851f",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "c9615fe4-577b-4b8a-97b6-aa970130851f",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Combo 2",
+                    "targetNodeGUID": "c8af9465-a8ee-44ca-8e11-fc9c7b2209e0",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Combo 2",
+                    "targetNodeGUID": "c8af9465-a8ee-44ca-8e11-fc9c7b2209e0",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "c9615fe4-577b-4b8a-97b6-aa970130851f",
+            "position": {
+                "x": 9.178202629089356,
+                "y": 0.05445176362991333,
+                "z": 16.59458351135254
+            },
+            "nodeTemplateName": "Staff_Charge_Cast_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "c7ade925-78d4-49fb-be27-0ef2867a979a",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "c7ade925-78d4-49fb-be27-0ef2867a979a",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "c8af9465-a8ee-44ca-8e11-fc9c7b2209e0",
+            "position": {
+                "x": 9.36254596710205,
+                "y": 0.05445176362991333,
+                "z": 15.071664810180664
+            },
+            "nodeTemplateName": "Staff_Charge_Cast_2",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "c7ade925-78d4-49fb-be27-0ef2867a979a",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "c7ade925-78d4-49fb-be27-0ef2867a979a",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "c7ade925-78d4-49fb-be27-0ef2867a979a",
+            "position": {
+                "x": 10.213584899902344,
+                "y": 0.06756489723920822,
+                "z": 15.88082504272461
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Triggers Out",
+                    "targetNodeGUID": "870f81fa-0183-4428-aff0-d53c66a500b6",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Triggers Out",
+                    "targetNodeGUID": "870f81fa-0183-4428-aff0-d53c66a500b6",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "870f81fa-0183-4428-aff0-d53c66a500b6",
+            "position": {
+                "x": 11.196714401245118,
+                "y": 0.05445176362991333,
+                "z": 15.702219009399414
+            },
+            "nodeTemplateName": "CollisionEnterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "On Event",
+                    "targetNodeGUID": "e766c340-dd77-40c8-b568-33eb058b66ca",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "On Event",
+                    "targetNodeGUID": "e766c340-dd77-40c8-b568-33eb058b66ca",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "013a5ed2-f35c-4c80-ad4f-ea8c955c5d66",
+            "position": {
+                "x": 11.247919082641602,
+                "y": 0.05445206165313721,
+                "z": 16.706016540527345
+            },
+            "nodeTemplateName": "EnemyOrEnvirmentTagFilterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Filter Out",
+                    "targetNodeGUID": "870f81fa-0183-4428-aff0-d53c66a500b6",
+                    "toInputSocketName": "Filters In"
+                },
+                {
+                    "fromOutputSocketName": "Filter Out",
+                    "targetNodeGUID": "870f81fa-0183-4428-aff0-d53c66a500b6",
+                    "toInputSocketName": "Filters In"
+                }
+            ]
+        },
+        {
+            "guid": "e766c340-dd77-40c8-b568-33eb058b66ca",
+            "position": {
+                "x": 12.371313095092774,
+                "y": 0.06756486743688584,
+                "z": 15.719621658325196
+            },
+            "nodeTemplateName": "DamageEffect_10",
+            "connections": []
+        }
+    ]
+}

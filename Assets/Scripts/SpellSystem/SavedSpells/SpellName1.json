@@ -1,0 +1,63 @@
+{
+    "entryPointControllerNodeGuid": "0fa3a0e3-79b4-44a6-8464-f26f95d28079",
+    "nodes": [
+        {
+            "guid": "0fa3a0e3-79b4-44a6-8464-f26f95d28079",
+            "position": {
+                "x": 9.22728443145752,
+                "y": 0.05445176362991333,
+                "z": 15.90730094909668
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "19e1ccd7-3a78-471b-9c73-800069d481fa",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "19e1ccd7-3a78-471b-9c73-800069d481fa",
+            "position": {
+                "x": 10.94690990447998,
+                "y": 0.054452091455459598,
+                "z": 15.652005195617676
+            },
+            "nodeTemplateName": "Staff_Charge_Cast_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "87c30ac6-fa73-437a-87be-ad0530e5ab83",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "87c30ac6-fa73-437a-87be-ad0530e5ab83",
+            "position": {
+                "x": 12.295736312866211,
+                "y": 0.06756488233804703,
+                "z": 16.457056045532228
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": [],
+            "childNodeGUIDs": [
+                "64e42976-dd79-44ec-8fff-b9ec1535b285"
+            ]
+        },
+        {
+            "guid": "64e42976-dd79-44ec-8fff-b9ec1535b285",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "nodeTemplateName": "ForwardMovement(Clone)",
+            "connections": [],
+            "childNodeGUIDs": []
+        }
+    ]
+}

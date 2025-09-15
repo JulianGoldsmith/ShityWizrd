@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a6f31b35484ca743862a869ba75eaba, type: 3}
+  m_Name: ProjectileInateCollisionTrigger
+  m_EditorClassIdentifier: 
+  nodeName: Projectile
+  description: Simple Projectile
+  category: 1
+  valueContainers: []
+  icon: {fileID: 2800000, guid: 5c4b14737a572df45aa13d9c33e07be0, type: 3}
+  overrideMesh: {fileID: 0}
+  overrideMaterial: {fileID: 2100000, guid: 81ff070d577702f499326062578c5af4, type: 2}
+  ovverideVisualScale: 1
+  casterTriggerMethod: 0
+  defaultBehaviourNodes: []
+  defaultTriggerNodes:
+  - {fileID: 11400000, guid: 62f104b76d5196f46a3792c386ef7114, type: 2}
+  behaviourNodes: []
+  triggerNodes: []
+  size: 0.25
+  lifeTime: 5
+  coreVFX: 4
+  CastSpawnPosition: 1
+  CastSpawnRotation: 4
+  TriggerSpawnPosition: 0
+  TriggerSpawnRotation: 1

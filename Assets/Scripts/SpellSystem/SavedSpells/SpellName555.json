@@ -1,0 +1,109 @@
+{
+    "entryPointControllerNodeGuid": "3a61294a-e9bb-488a-9d4c-b9b5a743316e",
+    "nodes": [
+        {
+            "guid": "3a61294a-e9bb-488a-9d4c-b9b5a743316e",
+            "position": {
+                "x": 9.049275398254395,
+                "y": 0.05445204675197601,
+                "z": 15.563211441040039
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "5a3e720b-0cff-4d49-8574-1e6eb670f51c",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "5a3e720b-0cff-4d49-8574-1e6eb670f51c",
+            "position": {
+                "x": 10.348319053649903,
+                "y": 0.05445176362991333,
+                "z": 16.40160369873047
+            },
+            "nodeTemplateName": "Staff_Charge_Cast_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "fa298c78-d255-4e25-bf92-976df7acde55",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "fa298c78-d255-4e25-bf92-976df7acde55",
+            "position": {
+                "x": 11.797178268432618,
+                "y": 0.06756488233804703,
+                "z": 16.7144718170166
+            },
+            "nodeTemplateName": "ProjectileInateCollisionTrigger",
+            "connections": [
+                {
+                    "fromOutputSocketName": "On Event",
+                    "targetNodeGUID": "0f834b92-76ef-4d6a-8656-a49606cfa11f",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": [
+                "732826bd-245e-47b6-bbde-bf832e56a45d",
+                "80d25667-5be0-4eb1-8f74-6bb0f5823edc"
+            ]
+        },
+        {
+            "guid": "732826bd-245e-47b6-bbde-bf832e56a45d",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "nodeTemplateName": "ForwardMovement",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "80d25667-5be0-4eb1-8f74-6bb0f5823edc",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "nodeTemplateName": "CollisionEnterNode",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "82c38213-fa67-4fb1-b264-616d22bc0ee8",
+            "position": {
+                "x": 10.855690956115723,
+                "y": 0.05445173382759094,
+                "z": 14.777603149414063
+            },
+            "nodeTemplateName": "EnemyOrEnvirmentTagFilterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Filter Out",
+                    "targetNodeGUID": "fa298c78-d255-4e25-bf92-976df7acde55",
+                    "toInputSocketName": "Filters In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "0f834b92-76ef-4d6a-8656-a49606cfa11f",
+            "position": {
+                "x": 13.177959442138672,
+                "y": 0.06756487488746643,
+                "z": 15.80803108215332
+            },
+            "nodeTemplateName": "Explosion",
+            "connections": [],
+            "childNodeGUIDs": []
+        }
+    ]
+}

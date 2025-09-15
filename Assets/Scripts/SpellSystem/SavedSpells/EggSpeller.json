@@ -1,0 +1,77 @@
+{
+    "entryPointControllerNodeGuid": "fb5e3c6d-4c0e-4182-b36a-477bd74e8bfb",
+    "nodes": [
+        {
+            "guid": "fb5e3c6d-4c0e-4182-b36a-477bd74e8bfb",
+            "position": {
+                "x": 9.09626579284668,
+                "y": 0.05445224046707153,
+                "z": 16.019838333129884
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "fb5e3c6d-4c0e-4182-b36a-477bd74e8bfb",
+                    "targetNodeGUID": "1294b238-434f-4d09-a68c-995423bea391",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "1294b238-434f-4d09-a68c-995423bea391"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "ff2b122c-2906-4145-873f-b09760e6c209",
+            "position": {
+                "x": 13.279352188110352,
+                "y": 0.06756488233804703,
+                "z": 16.27886199951172
+            },
+            "nodeTemplateName": "EggCore",
+            "connections": [],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "1294b238-434f-4d09-a68c-995423bea391",
+            "position": {
+                "x": 10.929935455322266,
+                "y": 0.05445176362991333,
+                "z": 14.984458923339844
+            },
+            "nodeTemplateName": "MomentumThrowCastNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "fromOutputOwnerGUID": "1294b238-434f-4d09-a68c-995423bea391",
+                    "targetNodeGUID": "ff2b122c-2906-4145-873f-b09760e6c209",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "ff2b122c-2906-4145-873f-b09760e6c209"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "d222d357-ae62-4a26-98b7-8d244b06b125",
+            "position": {
+                "x": 11.38052749633789,
+                "y": 0.0819324404001236,
+                "z": 17.389341354370118
+            },
+            "nodeTemplateName": "GravityNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Behaviour Out",
+                    "fromOutputOwnerGUID": "d222d357-ae62-4a26-98b7-8d244b06b125",
+                    "targetNodeGUID": "ff2b122c-2906-4145-873f-b09760e6c209",
+                    "toInputSocketName": "Behaviours In",
+                    "toInputOwnerGUID": "ff2b122c-2906-4145-873f-b09760e6c209"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        }
+    ]
+}

@@ -1,0 +1,132 @@
+{
+    "entryPointControllerNodeGuid": "a540e6ec-9da9-482d-a712-d6d418669f44",
+    "nodes": [
+        {
+            "guid": "a540e6ec-9da9-482d-a712-d6d418669f44",
+            "position": {
+                "x": 8.6328706741333,
+                "y": 0.054451778531074527,
+                "z": 15.497184753417969
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "20424807-f87b-4c4f-9cce-c2630f7d6475",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Combo 2",
+                    "targetNodeGUID": "d577e006-c94c-4b07-bd1a-c5ae4fa9ef78",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "c7ade925-78d4-49fb-be27-0ef2867a979a",
+            "position": {
+                "x": 11.474884033203125,
+                "y": 0.06756487488746643,
+                "z": 15.534107208251954
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Triggers Out",
+                    "targetNodeGUID": "8d498f2c-f151-4e15-bf52-d5b89cf34519",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "20424807-f87b-4c4f-9cce-c2630f7d6475",
+            "position": {
+                "x": 9.544849395751954,
+                "y": 0.054451778531074527,
+                "z": 16.497413635253908
+            },
+            "nodeTemplateName": "Club_Charge_Swing_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "c7ade925-78d4-49fb-be27-0ef2867a979a",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "d577e006-c94c-4b07-bd1a-c5ae4fa9ef78",
+            "position": {
+                "x": 10.007651329040528,
+                "y": 0.05445185303688049,
+                "z": 15.129268646240235
+            },
+            "nodeTemplateName": "Club_Charge_Swing_2",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "c7ade925-78d4-49fb-be27-0ef2867a979a",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "8d498f2c-f151-4e15-bf52-d5b89cf34519",
+            "position": {
+                "x": 13.062579154968262,
+                "y": 0.067564956843853,
+                "z": 15.150413513183594
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Triggers Out",
+                    "targetNodeGUID": "9d7914e3-8f94-4f0a-a18e-7ff69a4044f7",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "9d7914e3-8f94-4f0a-a18e-7ff69a4044f7",
+            "position": {
+                "x": 14.45775032043457,
+                "y": 0.054451823234558108,
+                "z": 14.959770202636719
+            },
+            "nodeTemplateName": "CollisionEnterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "On Event",
+                    "targetNodeGUID": "6f7b2421-a179-49cc-92b4-1c601fdb52ed",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "de5da7c6-d2ed-4cd5-8272-f55305b8d0a4",
+            "position": {
+                "x": 14.639728546142579,
+                "y": 0.05445176362991333,
+                "z": 16.770896911621095
+            },
+            "nodeTemplateName": "EnemyOrEnvirmentTagFilterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Filter Out",
+                    "targetNodeGUID": "9d7914e3-8f94-4f0a-a18e-7ff69a4044f7",
+                    "toInputSocketName": "Filters In"
+                }
+            ]
+        },
+        {
+            "guid": "6f7b2421-a179-49cc-92b4-1c601fdb52ed",
+            "position": {
+                "x": 15.5409574508667,
+                "y": 0.06756487488746643,
+                "z": 15.2890625
+            },
+            "nodeTemplateName": "DamageEffect_10",
+            "connections": []
+        }
+    ]
+}

@@ -1,0 +1,125 @@
+{
+    "entryPointControllerNodeGuid": "3a8d122c-4ad7-47fb-95ef-88e43a7561e4",
+    "nodes": [
+        {
+            "guid": "3a8d122c-4ad7-47fb-95ef-88e43a7561e4",
+            "position": {
+                "x": 8.70179271697998,
+                "y": 0.05445176362991333,
+                "z": 15.739432334899903
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "7e5799c8-54a3-42b5-b7b0-496f3691d1e9",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "7e5799c8-54a3-42b5-b7b0-496f3691d1e9",
+            "position": {
+                "x": 10.141728401184082,
+                "y": 0.05445176362991333,
+                "z": 16.398927688598634
+            },
+            "nodeTemplateName": "Staff_Charge_Cast_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "6483045e-8b34-4c37-9c5e-ae7995088488",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "6483045e-8b34-4c37-9c5e-ae7995088488",
+            "position": {
+                "x": 11.672870635986329,
+                "y": 0.06756488233804703,
+                "z": 16.101057052612306
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": [],
+            "childNodeGUIDs": [
+                "6c2a4fda-0d1e-415d-817a-628aa8081f34"
+            ]
+        },
+        {
+            "guid": "6c2a4fda-0d1e-415d-817a-628aa8081f34",
+            "position": {
+                "x": 0.0,
+                "y": -0.04754754900932312,
+                "z": 0.0
+            },
+            "nodeTemplateName": "ForwardMovement(Clone)",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "29bc827e-7993-4549-8a0f-8f8a777a0765",
+            "position": {
+                "x": 16.122194290161134,
+                "y": 0.06756487488746643,
+                "z": 17.566730499267579
+            },
+            "nodeTemplateName": "Explosion",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "f72d018c-4150-414f-a792-ec85b9d042db",
+            "position": {
+                "x": 11.849658012390137,
+                "y": 0.047895193099975589,
+                "z": 14.167045593261719
+            },
+            "nodeTemplateName": "SizeMult",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Value Out",
+                    "targetNodeGUID": "6483045e-8b34-4c37-9c5e-ae7995088488",
+                    "toInputSocketName": "Size"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "cc95581c-da14-453f-9db8-5856e021ae2a",
+            "position": {
+                "x": 12.75035285949707,
+                "y": 0.05445210635662079,
+                "z": 17.387954711914064
+            },
+            "nodeTemplateName": "GravityNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Behaviour Out",
+                    "targetNodeGUID": "6483045e-8b34-4c37-9c5e-ae7995088488",
+                    "toInputSocketName": "Behaviours In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "0ac41a35-2d20-4f30-8442-e9898e80bd96",
+            "position": {
+                "x": 14.342799186706543,
+                "y": 0.04789520800113678,
+                "z": 17.46721649169922
+            },
+            "nodeTemplateName": "ForceMult",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Value Out",
+                    "targetNodeGUID": "cc95581c-da14-453f-9db8-5856e021ae2a",
+                    "toInputSocketName": "Gravity"
+                }
+            ],
+            "childNodeGUIDs": []
+        }
+    ]
+}

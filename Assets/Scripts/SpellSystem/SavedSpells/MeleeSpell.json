@@ -1,0 +1,116 @@
+{
+    "entryPointControllerNodeGuid": "73017ac1-ed42-4068-8baf-ae60fe86bd5a",
+    "nodes": [
+        {
+            "guid": "73017ac1-ed42-4068-8baf-ae60fe86bd5a",
+            "position": {
+                "x": 8.438611030578614,
+                "y": 0.05445168912410736,
+                "z": 15.707972526550293
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "b8c7c937-1874-48ca-841c-3648c8c0f41b",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Combo 2",
+                    "targetNodeGUID": "3e4574c2-b928-4f7b-be2d-b46e4870a905",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "b8c7c937-1874-48ca-841c-3648c8c0f41b",
+            "position": {
+                "x": 10.027836799621582,
+                "y": 0.05445203185081482,
+                "z": 16.285696029663087
+            },
+            "nodeTemplateName": "Club_Charge_Swing_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "11706202-5d38-444d-91e3-be4875954bf6",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "3e4574c2-b928-4f7b-be2d-b46e4870a905",
+            "position": {
+                "x": 9.888681411743164,
+                "y": 0.05445212125778198,
+                "z": 15.414558410644532
+            },
+            "nodeTemplateName": "Club_Charge_Swing_2",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "11706202-5d38-444d-91e3-be4875954bf6",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "11706202-5d38-444d-91e3-be4875954bf6",
+            "position": {
+                "x": 11.559319496154786,
+                "y": 0.06756487488746643,
+                "z": 15.896533012390137
+            },
+            "nodeTemplateName": "MeleeHitBoxCore",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Triggers Out",
+                    "targetNodeGUID": "e241152d-7ced-4c21-8d0c-4af48ca83df8",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "e241152d-7ced-4c21-8d0c-4af48ca83df8",
+            "position": {
+                "x": 12.896279335021973,
+                "y": 0.05445176362991333,
+                "z": 15.778191566467286
+            },
+            "nodeTemplateName": "CollisionEnterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "On Event",
+                    "targetNodeGUID": "8f90bd4b-a94a-4376-881a-9750bf9b13c6",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "4c54e2d1-0f4a-4b40-8802-6f8a104f41e9",
+            "position": {
+                "x": 13.281755447387696,
+                "y": 0.054451748728752139,
+                "z": 17.2816162109375
+            },
+            "nodeTemplateName": "EnemyOrEnvirmentTagFilterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Filter Out",
+                    "targetNodeGUID": "e241152d-7ced-4c21-8d0c-4af48ca83df8",
+                    "toInputSocketName": "Filters In"
+                }
+            ]
+        },
+        {
+            "guid": "8f90bd4b-a94a-4376-881a-9750bf9b13c6",
+            "position": {
+                "x": 14.079790115356446,
+                "y": 0.06756507605314255,
+                "z": 15.535201072692871
+            },
+            "nodeTemplateName": "DamageEffect_10",
+            "connections": []
+        }
+    ]
+}

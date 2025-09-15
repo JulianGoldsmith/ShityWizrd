@@ -1,0 +1,57 @@
+{
+    "nodes": [
+        {
+            "guid": "92f348f0-f4df-4bbf-88f7-1fac30bdfd77",
+            "position": {
+                "x": 8.501092910766602,
+                "y": 0.0577300488948822,
+                "z": 16.626249313354493
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "1bc18bb3-8827-41e3-86a7-7aa8be2e6cac",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "1bc18bb3-8827-41e3-86a7-7aa8be2e6cac",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "1bc18bb3-8827-41e3-86a7-7aa8be2e6cac",
+            "position": {
+                "x": 10.999963760375977,
+                "y": 0.0577300488948822,
+                "z": 17.18455696105957
+            },
+            "nodeTemplateName": "Staff_Charge_Cast_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "d1f5aecd-4bf3-474f-a34e-85f352ac905a",
+                    "toInputSocketName": "Exec In"
+                },
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "d1f5aecd-4bf3-474f-a34e-85f352ac905a",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "d1f5aecd-4bf3-474f-a34e-85f352ac905a",
+            "position": {
+                "x": 11.007972717285157,
+                "y": 0.07166272401809693,
+                "z": 14.973337173461914
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": []
+        }
+    ],
+    "entryPointControllerNodeGuid": "92f348f0-f4df-4bbf-88f7-1fac30bdfd77"
+}

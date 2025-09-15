@@ -1,0 +1,73 @@
+{
+    "entryPointControllerNodeGuid": "fb5e3c6d-4c0e-4182-b36a-477bd74e8bfb",
+    "nodes": [
+        {
+            "guid": "fb5e3c6d-4c0e-4182-b36a-477bd74e8bfb",
+            "position": {
+                "x": 9.09626579284668,
+                "y": 0.05445176362991333,
+                "z": 16.019840240478517
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "fb5e3c6d-4c0e-4182-b36a-477bd74e8bfb",
+                    "targetNodeGUID": "da77c8fd-004c-44a6-a615-b68c3d8fbd0d",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "da77c8fd-004c-44a6-a615-b68c3d8fbd0d"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "da77c8fd-004c-44a6-a615-b68c3d8fbd0d",
+            "position": {
+                "x": 10.030904769897461,
+                "y": 0.05445176362991333,
+                "z": 16.587631225585939
+            },
+            "nodeTemplateName": "MomentumFlickCastNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "fromOutputOwnerGUID": "da77c8fd-004c-44a6-a615-b68c3d8fbd0d",
+                    "targetNodeGUID": "92da3e01-5cff-4d7e-882c-9803d66dd81f",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "92da3e01-5cff-4d7e-882c-9803d66dd81f"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "92da3e01-5cff-4d7e-882c-9803d66dd81f",
+            "position": {
+                "x": 11.802412033081055,
+                "y": 0.06756488233804703,
+                "z": 17.275745391845704
+            },
+            "nodeTemplateName": "EggCore",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "c3229671-2a46-46a6-a483-21cf91a5341d",
+            "position": {
+                "x": 10.599041938781739,
+                "y": 0.054451823234558108,
+                "z": 17.736431121826173
+            },
+            "nodeTemplateName": "AddMomentumBehaviourNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Behaviour Out",
+                    "fromOutputOwnerGUID": "c3229671-2a46-46a6-a483-21cf91a5341d",
+                    "targetNodeGUID": "92da3e01-5cff-4d7e-882c-9803d66dd81f",
+                    "toInputSocketName": "Behaviours In",
+                    "toInputOwnerGUID": "92da3e01-5cff-4d7e-882c-9803d66dd81f"
+                }
+            ],
+            "childNodeGUIDs": []
+        }
+    ]
+}

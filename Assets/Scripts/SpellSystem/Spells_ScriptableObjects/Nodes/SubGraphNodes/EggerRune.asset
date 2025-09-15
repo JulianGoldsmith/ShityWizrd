@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc4ea14c37f76a145887919069bd5c3d, type: 3}
+  m_Name: EggerRune
+  m_EditorClassIdentifier: 
+  nodeName: EggerRune
+  description: 
+  category: 1
+  valueContainers: []
+  icon: {fileID: 2800000, guid: 6dc75716644b862499c0aad9b1b4654d, type: 3}
+  overrideMesh: {fileID: 0}
+  overrideMaterial: {fileID: 0}
+  ovverideVisualScale: 1
+  rootNodeGuid: a098888b-bf76-420f-b7e3-156df71bd7f3
+  internalNodes:
+  - guid: a098888b-bf76-420f-b7e3-156df71bd7f3
+    position: {x: 11.8771105, y: 0.18599844, z: 15.602899}
+    nodeTemplateName: EggCore
+    connections:
+    - fromOutputSocketName: Triggers Out
+      fromOutputOwnerGUID: a098888b-bf76-420f-b7e3-156df71bd7f3
+      targetNodeGUID: 4760acf0-b031-4061-b142-1adaa6eae642
+      toInputSocketName: Exec In
+      toInputOwnerGUID: 4760acf0-b031-4061-b142-1adaa6eae642
+    childNodeGUIDs: []
+    sourceTemplateNodeGuid: 
+  - guid: 0ed2f246-5a12-4dbd-aaf8-0611f157cf8e
+    position: {x: 11.712316, y: 0.1859982, z: 17.012415}
+    nodeTemplateName: AddMomentumBehaviourNode
+    connections:
+    - fromOutputSocketName: Behaviour Out
+      fromOutputOwnerGUID: 0ed2f246-5a12-4dbd-aaf8-0611f157cf8e
+      targetNodeGUID: a098888b-bf76-420f-b7e3-156df71bd7f3
+      toInputSocketName: Behaviours In
+      toInputOwnerGUID: a098888b-bf76-420f-b7e3-156df71bd7f3
+    childNodeGUIDs: []
+    sourceTemplateNodeGuid: 
+  - guid: 4760acf0-b031-4061-b142-1adaa6eae642
+    position: {x: 13.217216, y: 0.18599868, z: 16.197077}
+    nodeTemplateName: CollisionEnterNode
+    connections: []
+    childNodeGUIDs: []
+    sourceTemplateNodeGuid: 
+  - guid: 7978458f-8874-4a7d-b5dc-0a20a2e3fe28
+    position: {x: 13.056754, y: 0.18599844, z: 14.891655}
+    nodeTemplateName: EnemyOrEnvirmentTagFilterNode
+    connections:
+    - fromOutputSocketName: Filter Out
+      fromOutputOwnerGUID: 7978458f-8874-4a7d-b5dc-0a20a2e3fe28
+      targetNodeGUID: 4760acf0-b031-4061-b142-1adaa6eae642
+      toInputSocketName: Filters In
+      toInputOwnerGUID: 4760acf0-b031-4061-b142-1adaa6eae642
+    childNodeGUIDs: []
+    sourceTemplateNodeGuid: 
+  exposedSockets:
+  - exposedName: On Event
+    internalNodeGuid: 4760acf0-b031-4061-b142-1adaa6eae642
+    internalSocketName: On Event
+    direction: 1
+    type: 0
+    tag: 0
+  - exposedName: Size
+    internalNodeGuid: a098888b-bf76-420f-b7e3-156df71bd7f3
+    internalSocketName: size
+    direction: 0
+    type: 3
+    tag: 3
+  - exposedName: Behaviours In
+    internalNodeGuid: a098888b-bf76-420f-b7e3-156df71bd7f3
+    internalSocketName: Behaviours In
+    direction: 0
+    type: 1
+    tag: 0
+  - exposedName: Filters In
+    internalNodeGuid: 4760acf0-b031-4061-b142-1adaa6eae642
+    internalSocketName: Filters In
+    direction: 0
+    type: 2
+    tag: 0

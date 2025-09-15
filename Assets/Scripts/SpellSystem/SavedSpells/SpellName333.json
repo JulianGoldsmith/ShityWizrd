@@ -1,0 +1,176 @@
+{
+    "entryPointControllerNodeGuid": "113e8858-4b40-4805-aaf4-a176acb91baa",
+    "nodes": [
+        {
+            "guid": "113e8858-4b40-4805-aaf4-a176acb91baa",
+            "position": {
+                "x": 8.424448013305664,
+                "y": 0.05445176362991333,
+                "z": 15.527772903442383
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "76bcf90c-b87c-45b3-ada2-2938ae9884a7",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "76bcf90c-b87c-45b3-ada2-2938ae9884a7",
+            "position": {
+                "x": 9.863411903381348,
+                "y": 0.05445204675197601,
+                "z": 16.16095542907715
+            },
+            "nodeTemplateName": "Staff_Charge_Cast_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "1eb0522d-7431-4aa9-a3b2-4cf4dd514699",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "1eb0522d-7431-4aa9-a3b2-4cf4dd514699",
+            "position": {
+                "x": 11.309228897094727,
+                "y": 0.06756488233804703,
+                "z": 16.170204162597658
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Triggers Out",
+                    "targetNodeGUID": "053d800e-1fcf-4c4e-8ccb-dcd45013f235",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": [
+                "51a29614-733c-4c05-a2b6-6568af25af4a"
+            ]
+        },
+        {
+            "guid": "51a29614-733c-4c05-a2b6-6568af25af4a",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "nodeTemplateName": "ForwardMovement",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "053d800e-1fcf-4c4e-8ccb-dcd45013f235",
+            "position": {
+                "x": 12.247539520263672,
+                "y": 0.054451778531074527,
+                "z": 15.261276245117188
+            },
+            "nodeTemplateName": "CollisionEnterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "On Event",
+                    "targetNodeGUID": "5adb4426-45bb-4abf-913c-037aeab37280",
+                    "toInputSocketName": "Exec In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "0a75c518-7963-4f3a-adda-653902c968a0",
+            "position": {
+                "x": 12.718425750732422,
+                "y": 0.05445176362991333,
+                "z": 16.928468704223634
+            },
+            "nodeTemplateName": "EnemyOrEnvirmentTagFilterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Filter Out",
+                    "targetNodeGUID": "053d800e-1fcf-4c4e-8ccb-dcd45013f235",
+                    "toInputSocketName": "Filters In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "5adb4426-45bb-4abf-913c-037aeab37280",
+            "position": {
+                "x": 14.4220609664917,
+                "y": 0.06756488233804703,
+                "z": 14.664230346679688
+            },
+            "nodeTemplateName": "DamageEffect_10",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "797a5ce1-54b7-45df-9bc2-c6d12d90b7d3",
+            "position": {
+                "x": 9.680765151977539,
+                "y": 0.047895193099975589,
+                "z": 14.707466125488282
+            },
+            "nodeTemplateName": "SizeMult",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Value Out",
+                    "targetNodeGUID": "1eb0522d-7431-4aa9-a3b2-4cf4dd514699",
+                    "toInputSocketName": "Size"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "4ea8c3c2-65b5-4c27-89cb-b4fc9eed33cb",
+            "position": {
+                "x": 15.070566177368164,
+                "y": 0.05445204675197601,
+                "z": 16.516075134277345
+            },
+            "nodeTemplateName": "ForwardMovement",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "f6c70458-00f5-4a8e-b6a1-e1e719d4ef52",
+            "position": {
+                "x": 11.583653450012207,
+                "y": 0.05445191264152527,
+                "z": 17.709827423095704
+            },
+            "nodeTemplateName": "GravityNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Behaviour Out",
+                    "targetNodeGUID": "1eb0522d-7431-4aa9-a3b2-4cf4dd514699",
+                    "toInputSocketName": "Behaviours In"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "62d96da0-84d8-4157-b2c9-f6854eb4d5da",
+            "position": {
+                "x": 14.309924125671387,
+                "y": 0.04789513349533081,
+                "z": 17.86052894592285
+            },
+            "nodeTemplateName": "ForceMult",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Value Out",
+                    "targetNodeGUID": "f6c70458-00f5-4a8e-b6a1-e1e719d4ef52",
+                    "toInputSocketName": "Gravity"
+                }
+            ],
+            "childNodeGUIDs": []
+        }
+    ]
+}

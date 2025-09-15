@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a1cd344325b20a43a0af910272df265, type: 3}
+  m_Name: WandHandState
+  m_EditorClassIdentifier: 
+  positionSpringStrength: 10
+  positionSpringDamper: 25
+  rotationSpringStrength: 200
+  rotationSpringDamper: 15
+  handOffsetFromShoulder: {x: 0.27, y: -0.33, z: 0.69}
+  handRotationOffset: {x: 19.08, y: -21.5, z: -80.4}
+  handBobSpeed: 1
+  handBobAmountX: 0.1
+  handBobAmountY: 0.1
+  forceRelativeToDistance:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.2
+      inSlope: 1.4304029
+      outSlope: 1.4304029
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.45930973
+      value: 0.85699797
+      inSlope: 0.8474417
+      outSlope: 0.8474417
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0.147578
+      outSlope: 0.147578
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.095393285
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  maxDistance: 1
+  maxStrengthMultiplier: 50
+  idleClip: {fileID: -1609281748187839663, guid: 0223915bc06d2b648abf4a3415809356, type: 3}
+  windupClip: {fileID: 0}
+  holdClip: {fileID: 0}
+  releaseClip: {fileID: 0}

@@ -1,0 +1,54 @@
+{
+    "entryPointControllerNodeGuid": "cf5f5c06-11e1-43b5-b5f1-b9ef23c51114",
+    "nodes": [
+        {
+            "guid": "cf5f5c06-11e1-43b5-b5f1-b9ef23c51114",
+            "position": {
+                "x": 8.424359321594239,
+                "y": 0.05445168912410736,
+                "z": 15.564672470092774
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "cf5f5c06-11e1-43b5-b5f1-b9ef23c51114",
+                    "targetNodeGUID": "82aa193f-a005-44d9-9fa5-b1e70c0d2f5b",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "82aa193f-a005-44d9-9fa5-b1e70c0d2f5b"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "82aa193f-a005-44d9-9fa5-b1e70c0d2f5b",
+            "position": {
+                "x": 10.457114219665528,
+                "y": 0.05445215106010437,
+                "z": 16.837913513183595
+            },
+            "nodeTemplateName": "MomentumFlickCastNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "fromOutputOwnerGUID": "82aa193f-a005-44d9-9fa5-b1e70c0d2f5b",
+                    "targetNodeGUID": "9290c876-d0e7-412a-853d-8be0c7aa103b",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "9290c876-d0e7-412a-853d-8be0c7aa103b"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "9290c876-d0e7-412a-853d-8be0c7aa103b",
+            "position": {
+                "x": 12.490962982177735,
+                "y": 0.06756506115198136,
+                "z": 16.983850479125978
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": [],
+            "childNodeGUIDs": []
+        }
+    ]
+}

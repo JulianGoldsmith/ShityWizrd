@@ -1,0 +1,315 @@
+fileFormatVersion: 2
+guid: 0223915bc06d2b648abf4a3415809356
+ModelImporter:
+  serializedVersion: 22200
+  internalIDToNameTable: []
+  externalObjects: {}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 3
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: HandIdle
+      takeName: Scene
+      internalID: -623603649343465320
+      firstFrame: 1
+      lastFrame: 100
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0.9
+    - serializedVersion: 16
+      name: HandHold
+      takeName: Scene
+      internalID: -1609281748187839663
+      firstFrame: 120
+      lastFrame: 130
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 1
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 1
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0.9
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 0.2
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton:
+    - name: WizHand(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Armature
+      parentName: WizHand(Clone)
+      position: {x: -1.1092888, y: 1.50234, z: 0.19008398}
+      rotation: {x: -0.000000037748947, y: 0, z: -0, w: 1}
+      scale: {x: 0.01, y: 0.01, z: 0.01}
+    - name: ForeArm.L
+      parentName: Armature
+      position: {x: 333.2298, y: 10.587348, z: -18.680592}
+      rotation: {x: 0.5023646, y: -0.49281773, z: 0.4839305, w: 0.52016515}
+      scale: {x: 1, y: 1, z: 1.0000001}
+    - name: Hand.L
+      parentName: ForeArm.L
+      position: {x: -0.0000008940697, y: 215.68814, z: -0.0000013411045}
+      rotation: {x: 0.42859665, y: -0.3765512, z: 0.027467534, w: 0.8208286}
+      scale: {x: 0.99999994, y: 1.0000001, z: 1.0000001}
+    - name: HandThumb1.L
+      parentName: Hand.L
+      position: {x: 47.07982, y: 52.96102, z: 11.06289}
+      rotation: {x: 0.086492516, y: -0.027346969, z: -0.28616747, w: 0.95387596}
+      scale: {x: 1, y: 0.99999994, z: 1}
+    - name: HandThumb2.L
+      parentName: HandThumb1.L
+      position: {x: 8.478493, y: 56.746155, z: -0.000050354}
+      rotation: {x: -0.0543646, y: -0.48148823, z: -0.10235452, w: 0.8687562}
+      scale: {x: 1.0000001, y: 1, z: 1}
+    - name: HandThumb3.L
+      parentName: HandThumb2.L
+      position: {x: 2.9779587, y: 51.642284, z: 0.0000045776364}
+      rotation: {x: -0.59087646, y: 0.033354737, z: -0.034709893, w: 0.8053246}
+      scale: {x: 1, y: 0.99999994, z: 1}
+    - name: HandThumb4.L
+      parentName: HandThumb3.L
+      position: {x: -11.456448, y: 39.31133, z: -0.000009536743}
+      rotation: {x: -0.0000000018626449, y: 9.313227e-10, z: 0.000000013271347, w: 1}
+      scale: {x: 1, y: 1.0000001, z: 1.0000001}
+    - name: HandThumb4.L_end
+      parentName: HandThumb4.L
+      position: {x: -0, y: 40.946587, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: HandIndex1.L
+      parentName: Hand.L
+      position: {x: 49.66238, y: 112.65285, z: 0.29560268}
+      rotation: {x: -0.48317626, y: 0.03604955, z: 0.65338284, w: 0.5816632}
+      scale: {x: 0.99999994, y: 0.9999999, z: 1.0000001}
+    - name: HandIndex2.L
+      parentName: HandIndex1.L
+      position: {x: 0.028073478, y: 42.57879, z: -0.00001952648}
+      rotation: {x: 0.06092763, y: -0.00000028430512, z: -0.000000021850276, w: 0.9981422}
+      scale: {x: 1.0000001, y: 1, z: 1}
+    - name: HandIndex3.L
+      parentName: HandIndex2.L
+      position: {x: -0.019270658, y: 40.246464, z: -0.00006184578}
+      rotation: {x: -0.010926032, y: -0.0000002739853, z: 0.000000025732964, w: 0.99994034}
+      scale: {x: 0.99999994, y: 0.99999994, z: 0.9999999}
+    - name: HandIndex4.L
+      parentName: HandIndex3.L
+      position: {x: -0.008806539, y: 32.344067, z: -0.000024652481}
+      rotation: {x: -0.000000030191586, y: 0.0000004587346, z: -0.000000021762391, w: 1}
+      scale: {x: 0.99999994, y: 0.9999999, z: 1}
+    - name: HandIndex4.L_end
+      parentName: HandIndex4.L
+      position: {x: -0, y: 32.344013, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: HandMiddle1.L
+      parentName: Hand.L
+      position: {x: 15.179004, y: 126.3184, z: 1.8981457}
+      rotation: {x: -0.04184641, y: 0.0007434129, z: -0.017756417, w: 0.998966}
+      scale: {x: 0.99999994, y: 1.0000001, z: 1}
+    - name: HandMiddle2.L
+      parentName: HandMiddle1.L
+      position: {x: 0.037052058, y: 44.74385, z: 0.000018841027}
+      rotation: {x: 0.066894405, y: 0.00000041321775, z: -0.000000022022727, w: 0.99776006}
+      scale: {x: 1, y: 0.9999998, z: 0.99999994}
+    - name: HandMiddle3.L
+      parentName: HandMiddle2.L
+      position: {x: -0.018791461, y: 41.388786, z: 0.00007151365}
+      rotation: {x: 0.0046661953, y: -0.0000005100102, z: 0.00000004635746, w: 0.99998915}
+      scale: {x: 1, y: 0.99999994, z: 0.99999994}
+    - name: HandMiddle4.L
+      parentName: HandMiddle3.L
+      position: {x: -0.018257521, y: 33.753166, z: 0.00007448792}
+      rotation: {x: -0.0000000011059457, y: -3.4560801e-10, z: -0.000000002237357, w: 1}
+      scale: {x: 1, y: 0.9999999, z: 0.9999999}
+    - name: HandMiddle4.L_end
+      parentName: HandMiddle4.L
+      position: {x: -0, y: 33.75304, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: HandRing1.L
+      parentName: Hand.L
+      position: {x: -13.942848, y: 127.893135, z: 1.9854032}
+      rotation: {x: -0.038973507, y: -0.00046855907, z: 0.0119995605, w: 0.9991681}
+      scale: {x: 0.99999994, y: 1.0000001, z: 1.0000002}
+    - name: HandRing2.L
+      parentName: HandRing1.L
+      position: {x: 0.03725842, y: 44.32921, z: -0.000036263467}
+      rotation: {x: 0.06427147, y: 0.00000030686493, z: -0.00000007652485, w: 0.99793243}
+      scale: {x: 1, y: 1, z: 1}
+    - name: HandRing3.L
+      parentName: HandRing2.L
+      position: {x: -0.01298362, y: 39.281326, z: -0.0000017285346}
+      rotation: {x: 0.021909662, y: -0.00000024942148, z: -0.000000017222687, w: 0.99976}
+      scale: {x: 1.0000001, y: 0.9999998, z: 1}
+    - name: HandRing4.L
+      parentName: HandRing3.L
+      position: {x: -0.024267685, y: 30.80946, z: -0.000025874377}
+      rotation: {x: -0.000000051075403, y: 2.910383e-11, z: -0.000000001899025, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: HandRing4.L_end
+      parentName: HandRing4.L
+      position: {x: -0, y: 30.809488, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: HandPinky1.L
+      parentName: Hand.L
+      position: {x: -50.898544, y: 105.79123, z: 1.6772673}
+      rotation: {x: -0.06765231, y: -0.0030281127, z: 0.044610728, w: 0.99670655}
+      scale: {x: 0.9999998, y: 1, z: 1.0000002}
+    - name: HandPinky2.L
+      parentName: HandPinky1.L
+      position: {x: 0.053753745, y: 42.552074, z: 0.00008659363}
+      rotation: {x: 0.07429413, y: -0.0000002026279, z: 0.000000045227747, w: 0.9972364}
+      scale: {x: 1, y: 0.99999994, z: 0.9999997}
+    - name: HandPinky3.L
+      parentName: HandPinky2.L
+      position: {x: -0.0025584756, y: 36.714584, z: 0.000017571449}
+      rotation: {x: 0.09796974, y: 0.000000018336314, z: -0.000000010532598, w: 0.9951894}
+      scale: {x: 0.99999994, y: 0.99999994, z: 1.0000001}
+    - name: HandPinky4.L
+      parentName: HandPinky3.L
+      position: {x: -0.051202707, y: 28.075064, z: 0.000009727478}
+      rotation: {x: 0.00000004630419, y: 0.0000001162989, z: 0.0000000834807, w: 1}
+      scale: {x: 1, y: 1, z: 1.0000001}
+    - name: HandPinky4.L_end
+      parentName: HandPinky4.L
+      position: {x: -0, y: 28.075172, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Hands
+      parentName: WizHand(Clone)
+      position: {x: -0.0000007629394, y: -0.000000035212565, z: 0.000000021442057}
+      rotation: {x: 1, y: 0.0000000031471241, z: 6.6757133e-10, w: 0.00000019470718}
+      scale: {x: 100, y: 100, z: 100}
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 0.2
+    rootMotionBoneName: ForeArm.L
+    hasTranslationDoF: 0
+    hasExtraRoot: 1
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

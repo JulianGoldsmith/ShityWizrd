@@ -1,0 +1,131 @@
+{
+    "entryPointControllerNodeGuid": "c5228d50-590f-44e4-ae22-80aba8182e4e",
+    "nodes": [
+        {
+            "guid": "c5228d50-590f-44e4-ae22-80aba8182e4e",
+            "position": {
+                "x": 7.576349258422852,
+                "y": 0.05445176362991333,
+                "z": 15.64661979675293
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "c5228d50-590f-44e4-ae22-80aba8182e4e",
+                    "targetNodeGUID": "817b96ce-69ed-49a9-a550-ff96564210ad",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "817b96ce-69ed-49a9-a550-ff96564210ad"
+                },
+                {
+                    "fromOutputSocketName": "Combo 2",
+                    "fromOutputOwnerGUID": "c5228d50-590f-44e4-ae22-80aba8182e4e",
+                    "targetNodeGUID": "d0d3d7b1-7ad2-45d0-83fc-daa3fb6e1bed",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "d0d3d7b1-7ad2-45d0-83fc-daa3fb6e1bed"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "817b96ce-69ed-49a9-a550-ff96564210ad",
+            "position": {
+                "x": 8.963706970214844,
+                "y": 0.05445176362991333,
+                "z": 16.044057846069337
+            },
+            "nodeTemplateName": "Club_Charge_Swing_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "fromOutputOwnerGUID": "817b96ce-69ed-49a9-a550-ff96564210ad",
+                    "targetNodeGUID": "6feb3f62-6a95-448d-b156-a7fed3022d55",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "6feb3f62-6a95-448d-b156-a7fed3022d55"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "d0d3d7b1-7ad2-45d0-83fc-daa3fb6e1bed",
+            "position": {
+                "x": 8.96767520904541,
+                "y": 0.054451748728752139,
+                "z": 15.04681396484375
+            },
+            "nodeTemplateName": "Club_Charge_Swing_2",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "fromOutputOwnerGUID": "d0d3d7b1-7ad2-45d0-83fc-daa3fb6e1bed",
+                    "targetNodeGUID": "6feb3f62-6a95-448d-b156-a7fed3022d55",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "6feb3f62-6a95-448d-b156-a7fed3022d55"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "6feb3f62-6a95-448d-b156-a7fed3022d55",
+            "position": {
+                "x": 10.216141700744629,
+                "y": 0.06756488978862763,
+                "z": 15.575313568115235
+            },
+            "nodeTemplateName": "MeleeHitBoxCore",
+            "connections": [
+                {
+                    "fromOutputSocketName": "On Event",
+                    "fromOutputOwnerGUID": "af50a0e9-5acb-4b2a-9656-649b93f1a790",
+                    "targetNodeGUID": "84151ff0-ab0f-4c9a-9b92-9961109555a7",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "84151ff0-ab0f-4c9a-9b92-9961109555a7"
+                }
+            ],
+            "childNodeGUIDs": [
+                "af50a0e9-5acb-4b2a-9656-649b93f1a790"
+            ]
+        },
+        {
+            "guid": "af50a0e9-5acb-4b2a-9656-649b93f1a790",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "nodeTemplateName": "MeleeSweepTriggerNde",
+            "connections": [],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "db20e67a-9dc5-4e32-a659-c33676cc04cc",
+            "position": {
+                "x": 10.611504554748536,
+                "y": 0.05445206165313721,
+                "z": 17.271339416503908
+            },
+            "nodeTemplateName": "EnemyOrEnvirmentTagFilterNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Filter Out",
+                    "fromOutputOwnerGUID": "db20e67a-9dc5-4e32-a659-c33676cc04cc",
+                    "targetNodeGUID": "6feb3f62-6a95-448d-b156-a7fed3022d55",
+                    "toInputSocketName": "Filters In",
+                    "toInputOwnerGUID": "af50a0e9-5acb-4b2a-9656-649b93f1a790"
+                }
+            ],
+            "childNodeGUIDs": []
+        },
+        {
+            "guid": "84151ff0-ab0f-4c9a-9b92-9961109555a7",
+            "position": {
+                "x": 11.872297286987305,
+                "y": 0.06756486743688584,
+                "z": 15.476757049560547
+            },
+            "nodeTemplateName": "DamageEffect_10",
+            "connections": [],
+            "childNodeGUIDs": []
+        }
+    ]
+}

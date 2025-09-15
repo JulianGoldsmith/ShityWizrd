@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a1cd344325b20a43a0af910272df265, type: 3}
+  m_Name: CastHandState
+  m_EditorClassIdentifier: 
+  positionSpringStrength: 0.3
+  positionSpringDamper: 4
+  rotationSpringStrength: 100
+  rotationSpringDamper: 25
+  handOffsetFromShoulder: {x: 0, y: -0.15, z: 1}
+  handRotationOffset: {x: -6, y: -25, z: -80}
+  handBobSpeed: 0
+  handBobAmountX: 0
+  handBobAmountY: 0
+  forceRelativeToDistance:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  maxDistance: 1
+  maxStrengthMultiplier: 100
+  idleClip: {fileID: -1609281748187839663, guid: 0223915bc06d2b648abf4a3415809356, type: 3}
+  windupClip: {fileID: 0}
+  holdClip: {fileID: 0}
+  releaseClip: {fileID: 0}

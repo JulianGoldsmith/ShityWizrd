@@ -1,0 +1,173 @@
+{
+  "nodes": [
+    {
+      "guid": "f3d53870-1792-4444-b8e6-460fd3a61e84",
+      "type": "ComboControllerNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "ComboController",
+      "position": {
+        "x": 9.017125,
+        "y": 0.05327202,
+        "z": 15.5665493
+      },
+      "childrenGuids": [
+        "745615e5-635c-45f1-816a-689d7076805c",
+        "30ede010-0fb0-42e0-a2cf-3bf4e501356f"
+      ],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "2bac8238-9b42-43e9-83f3-cd03059cfbdd",
+      "type": "BeamNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "BaseBeamNode",
+      "position": {
+        "x": 11.98401,
+        "y": 0.05327203,
+        "z": 16.2491589
+      },
+      "childrenGuids": [],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "51fb39f1-770f-4ad3-aff9-6e5201326911",
+      "type": "ExplosionSpellNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "BaseExplosionNode",
+      "position": {
+        "x": 11.4328527,
+        "y": 0.0532720238,
+        "z": 17.5061264
+      },
+      "childrenGuids": [],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "31bb2ef1-3c04-46ec-a99c-cbbfaa557dee",
+      "type": "ProjectileNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "BaseProjectileNode",
+      "position": {
+        "x": 12.3675814,
+        "y": 0.053272333,
+        "z": 14.5838585
+      },
+      "childrenGuids": [
+        "0ca26a9c-4b71-4390-b4a1-6ab8963337c6"
+      ],
+      "propertyConnections": {
+        "speedPropertyMult": "ce1c8baa-da50-46bf-9589-386f0d48fa65"
+      }
+    },
+    {
+      "guid": "77c0fffd-8fa4-4a26-9a6b-49d0da61fbf7",
+      "type": "DamageNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "SimpleDamageNode",
+      "position": {
+        "x": 14.16272,
+        "y": 0.05327202,
+        "z": 14.82984
+      },
+      "childrenGuids": [],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "36f1b094-b645-44a7-a43c-7ca60a49bb8b",
+      "type": "WeaponSwingNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "WeaponSwingNode",
+      "position": {
+        "x": 14.3062048,
+        "y": 0.0532723367,
+        "z": 16.6925621
+      },
+      "childrenGuids": [],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "0ca26a9c-4b71-4390-b4a1-6ab8963337c6",
+      "type": "OnCollisionNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "OnCollisionWithEnvironmentAndEnemy",
+      "position": {
+        "x": 13.569,
+        "y": 0.0552713275,
+        "z": 15.4867477
+      },
+      "childrenGuids": [
+        "77c0fffd-8fa4-4a26-9a6b-49d0da61fbf7"
+      ],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "7a84d3fb-f2f0-4f62-afff-16db14e1c81b",
+      "type": "OnAfterTimeNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "After1Seconds",
+      "position": {
+        "x": 14.8370848,
+        "y": 0.05327236,
+        "z": 16.6026478
+      },
+      "childrenGuids": [],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "33005536-3cfb-4ba4-8918-6c529027c566",
+      "type": "SizePropertyNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "DoubleSize",
+      "position": {
+        "x": 13.2739086,
+        "y": 0.05327204,
+        "z": 16.5058632
+      },
+      "childrenGuids": [],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "ce1c8baa-da50-46bf-9589-386f0d48fa65",
+      "type": "SpeedPropertyNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "DoubleSpeed",
+      "position": {
+        "x": 11.2663412,
+        "y": 0.05327202,
+        "z": 17.0804138
+      },
+      "childrenGuids": [],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "30ede010-0fb0-42e0-a2cf-3bf4e501356f",
+      "type": "ChargeCastNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "Staff_ChargeCast_1",
+      "position": {
+        "x": 10.4074688,
+        "y": 0.05327202,
+        "z": 15.97807
+      },
+      "childrenGuids": [
+        "31bb2ef1-3c04-46ec-a99c-cbbfaa557dee"
+      ],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "55ea25e3-3d38-4ad1-b1f2-e4e54a3f1da0",
+      "type": "ChannelCastNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "ChanelCast",
+      "position": {
+        "x": 12.9571409,
+        "y": 0.05327203,
+        "z": 16.9814587
+      },
+      "childrenGuids": [],
+      "propertyConnections": {}
+    },
+    {
+      "guid": "745615e5-635c-45f1-816a-689d7076805c",
+      "type": "ChargeCastNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+      "basePrefabName": "Staff_ChargeCast_2",
+      "position": {
+        "x": 11.3421469,
+        "y": 0.05327202,
+        "z": 14.5088711
+      },
+      "childrenGuids": [
+        "31bb2ef1-3c04-46ec-a99c-cbbfaa557dee"
+      ],
+      "propertyConnections": {}
+    }
+  ]
+}

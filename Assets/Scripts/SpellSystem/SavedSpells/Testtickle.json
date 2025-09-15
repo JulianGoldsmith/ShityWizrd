@@ -1,0 +1,47 @@
+{
+    "entryPointControllerNodeGuid": "22c3c5ac-a02e-44da-b116-7112d64e5ab7",
+    "nodes": [
+        {
+            "guid": "22c3c5ac-a02e-44da-b116-7112d64e5ab7",
+            "position": {
+                "x": 8.445366859436036,
+                "y": 0.054450035095214847,
+                "z": 15.775657653808594
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "targetNodeGUID": "4915c4cf-851a-4a34-8c35-c042e2a3be3f",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "4915c4cf-851a-4a34-8c35-c042e2a3be3f",
+            "position": {
+                "x": 9.888364791870118,
+                "y": 0.05445192754268646,
+                "z": 16.589826583862306
+            },
+            "nodeTemplateName": "Staff_Charge_Cast_1",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "targetNodeGUID": "f7ac2ad9-ae19-4523-8151-d25b14398878",
+                    "toInputSocketName": "Exec In"
+                }
+            ]
+        },
+        {
+            "guid": "f7ac2ad9-ae19-4523-8151-d25b14398878",
+            "position": {
+                "x": 12.426592826843262,
+                "y": 0.06756488233804703,
+                "z": 16.360336303710939
+            },
+            "nodeTemplateName": "Projectile",
+            "connections": []
+        }
+    ]
+}
