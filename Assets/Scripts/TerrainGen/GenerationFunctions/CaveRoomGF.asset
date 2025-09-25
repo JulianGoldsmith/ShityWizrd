@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e02fab72b69f75e43a4d951d38c15990, type: 3}
+  m_Name: CaveRoomGF
+  m_EditorClassIdentifier: Assembly-CSharp::CaveRoomsFunction
+  functionName: GenerationFunctions
+  roomShapes:
+  - shape: 0
+    operation: 0
+    offset: {x: 0, y: 0, z: 0}
+    size: {x: 15, y: 15, z: 15}
+  - shape: 0
+    operation: 0
+    offset: {x: 0, y: 0, z: 0}
+    size: {x: 15, y: 15, z: 15}
+  - shape: 0
+    operation: 0
+    offset: {x: 0, y: 0, z: 0}
+    size: {x: 12, y: 12, z: 12}
+  - shape: 0
+    operation: 0
+    offset: {x: 0, y: 0, z: 0}
+    size: {x: 5, y: 5, z: 5}
+  - shape: 0
+    operation: 0
+    offset: {x: 0, y: 0, z: 0}
+    size: {x: 15, y: 15, z: 15}
+  roomShapesNoise:
+  - enabled: 1
+    frequency: 0.05
+    amplitude: 12
+    influences: []
+  - enabled: 1
+    frequency: 0.1
+    amplitude: 7
+    influences: []
+  - enabled: 1
+    frequency: 0.2
+    amplitude: 3
+    influences: []
+  floorHeightPercent: 0.3
+  floorNoise:
+    enabled: 1
+    frequency: 0.1
+    amplitude: 5
+    influences: []
+  floorBlendFactor: 3
+  floorMaterial: 1

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c9b3187f26ad6e40866739720a96b2b, type: 3}
+  m_Name: CavesBasicWorldGenProfile2
+  m_EditorClassIdentifier: 
+  boundsSize: {x: 240, y: 110, z: 240}
+  gridSize: {x: 240, y: 110, z: 240}
+  defaultMaterial: 0
+  minRoomDistance: 45
+  roomRadius: 34
+  rejectionSamples: 34
+  startRoom: {fileID: 11400000, guid: 51c1af72c66e8794287cb977206adce5, type: 2}
+  endRoom: {fileID: 11400000, guid: 51c1af72c66e8794287cb977206adce5, type: 2}
+  defaultRoom: {fileID: 11400000, guid: 51c1af72c66e8794287cb977206adce5, type: 2}
+  extraConnectionPercentage: 0.35
+  tunnelRadius: 3
+  humidityNoise:
+    enabled: 1
+    frequency: 0.08
+    amplitude: 4
+    influences: []
+  temperatureNoise:
+    enabled: 1
+    frequency: 0.01
+    amplitude: 4
+    influences: []
+  biomes:
+  - {fileID: 11400000, guid: fb52d8cf249bb1c4ca959832b08304ec, type: 2}

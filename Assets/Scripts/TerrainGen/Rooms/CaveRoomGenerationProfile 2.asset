@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e9daa71807ade24dbe5799e1940b023, type: 3}
+  m_Name: CaveRoomGenerationProfile 2
+  m_EditorClassIdentifier: 
+  minRadius: 25
+  maxRadius: 36
+  shapeGroups:
+  - name: Carve
+    blendOperation: 0
+    primitives:
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 10, y: 10, z: 10}
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 10, y: 10, z: 10}
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 15, y: 15, z: 15}
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 12, y: 12, z: 12}
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 5, y: 5, z: 5}
+    groupNoiseLayers:
+    - enabled: 1
+      frequency: 0.1
+      amplitude: 4
+      influences: []
+    - enabled: 1
+      frequency: 0.2
+      amplitude: 2
+      influences: []
+    - enabled: 1
+      frequency: 0.04
+      amplitude: 7
+      influences: []
+  - name: Rocks
+    blendOperation: 1
+    primitives:
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 5, y: 5, z: 5}
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 10, y: 10, z: 10}
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 3, y: 3, z: 3}
+    - shape: 0
+      operation: 0
+      offset: {x: 0, y: 0, z: 0}
+      size: {x: 5, y: 5, z: 5}
+    groupNoiseLayers:
+    - enabled: 1
+      frequency: 0.1
+      amplitude: 4
+      influences: []
+    - enabled: 1
+      frequency: 0.2
+      amplitude: 2
+      influences: []
+  generateFloor: 1
+  baseFloorHeightRatio: 0.3
+  floorNoise:
+    enabled: 1
+    frequency: 0.1
+    amplitude: 3
+    influences:
+    - enabled: 1
+      sourceType: 0
+      influence: 0.41

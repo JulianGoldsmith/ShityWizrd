@@ -31,7 +31,8 @@ public class GameController : MonoBehaviour
 
     void Start()
     {
-        spellEditorWorld.SetActive(false);
+        if(spellEditorWorld != null)
+            spellEditorWorld.SetActive(false);
         EnableGameplayInput();
     }
 
