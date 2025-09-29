@@ -1,11 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using Fusion;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.TextCore.Text;
 
-public class ActiveRagdollController : MonoBehaviour
-{
+
+public class ActiveRagdollController : NetworkBehaviour
+{ 
+    [Header("Networking")]
+    public NetworkRunner runner;
 
     [Header("Grounded movement")]
     [SerializeField] private float maxSpeed = 8f;
@@ -50,19 +54,29 @@ public class ActiveRagdollController : MonoBehaviour
     void Awake()
     {
         InitilizeBones();
+        cameraTransform = Camera.main.transform;
     }
-    
+
+    public override void FixedUpdateNetwork()
+    {
+        if (GetInput(out NetworkInputData data))
+        {
+            data.direction.Normalize();
+
+            moveInput = new Vector2(data.direction.x, data.direction.z);
+        }
+        if (isGrounded)
+        {
+            HandleGroundedMovement();
+        }
+    }
 
     void FixedUpdate()
     {
         ApplyUprightTorque();
         ApplySuspensionForce();
         UpdateBoneJoints();
-
-        if (isGrounded)
-        {
-            HandleGroundedMovement(); 
-        }
+       
         UpdateAnimatior();
     }
 
@@ -103,7 +117,8 @@ public class ActiveRagdollController : MonoBehaviour
 
     public void OnMove(InputAction.CallbackContext context)
     {
-        moveInput = context.ReadValue<Vector2>();
+        
+      
     }
 
     public void OnJump()
