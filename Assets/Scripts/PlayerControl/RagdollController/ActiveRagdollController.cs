@@ -4,10 +4,11 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.TextCore.Text;
+using UnityEngine.UIElements;
 
 
 public class ActiveRagdollController : NetworkBehaviour
-{ 
+{
     [Header("Networking")]
     public NetworkRunner runner;
 
@@ -18,7 +19,7 @@ public class ActiveRagdollController : NetworkBehaviour
     [SerializeField] private float jumpForce = 20f;
 
     [Header("input")]
-    private Vector2 moveInput;
+    [Networked] public Vector2 moveInput { get; set; }
 
     [Header("anmatior")]
     public Animator animator;
@@ -51,10 +52,16 @@ public class ActiveRagdollController : NetworkBehaviour
 
     public bool configureJointsInWorldSpce = true;
 
+    [Networked] public Vector3 rbpos { get; set; }
+    [Networked] public Vector3 rbVelocity { get; set; }
+    [Networked] public Quaternion rbRot { get; set; }
+
     void Awake()
     {
         InitilizeBones();
         cameraTransform = Camera.main.transform;
+ 
+        //runner.ProvideInput = true;
     }
 
     public override void FixedUpdateNetwork()
@@ -65,36 +72,51 @@ public class ActiveRagdollController : NetworkBehaviour
 
             moveInput = new Vector2(data.direction.x, data.direction.z);
         }
-        if (isGrounded)
-        {
-            HandleGroundedMovement();
-        }
+        
     }
 
     void FixedUpdate()
     {
+        
         ApplyUprightTorque();
         ApplySuspensionForce();
         UpdateBoneJoints();
        
+        HandleGroundedMovement(moveInput);
+        
         UpdateAnimatior();
     }
 
-    void HandleGroundedMovement()
+    void HandleGroundedMovement(Vector2 _moveInput)
     {
-        Vector3 camForward = (cameraTransform.forward);
-        Vector3 moveDirection = (camForward * moveInput.y + cameraTransform.right * moveInput.x).normalized;
 
-        Vector3 targetVelocity = moveDirection * maxSpeed;
+        if (Runner.IsServer)
+        {
 
-        Vector3 currentVelocity = new Vector3(pelvisRigidbody.linearVelocity.x, 0, pelvisRigidbody.linearVelocity.z);
+            Vector3 camForward = (cameraTransform.forward);
+            Vector3 moveDirection = (camForward * _moveInput.y + cameraTransform.right * _moveInput.x).normalized;
 
-        Vector3 velocityError = targetVelocity - currentVelocity;
+            Vector3 targetVelocity = moveDirection * maxSpeed;
 
-        float forceMagnitude = moveInput.sqrMagnitude > 0 ? acceleration : braking;
-        Vector3 correctiveForce = velocityError * forceMagnitude * Time.fixedDeltaTime;
+            Vector3 currentVelocity = new Vector3(pelvisRigidbody.linearVelocity.x, 0, pelvisRigidbody.linearVelocity.z);
 
-        pelvisRigidbody.AddForce(correctiveForce, ForceMode.Acceleration);
+            Vector3 velocityError = targetVelocity - currentVelocity;
+
+            float forceMagnitude = _moveInput.sqrMagnitude > 0 ? acceleration : braking;
+            Vector3 correctiveForce = velocityError * forceMagnitude * Runner.DeltaTime;
+
+            pelvisRigidbody.AddForce(correctiveForce, ForceMode.Acceleration);
+
+            rbpos = pelvisRigidbody.transform.position;
+            rbVelocity = pelvisRigidbody.linearVelocity;
+            rbRot = pelvisRigidbody.rotation;
+        }
+        else
+        {
+            pelvisRigidbody.transform.position = rbpos;
+            pelvisRigidbody.linearVelocity = rbVelocity ;
+            pelvisRigidbody.rotation = rbRot;
+        }
     }
 
     void Jump()
