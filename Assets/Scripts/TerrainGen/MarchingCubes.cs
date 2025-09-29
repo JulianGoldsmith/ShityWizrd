@@ -606,3 +606,231 @@ public static class MarchingCubes
         {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
     };
 }
+
+public static class MarchingTetrahedra
+{
+    // Match your existing cube corner layout (same as MarchingCubes.CubePoints)
+    // 0:(0,0,0) 1:(1,0,0) 2:(1,0,1) 3:(0,0,1) 4:(0,1,0) 5:(1,1,0) 6:(1,1,1) 7:(0,1,1)
+    static readonly int[,] CubePoints = {
+        {0,0,0},{1,0,0},{1,0,1},{0,0,1},{0,1,0},{1,1,0},{1,1,1},{0,1,1}
+    };
+
+    // Split each cube into 6 tetrahedra along the 0->6 diagonal
+    // This is deterministic and chunk-friendly.
+    static readonly int[,] Tets = new int[,] {
+        {0,1,2,6},
+        {0,2,3,6},
+        {0,3,7,6},
+        {0,7,4,6},
+        {0,4,5,6},
+        {0,5,1,6},
+    };
+
+    // Edge list inside a single tetrahedron (local indices 0..3)
+    // e0:(0-1), e1:(1-2), e2:(2-0), e3:(0-3), e4:(1-3), e5:(2-3)
+    static readonly int[,] TetEdgeVerts = new int[,] {
+        {0,1},{1,2},{2,0},{0,3},{1,3},{2,3}
+    };
+
+    // 16-case triangulation table for a single tetrahedron.
+    // Each row lists edge indices; every group of three forms one triangle; -1 terminates.
+    // Winding here assumes "positive-inside" and aims to produce outward-facing normals,
+    // but we also provide an optional gradient-based flip to guarantee consistency.
+    static readonly int[,] TriTable = new int[,] {
+        { -1,-1,-1,-1,-1,-1 },           // 0  (0000) empty
+        {  0, 3, 2, -1,-1,-1 },          // 1  (0001)
+        {  0, 1, 4, -1,-1,-1 },          // 2  (0010)
+        {  1, 4, 2,  2, 4, 3 },          // 3  (0011)
+        {  1, 2, 5, -1,-1,-1 },          // 4  (0100)
+        {  0, 3, 5,  0, 5, 1 },          // 5  (0101)
+        {  0, 2, 5,  0, 5, 4 },          // 6  (0110)
+        {  3, 5, 4, -1,-1,-1 },          // 7  (0111)
+        {  3, 4, 5, -1,-1,-1 },          // 8  (1000)
+        {  0, 4, 5,  0, 5, 2 },          // 9  (1001)
+        {  0, 5, 3,  0, 1, 5 },          // 10 (1010)
+        {  1, 5, 2, -1,-1,-1 },          // 11 (1011)
+        {  2, 4, 3,  1, 2, 4 },          // 12 (1100)
+        {  0, 4, 1, -1,-1,-1 },          // 13 (1101)
+        {  0, 2, 3, -1,-1,-1 },          // 14 (1110)
+        { -1,-1,-1,-1,-1,-1 },           // 15 (1111) full
+    };
+
+    /// <summary>
+    /// Build a mesh from a VoxelData SDF (positive-inside). Simple, reliable defaults.
+    /// </summary>
+    public static void CreateMesh(
+        VoxelData[,,] grid,
+        Mesh mesh,
+        float isoLevel = 0f,
+        bool autoFlipWindingWithGradient = true  // keep true for bulletproof facing
+    )
+    {
+        mesh.Clear();
+        mesh.indexFormat = IndexFormat.UInt32;
+
+        int W = grid.GetLength(0);
+        int H = grid.GetLength(1);
+        int D = grid.GetLength(2);
+
+        var verts = new List<Vector3>(W * H * D / 3);
+        var tris = new List<int>(W * H * D);
+
+        // Walk all cubes (voxel cells)
+        for (int x = 0; x < W - 1; x++)
+            for (int y = 0; y < H - 1; y++)
+                for (int z = 0; z < D - 1; z++)
+                {
+                    // Gather cube corner positions and densities
+                    Vector3[] cpos = new Vector3[8];
+                    float[] cd = new float[8];
+                    for (int i = 0; i < 8; i++)
+                    {
+                        int cx = x + CubePoints[i, 0];
+                        int cy = y + CubePoints[i, 1];
+                        int cz = z + CubePoints[i, 2];
+                        cpos[i] = new Vector3(cx, cy, cz);
+                        cd[i] = grid[cx, cy, cz].density;
+                    }
+
+                    // Process the 6 tets
+                    for (int t = 0; t < 6; t++)
+                    {
+                        int i0 = Tets[t, 0], i1 = Tets[t, 1], i2 = Tets[t, 2], i3 = Tets[t, 3];
+
+                        // Local tet vertex arrays (positions and densities)
+                        Vector3[] tp = { cpos[i0], cpos[i1], cpos[i2], cpos[i3] };
+                        float[] td = { cd[i0], cd[i1], cd[i2], cd[i3] };
+
+                        // Build a 4-bit case mask: bit set if vertex is INSIDE (solid) => density > isoLevel
+                        int mask = 0;
+                        if (td[0] < isoLevel) mask |= 1;
+                        if (td[1] < isoLevel) mask |= 2;
+                        if (td[2] < isoLevel) mask |= 4;
+                        if (td[3] < isoLevel) mask |= 8;
+                        if (mask == 0 || mask == 15) continue; // fully empty or full: no surface
+
+                        // Compute up to 6 edge intersections for this tetrahedron
+                        Vector3[] edgeV = new Vector3[6];
+                        bool[] hit = new bool[6];
+
+                        for (int e = 0; e < 6; e++)
+                        {
+                            int a = TetEdgeVerts[e, 0];
+                            int b = TetEdgeVerts[e, 1];
+                            float da = td[a], db = td[b];
+
+                            // Edge crosses the iso-surface if one is inside and the other is outside
+                            bool aInside = da > isoLevel;
+                            bool bInside = db > isoLevel;
+                            if (aInside != bInside)
+                            {
+                                float tLerp = EdgeT(isoLevel, da, db);        // NO clamp
+                                edgeV[e] = Vector3.Lerp(tp[a], tp[b], tLerp);  // intersection point
+                                hit[e] = true;
+                            }
+                        }
+
+                        // Emit triangles for this case
+                        for (int k = 0; k < 6; k += 3)
+                        {
+                            int e0 = TriTable[mask, k];
+                            if (e0 == -1) break;
+                            int e1 = TriTable[mask, k + 1];
+                            int e2 = TriTable[mask, k + 2];
+
+                            if (!hit[e0] || !hit[e1] || !hit[e2])
+                                continue; // guard (shouldn't happen with correct table/signs)
+
+                            // Triangle vertices
+                            Vector3 a = edgeV[e0];
+                            Vector3 b = edgeV[e1];
+                            Vector3 c = edgeV[e2];
+
+                            // Optional: ensure consistent outward-facing winding by using the density gradient
+                            if (autoFlipWindingWithGradient)
+                            {
+                                Vector3 nGeom = Vector3.Cross(b - a, c - a);
+                                Vector3 pCent = (a + b + c) * (1f / 3f);
+                                Vector3 grad = -DensityGradient(grid, pCent); // points toward *increasing* density
+
+                                // Positive-inside: outward should align with +grad. If opposite, flip b/c.
+                                if (Vector3.Dot(nGeom, grad) < 0f)
+                                {
+                                    var tmp = b; b = c; c = tmp;
+                                }
+                            }
+
+                            int baseIdx = verts.Count;
+                            verts.Add(a); verts.Add(b); verts.Add(c);
+                            tris.Add(baseIdx + 0);
+                            tris.Add(baseIdx + 1);
+                            tris.Add(baseIdx + 2);
+                        }
+                    }
+                }
+
+        mesh.SetVertices(verts);
+        mesh.SetTriangles(tris, 0, true);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+    }
+
+    // --- helpers ---
+
+    // Unclamped interpolation factor where the field crosses iso between d1 and d2.
+    static float EdgeT(float iso, float d1, float d2)
+    {
+        float denom = d2 - d1;
+        if (Mathf.Abs(denom) < 1e-6f) return 0.5f; // degenerate case
+        return (iso - d1) / denom; // DO NOT clamp—prevents tiny cracks
+    }
+
+    // Trilinear sampling + central-difference gradient for flip check
+    static Vector3 DensityGradient(VoxelData[,,] grid, Vector3 p)
+    {
+        const float h = 0.5f;
+        float dx = SampleDensity(grid, p + new Vector3(h, 0, 0)) - SampleDensity(grid, p + new Vector3(-h, 0, 0));
+        float dy = SampleDensity(grid, p + new Vector3(0, h, 0)) - SampleDensity(grid, p + new Vector3(0, -h, 0));
+        float dz = SampleDensity(grid, p + new Vector3(0, 0, h)) - SampleDensity(grid, p + new Vector3(0, 0, -h));
+        return new Vector3(dx, dy, dz);
+    }
+
+    static float SampleDensity(VoxelData[,,] grid, Vector3 p)
+    {
+        int W = grid.GetLength(0);
+        int H = grid.GetLength(1);
+        int D = grid.GetLength(2);
+
+        // Clamp into valid cell for tri-linear
+        float x = Mathf.Clamp(p.x, 0f, W - 1.001f);
+        float y = Mathf.Clamp(p.y, 0f, H - 1.001f);
+        float z = Mathf.Clamp(p.z, 0f, D - 1.001f);
+
+        int x0 = (int)x, y0 = (int)y, z0 = (int)z;
+        int x1 = Mathf.Min(x0 + 1, W - 1);
+        int y1 = Mathf.Min(y0 + 1, H - 1);
+        int z1 = Mathf.Min(z0 + 1, D - 1);
+
+        float tx = x - x0, ty = y - y0, tz = z - z0;
+
+        float c000 = grid[x0, y0, z0].density;
+        float c100 = grid[x1, y0, z0].density;
+        float c010 = grid[x0, y1, z0].density;
+        float c110 = grid[x1, y1, z0].density;
+        float c001 = grid[x0, y0, z1].density;
+        float c101 = grid[x1, y0, z1].density;
+        float c011 = grid[x0, y1, z1].density;
+        float c111 = grid[x1, y1, z1].density;
+
+        float c00 = Mathf.Lerp(c000, c100, tx);
+        float c10 = Mathf.Lerp(c010, c110, tx);
+        float c01 = Mathf.Lerp(c001, c101, tx);
+        float c11 = Mathf.Lerp(c011, c111, tx);
+
+        float c0 = Mathf.Lerp(c00, c10, ty);
+        float c1 = Mathf.Lerp(c01, c11, ty);
+
+        return Mathf.Lerp(c0, c1, tz);
+    }
+}
+

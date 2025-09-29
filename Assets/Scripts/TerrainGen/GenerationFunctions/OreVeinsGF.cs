@@ -49,14 +49,12 @@ public class OreVeinsGF : GenerationFunctions
         float oreSolid;
         if (bandT > 0f)
         {
-            // linear ramp to +cap; you can use Smoothstep if you prefer:
-            //float t = Mathf.Clamp01(bandT);
-            //float s = t*t*(3f - 2f*t); oreSolid = s * cap;
+
             oreSolid = bandT * cap;
         }
         else
         {
-            oreSolid = -cap; // decisively "air" outside the band
+            oreSolid = -cap; 
         }
 
         float before = density;

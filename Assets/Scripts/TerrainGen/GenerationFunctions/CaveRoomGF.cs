@@ -50,18 +50,20 @@ public class CaveRoomGF : GenerationFunctions
 
             float roomShape = shape.Generate(pos, roomInstance.pos); //generate a positive inside shape 
             
-            foreach (var n in roomShapesNoise)
-            {
-                if (n.enabled)
-                {
-                    float influenceMultiplier = CalculateInfluenceMultiplier(n.influences, voxelData);
-                    float noiseValue = Noise.Generate(pos.x * n.frequency, pos.y * n.frequency, pos.z * n.frequency) * n.amplitude * influenceMultiplier;
-                    roomShape -= noiseValue;
-                }
-                
-            }
+            
 
             caveSolid = SDFHelpers.Union(caveSolid, roomShape, cap, softTruncate: true, k: smoothing); //union the positive shapes with smoothing and truncation
+
+        }
+
+        foreach (var n in roomShapesNoise)
+        {
+            if (n.enabled)
+            {
+                float influenceMultiplier = CalculateInfluenceMultiplier(n.influences, voxelData);
+                float noiseValue = Noise.Generate(pos.x * n.frequency, pos.y * n.frequency, pos.z * n.frequency) * n.amplitude * influenceMultiplier;
+                caveSolid -= noiseValue;
+            }
 
         }
 

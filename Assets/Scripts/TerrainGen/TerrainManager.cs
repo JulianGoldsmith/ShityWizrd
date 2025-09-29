@@ -138,9 +138,10 @@ public class TerrainManager : MonoBehaviour
             var ch = kv.Value;
 
             MaterialFields.ChunkMaterialVolumeBuilder.BuildAndAssignMaterialVolume(ch);
-
+            
             Mesh mesh = new Mesh();
             MarchingCubes.CreateMesh(ch.grid, mesh, isoLevel, smoothTerrain, customNormals);
+            //MarchingTetrahedra.CreateMesh(ch.grid, mesh, isoLevel);
             ch.meshFilter.mesh = mesh;
             ch.meshCollider.sharedMesh = mesh;
             yield return null;

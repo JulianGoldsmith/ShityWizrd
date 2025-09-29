@@ -50,7 +50,8 @@ public struct ValueModifier<T>
 }
 
 [System.Serializable]
-public class PropertyBinder
+public class PropertyBinder //Modifiers (intermediary parameters) = mutable properties which combine with base properties.
+                            //This is the stuff spells can change, and can impact many derived properies.
 {
     public string TargetSocketName;      // like motion Speed
     public string TargetFieldName;       // e.g speed

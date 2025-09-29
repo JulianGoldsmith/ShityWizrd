@@ -6,8 +6,6 @@ public static class RandomDistributionPointSampler
 
     public static List<Vector3> GeneratePoints(float roomRadius, float minRadius, Vector3Int boundsSize, int numSamplesBeforeRejection = 30, Vector3? startPoint = null)
     {
-
-        //means only one point per cell max 
         float cellSize = minRadius / Mathf.Sqrt(3); 
         int[,,] grid = new int[Mathf.CeilToInt(boundsSize.x / cellSize), Mathf.CeilToInt(boundsSize.y / cellSize), Mathf.CeilToInt(boundsSize.z / cellSize)];
 
