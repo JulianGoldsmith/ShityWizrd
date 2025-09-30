@@ -22,6 +22,8 @@ public class PhysicsObject : MonoBehaviour
      */
 
     public PhysicsObjectProperties physicsObjectProperties;
+    private Rigidbody rigidbody;
+    private PhysicsMaterial physicsMaterial;
 
     #region Initialisation
     // Assign parameter values to Rigidbody and Unity PhysicsMaterials
@@ -29,13 +31,13 @@ public class PhysicsObject : MonoBehaviour
     {
         UpdateRigidbody(GetComponent<Rigidbody>());
         Collider col = GetComponent<Collider>();
-        Debug.Log(col == null);
-        Debug.Log(GetComponent<MeshCollider>() == null);
         if (col != null) UpdatePhysicsMaterial(col.material);
     }
-    public Rigidbody UpdateRigidbody(Rigidbody rigidbody)
+    public Rigidbody UpdateRigidbody(Rigidbody rb)
     {
-        if (rigidbody == null) return null;
+        if (rb == null) return null;
+
+        rigidbody = rb;
 
         rigidbody.mass = physicsObjectProperties.mass;
         rigidbody.linearDamping = physicsObjectProperties.hardness;
@@ -46,26 +48,55 @@ public class PhysicsObject : MonoBehaviour
         return rigidbody;
     }
 
-    public PhysicsMaterial UpdatePhysicsMaterial(PhysicsMaterial material)
+    public PhysicsMaterial UpdatePhysicsMaterial(PhysicsMaterial mat)
     {
-        if (material == null) return null;
+        if (mat == null) return null;
+
+        physicsMaterial = mat;
 
         // Friction
-        material.staticFriction = physicsObjectProperties.stickiness;
-        material.dynamicFriction = physicsObjectProperties.stickiness;
-        material.frictionCombine = PhysicsMaterialCombine.Average;
+        physicsMaterial.staticFriction = physicsObjectProperties.stickiness;
+        physicsMaterial.dynamicFriction = physicsObjectProperties.stickiness;
+        physicsMaterial.frictionCombine = PhysicsMaterialCombine.Average;
 
         // Bounciness
-        material.bounciness = physicsObjectProperties.elasticity;
-        material.bounceCombine = PhysicsMaterialCombine.Minimum;
+        physicsMaterial.bounciness = physicsObjectProperties.elasticity;
+        physicsMaterial.bounceCombine = PhysicsMaterialCombine.Minimum;
 
-        return material;
+        return physicsMaterial;
     }
     #endregion
 
     #region Collisions
     // additional things to happen on collision.
     // [placeholder]
+
+    #endregion
+
+    #region Halo Collisions
+    // Physics objects are given halo colliders which are just triggers
+    // to allow sticking to objects.
+    public void OnHaloEnter(Collider other)
+    {
+        Debug.Log("Halo entered");
+    }
+    public void OnHaloExit(Collider other)
+    {
+        Debug.Log("Halo exited");
+    }
+    public void OnHaloStay(Collider other)
+    {
+        Debug.Log("Halo stayed");
+
+        // If sticky, apply a drag force while halo
+        // collider is being triggered.
+        // Note that current implementation means it gets pinged
+        // away at high velocity if stickiness is too high.
+        // At about 10, it actually becomes sticky.
+        // Might need a maxmin.
+        rigidbody.AddForce(-rigidbody.linearVelocity * physicsObjectProperties.stickiness);
+        
+    }
     #endregion
 
     #region Bonking
