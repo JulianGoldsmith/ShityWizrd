@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[System.Serializable]
 public struct PhysicsObjectProperties
 {
     /* Define the base properties of a physics object and 
@@ -63,35 +64,6 @@ public struct PhysicsObjectProperties
         }
     }
 
-    #endregion
-
-
-    #region Parameter Transfer
-    // Assign parameter values to Rigidbody and Unity PhysicsMaterials
-    public Rigidbody UpdateRigidbody(Rigidbody rigidbody)
-    {
-        rigidbody.mass = mass;
-        rigidbody.linearDamping = 0f;
-        rigidbody.angularDamping = 0.05f;
-        
-        rigidbody.useGravity = true;
-
-        return rigidbody;
-    }
-
-    public PhysicsMaterial UpdatePhysicsMaterial(PhysicsMaterial material)
-    {
-        // Friction
-        material.staticFriction = stickiness;
-        material.dynamicFriction = stickiness;
-        material.frictionCombine = PhysicsMaterialCombine.Average;
-        
-        // Bounciness
-        material.bounciness = elasticity;
-        material.bounceCombine = PhysicsMaterialCombine.Average;
-
-        return material;
-    }
     #endregion
 
 
