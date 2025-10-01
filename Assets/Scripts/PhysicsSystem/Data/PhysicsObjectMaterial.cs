@@ -27,5 +27,6 @@ public class PhysicsObjectMaterial : ScriptableObject
     #region Visuals 
     // (VFX / shaders / actual material)
     public Material vfx_material;
+    public bool casts_shadows = true;
     #endregion
 }

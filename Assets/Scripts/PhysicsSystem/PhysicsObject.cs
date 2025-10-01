@@ -82,6 +82,8 @@ public class PhysicsObject : MonoBehaviour
         for (int i = 0; i < renderers.Length; i++)
         {
             renderers[i].material = mat;
+            renderers[i].shadowCastingMode = physicsObjectProperties.physicsobjectmaterial.casts_shadows? 
+                UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
         }
     }
     #endregion
