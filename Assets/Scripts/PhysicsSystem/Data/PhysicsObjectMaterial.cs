@@ -19,13 +19,13 @@ public class PhysicsObjectMaterial : ScriptableObject
     public float hardness; // brittleness, affects sound
     public float elasticity; // bounciness during collisions
     public float viscosity; // deformity of shape? does it droop and goop? (don't know how much that can be done).
-    public float stickiness; // defines collision friction. (dynamic friction)
+    [Range(0,1)]public float stickiness; // defines collision friction. (dynamic friction)
 
     #endregion
 
 
     #region Visuals 
     // (VFX / shaders / actual material)
-
+    public Material vfx_material;
     #endregion
 }

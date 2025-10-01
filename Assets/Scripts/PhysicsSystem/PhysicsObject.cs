@@ -32,6 +32,7 @@ public class PhysicsObject : MonoBehaviour
         UpdateRigidbody(GetComponent<Rigidbody>());
         Collider col = GetComponent<Collider>();
         if (col != null) UpdatePhysicsMaterial(col.material);
+        UpdateVisuals();
     }
     public Rigidbody UpdateRigidbody(Rigidbody rb)
     {
@@ -65,6 +66,24 @@ public class PhysicsObject : MonoBehaviour
 
         return physicsMaterial;
     }
+    public void UpdateVisuals()
+    {
+        // Update VFX based on the physicsobjectmaterial, if appropriate.
+        // This is a simplistic approach that will likely need to be 
+        // updated for complex objects.
+        if (physicsObjectProperties.physicsobjectmaterial == null)
+            return;
+
+        Material mat = physicsObjectProperties.physicsobjectmaterial.vfx_material;
+        Renderer[] renderers = GetComponents<Renderer>();
+        if (renderers == null || renderers.Length == 0) 
+            return;
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].material = mat;
+        }
+    }
     #endregion
 
     #region Collisions
@@ -94,7 +113,8 @@ public class PhysicsObject : MonoBehaviour
         // away at high velocity if stickiness is too high.
         // At about 10, it actually becomes sticky.
         // Might need a maxmin.
-        rigidbody.AddForce(-rigidbody.linearVelocity * physicsObjectProperties.stickiness);
+        //rigidbody.AddForce(-rigidbody.linearVelocity * physicsObjectProperties.stickiness);
+        rigidbody.linearVelocity = rigidbody.linearVelocity * Mathf.Clamp01(1 - physicsObjectProperties.stickiness);
         
     }
     #endregion
