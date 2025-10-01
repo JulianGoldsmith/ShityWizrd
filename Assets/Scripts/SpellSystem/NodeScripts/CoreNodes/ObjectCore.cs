@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -18,10 +19,11 @@ public class ObjectCore : CoreNode
 
     [Promotable("Size", DataTypeTag.Radius)]
     public float size = 1f;
-
+    
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
         ApplyPromotableValues(); //apply promotable values from connected runes 
+
 
         Vector3 pos = SpellSystemHelpers.GetSpellPosition(
             triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
@@ -29,7 +31,14 @@ public class ObjectCore : CoreNode
             triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
 
         GameObject spellCore = Instantiate(corePrefab, pos, rot);
-        
+
+        SpellCreatedPhysicsObject physicsObject = spellCore.GetComponent<SpellCreatedPhysicsObject>();
+        if (physicsObject != null)
+        {
+            physicsObject.AssignProperties(this);
+            physicsObject.InitialisePhysicsObject();
+        }
+
         spellCore.transform.localScale *= size;
 
         /*Debug.Log($"is cast = {triggerInfo.IsCast} [Spawn] posType={CastSpawnPosition} rotType={CastSpawnRotation} " +
