@@ -40,41 +40,67 @@ public abstract class SpellNode : ScriptableObject
             }
         }
     }
-
-    protected void ApplyPromotableValues()
+    protected void ApplyPromotableValuesGeneric<T>(T obj)
     {
-        if (baseValues == null)
+        // Extend this to work with anything, not just a spellnode
+        // (so that it can work with PhysicsObjectProperties too.
+        if(obj == null)
         {
-            Debug.LogError($"Base values have not been stored for node {this.name} you need to call StoredBaseValues() after cloning");
+            Debug.LogError("Tried to modify values on a null-object.");
             return;
         }
-        var fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+
+        if (baseValues == null)
+        {
+            Debug.LogError($"Base values have not been stored for node {obj} you need to call StoredBaseValues() after cloning");
+            return;
+        }
+        var fields = obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
 
         foreach (var field in fields)
         {
             var promotableAttr = field.GetCustomAttribute<PromotableAttribute>();
             if (promotableAttr != null)
             {
-                object baseValue = baseValues[field.Name];
+                Debug.Log($"field {field.Name}");
+                object? baseValue;
+                if (!baseValues.TryGetValue(field.Name, out baseValue))
+                    baseValue = null;
 
                 var found = valueContainers.FirstOrDefault(c => c.TargetFieldName == field.Name);
-                Debug.Log($"[{GetType().Name}] Apply: field={field.Name}, base={baseValue}, " +
+                Debug.Log($"[{GetType().Name}] Apply: field={field.Name}, type={field.FieldType}, " +
+                          $"base={baseValue}, " +
                           $"binder={(found != null)}, mods={(found?.ModifyingNodes?.Count ?? 0)}");
 
                 if (field.FieldType == typeof(float))
                 {
                     float finalValue = GetFinalValue(field.Name, (float)baseValue);
-                    field.SetValue(this, finalValue);
+                    field.SetValue(obj, finalValue);
                 }
                 else if (field.FieldType == typeof(bool))
                 {
                     bool finalValue = GetFinalValue(field.Name, (bool)baseValue);
-                    field.SetValue(this, finalValue);
+                    field.SetValue(obj, finalValue);
+                }
+                else if (field.FieldType == typeof(PhysicsObjectMaterial))
+                {
+                    // Only ever replace, so don't need to 'calculate' a final value.
+                    PhysicsObjectMaterial finalValue = GetFinalValue(field.Name, (PhysicsObjectMaterial)baseValue);
+                    Debug.Log(finalValue != null);
+                    Debug.Log(obj);
+                    Debug.Log(finalValue.material_name);
+                    //Debug.Log(finalValue.material_name);
+                    field.SetValue(obj, finalValue);
                 }
             }
-            
+
         }
     }
+    protected void ApplyPromotableValues()
+    {
+        ApplyPromotableValuesGeneric(this);
+    }
+    
     protected float GetFinalValue(string fieldName, float baseValue)
     {
         float finalValue = baseValue;
@@ -142,6 +168,39 @@ public abstract class SpellNode : ScriptableObject
 
         return finalValue;
     }
+
+    protected PhysicsObjectMaterial GetFinalValue(string fieldName, PhysicsObjectMaterial baseValue)
+    {
+        PhysicsObjectMaterial finalValue = baseValue;
+
+        var container = valueContainers.FirstOrDefault(c =>
+            c.TargetFieldName == fieldName &&
+            c.OwningNodeGUID == this.InstanceGuid);
+        Debug.Log(this.InstanceGuid);
+        Debug.Log(fieldName);
+        if (container == null)
+        {
+            Debug.LogError($"NO CONTAINER for {fieldName}"); 
+            return baseValue;
+        }
+
+        var modifiers = new List<ValueModifier<PhysicsObjectMaterial>>();
+        foreach (var node in container.ModifyingNodes)
+        {
+            if (node is ValueNode<PhysicsObjectMaterial> matNode)
+            {
+                modifiers.Add(matNode.GetModifier(null));
+            }
+        }
+
+        var setModifiers = modifiers.Where(m => m.Type == ValueModifierType.Set).ToList();
+        if (setModifiers.Any())
+        {
+            finalValue = setModifiers.Last().Value;
+        }
+        return finalValue;
+    }
+
 
     public virtual SpellNode CloneThisNode()
     {

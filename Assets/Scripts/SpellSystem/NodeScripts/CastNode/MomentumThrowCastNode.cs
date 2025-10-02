@@ -30,7 +30,7 @@ public class MomentumThrowCastNode : CasterNode
         var handController = castController.GetComponentInChildren<PhysicsHandController>();
         if (handController == null) return;
 
-        Vector3 startPoint = handController.rightHand.temporaryTarget.transform.position;
+        Vector3 startPoint = handController.rightHand.temporaryTarget.transform.position;   
         Vector3 endPoint = handController.CalculateHandOffset(handController.rightHand, false);
         Vector3 throwVector = endPoint - startPoint;
         Vector3 camForward = state.Controller.GetForward().normalized * throwVector.magnitude;

@@ -20,10 +20,10 @@ public class PhysicsObject : MonoBehaviour
      *  Relevant for spell-objects (e.g. tangible projectiles), 
      *      players, enemies, world-objects.
      */
-
+    
     public PhysicsObjectProperties physicsObjectProperties;
     private Rigidbody rigidbody;
-    private PhysicsMaterial physicsMaterial;
+    public PhysicsMaterial physicsMaterial;
 
     #region Initialisation
     // Assign parameter values to Rigidbody and Unity PhysicsMaterials
@@ -99,15 +99,14 @@ public class PhysicsObject : MonoBehaviour
     // to allow sticking to objects.
     public void OnHaloEnter(Collider other)
     {
-        Debug.Log("Halo entered");
+        
     }
     public void OnHaloExit(Collider other)
     {
-        Debug.Log("Halo exited");
+
     }
     public void OnHaloStay(Collider other)
     {
-        Debug.Log("Halo stayed");
 
         // If sticky, apply a drag force while halo
         // collider is being triggered.

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Reflection;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -35,6 +37,11 @@ public class ObjectCore : CoreNode
         SpellCreatedPhysicsObject physicsObject = spellCore.GetComponent<SpellCreatedPhysicsObject>();
         if (physicsObject != null)
         {
+            // We allow modification of values also within the created physicsobject
+            // as well as its properties.
+            ApplyPromotableValuesGeneric<SpellCreatedPhysicsObject>(physicsObject);
+            ApplyPromotableValuesGeneric<PhysicsObjectProperties>(physicsObject.physicsObjectProperties);
+            Debug.Log(physicsObject.physicsObjectProperties.physicsobjectmaterial.name);
             physicsObject.AssignProperties(this);
             physicsObject.InitialisePhysicsObject();
         }
@@ -46,5 +53,46 @@ public class ObjectCore : CoreNode
           $"TrigPos={triggerInfo.TriggerPoint} and spell core is {spellCore.transform.position}");*/
 
         AttatchBehavioursAndTriggers(spellCore, triggerInfo);
+    }
+
+    public override List<SocketDefinition> GetSockets()
+    {
+        List<SocketDefinition> sockets = base.GetSockets();
+
+        // Append on sockets for additional promotable values from extra scripts.
+        var modifiableFields = typeof(SpellCreatedPhysicsObject).GetFields(BindingFlags.Public | BindingFlags.Instance);
+        foreach (var field in modifiableFields)
+        {
+            var promotableAttr = field.GetCustomAttribute<PromotableAttribute>(); if (promotableAttr != null)
+            {
+                sockets.Add(new SocketDefinition(
+                    name: promotableAttr.DisplayName,
+                    type: SocketType.Data,
+                    direction: SocketDirection.Input,
+                    tag: promotableAttr.Tag,
+                    dataType: field.FieldType,
+                    owningNodeGUID: this.InstanceGuid,
+                    targetFieldName: field.Name
+                ));
+            }
+        }
+        modifiableFields = typeof(PhysicsObjectProperties).GetFields(BindingFlags.Public | BindingFlags.Instance);
+        foreach (var field in modifiableFields)
+        {
+            var promotableAttr = field.GetCustomAttribute<PromotableAttribute>(); if (promotableAttr != null)
+            {
+                sockets.Add(new SocketDefinition(
+                    name: promotableAttr.DisplayName,
+                    type: SocketType.Data,
+                    direction: SocketDirection.Input,
+                    tag: promotableAttr.Tag,
+                    dataType: field.FieldType,
+                    owningNodeGUID: this.InstanceGuid,
+                    targetFieldName: field.Name
+                ));
+            }
+        }
+
+        return sockets;
     }
 }

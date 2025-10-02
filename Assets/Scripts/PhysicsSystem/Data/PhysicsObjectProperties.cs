@@ -7,6 +7,7 @@ public struct PhysicsObjectProperties
      how they combine in physics calculations. */
 
     #region Base Properties
+    [Promotable("Material", DataTypeTag.Material)]
     public PhysicsObjectMaterial physicsobjectmaterial;
 
     #endregion
@@ -40,6 +41,7 @@ public struct PhysicsObjectProperties
 
 
     #region Modifiers
+    //[Promotable("Size", DataTypeTag.Radius)]
     public float size;
 
     #endregion
