@@ -5,9 +5,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using Fusion.Addons.Physics;
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
+    public NetworkRunner _runner;
+
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
@@ -16,7 +19,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             // Create a unique position for the player
-            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 3, 1, 0);
+            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
 
             // Keep track of the player avatars for easy access
@@ -49,6 +52,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (Keyboard.current.dKey.isPressed)
             data.direction += Vector3.right;
 
+        data.lookRotation = Camera.main.transform.rotation;
+
         input.Set(data);
     }
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
@@ -68,13 +73,16 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
     public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { }
 
-    private NetworkRunner _runner;
+    
 
     async void StartGame(GameMode mode)
     {
         // Create the Fusion runner and let it know that we will be providing user input
         _runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;
+
+        var runnerSimulatePhysics3D = gameObject.AddComponent<RunnerSimulatePhysics3D>();
+        runnerSimulatePhysics3D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateAlways;
 
         // Create the NetworkSceneInfo from the current scene
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
@@ -92,6 +100,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             Scene = scene,
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
+
+        //float prevDelta = Time.fixedDeltaTime;
+        //Time.fixedDeltaTime = _runner.DeltaTime; ; ////////////////////////////////////////////////////////////////////////////Feels like i shouldnt chaneg this///
+        //Debug.Log($"fixedDelta = {Time.fixedDeltaTime} changed from {prevDelta} and runnerDelta = {_runner.DeltaTime}");
     }
 
     private void OnGUI()

@@ -1,0 +1,76 @@
+using UnityEngine;
+using UnityEngine.Animations.Rigging;
+
+public class RagDollAnimationController : MonoBehaviour
+{
+    public NetworkedRagdollController character;
+
+
+    [Header("Foot IK")]
+    [SerializeField] private bool enableFootIK = true;
+    public float footOffset;
+    [SerializeField] private LayerMask groundLayer;
+    public float leftIKFootWeight, rightIKFootWeight;
+    public float footExtensionLenght;
+
+    [Header("SpineIk")]
+    public MultiAimConstraint spineConstraint;
+    public Transform spineIk;
+    public Vector3 headOffset;
+
+
+    public Animator animator;
+
+
+    public void UpdateSpineIkTarget(Quaternion lookRot)
+    {
+        Vector3 lookDir = lookRot * Vector3.forward;
+        spineIk.position = (transform.position + headOffset) + (lookDir * 5);
+    }
+
+    private void OnAnimatorIK(int layerIndex)
+    {
+
+        //Debug.Log("OnAnimatorIK is being called!");
+        if (!enableFootIK || !character.IsGrounded)
+        {
+            animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, 0);
+            animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, 0);
+
+            animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, 0);
+            animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, 0);
+            return;
+        }
+
+        AdjustFoot(AvatarIKGoal.LeftFoot, leftIKFootWeight, 1);
+        AdjustFoot(AvatarIKGoal.RightFoot, rightIKFootWeight, 1);
+
+    }
+
+    private void AdjustFoot(AvatarIKGoal foot, float positionWeight, float rotationWeight)
+    {
+        float weightToApply = animator.GetFloat(foot == AvatarIKGoal.LeftFoot ? "IKLeftFootWeight" : "IKRightFootWeight");
+        animator.SetIKPositionWeight(foot, 1 - weightToApply);
+        animator.SetIKRotationWeight(foot, 1 - weightToApply);
+
+        Transform footTransform = animator.GetBoneTransform(foot == AvatarIKGoal.LeftFoot ? HumanBodyBones.LeftFoot : HumanBodyBones.RightFoot);
+        Vector3 animatedFootPosition = footTransform.position;
+
+
+        RaycastHit hit;
+        Ray ray = new Ray(animatedFootPosition + Vector3.up * 0.5f, Vector3.down);
+        if (Physics.Raycast(ray, out hit, 0.5f * footExtensionLenght + footOffset, groundLayer))
+        {
+            Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.green * weightToApply);
+
+            animator.SetIKPosition(foot, hit.point + new Vector3(0, footOffset, 0));
+            Vector3 footForward = Vector3.ProjectOnPlane(footTransform.forward, hit.normal);
+            Quaternion footRotation = Quaternion.LookRotation(footForward, hit.normal);
+            animator.SetIKRotation(foot, footRotation);
+        }
+        else
+        {
+            Debug.DrawRay(ray.origin, ray.direction * 1.5f, Color.red);
+        }
+    }
+}

@@ -1,11 +1,9 @@
-﻿using System; // Required for the [Serializable] attribute
+﻿using System; 
 using UnityEngine;
 
-[RequireComponent(typeof(Animator))]
 public class PhysicsHandController : MonoBehaviour
 {
-    // A special class to hold all the data for a single hand.
-    // [Serializable] makes it show up neatly in the Inspector.
+
     [Serializable]
     public class Hand
     {
