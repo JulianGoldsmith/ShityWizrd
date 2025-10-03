@@ -1,7 +1,8 @@
+using Fusion;
 using UnityEngine;
 
 [System.Serializable]
-public class PhysicsObjectProperties
+public struct PhysicsObjectProperties : INetworkStruct
 {
     /* Define the base properties of a physics object and 
      how they combine in physics calculations. 
@@ -13,10 +14,32 @@ public class PhysicsObjectProperties
         end up having the same instance of POP.
      */
 
+    // This remains as a struct so that it can be automatically
+    // serialised and networked by Photon (user-defined Blittable Structs
+    // are fine).
+
+    // As an INetworkStruct, it cannot contain any:
+    // - reference types
+    // - string or char (use NetworkString instead).
+    // - bools (use NetworkBool or int instead)
 
     #region Base Properties
     [Promotable("Material", DataTypeTag.Material)]
-    public PhysicsObjectMaterial physicsobjectmaterial;
+    public PHYSICS_OBJECT_MATERIAL material_label;
+    //private PhysicsObjectMaterial _physicsobjectmaterial;
+    public PhysicsObjectMaterial physicsobjectmaterial
+    {
+        get
+        {
+            //if (_physicsobjectmaterial == null
+            //    || _physicsobjectmaterial.label != material_label)
+            //{
+            //    _physicsobjectmaterial = POMLookUp.Get(material_label);
+            //}
+            //return _physicsobjectmaterial;
+            return POMLookUp.Get(material_label);
+        }
+    }
 
     #endregion
 

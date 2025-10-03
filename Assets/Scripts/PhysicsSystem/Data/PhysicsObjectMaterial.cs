@@ -9,6 +9,7 @@ public class PhysicsObjectMaterial : ScriptableObject
 
     #region Labelling
     public string material_name;
+    public PHYSICS_OBJECT_MATERIAL label;
 
     #endregion
 
@@ -31,4 +32,19 @@ public class PhysicsObjectMaterial : ScriptableObject
     public Material vfx_material;
     public bool casts_shadows = true;
     #endregion
+}
+
+public enum PHYSICS_OBJECT_MATERIAL
+{
+    // To allow easier communication across network,
+    // we store materials as enum-labels and store
+    // the objects in a data-dictionary which is looked
+    // up at runtime.
+    NULL = 0,
+
+    STONE = 1,
+    GLASS = 2,
+    GOO = 3,
+
+    MAX_N
 }

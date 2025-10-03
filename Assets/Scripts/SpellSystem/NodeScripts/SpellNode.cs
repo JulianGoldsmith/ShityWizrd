@@ -61,20 +61,26 @@ public abstract class SpellNode : ScriptableObject
             }
         }
     }
-    protected void ApplyPromotableValuesGeneric<T>(T obj)
+    protected T ApplyPromotableValuesGeneric<T>(T obj_to_mod)
     {
         // Extend this to work with anything, not just a spellnode
         // (so that it can work with PhysicsObjectProperties too.
+
+        // To allow changing structs. (This is very bad practice
+        // but I'm a bad boy). Primarily doing this to allow
+        // things like physicsobjectproperties to be a struct and therefore
+        // communicate easily across the network
+        object obj = obj_to_mod;
         if(obj == null)
         {
             Debug.LogError("Tried to modify values on a null-object.");
-            return;
+            return (T)obj; 
         }
 
         if (baseValues == null)
         {
             Debug.LogError($"Base values have not been stored for node {obj} you need to call StoredBaseValues() after cloning");
-            return;
+            return (T)obj;
         }
         var fields = obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
 
@@ -85,7 +91,7 @@ public abstract class SpellNode : ScriptableObject
             {
                 object? baseValue;
                 if (!baseValues.TryGetValue(field.Name, out baseValue))
-                    return;
+                    return (T)obj;
 
                 var found = valueContainers.FirstOrDefault(c => c.TargetFieldName == field.Name);
                 Debug.Log($"[{GetType().Name}] Apply: field={field.Name}, type={field.FieldType}, " +
@@ -102,15 +108,16 @@ public abstract class SpellNode : ScriptableObject
                     bool finalValue = GetFinalValue(field.Name, (bool)baseValue);
                     field.SetValue(obj, finalValue);
                 }
-                else if (field.FieldType == typeof(PhysicsObjectMaterial))
+                else if (field.FieldType == typeof(PHYSICS_OBJECT_MATERIAL))
                 {
                     // Only ever replace, so don't need to 'calculate' a final value.
-                    PhysicsObjectMaterial finalValue = GetFinalValue(field.Name, (PhysicsObjectMaterial)baseValue);
+                    PHYSICS_OBJECT_MATERIAL finalValue = GetFinalValue(field.Name, (PHYSICS_OBJECT_MATERIAL)baseValue);
                     field.SetValue(obj, finalValue);
                 }
             }
 
         }
+        return (T)obj;
     }
     protected void ApplyPromotableValues()
     {
@@ -185,9 +192,9 @@ public abstract class SpellNode : ScriptableObject
         return finalValue;
     }
 
-    protected PhysicsObjectMaterial GetFinalValue(string fieldName, PhysicsObjectMaterial baseValue)
+    protected PHYSICS_OBJECT_MATERIAL GetFinalValue(string fieldName, PHYSICS_OBJECT_MATERIAL baseValue)
     {
-        PhysicsObjectMaterial finalValue = baseValue;
+        PHYSICS_OBJECT_MATERIAL finalValue = baseValue;
 
         var container = valueContainers.FirstOrDefault(c =>
             c.TargetFieldName == fieldName &&
@@ -197,10 +204,10 @@ public abstract class SpellNode : ScriptableObject
             return baseValue;
         }
 
-        var modifiers = new List<ValueModifier<PhysicsObjectMaterial>>();
+        var modifiers = new List<ValueModifier<PHYSICS_OBJECT_MATERIAL>>();
         foreach (var node in container.ModifyingNodes)
         {
-            if (node is ValueNode<PhysicsObjectMaterial> matNode)
+            if (node is ValueNode<PHYSICS_OBJECT_MATERIAL> matNode)
             {
                 modifiers.Add(matNode.GetModifier(null));
             }

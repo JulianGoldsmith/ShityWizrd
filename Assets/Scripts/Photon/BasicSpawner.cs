@@ -10,9 +10,26 @@ using Fusion.Addons.Physics;
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
     public NetworkRunner _runner;
+    private static NetworkRunner static_runner;
 
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
+
+    public static NetworkObject Spawn(NetworkPrefabRef prefab, Vector3 pos, Quaternion rot, NetworkRunner.OnBeforeSpawned onBeforeSpawned = null)
+    {
+        // Only host can spawn.
+        if(static_runner == null || !static_runner.IsServer)
+            return null;
+
+        // Do we need to assign input authority here?
+        // Would be relevant for nodes that change based on input, such 
+        // as 'homing toward mouse cursor' or 'click a button to detonate'.
+
+        // We allow a delegate (OnBeforeSpawned) to be passed, such that
+        // a method can be called on the object, before replicating
+        // it across all instances.
+        return static_runner.Spawn(prefab, pos, rot, null, onBeforeSpawned);
+    }
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
@@ -20,10 +37,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             // Create a unique position for the player
             Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
-            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
+            //NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
 
             // Keep track of the player avatars for easy access
-            _spawnedCharacters.Add(player, networkPlayerObject);
+            //_spawnedCharacters.Add(player, networkPlayerObject);
 
         }
     }
@@ -80,9 +97,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         // Create the Fusion runner and let it know that we will be providing user input
         _runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;
+        static_runner = _runner;
 
         var runnerSimulatePhysics3D = gameObject.AddComponent<RunnerSimulatePhysics3D>();
-        runnerSimulatePhysics3D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateAlways;
+        runnerSimulatePhysics3D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateForward;
 
         // Create the NetworkSceneInfo from the current scene
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);

@@ -6,7 +6,7 @@ using System.Linq;
 using System;
 using System.Security.Cryptography;
 using NUnit.Framework.Interfaces;
-
+using Fusion;
 /// <summary>
 /// Main script controlling player casting, ie sword swing, cast spell etc, works with player movement controller and player animation controller
 /// </summary>

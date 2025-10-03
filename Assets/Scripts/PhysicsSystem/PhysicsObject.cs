@@ -1,7 +1,8 @@
 using System.Timers;
 using UnityEngine;
+using Fusion;
 
-public class PhysicsObject : MonoBehaviour
+public class PhysicsObject : NetworkBehaviour, ISpawned
 {
     /* Defines interactions of physics objects in the physics system.
      * Any object that is expected to interact with physics should have:
@@ -21,10 +22,28 @@ public class PhysicsObject : MonoBehaviour
      *  Relevant for spell-objects (e.g. tangible projectiles), 
      *      players, enemies, world-objects.
      */
-    
-    public PhysicsObjectProperties physicsObjectProperties;
+
+
+    [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))] 
+    public PhysicsObjectProperties physicsObjectProperties { get; set; }
     private Rigidbody rigidbody;
     public PhysicsMaterial physicsMaterial;
+
+    #region Data Networking
+    public void OnPhysicsObjectPropertiesChanged()
+    {
+        // Just re-init the object.
+        // This includes assigning properties as well
+        Debug.Log("Physics changed.");
+        InitialisePhysicsObject();
+    }
+    public override void Spawned()
+    {
+        // When it spawns, ensure the properties are mapped.
+        base.Spawned();
+        InitialisePhysicsObject();
+    }
+    #endregion
 
     #region Initialisation
     // Assign parameter values to Rigidbody and Unity PhysicsMaterials
@@ -32,8 +51,10 @@ public class PhysicsObject : MonoBehaviour
     {
         UpdateRigidbody(GetComponent<Rigidbody>());
         Collider col = GetComponent<Collider>();
-        if (col != null) UpdatePhysicsMaterial(col.material);
+        if (col != null) 
+            UpdatePhysicsMaterial(col.material);
         UpdateVisuals();
+        ModifyTransform();
     }
     public Rigidbody UpdateRigidbody(Rigidbody rb)
     {
@@ -88,6 +109,14 @@ public class PhysicsObject : MonoBehaviour
             renderers[i].shadowCastingMode = physicsObjectProperties.physicsobjectmaterial.casts_shadows? 
                 UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
         }
+    }
+
+    public void ModifyTransform()
+    {
+        // TODO:
+        // This should be based on a base-size, not a multiplication.
+        // So it wouldn't matter how often this is called.
+        transform.localScale = Vector3.one * (1 + physicsObjectProperties.size);
     }
     #endregion
 
@@ -167,12 +196,10 @@ public class PhysicsObject : MonoBehaviour
                 other_rb = other_po.rigidbody;
                 other_velocity = other_rb.linearVelocity;
             }
-            if (other_po.physicsObjectProperties != null)
-            {
-                other_mass = other_po.physicsObjectProperties.mass;
-                if (other_po.physicsObjectProperties.physicsobjectmaterial != null)
-                    other_stickiness = other_po.physicsObjectProperties.physicsobjectmaterial.stickiness;
-            }
+
+            other_mass = other_po.physicsObjectProperties.mass;
+            if (other_po.physicsObjectProperties.physicsobjectmaterial != null)
+                other_stickiness = other_po.physicsObjectProperties.physicsobjectmaterial.stickiness;
         }
 
         // QUESTION: should we be including the other's stickiness? They'll run their
