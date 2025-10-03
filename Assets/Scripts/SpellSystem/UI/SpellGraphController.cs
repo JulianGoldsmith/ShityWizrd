@@ -1404,7 +1404,6 @@ public class SpellGraphController : MonoBehaviour
         if (meshRenderer.material.HasProperty("_Seed"))
         {
             meshRenderer.material.SetFloat("_Seed", UnityEngine.Random.Range(0,1000));
-            Debug.Log("'_Seed' property found and set.");
         }
 
         runeObject.transform.localScale = Vector3.one * ((nodeClone.ovverideVisualScale != 1)
