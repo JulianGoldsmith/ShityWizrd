@@ -84,7 +84,7 @@ public class CharacterAnimationController : GenericAnimationController
     {
         float weightToApply = animator.GetFloat( foot == AvatarIKGoal.LeftFoot ? "IKLeftFootWeight": "IKRightFootWeight");
         animator.SetIKPositionWeight(foot, 1-weightToApply);
-        animator.SetIKRotationWeight(foot, 0);
+        animator.SetIKRotationWeight(foot, 1 - weightToApply);
 
         Transform footTransform = animator.GetBoneTransform(foot == AvatarIKGoal.LeftFoot ? HumanBodyBones.LeftFoot : HumanBodyBones.RightFoot);
         Vector3 animatedFootPosition = footTransform.position;
@@ -97,6 +97,7 @@ public class CharacterAnimationController : GenericAnimationController
             Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.green*weightToApply);
 
             animator.SetIKPosition(foot, hit.point + new Vector3(0, footOffset, 0));
+
             Quaternion footRotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(transform.forward, hit.normal), hit.normal);
             animator.SetIKRotation(foot, footRotation);
         }
