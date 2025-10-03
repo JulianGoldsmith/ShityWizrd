@@ -116,7 +116,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // TODO:
         // This should be based on a base-size, not a multiplication.
         // So it wouldn't matter how often this is called.
-        transform.localScale = Vector3.one * (1 + physicsObjectProperties.size);
+        transform.localScale = Vector3.one * physicsObjectProperties.size;
     }
     #endregion
 

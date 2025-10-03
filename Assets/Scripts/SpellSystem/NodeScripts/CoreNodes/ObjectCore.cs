@@ -25,7 +25,7 @@ public class ObjectCore : CoreNode
     public SpellRotation CastSpawnRotation = SpellRotation.CasterRotation;
     public SpellPosition TriggerSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
-    
+
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
         ApplyPromotableValues(); //apply promotable values from connected runes 
@@ -45,6 +45,7 @@ public class ObjectCore : CoreNode
     {
         // This is called by the spawner before replicating the networkobject
         // across all instances.
+
         SpellCreatedPhysicsObject physicsObject = spellCore.GetComponent<SpellCreatedPhysicsObject>();
         if (physicsObject != null)
         {

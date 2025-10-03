@@ -17,7 +17,12 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     public static NetworkObject Spawn(NetworkPrefabRef prefab, Vector3 pos, Quaternion rot, NetworkRunner.OnBeforeSpawned onBeforeSpawned = null)
     {
-        // Only host can spawn.
+        // Deal with spawning objects.
+        // If host, spawn the object.
+        // If client, send a request to spawn the object.
+        // How do we cast spells?
+        // Do we just send a request to the host to start casting?
+        // Or do we cast, then have the host correct it?
         if(static_runner == null || !static_runner.IsServer)
             return null;
 
@@ -41,6 +46,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
             // Keep track of the player avatars for easy access
             //_spawnedCharacters.Add(player, networkPlayerObject);
+
+            // Share equipped spells? (i.e. full spell-graph?)
 
         }
     }

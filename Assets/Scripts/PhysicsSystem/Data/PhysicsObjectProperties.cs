@@ -82,7 +82,7 @@ public struct PhysicsObjectProperties : INetworkStruct
     public float mass { 
         get 
         {
-            // perhaps, mass should be size**3 and moment of inertia size**2,
+            // mass should be size**3 and moment of inertia size**2,
             // but it might not matter in practice.
             return density * size;
         }
