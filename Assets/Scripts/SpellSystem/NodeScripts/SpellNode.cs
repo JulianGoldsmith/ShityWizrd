@@ -19,7 +19,7 @@ public abstract class SpellNode : ScriptableObject
     public List<PropertyBinder> valueContainers = new List<PropertyBinder>();
 
     [System.NonSerialized]
-    private Dictionary<string, object> baseValues; //values that can be overwritten with the promotable attribute are stored here
+    protected Dictionary<string, object> baseValues; //values that can be overwritten with the promotable attribute are stored here
 
     public Texture2D icon;
     public Mesh overrideMesh = null;
@@ -27,7 +27,7 @@ public abstract class SpellNode : ScriptableObject
     public float ovverideVisualScale = 1f;
 
     ////Promotable attribues settings setting 
-    public void StoreBaseValues()
+    public virtual void StoreBaseValues()
     {
         baseValues = new Dictionary<string, object>();
         var fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
@@ -37,6 +37,27 @@ public abstract class SpellNode : ScriptableObject
             if (field.GetCustomAttribute<PromotableAttribute>() != null)
             {
                 baseValues[field.Name] = field.GetValue(this);
+            }
+        }
+    }
+    protected void AppendBaseValuesFromDependency<T>(T obj)
+    {
+        // Allow nodes to store base values from dependencies,
+        // for example, an objectcore can store the basevalues from
+        // its physicsobject.
+        if (baseValues == null)
+        {
+            Debug.LogError($"[{this.name}] is trying to store basevalues from {obj} but baseValues does not exist.");
+            return;
+        }
+
+        var fields = typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance);
+
+        foreach (var field in fields)
+        {
+            if (field.GetCustomAttribute<PromotableAttribute>() != null)
+            {
+                baseValues[field.Name] = field.GetValue(obj);
             }
         }
     }
@@ -62,10 +83,9 @@ public abstract class SpellNode : ScriptableObject
             var promotableAttr = field.GetCustomAttribute<PromotableAttribute>();
             if (promotableAttr != null)
             {
-                Debug.Log($"field {field.Name}");
                 object? baseValue;
                 if (!baseValues.TryGetValue(field.Name, out baseValue))
-                    baseValue = null;
+                    return;
 
                 var found = valueContainers.FirstOrDefault(c => c.TargetFieldName == field.Name);
                 Debug.Log($"[{GetType().Name}] Apply: field={field.Name}, type={field.FieldType}, " +
@@ -86,10 +106,6 @@ public abstract class SpellNode : ScriptableObject
                 {
                     // Only ever replace, so don't need to 'calculate' a final value.
                     PhysicsObjectMaterial finalValue = GetFinalValue(field.Name, (PhysicsObjectMaterial)baseValue);
-                    Debug.Log(finalValue != null);
-                    Debug.Log(obj);
-                    Debug.Log(finalValue.material_name);
-                    //Debug.Log(finalValue.material_name);
                     field.SetValue(obj, finalValue);
                 }
             }
@@ -176,11 +192,8 @@ public abstract class SpellNode : ScriptableObject
         var container = valueContainers.FirstOrDefault(c =>
             c.TargetFieldName == fieldName &&
             c.OwningNodeGUID == this.InstanceGuid);
-        Debug.Log(this.InstanceGuid);
-        Debug.Log(fieldName);
         if (container == null)
         {
-            Debug.LogError($"NO CONTAINER for {fieldName}"); 
             return baseValue;
         }
 

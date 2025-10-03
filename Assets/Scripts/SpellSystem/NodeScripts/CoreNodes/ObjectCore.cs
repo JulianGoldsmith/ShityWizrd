@@ -13,19 +13,16 @@ public class ObjectCore : CoreNode
 {
     public GameObject corePrefab;
 
+    private bool base_values_from_dependencies_stored = false;
 
     public SpellPosition CastSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation CastSpawnRotation = SpellRotation.CasterRotation;
     public SpellPosition TriggerSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
-
-    [Promotable("Size", DataTypeTag.Radius)]
-    public float size = 1f;
     
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
         ApplyPromotableValues(); //apply promotable values from connected runes 
-
 
         Vector3 pos = SpellSystemHelpers.GetSpellPosition(
             triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
@@ -39,14 +36,23 @@ public class ObjectCore : CoreNode
         {
             // We allow modification of values also within the created physicsobject
             // as well as its properties.
+            // We capture the base values here, since this is the first time
+            // we're seeing it. Then we can apply promotable values.
+            if (!base_values_from_dependencies_stored)
+            {
+                // Only need to do this once.
+                AppendBaseValuesFromDependency(physicsObject);
+                AppendBaseValuesFromDependency(physicsObject.physicsObjectProperties);
+                base_values_from_dependencies_stored = true;
+            }
             ApplyPromotableValuesGeneric<SpellCreatedPhysicsObject>(physicsObject);
             ApplyPromotableValuesGeneric<PhysicsObjectProperties>(physicsObject.physicsObjectProperties);
-            Debug.Log(physicsObject.physicsObjectProperties.physicsobjectmaterial.name);
             physicsObject.AssignProperties(this);
             physicsObject.InitialisePhysicsObject();
+
+            spellCore.transform.localScale *= physicsObject.physicsObjectProperties.size;
         }
 
-        spellCore.transform.localScale *= size;
 
         /*Debug.Log($"is cast = {triggerInfo.IsCast} [Spawn] posType={CastSpawnPosition} rotType={CastSpawnRotation} " +
           $"CastPos={triggerInfo.State.CastPosition} Override?={triggerInfo.HasOverridePosition} " +

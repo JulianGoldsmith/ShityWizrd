@@ -1,10 +1,18 @@
 using UnityEngine;
 
 [System.Serializable]
-public struct PhysicsObjectProperties
+public class PhysicsObjectProperties
 {
     /* Define the base properties of a physics object and 
-     how they combine in physics calculations. */
+     how they combine in physics calculations. 
+        Has to be a class to work with the modifier system.
+    Otherwise we modify a value, creating a new struct, and then
+        never return that struct to the original object.
+    It doesn't really make much of a difference which is is,
+        though may need to be careful if multiple objects
+        end up having the same instance of POP.
+     */
+
 
     #region Base Properties
     [Promotable("Material", DataTypeTag.Material)]
@@ -41,7 +49,7 @@ public struct PhysicsObjectProperties
 
 
     #region Modifiers
-    //[Promotable("Size", DataTypeTag.Radius)]
+    [Promotable("Size", DataTypeTag.Radius)]
     public float size;
 
     #endregion

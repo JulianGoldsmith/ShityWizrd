@@ -75,6 +75,8 @@ public class PhysicsObject : MonoBehaviour
             return;
 
         Material mat = physicsObjectProperties.physicsobjectmaterial.vfx_material;
+        if (mat == null) 
+            return;
         Renderer[] renderers = GetComponents<Renderer>();
         if (renderers == null || renderers.Length == 0) 
             return;

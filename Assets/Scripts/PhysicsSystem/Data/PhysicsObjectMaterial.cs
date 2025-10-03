@@ -15,6 +15,7 @@ public class PhysicsObjectMaterial : ScriptableObject
 
     #region Base Properties 
     // (to be used by physics system)
+    [Header("Physics Properties")]
     public float density; // affects mass, so inertia, moment of inertia, weight.
     public float hardness; // brittleness, affects sound
     public float elasticity; // bounciness during collisions
@@ -26,6 +27,7 @@ public class PhysicsObjectMaterial : ScriptableObject
 
     #region Visuals 
     // (VFX / shaders / actual material)
+    [Header("Visuals")]
     public Material vfx_material;
     public bool casts_shadows = true;
     #endregion
