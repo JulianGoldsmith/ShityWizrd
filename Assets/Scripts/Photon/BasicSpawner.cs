@@ -13,6 +13,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     private static NetworkRunner static_runner;
 
     [SerializeField] private NetworkPrefabRef _playerPrefab;
+    [SerializeField] private NetworkPrefabRef _itemPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
     public static NetworkObject Spawn(NetworkPrefabRef prefab, Vector3 pos, Quaternion rot, NetworkRunner.OnBeforeSpawned onBeforeSpawned = null)
@@ -43,6 +44,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             // Create a unique position for the player
             Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
             //NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
+            NetworkObject networkItem = runner.Spawn(_itemPrefab, spawnPosition, Quaternion.identity, player);
 
             // Keep track of the player avatars for easy access
             //_spawnedCharacters.Add(player, networkPlayerObject);
@@ -121,7 +123,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         await _runner.StartGame(new StartGameArgs()
         {
             GameMode = mode,
-            SessionName = "TestRoom",
+            SessionName = "TestRoom2",
             Scene = scene,
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
