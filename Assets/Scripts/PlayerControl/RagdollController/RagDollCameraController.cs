@@ -12,7 +12,7 @@ public class RagDollCameraController : MonoBehaviour
 
     [Header("Input")]
     public Vector2 lookInput;
-    [SerializeField] private float mouseSensitivity = 0.12f;
+    [SerializeField] public float mouseSensitivity = 0.12f;
     public float lookSmoothing = 0.1f;
 
     [Header("Pitch Limits")]

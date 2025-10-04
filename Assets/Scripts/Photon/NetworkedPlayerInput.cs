@@ -7,31 +7,21 @@ using UnityEngine.Windows;
 public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
 {
     private NetworkInputData _accumulatedInput;
-    private CharacterCameraController _characterCameraController;
+    //private RagDollCameraController _characterCameraController;
 
     public override void Spawned()
     {
-        if (HasInputAuthority == false)
-        {
-            // FOR TESTING STUPIDNESS.
-            Camera cam = GetComponentInChildren<Camera>();
-            if (cam != null)
-            {
-                Destroy(cam.gameObject);
-            }
-            return;
-        }
-
+        if (!HasInputAuthority) return;
         // Register to Fusion input poll callback.
         var networkEvents = Runner.GetComponent<NetworkEvents>();
         networkEvents.OnInput.AddListener(OnInput);
 
-        GameController.Instance.playerInput = GetComponent<PlayerInput>();
+        //GameController.Instance.playerInput = GetComponent<PlayerInput>();
 
-        _characterCameraController = Camera.main.GetComponent<CharacterCameraController>();
+        //_characterCameraController = this.GetComponent<RagDollCameraController>();
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        //Cursor.lockState = CursorLockMode.Locked;
+        //Cursor.visible = false;
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -102,24 +92,25 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             if (Keyboard.current.dKey.isPressed)
                 moveDirection += Vector3.right;
 
-            moveDirection = moveDirection.normalized;
+           // moveDirection = moveDirection.normalized;
 
-            float sens = _characterCameraController != null ? _characterCameraController.cameraLookSensitivity : 2f;
-            Vector2 lookInput = PlayerInputController.global_look;
+            //float sens = _characterCameraController != null ? _characterCameraController.mouseSensitivity : 2f;
+            //Vector2 lookInput = PlayerInputController.global_look;
             
-            float yaw = _accumulatedInput.yawpitch.x + lookInput.x * sens;// * Time.deltaTime;
-            float pitch = _accumulatedInput.yawpitch.y - lookInput.y * sens;// * Time.deltaTime;
+            //float yaw = _accumulatedInput.yawpitch.x + lookInput.x * sens;// * Time.deltaTime;
+            //float pitch = _accumulatedInput.yawpitch.y - lookInput.y * sens;// * Time.deltaTime;
 
-            _accumulatedInput.yawpitch = new Vector2(yaw, pitch);
+            //_accumulatedInput.yawpitch = new Vector2(yaw, pitch);
 
-            Vector3 camForward = _characterCameraController.transform.forward;
-            Vector3 camRight = _characterCameraController.transform.right;
+            //Vector3 camForward = _characterCameraController.transform.forward;
+            //Vector3 camRight = _characterCameraController.transform.right;
 
-            camForward.y = 0;
-            camRight.y = 0;
-            camForward.Normalize();
-            camRight.Normalize();
-            moveDirection = (camForward * moveDirection.z + camRight * moveDirection.x).normalized;
+            //camForward.y = 0;
+            //camRight.y = 0;
+            //camForward.Normalize();
+            //camRight.Normalize();
+            //moveDirection = (camForward * moveDirection.z + camRight * moveDirection.x).normalized;
+
             _accumulatedInput.direction = moveDirection;
 
             _accumulatedInput.buttons.Set(EInputButton.LEFT_CLICK, mouse.leftButton.isPressed);
@@ -127,12 +118,15 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             _accumulatedInput.buttons.Set(EInputButton.JUMP, keyboard.spaceKey.isPressed);
             _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
             _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
+            _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
+            
         }
+        _accumulatedInput.lookRotation = Camera.main.transform.rotation;
     }
 
     private void OnInput(NetworkRunner runner, NetworkInput networkInput)
     {
-        _accumulatedInput.lookRotation = Camera.main.transform.rotation;
+        
 
         // Fusion polls accumulated input. This callback can be executed multiple times in a row if there is a performance spike.
         networkInput.Set(_accumulatedInput);

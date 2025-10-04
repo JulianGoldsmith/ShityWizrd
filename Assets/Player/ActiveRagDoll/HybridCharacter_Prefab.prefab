@@ -1288,6 +1288,7 @@ GameObject:
   - component: {fileID: 1888927423885705802}
   - component: {fileID: 6340558049541726636}
   - component: {fileID: 23419628365479375}
+  - component: {fileID: 7822660770966405879}
   m_Layer: 0
   m_Name: HybridCharacter_Prefab
   m_TagString: Untagged
@@ -1334,7 +1335,7 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 130943
-  isGrounded: 0
+  _IsGrounded: 0
   maxSpeed: 3
   acceleration: 100
   braking: 20
@@ -1487,6 +1488,7 @@ MonoBehaviour:
   - {fileID: 6278773161791462718}
   NetworkedBehaviours:
   - {fileID: 2616703058331641411}
+  - {fileID: 7822660770966405879}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6340558049541726636
 MonoBehaviour:
@@ -1674,6 +1676,18 @@ MonoBehaviour:
   m_DefaultActionMap: GamePlay
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &7822660770966405879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646711710736611360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1ec3645d00980448eff45f53543882, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1659192456888941227
 GameObject:
   m_ObjectHideFlags: 0

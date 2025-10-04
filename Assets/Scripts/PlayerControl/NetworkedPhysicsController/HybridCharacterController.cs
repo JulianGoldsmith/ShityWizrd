@@ -97,7 +97,7 @@ public class HybridCharacterController : NetworkBehaviour
     NetworkButtons priorButtons;
     public override void FixedUpdateNetwork()
     {
-        Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
+        //Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
         DetectVariablesChangedOnNetwork();
         if (GetInput(out NetworkInputData data))
         {
@@ -219,7 +219,7 @@ public class HybridCharacterController : NetworkBehaviour
     public void ApplyLookRotation()
     {
 
-        Debug.Log($"Look ROtation Running - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
+       // Debug.Log($"Look ROtation Running - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
 
         var _lookRot = HasInputAuthority ? cameraTransform.rotation : lookRot;
 
@@ -287,14 +287,14 @@ public class HybridCharacterController : NetworkBehaviour
         hipsRb.AddForce(jumpForce * Vector3.up, ForceMode.VelocityChange);
         targetAnimator.SetTrigger("Jump");
         finalAnimator.SetTrigger("Jump");
-        Debug.Log("Jumped");
+        //Debug.Log("Jumped");
     }
 
     public void UpdateHips()
     {
         IsGrounded = Physics.Raycast(hipsRb.transform.position, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
         Debug.DrawRay(hipsRb.transform.position, Vector3.down * groundCheckDistance, Color.aliceBlue);
-        Debug.Log($"Raycasting Doon - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
+        //Debug.Log($"Raycasting Doon - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
         /*
         if (isGrounded)
         {
@@ -312,7 +312,7 @@ public class HybridCharacterController : NetworkBehaviour
     private void ApplyHipsMovement()
     {
 
-        Debug.Log($"Apply movement - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
+        //Debug.Log($"Apply movement - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
         Vector2 _moveInput =   moveInput;
         Quaternion _lookRot = lookRot;
         _moveInput.Normalize();
