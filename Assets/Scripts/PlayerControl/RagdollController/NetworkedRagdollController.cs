@@ -63,6 +63,8 @@ public class NetworkedRagdollController : NetworkBehaviour
 
     private Rigidbody rootRigidbody;
 
+    
+
     public override void Spawned()
     {
         //general setup

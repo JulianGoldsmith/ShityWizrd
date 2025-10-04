@@ -54,6 +54,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
         data.lookRotation = Camera.main.transform.rotation;
 
+        data.buttons.Set(EInputButton.JUMP, Keyboard.current.spaceKey.isPressed);
+
         input.Set(data);
     }
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
@@ -101,9 +103,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
 
-        //float prevDelta = Time.fixedDeltaTime;
-        //Time.fixedDeltaTime = _runner.DeltaTime; ; ////////////////////////////////////////////////////////////////////////////Feels like i shouldnt chaneg this///
-        //Debug.Log($"fixedDelta = {Time.fixedDeltaTime} changed from {prevDelta} and runnerDelta = {_runner.DeltaTime}");
+
     }
 
     private void OnGUI()

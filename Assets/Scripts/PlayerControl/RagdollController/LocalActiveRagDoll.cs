@@ -79,7 +79,7 @@ public class LocalActiveRagDoll : MonoBehaviour
         //UpdateHipsFollowPD();
         //UpdateNetworkSpring();
         UpdateBoneJoints();
-
+        Debug.Log($"FixedUpdate time {Time.fixedDeltaTime}");
     }
 
     private void LateUpdate()

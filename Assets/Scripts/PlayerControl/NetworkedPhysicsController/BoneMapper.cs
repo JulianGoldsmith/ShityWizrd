@@ -3,37 +3,51 @@ using System.Collections.Generic;
 
 public class BoneMapper : MonoBehaviour
 {
-    [SerializeField] private Transform _animationArmatureRoot;
-    [SerializeField] private Transform _ikArmatureRoot;
+    private Transform targetAnimator, finalAnimator;
+    private List<BoneMapping> boneMappings = new List<BoneMapping>();
+    private class BoneMapping { public Transform source; public Transform destination; }
+    public bool syncEnabled = false;
 
-    private Dictionary<string, Transform> _animationBoneMap = new Dictionary<string, Transform>();
-    private Dictionary<string, Transform> _ikBoneMap = new Dictionary<string, Transform>();
-
-    void Awake()
+    public void Spawn(bool enabled, Transform t, Transform f)
     {
-        // Populate the dictionaries by scanning the hierarchies
-        MapBonesRecursively(_animationArmatureRoot, _animationBoneMap);
-        MapBonesRecursively(_ikArmatureRoot, _ikBoneMap);
+        targetAnimator = t; finalAnimator = f;
+        syncEnabled = enabled;
+        InitializeBoneMappings();
     }
 
-    private void MapBonesRecursively(Transform bone, Dictionary<string, Transform> map)
+
+    void Update()
     {
-        map[bone.name] = bone;
-        foreach (Transform child in bone)
+        if (!syncEnabled) return;
+
+        foreach (var map in boneMappings)
         {
-            MapBonesRecursively(child, map);
+            map.destination.localPosition = map.source.localPosition;
+            map.destination.localRotation = map.source.localRotation;
         }
     }
 
-    public Transform GetAnimationBone(string boneName)
+    private void InitializeBoneMappings()
     {
-        _animationBoneMap.TryGetValue(boneName, out Transform bone);
-        return bone;
-    }
+        var sourceArmatureRoot = targetAnimator;
 
-    public Transform GetIKBone(string boneName)
-    {
-        _ikBoneMap.TryGetValue(boneName, out Transform bone);
-        return bone;
+        var sourceBones = sourceArmatureRoot.GetComponentsInChildren<Transform>();
+        var sourceBoneMap = new Dictionary<string, Transform>(sourceBones.Length);
+        foreach (var sourceBone in sourceBones)
+        {
+            sourceBoneMap[sourceBone.name] = sourceBone;
+        }
+
+        var finalArmatureRoot = finalAnimator;
+        var destBones = finalArmatureRoot.transform.GetComponentsInChildren<Transform>();
+
+        // 3. Iterate through our destination bones and find the matching source bone.
+        foreach (var destBone in destBones)
+        {
+            if (sourceBoneMap.TryGetValue(destBone.name, out Transform sourceBone))
+            {
+                boneMappings.Add(new BoneMapping { source = sourceBone, destination = destBone });
+            }
+        }
     }
 }

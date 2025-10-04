@@ -5,10 +5,8 @@ using UnityEngine.InputSystem;
 
 public class RagDollCameraController : MonoBehaviour
 {
-
-    [SerializeField] private NetworkedRagdollController character; 
-    [SerializeField] private Rigidbody rootRigidbody;           
-    [SerializeField] private Transform cameraTransform;       
+    [SerializeField] private Transform networkedRenderTargetTransform;
+    private Transform cameraTransform;       
 
     [SerializeField] private Vector3 localEyeOffset = new Vector3(0f, 1.55f, 0f);
 
@@ -33,6 +31,7 @@ public class RagDollCameraController : MonoBehaviour
     public void Spawned()
     {
         cameraTransform = Camera.main.transform;
+        Debug.Log("Assigned camera");
     }
 
     void LateUpdate()
@@ -46,7 +45,7 @@ public class RagDollCameraController : MonoBehaviour
         finalPitch = Mathf.SmoothDampAngle(finalPitch, targetPitch, ref pitchVel, lookSmoothing);
 
         cameraTransform.rotation = Quaternion.Euler(finalPitch, finalYaw, 0f);
-        cameraTransform.position = rootRigidbody.transform.position + localEyeOffset;
+        cameraTransform.position = networkedRenderTargetTransform.transform.position + localEyeOffset;
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
