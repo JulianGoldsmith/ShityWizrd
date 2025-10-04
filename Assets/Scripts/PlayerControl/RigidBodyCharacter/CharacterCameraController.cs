@@ -33,7 +33,7 @@ public class CharacterCameraController : MonoBehaviour
 
     public float cameraLookSensitivity = 2.0f;
 
-    [SerializeField] private CharacterAnimationController animationController;
+    [SerializeField] public CharacterAnimationController animationController;
     public CharacterHandsController handController;
     public PlayerInputController inputController;
     public CharacterMovementController characterMovementController;

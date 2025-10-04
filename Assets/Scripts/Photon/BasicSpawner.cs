@@ -13,6 +13,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     private static NetworkRunner static_runner;
 
     [SerializeField] private NetworkPrefabRef _playerPrefab;
+    [SerializeField] private NetworkPrefabRef _handsPrefab;
     [SerializeField] private NetworkPrefabRef _itemPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
@@ -43,14 +44,24 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             // Create a unique position for the player
             Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
-            //NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-            NetworkObject networkItem = runner.Spawn(_itemPrefab, spawnPosition, Quaternion.identity, player);
+            
+
+            Vector3 handsoffset = new Vector3(0,0,-1);
+            NetworkObject networkHandsObject = runner.Spawn(_handsPrefab, spawnPosition + handsoffset, Quaternion.identity, player);
+
+            // We spawn hands first so that the player OnSpawned can grab all the required references.
+            // Unfortunately, everyone needs the references so we can't just pass a OnBeforeSpawned delegate
+            // or do it here, we need everyone to find those references themselves for each player OnSpawn.
+            // That's done, at the moment, in PhysicsHandController.
+            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
+            
+            Vector3 itemoffset = new Vector3(0,2,-2);
+            NetworkObject networkItem = runner.Spawn(_itemPrefab, spawnPosition + itemoffset, Quaternion.identity, player);
 
             // Keep track of the player avatars for easy access
-            //_spawnedCharacters.Add(player, networkPlayerObject);
+            _spawnedCharacters.Add(player, networkPlayerObject);
 
             // Share equipped spells? (i.e. full spell-graph?)
-
         }
     }
 
@@ -62,26 +73,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             _spawnedCharacters.Remove(player);
         }
     }
-    public void OnInput(NetworkRunner runner, NetworkInput input)
-    {
-        var data = new NetworkInputData();
-
-        if (Keyboard.current.wKey.isPressed)
-            data.direction += Vector3.forward;
-
-        if (Keyboard.current.sKey.isPressed)
-            data.direction += Vector3.back;
-
-        if (Keyboard.current.aKey.isPressed)
-            data.direction += Vector3.left;
-
-        if (Keyboard.current.dKey.isPressed)
-            data.direction += Vector3.right;
-
-        data.lookRotation = Camera.main.transform.rotation;
-
-        input.Set(data);
-    }
+    public void OnInput(NetworkRunner runner, NetworkInput input) { }
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
     public void OnConnectedToServer(NetworkRunner runner) { }

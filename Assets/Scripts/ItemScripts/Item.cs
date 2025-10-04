@@ -32,6 +32,7 @@ public class Item : NetworkBehaviour
     List<byte[]> received_chunks = null;
     public void EquipSpellToPrimary(SpellGraph graph)
     {
+        Debug.Log("Equipping spell");
         // Set the spell as primary spell and communicate
         // the changes to all other instances via RPC call.
         primaryActionSpell = graph;
