@@ -752,82 +752,10 @@ public class SpellGraphController : MonoBehaviour
         var sourceData = outputSocket.ParentRune.InstanceData;
         var targetData = inputSocket.ParentRune.InstanceData;
 
-        CreateNodeLink(currentGraph,sourceData, targetData, newConnectionData);
+        currentGraph.CreateNodeLink(sourceData, targetData, newConnectionData);
 
         CreateVisualConnection(outputSocket, inputSocket);
         CancelConnection();
-    }
-
-    private void CreateNodeLink(SpellGraph graph, NodeInstanceData sourceData, NodeInstanceData targetData, NodeConnection connectionData)
-    {
-        if (!graph.liveNodeClonesByGuid.TryGetValue(connectionData.fromOutputOwnerGUID, out var logicalSource) ||
-        !graph.liveNodeClonesByGuid.TryGetValue(connectionData.toInputOwnerGUID, out var logicalTarget))
-        {
-            Debug.LogError($"Could not find the live node clones for the connection owners. From: {connectionData.fromOutputOwnerGUID}, To: {connectionData.toInputOwnerGUID}");
-            return;
-        }
-        var outputSocketDef = logicalSource.GetSockets().FirstOrDefault(s =>
-        (s.Name == connectionData.fromOutputSocketName) || (s.TargetFieldName == connectionData.fromOutputSocketName));
-
-        var inputSocketDef = logicalTarget.GetSockets().FirstOrDefault(s =>
-            (s.Name == connectionData.toInputSocketName) || (s.TargetFieldName == connectionData.toInputSocketName));
-
-        if (string.IsNullOrEmpty(outputSocketDef.Name) || string.IsNullOrEmpty(inputSocketDef.Name))
-        {
-            Debug.LogError($"SocketDefs not found on the resolved logical nodes. Looking for '{connectionData.fromOutputSocketName}' on '{logicalSource.name}' and '{connectionData.toInputSocketName}' on '{logicalTarget.name}'.");
-            return;
-        }
-
-        /*Debug.Log($"CreateNodeLink: {sourceData.nodeTemplateName} [{outputSocketDef.Name} -> {inputSocketDef.Name}] {targetData.nodeTemplateName} | " +
-                  $"ownerOut='{outputSocketDef.OwningNodeGUID}', ownerIn='{inputSocketDef.OwningNodeGUID}', " +
-                  $"resolvedSource={logicalSource.GetType().Name}, resolvedTarget={logicalTarget.GetType().Name}");*/
-
-
-        switch (outputSocketDef.Type)
-        {
-            case SocketType.ExecutionLink:
-                if (logicalSource is EntryPointControlNode entryPoint && logicalTarget is CasterNode casterNode)
-                {
-                    int comboIndex = int.Parse(connectionData.fromOutputSocketName.Split(' ')[1]) - 1;
-                    while (entryPoint.orderedEntries.Count <= comboIndex) entryPoint.orderedEntries.Add(null);
-                    entryPoint.orderedEntries[comboIndex] = casterNode;
-                }
-                else if (logicalSource is CasterNode caster && logicalTarget is CoreNode core)
-                {
-                    if (!caster.outcomeCoreNodes.Contains(core)) caster.outcomeCoreNodes.Add(core);
-                }
-                else if (logicalSource is CoreNode sourceCore && logicalTarget is TriggerNode trigger)
-                {
-                    if (!sourceCore.triggerNodes.Contains(trigger)) sourceCore.triggerNodes.Add(trigger);
-                }
-                else if (logicalSource is TriggerNode sourceTrigger && (logicalTarget is EffectNode || logicalTarget is CoreNode))
-                {
-                    if (!sourceTrigger.outcomeNodes.Contains(logicalTarget))
-                        sourceTrigger.outcomeNodes.Add(logicalTarget);
-                }
-                break;
-
-            case SocketType.BehaviourLink:
-                if (logicalSource is BehaviourNode behaviour && logicalTarget is CoreNode targetCore)
-                {
-                    if (!targetCore.behaviourNodes.Contains(behaviour)) targetCore.behaviourNodes.Add(behaviour);
-                }
-                break;
-
-            case SocketType.FilterLink:
-                if (logicalSource is FilterNode filter && logicalTarget is TriggerNode targetTrigger)
-                {
-                    if (!targetTrigger.filterNodes.Contains(filter)) targetTrigger.filterNodes.Add(filter);
-                }
-                break;
-
-            case SocketType.Data:
-                if (logicalSource is ValueNode valueNode)
-                {
-                    AddPropertyBinding(logicalTarget, inputSocketDef, valueNode);
-                }
-                break;
-        }
     }
 
     private SpellNode ResolvePromotedOwner(SpellGraph graph, NodeInstanceData parentData, SocketDefinition socketDef)
@@ -849,30 +777,6 @@ public class SpellGraphController : MonoBehaviour
 
         Debug.LogWarning($"[SpellGraph] Owner '{owner}' not found under parent '{parentData.guid}' for socket '{socketDef.Name}");
         return null;
-    }
-
-    private void AddPropertyBinding(SpellNode targetNode, SocketDefinition socketDef, ValueNode sourceNode)
-    {
-        Debug.Log($"AddPropertyBinding -> target={targetNode.GetType().Name}, field={socketDef.TargetFieldName}, owner={socketDef.OwningNodeGUID}");
-        var binder = targetNode.valueContainers.FirstOrDefault(c =>
-            c.TargetFieldName == socketDef.TargetFieldName &&
-            c.OwningNodeGUID == socketDef.OwningNodeGUID);
-
-        if (binder == null)
-        { 
-            binder = new PropertyBinder
-            {
-
-                OwningNodeGUID = socketDef.OwningNodeGUID,
-                TargetFieldName = socketDef.TargetFieldName
-            };
-            targetNode.valueContainers.Add(binder);
-        }
-
-        if (!binder.ModifyingNodes.Contains(sourceNode))
-        {
-            binder.ModifyingNodes.Add(sourceNode);
-        }
     }
 
     private void CancelConnection()
@@ -999,7 +903,7 @@ public class SpellGraphController : MonoBehaviour
                         toInputOwnerGUID = guidMap[conn.toInputOwnerGUID],
                     };
                     liveInst.connections.Add(newConn);
-                    CreateNodeLink(currentGraph, liveInst, GetNodeInstance(newConn.targetNodeGUID), newConn);
+                    currentGraph.CreateNodeLink(liveInst, GetNodeInstance(newConn.targetNodeGUID), newConn);
                 }
             }
 
@@ -1190,106 +1094,8 @@ public class SpellGraphController : MonoBehaviour
 
         string json = System.IO.File.ReadAllText(savePath);
 
-        SpellGraph graph = ScriptableObject.CreateInstance<SpellGraph>();
-        JsonUtility.FromJsonOverwrite(json, graph);
-
-        foreach (var nodeData in graph.nodes)
-        {
-            SpellNode nodeTemplate = FindTemplateByName(nodeData.nodeTemplateName);
-            if (nodeTemplate != null)
-            {
-                SpellNode clone = nodeTemplate.CloneThisNode();
-                clone.InstanceGuid = nodeData.guid;
-                graph.liveNodeClonesByGuid[nodeData.guid] = clone;
-                if (clone is CoreNode core)
-                {
-                    core.defaultBehaviourNodes = new List<BehaviourNode>();
-                    core.defaultTriggerNodes = new List<TriggerNode>();
-                    core.behaviourNodes = new List<BehaviourNode>();
-                    core.triggerNodes = new List<TriggerNode>();
-                }
-            }
-        }
-
-        foreach (var nodeData in graph.nodes)
-        {
-            var parentClone = graph.liveNodeClonesByGuid[nodeData.guid];
-            if (parentClone is CoreNode coreClone)
-            {
-                foreach (var childGuid in nodeData.childNodeGUIDs)
-                {
-                    var childClone = graph.liveNodeClonesByGuid[childGuid];
-
-                    if (childClone is BehaviourNode behaviour)
-                    {
-                        coreClone.defaultBehaviourNodes.Add(behaviour);
-                    }
-                    else if (childClone is TriggerNode trigger)
-                    {
-                        coreClone.defaultTriggerNodes.Add(trigger);
-                    }
-                }
-            }
-        }
-
-
-        foreach (var nodeData in graph.nodes)
-        {
-            if (!graph.liveNodeClonesByGuid.TryGetValue(nodeData.guid, out var clone)) continue;
-            if (clone is not SubgraphNode subClone) continue;
-
-            var guidMap = new Dictionary<string, string>();
-            var liveInternalNodes = new List<NodeInstanceData>();
-
-            foreach (var childGuid in nodeData.childNodeGUIDs)
-            {
-                var liveChild = graph.GetNodeInstance(childGuid);
-                if (liveChild == null) continue;
-
-                if (!string.IsNullOrEmpty(liveChild.sourceTemplateNodeGuid))
-                {
-                    guidMap[liveChild.sourceTemplateNodeGuid] = liveChild.guid;
-                }
-                liveInternalNodes.Add(liveChild);
-            }
-
-            subClone.internalNodes = liveInternalNodes;
-
-            if (!string.IsNullOrEmpty(subClone.rootNodeGuid) && guidMap.TryGetValue(subClone.rootNodeGuid, out var liveRoot))
-            {
-                subClone.rootNodeGuid = liveRoot;
-            }
-
-            for (int i = 0; i < subClone.exposedSockets.Count; i++)
-            {
-                var info = subClone.exposedSockets[i];
-                if (guidMap.TryGetValue(info.internalNodeGuid, out var liveOwner))
-                {
-                    info.internalNodeGuid = liveOwner; 
-                    subClone.exposedSockets[i] = info;
-                }
-                else
-                {
-                    Debug.LogWarning($"[Load] Subgraph '{subClone.name}': no live owner for template guid '{info.internalNodeGuid}'.");
-                }
-            }
-        }
-
-        foreach (var nodeData in graph.nodes)
-        {
-            foreach (var connectionData in nodeData.connections)
-            {
-                CreateNodeLink(graph,nodeData, graph.GetNodeInstance(connectionData.targetNodeGUID), connectionData);
-            }
-        }
-
-        if (!string.IsNullOrEmpty(graph.entryPointControllerNodeGuid) &&
-        graph.liveNodeClonesByGuid.TryGetValue(graph.entryPointControllerNodeGuid, out SpellNode entryNode))
-        {
-            graph.entryPointControllerNode = entryNode as EntryPointControlNode;
-        }
-
-        return graph;
+        SpellGraph spell_graph = SpellGraph.FromJson(json);
+        return spell_graph;
     }
 
     public void BuildGraphView(SpellGraph graphToBuild)
@@ -1493,7 +1299,7 @@ public class SpellGraphController : MonoBehaviour
             Item itemComponent = inventory.activeItem.GetComponent<Item>();
             if (itemComponent != null)
             {
-                itemComponent.primaryActionSpell = graphToEquip;
+                itemComponent.EquipSpellToPrimary(currentGraph);
                 Debug.Log($"SUCCESS: Equipped '{graphToEquip.name}' to '{itemComponent.name}' on '{inventory.gameObject.name}");
             }
         }
@@ -1505,6 +1311,9 @@ public class SpellGraphController : MonoBehaviour
 
     public void EditSpellFromActiveItem()
     {
+        // TODO:
+        // check if this works properly.
+        // Needs to make sure you communicate.
         SpellGraph spellToEdit = null;
 
         if (inventory != null && inventory.activeItem != null)

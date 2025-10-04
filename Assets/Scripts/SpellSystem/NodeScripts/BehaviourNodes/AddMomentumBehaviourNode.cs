@@ -27,7 +27,15 @@ public class AddMomentumSBMono : SpellBehaviour
 
         if (rb != null)
         {
-            rb.AddForce(velocity, ForceMode.VelocityChange); //ignores mass (ie adds momentum)
+            rb.AddForce(velocity/Mathf.Sqrt(mass), ForceMode.VelocityChange); //ignores mass (ie adds momentum)
+            // just applies velocity, not momentum since mass is ignored.
+            // This means that you can fling any-weight object at the same initial velocity.
+            // However, including mass in the denominator makes flings extremely weak
+            // if you include a size rune, since the object gets super heavy.
+            // It feels like a heavier object should be more difficult to fling with
+            // this rune, but currently not the case.
+            // Could try dividing by mass to get back to a momentum;
+            // or dividing by sqrt(mass) or similar to make mass not as impactful.
         }
     }
 }

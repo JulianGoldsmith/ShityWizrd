@@ -21,8 +21,8 @@ public class CharacterAnimationController : GenericAnimationController
 
     [Header("Arm IK")]
     [SerializeField] private bool enableArmIK = true;
-    [SerializeField] private Transform leftHandHolder;
-    [SerializeField] private Transform rightHandHolder;
+    [SerializeField] public Transform leftHandHolder;
+    [SerializeField] public Transform rightHandHolder;
 
     private void Awake()
     {

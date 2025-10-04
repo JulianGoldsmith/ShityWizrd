@@ -33,7 +33,8 @@ public class GameController : MonoBehaviour
     {
         if(spellEditorWorld != null)
             spellEditorWorld.SetActive(false);
-        EnableGameplayInput();
+        if (playerInput != null)
+            EnableGameplayInput();
     }
 
     void Update()

@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using System.Security.Cryptography;
+using System.Runtime.Serialization.Formatters;
+using Fusion;
+using Unity.VisualScripting.Antlr3.Runtime.Tree;
 
 /// <summary>
 /// Main script controlling player casting, ie sword swing, cast spell etc, works with player movement controller and player animation controller
@@ -14,49 +17,92 @@ using System.Security.Cryptography;
 [RequireComponent(typeof(InventoryManager))]
 public class PlayerCastActionController : CastActionController
 {
-    public Transform cameraTrans;
+    //public Transform cameraTrans;
+    NetworkButtons prior_buttons;
+    int primary_attack_pressed { get; set; }
+    int primary_attack_released { get; set; }
+    Quaternion lookDirection;
 
-    private void Awake()
+    public override void Spawned()
     {
         if (animator == null) animator = GetComponentInChildren<Animator>();
         if (inventory == null) inventory = GetComponent<InventoryManager>();
-        if (cameraTrans == null)
-        {
-            cameraTrans = Camera.main.transform;
-        }
+        //if (cameraTrans == null)
+        //{
+        //    cameraTrans = Camera.main.transform;
+        //}
         if (animationController != null)
         {
             animationController = GetComponentInChildren<GenericAnimationController>();
             animationController.OnAnimationEventTriggered += HandleAnimationEvent;
         }
-
     }
+    public override void FixedUpdateNetwork()
+    {
+        if (GetInput(out NetworkInputData data))
+        {
+            if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
+            {
+                primary_attack_pressed++;
+            }
+            if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
+            {
+                primary_attack_released++;
+            }
+            prior_buttons = data.buttons;
+
+            lookDirection = data.lookRotation;
+        }
+    }
+
+    public void FixedUpdate()
+    {
+        if (primary_attack_pressed > 0)
+        {
+            if (currentAttackCooldown <= 0)
+            {
+                primary_attack_pressed = 0;
+                Debug.Log("Try start cast");
+                StartCast(primary_attack_released > 0);
+                if (primary_attack_released > 0)
+                    primary_attack_released = 0;
+            }
+        }
+        else if (primary_attack_released > 0)
+        {
+            primary_attack_released = 0;
+            EndCast();
+        }
+    }
+
 
     public void OnPrimaryAttack(InputAction.CallbackContext context)
     {
-        
-        switch (context.phase)
-        {
-            case InputActionPhase.Started:
+        // Removing this for now.
+        // Deal with it later.
 
-                if (currentAttackCooldown > 0)
-                {
-                    if (comboTimer > 0)
-                    {
-                        primaryAttackReleaseBuffered = false;
-                        primaryAttackBuffered = true;
+        //switch (context.phase)
+        //{
+        //    case InputActionPhase.Started:
+
+        //        if (currentAttackCooldown > 0)
+        //        {
+        //            if (comboTimer > 0)
+        //            {
+        //                primaryAttackReleaseBuffered = false;
+        //                primaryAttackBuffered = true;
                         
-                    }
-                    return; // Do nothing else
-                }
-                StartCast(false);
-                break;
+        //            }
+        //            return; // Do nothing else
+        //        }
+        //        StartCast(false);
+        //        break;
 
-            case InputActionPhase.Canceled:
+        //    case InputActionPhase.Canceled:
 
-                EndCast();
-                break;
-        }
+        //        EndCast();
+        //        break;
+        //}
         
     }
 
@@ -70,13 +116,22 @@ public class PlayerCastActionController : CastActionController
 
     public override Vector3 GetAimTarget()
     {
-        Ray ray = cameraTrans.GetComponent<Camera>().ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
-        return Physics.Raycast(ray, out RaycastHit hit, 100f) ? hit.point : ray.GetPoint(100f);
+        // This won't work right now.
+        RaycastHit hit;
+        PlayerCastActionController controller = GetComponent<PlayerCastActionController>();
+        if (controller == null)
+            return lookDirection * Vector3.forward + transform.position;
+        Transform eyes = controller.transform.Find("Eyes").transform;
+        Physics.Raycast(eyes.position, lookDirection * Vector3.forward, out hit);
+        //Ray ray = cameraTrans.GetComponent<Camera>().ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+        //return Physics.Raycast(ray, out RaycastHit hit, 100f) ? hit.point : ray.GetPoint(100f);
+        Vector3 fallback = lookDirection * Vector3.forward * 100f + eyes.position;
+        return Physics.Raycast(eyes.position, lookDirection * Vector3.forward, out hit) ? hit.point : fallback;
     }
 
     public override Vector3 GetForward()
     {
-        return cameraTrans.forward;
+        return lookDirection * Vector3.forward;
     }
 
     

@@ -2,16 +2,16 @@ using System;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "MaterialTypeNode", menuName = "SpellNodes/ValueNodes/Material Type Node")]
-public class MaterialTypeNode: ValueNode<PhysicsObjectMaterial>
+public class MaterialTypeNode: ValueNode<PHYSICS_OBJECT_MATERIAL>
 {
-    public PhysicsObjectMaterial material;
+    public PHYSICS_OBJECT_MATERIAL material;
     public DataTypeTag tag;
 
-    public override Type ValueType => typeof(PhysicsObjectMaterial);
+    public override Type ValueType => typeof(PHYSICS_OBJECT_MATERIAL);
     public override DataTypeTag ValueTag => tag;
 
-    public override ValueModifier<PhysicsObjectMaterial> GetModifier(SpellState state)
+    public override ValueModifier<PHYSICS_OBJECT_MATERIAL> GetModifier(SpellState state)
     {
-        return new ValueModifier<PhysicsObjectMaterial>(material, ValueModifierType.Set);
+        return new ValueModifier<PHYSICS_OBJECT_MATERIAL>(material, ValueModifierType.Set);
     }
 }

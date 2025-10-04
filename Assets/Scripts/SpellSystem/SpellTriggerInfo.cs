@@ -1,3 +1,4 @@
+using Fusion;
 using UnityEngine;
 
 //holds information on the event that triggered the core of the spell 
@@ -14,7 +15,7 @@ public class SpellTriggerInfo
     public Vector3 TriggerVector { get; private set; } //represents things like impactVector or throwVector. 
     
 
-    public SpellTriggerInfo(bool isCast, SpellState state, Vector3 position, Quaternion rotation, Quaternion normal, Vector3 tiggerVector, GameObject hitObject = null)
+    public SpellTriggerInfo(PlayerRef playerref, bool isCast, SpellState state, Vector3 position, Quaternion rotation, Quaternion normal, Vector3 tiggerVector, GameObject hitObject = null)
     {
         IsCast = isCast;
         State = state;

@@ -2,8 +2,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
+using Fusion;
 
-public class InventoryManager : MonoBehaviour
+public class InventoryManager : NetworkBehaviour
 {
     //public List<GameObject> equippedItems = new List<GameObject>();
 
@@ -15,10 +16,10 @@ public class InventoryManager : MonoBehaviour
 
     public GameObject activeItem;
 
-
+    public Transform snapPoint;
 
     [SerializeField] private PhysicsHandController handController;
-    [SerializeField] private Transform playerCamera;
+    //[SerializeField] private Transform playerCamera;
 
     [SerializeField] private float pickupRadius = 3f;
     [SerializeField] private float pickupAngle = 45f;
@@ -27,9 +28,14 @@ public class InventoryManager : MonoBehaviour
     private Item currentItemInHand = null;
     private Item potentialItemToPickup = null;
 
+    Quaternion lookRotation;
+    int pickupkey_pressed = 0;
+    int dropkey_pressed = 0;
+    NetworkButtons prior_buttons; 
+
     private void Awake()
     {
-
+        //playerCamera = Camera.main.transform;
     }
 
     void Start()
@@ -45,17 +51,53 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
+
+    public override void FixedUpdateNetwork()
+    {
+        if (GetInput(out NetworkInputData data))
+        {
+            lookRotation = data.lookRotation;
+
+            if (data.buttons.WasPressed(prior_buttons, EInputButton.PICKUP))
+            {
+                pickupkey_pressed++;
+            }
+            if (data.buttons.WasReleased(prior_buttons, EInputButton.DROP))
+            {
+                dropkey_pressed++;
+            }
+            prior_buttons = data.buttons;
+        }
+    }
+
+    public void FixedUpdate()
+    {
+        if (pickupkey_pressed > 0)
+        {
+            pickupkey_pressed = 0;
+            PickupItem();
+        }
+        else if(dropkey_pressed > 0)
+        {
+            dropkey_pressed = 0;
+            DropItem();
+        }
+    }
+
     private void LookForItems()
     {
-        Collider[] nearbyItems = Physics.OverlapSphere(playerCamera.position, pickupRadius, itemLayer);
+        // before, it was camera position. For simplicity, put it as transform position,
+        // though that will be incorrect since it has a different anchor to the camera.
+        Collider[] nearbyItems = Physics.OverlapSphere(transform.position, pickupRadius, itemLayer);
         Item bestCandidate = null;
         float bestDot = -1f;
 
         foreach (var col in nearbyItems)
         {
 
-            Vector3 directionToItem = (col.transform.position - playerCamera.position).normalized;
-            float dot = Vector3.Dot(playerCamera.forward, directionToItem);
+            Vector3 directionToItem = (col.transform.position - transform.position).normalized;
+            Vector3 forwardDir = lookRotation * Vector3.forward;
+            float dot = Vector3.Dot(forwardDir, directionToItem);
 
             if (dot > Mathf.Cos(pickupAngle * Mathf.Deg2Rad))
             {
@@ -85,7 +127,7 @@ public class InventoryManager : MonoBehaviour
     private void PickupItem()
     {
         if (potentialItemToPickup == null) return;
-
+        
         currentItemInHand = potentialItemToPickup;
         potentialItemToPickup = null;
 
@@ -100,13 +142,14 @@ public class InventoryManager : MonoBehaviour
         Transform itemHandle = currentItemInHand.primaryHandle;
 
 
-        GameObject snapPoint = new GameObject("ItemSnapPoint");
-        snapPoint.transform.position = itemHandle.position;
-        snapPoint.transform.rotation = itemHandle.rotation;
+        //GameObject snapPoint = new GameObject("ItemSnapPoint");
+        snapPoint.position = itemHandle.position;
+        snapPoint.rotation = itemHandle.rotation;
 
-        currentItemInHand.transform.SetParent(snapPoint.transform);
-
-        snapPoint.transform.SetParent(handProxy);
+        // Can set parent, but the parent needs to also be a networkbehaviour.
+        // So can't do this "create a temporary snapPoint" thing.
+        currentItemInHand.transform.SetParent(snapPoint);
+        //snapPoint.SetParent(handProxy);
 
         if (currentItemInHand.secondaryHandle != null)
         {
@@ -129,16 +172,18 @@ public class InventoryManager : MonoBehaviour
             handController.ReleaseHand(handController.leftHand);
         }
 
-        Transform snapPoint = currentItemInHand.transform.parent;
+        //Transform snapPoint = currentItemInHand.transform.parent;
         currentItemInHand.transform.SetParent(null);
-        Destroy(snapPoint.gameObject);
+        //Destroy(snapPoint.gameObject);
+        snapPoint.localPosition = Vector3.zero;
         
         Rigidbody itemRb = currentItemInHand.GetComponent<Rigidbody>();
         itemRb.GetComponent<Collider>().enabled = true;
         itemRb.isKinematic = false;
 
         itemRb.linearVelocity = GetComponent<Rigidbody>().linearVelocity;
-        itemRb.AddForce(playerCamera.forward * 5f, ForceMode.Impulse);
+        Vector3 forwardDir = lookRotation * Vector3.forward;
+        itemRb.AddForce(forwardDir * 5f, ForceMode.Impulse);
 
         handController.SetHandState(handController.rightHand, handController.defaultHandState);
         currentItemInHand = null;
@@ -147,21 +192,25 @@ public class InventoryManager : MonoBehaviour
     }
 
     // --- Input System Handlers ---
-    public void OnPickup(InputAction.CallbackContext context)
-    {
-        if (context.performed && currentItemInHand == null && potentialItemToPickup != null)
-        {
-            PickupItem();
-        }
-    }
+    //public void OnPickup(InputAction.CallbackContext context)
+    //{
+    //    if (!HasInputAuthority)
+    //        return;
+    //    if (context.performed && currentItemInHand == null && potentialItemToPickup != null)
+    //    {
+    //        PickupItem();
+    //    }
+    //}
 
-    public void OnDrop(InputAction.CallbackContext context)
-    {
-        if (context.performed && currentItemInHand != null)
-        {
-            DropItem();
-        }
-    }
+    //public void OnDrop(InputAction.CallbackContext context)
+    //{
+    //    if (!HasInputAuthority)
+    //        return;
+    //    if (context.performed && currentItemInHand != null)
+    //    {
+    //        DropItem();
+    //    }
+    //}
 
 
     /*

@@ -1,7 +1,8 @@
 ﻿using System; 
 using UnityEngine;
+using Fusion;
 
-public class PhysicsHandController : MonoBehaviour
+public class PhysicsHandController : NetworkBehaviour
 {
 
     [Serializable]
@@ -34,29 +35,106 @@ public class PhysicsHandController : MonoBehaviour
     private Animator characterAnimator;
     private Rigidbody controller;
 
-    public Transform cameraTrans;
-  
+    //public Transform cameraTrans;
+    Quaternion lookRotation;
+    public Transform offset_anchor;
 
     public HandState defaultHandState, grabHandState;
 
-    private void Awake()
+    public override void Spawned()
+    {
+        // TODO
+        // THIS IS HACKY AND NEEDS TO BE DONE PROPERLY LATER.
+        NetworkObject hands = null;
+        GameObject[] allhands = GameObject.FindGameObjectsWithTag("Hands");
+
+        NetworkObject player = transform.parent.GetComponent<NetworkObject>();
+
+        for (int i = 0; i < allhands.Length; i++)
+        {
+            // Check if the same input authority, if so it's a match and
+            // use that.
+            // Bit of a hack, need to fix/cleanup later.
+            if (allhands[i].GetComponent<NetworkObject>().InputAuthority == player.InputAuthority)
+            {
+                hands = allhands[i].GetComponent<NetworkObject>();
+                break;
+            }
+        }
+        if (hands == null)
+        {
+            Debug.LogError("Hands not found");
+            return;
+        }
+
+        offset_anchor = transform.parent.Find("Eyes");
+
+        GameObject objlefthand = hands.transform.Find("LeftHand").gameObject;
+        leftHand.physicsProxy = objlefthand.GetComponent<Rigidbody>();
+        if (HasInputAuthority)
+            leftHand.handTarget = GameObject.Find("LeftHandAnchor").transform;
+        else
+            leftHand.handTarget = offset_anchor;
+
+        leftHand.defaultAnchor = leftHand.handTarget;
+        leftHand.animationManager = objlefthand.GetComponentInChildren<HandAnimationController>();
+
+        GameObject objrighthand = hands.transform.Find("RightHand").gameObject;
+        rightHand.physicsProxy = objrighthand.GetComponent<Rigidbody>();
+        if (HasInputAuthority)
+            rightHand.handTarget = GameObject.Find("RightHandAnchor").transform;
+        else
+            rightHand.handTarget = offset_anchor;
+
+        rightHand.defaultAnchor = rightHand.handTarget;
+        rightHand.animationManager = objrighthand.GetComponentInChildren<HandAnimationController>();
+
+
+        CharacterAnimationController cac = GetComponent<CharacterAnimationController>();
+        cac.leftHandHolder = objlefthand.transform;
+        cac.rightHandHolder = objrighthand.transform;
+        
+
+        InventoryManager iMan = GetComponentInParent<InventoryManager>();
+        iMan.snapPoint = rightHand.physicsProxy.transform.Find("snappoint");
+
+        Init();
+
+        if (!HasInputAuthority)
+            return;
+
+        //cameraTrans = Camera.main.transform;
+
+        CharacterCameraController ccc = Camera.main.GetComponent<CharacterCameraController>();
+        ccc.inputController = GetComponentInParent<PlayerInputController>();
+        ccc.characterMovementController = GetComponentInParent<CharacterMovementController>();
+        ccc.animationController = cac;
+        ccc.target = transform.parent;
+        ccc.firstPersonAnchor = transform.parent.Find("Eyes");
+
+        object[] sgcs = GameObject.FindObjectsOfTypeAll(typeof(SpellGraphController));
+        if (sgcs.Length > 0)
+        {
+            (sgcs[0] as SpellGraphController).inventory = GetComponentInParent<InventoryManager>();
+        }
+    }
+
+    private void Init() 
     {
         characterAnimator = GetComponent<Animator>();
         controller = characterAnimator.gameObject.GetComponentInParent<Rigidbody>();
 
-    }
-
-    private void Start() 
-    {
-  
         leftHand.previousHandPosition = leftHand.handTarget.position;
         rightHand.previousHandPosition = rightHand.handTarget.position;
         rightHand.handBobTimer = Mathf.PI;
-        SetHandState(leftHand, leftHand.currentHandState ?? defaultHandState);
-        SetHandState(rightHand, rightHand.currentHandState ?? defaultHandState);
+        SetHandState(leftHand, defaultHandState);
+        SetHandState(rightHand, defaultHandState);
         rightHand.handTarget = rightHand.defaultAnchor;
         leftHand.handTarget = leftHand.defaultAnchor;
     }
+
+    [Networked] Vector3 left_hand_target { get; set; }
+    [Networked] Vector3 right_hand_target { get; set; }
 
     private void LateUpdate()
     {
@@ -65,31 +143,58 @@ public class PhysicsHandController : MonoBehaviour
             UpdateHandTarget(rightHand, false);
             UpdateHandTarget(leftHand, true);
         }
-
     }
-
+    bool initialized_position = false;
     private void FixedUpdate()
     {
+        if(!initialized_position)
+        {            
+            rightHand.physicsProxy.MovePosition(rightHand.handTarget.position);
+            leftHand.physicsProxy.MovePosition(leftHand.handTarget.position);
+            initialized_position = true;
+        }
+
+
+
         if (!GameController.Instance.isEditorActive)
         {
-            ApplyHandPhysics(rightHand);
-            ApplyHandPhysics(leftHand);
+            ApplyHandPhysics(rightHand,false);
+            ApplyHandPhysics(leftHand, true);
+        }
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        if (GetInput(out NetworkInputData data))
+        {
+            lookRotation = data.lookRotation;
         }
     }
 
     private void UpdateHandTarget(Hand hand, bool isLeft)
     {
+        // CHANGED TO BE BASED ON INPUT LOOK DIRECTION
+        // RATHER THAN CAMERA.
+        // Should be consistent, but better for networking.
         if (hand.handTarget == null) return;
 
         if (hand.temporaryTarget != null)
         {
-            if (hand.lockedToTarget) { 
+            if (hand.lockedToTarget)
+            {
                 hand.physicsProxy.transform.position = hand.temporaryTarget.position;
                 hand.physicsProxy.transform.rotation = hand.temporaryTarget.rotation;
             }
 
-            hand.handTarget.position = hand.temporaryTarget.position;
-            hand.handTarget.rotation = hand.temporaryTarget.rotation;
+            //hand.handTarget.position = hand.temporaryTarget.position;
+
+
+            if (isLeft)
+                left_hand_target = hand.temporaryTarget.position;
+            else
+                right_hand_target = hand.temporaryTarget.position;
+
+            //hand.handTarget.rotation = hand.temporaryTarget.rotation;
             return;
         }
 
@@ -106,9 +211,14 @@ public class PhysicsHandController : MonoBehaviour
 
         offset += handBobOffset;
 
-        Vector3 targetPosition = cameraTrans.position + (cameraTrans.rotation * (offset));
-        hand.handTarget.position = targetPosition;
+        Vector3 targetPosition = offset_anchor.position + (lookRotation * (offset));
 
+        if (isLeft)
+            left_hand_target = targetPosition;
+        else
+            right_hand_target = targetPosition;
+
+        //hand.handTarget.position = targetPosition;
 
         if (hand.temporaryTargetRotation.HasValue)
         {
@@ -123,16 +233,24 @@ public class PhysicsHandController : MonoBehaviour
                 finalRotationOffset.z *= -1;
             }
             Quaternion offsetRotation = Quaternion.Euler(finalRotationOffset);
-            hand.handTarget.rotation = cameraTrans.rotation * offsetRotation;
+            hand.handTarget.rotation = lookRotation * offsetRotation;
         }
     }
 
-    private void ApplyHandPhysics(Hand hand)
+    private void ApplyHandPhysics(Hand hand, bool isLeft)
     {
         if (hand.physicsProxy == null || hand.handTarget == null) return;
 
         Rigidbody rb = hand.physicsProxy;
-        Rigidbody body = controller; 
+        Rigidbody body = controller;
+
+        if(isLeft)
+            rb.MovePosition(left_hand_target);
+        else
+            rb.MovePosition(right_hand_target);
+
+        rb.MoveRotation(hand.handTarget.rotation);
+        return;
 
         if (hand.lockedToTarget)
         {
@@ -236,7 +354,7 @@ public class PhysicsHandController : MonoBehaviour
             handOffsetFromShoulder.z
         );
 
-        offset = cameraTrans.position + (cameraTrans.rotation * (offset));
+        offset = offset_anchor.position + (lookRotation * (offset));
         return offset;
     }
 

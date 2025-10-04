@@ -35,12 +35,10 @@ public class CharacterMovementController : MonoBehaviour
     private void Awake()
     {
         character = GetComponent<Character>();
+        cameraController = Camera.main.GetComponent<CharacterCameraController>();
     }
 
-    private void Update()
-    {
 
-    }
 
     private void FixedUpdate()
     {
