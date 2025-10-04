@@ -126,7 +126,7 @@ public enum SocketType
 
 public enum SocketDirection { Input, Output };
 
-public enum DataTypeTag { Generic, Speed, Damage, Radius, Force, Size, Lifetime }
+public enum DataTypeTag { Generic, Speed, Damage, Radius, Force, Size, Lifetime, Material }
 
 
 [System.Serializable]

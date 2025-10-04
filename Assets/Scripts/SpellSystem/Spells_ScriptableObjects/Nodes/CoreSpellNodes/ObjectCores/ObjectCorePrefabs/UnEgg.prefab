@@ -66,6 +66,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3256514463769092792}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -8759002806252319658}
   m_SourcePrefab: {fileID: 100100000, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
 --- !u!1 &7532608151074762406 stripped
 GameObject:
@@ -79,7 +82,7 @@ MeshCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7532608151074762406}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 3a2bd678dd03f7f47a8d20fb034b50ce, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -121,3 +124,18 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 3
+--- !u!114 &-8759002806252319658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7532608151074762406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9acb7e5524f89e40ba79623a859deae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  physicsObjectProperties:
+    physicsobjectmaterial: {fileID: 11400000, guid: d43d69f4e07018f4cad4bd4029482185, type: 2}
+    size: 1
