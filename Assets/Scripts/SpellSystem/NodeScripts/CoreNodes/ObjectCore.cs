@@ -1,3 +1,4 @@
+using Fusion;
 using System.Collections.Generic;
 using System.Reflection;
 using Unity.VisualScripting;
@@ -11,7 +12,12 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ObjectCore", menuName = "SpellNodes/CoreNodes/ObjectCore")]
 public class ObjectCore : CoreNode
 {
+    // Should this be a networkprefabref
+    // Should there be a generic objectcore networkprefabref,
+    // then we replace its components at run time? 
+    // or a unique networkprefabref per thing that can be spawned?
     public GameObject corePrefab;
+    public NetworkPrefabRef corePrefabRef;
 
     private bool base_values_from_dependencies_stored = false;
 
@@ -19,7 +25,7 @@ public class ObjectCore : CoreNode
     public SpellRotation CastSpawnRotation = SpellRotation.CasterRotation;
     public SpellPosition TriggerSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
-    
+
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
         ApplyPromotableValues(); //apply promotable values from connected runes 
@@ -29,7 +35,16 @@ public class ObjectCore : CoreNode
         Quaternion rot = SpellSystemHelpers.GetSpellRotation(
             triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
 
-        GameObject spellCore = Instantiate(corePrefab, pos, rot);
+        // Create a lambda expression to be ran onspawn, then replicated across instances.
+        NetworkRunner.OnBeforeSpawned beforespawned = (Runner, NObject) => InitialisePhysicsObjectOnSpawn(NObject, triggerInfo);
+
+        NetworkObject spellCore = BasicSpawner.Spawn(corePrefabRef, pos, rot, beforespawned);
+    }
+
+    public void InitialisePhysicsObjectOnSpawn(NetworkObject spellCore, SpellTriggerInfo triggerInfo)
+    {
+        // This is called by the spawner before replicating the networkobject
+        // across all instances.
 
         SpellCreatedPhysicsObject physicsObject = spellCore.GetComponent<SpellCreatedPhysicsObject>();
         if (physicsObject != null)
@@ -45,12 +60,10 @@ public class ObjectCore : CoreNode
                 AppendBaseValuesFromDependency(physicsObject.physicsObjectProperties);
                 base_values_from_dependencies_stored = true;
             }
-            ApplyPromotableValuesGeneric<SpellCreatedPhysicsObject>(physicsObject);
-            ApplyPromotableValuesGeneric<PhysicsObjectProperties>(physicsObject.physicsObjectProperties);
+            physicsObject = ApplyPromotableValuesGeneric<SpellCreatedPhysicsObject>(physicsObject);
+            physicsObject.physicsObjectProperties = ApplyPromotableValuesGeneric<PhysicsObjectProperties>(physicsObject.physicsObjectProperties);
             physicsObject.AssignProperties(this);
             physicsObject.InitialisePhysicsObject();
-
-            spellCore.transform.localScale *= physicsObject.physicsObjectProperties.size;
         }
 
 
@@ -58,7 +71,7 @@ public class ObjectCore : CoreNode
           $"CastPos={triggerInfo.State.CastPosition} Override?={triggerInfo.HasOverridePosition} " +
           $"TrigPos={triggerInfo.TriggerPoint} and spell core is {spellCore.transform.position}");*/
 
-        AttatchBehavioursAndTriggers(spellCore, triggerInfo);
+        AttatchBehavioursAndTriggers(spellCore.gameObject, triggerInfo);
     }
 
     public override List<SocketDefinition> GetSockets()

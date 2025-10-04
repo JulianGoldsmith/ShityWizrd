@@ -6,14 +6,14 @@ using System.Linq;
 using System;
 using System.Security.Cryptography;
 using NUnit.Framework.Interfaces;
-
+using Fusion;
 /// <summary>
 /// Main script controlling player casting, ie sword swing, cast spell etc, works with player movement controller and player animation controller
 /// </summary>
 
 
 [RequireComponent(typeof(InventoryManager))]
-public abstract class CastActionController : MonoBehaviour
+public abstract class CastActionController : NetworkBehaviour
 {
     public Animator animator;
     public InventoryManager inventory;
@@ -66,6 +66,8 @@ public abstract class CastActionController : MonoBehaviour
 
     public void StartCast(bool isAlreadyReleased)
     {
+        if (isCasting) return;
+
         if (inventory.activeItem == null) return;
 
         if (comboTimer <= 0 && !isAlreadyReleased)
@@ -104,7 +106,7 @@ public abstract class CastActionController : MonoBehaviour
         activeCasts.Add(newCast);
         isCasting = true;
         newCast.isHeld = true;
-
+        
         entryCast.OnCastStarted(newCast, this);
 
         primaryComboCounter++;
@@ -132,6 +134,7 @@ public abstract class CastActionController : MonoBehaviour
             primaryAttackReleaseBuffered = true;
             return;
         }
+        isCasting = false;
 
         _nextActionId++;
         SpellState castToEnd = null;
@@ -152,6 +155,8 @@ public abstract class CastActionController : MonoBehaviour
                 originalCastNode.OnCastCanceled(castToEnd, this); //calls the castCancelled function in the caster Node for clean up etc
             }
             activeCasts.Remove(castToEnd);
+            Debug.Log("REMOVED ACTIVE CAST");
+            Debug.Log(activeCasts.Count);
         }
     }
 
