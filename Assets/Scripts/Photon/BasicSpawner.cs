@@ -101,7 +101,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         static_runner = _runner;
 
         var runnerSimulatePhysics3D = gameObject.AddComponent<RunnerSimulatePhysics3D>();
-        runnerSimulatePhysics3D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateForward;
+        runnerSimulatePhysics3D.ClientPhysicsSimulation = ClientPhysicsSimulation.SimulateAlways;
 
         // Create the NetworkSceneInfo from the current scene
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);

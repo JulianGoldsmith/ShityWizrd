@@ -20,7 +20,7 @@ public class PhysicsObjectMaterial : ScriptableObject
     public float density; // affects mass, so inertia, moment of inertia, weight.
     public float hardness; // brittleness, affects sound
     public float elasticity; // bounciness during collisions
-    public float viscosity; // deformity of shape? does it droop and goop? (don't know how much that can be done).
+    public float brittleness; // how easily it is destroyed on collision.
     [Range(0,1)]public float stickiness; // defines collision friction. (dynamic friction)
 
     #endregion
@@ -31,6 +31,7 @@ public class PhysicsObjectMaterial : ScriptableObject
     [Header("Visuals")]
     public Material vfx_material;
     public bool casts_shadows = true;
+    public Color shatter_particle_color;
     #endregion
 }
 

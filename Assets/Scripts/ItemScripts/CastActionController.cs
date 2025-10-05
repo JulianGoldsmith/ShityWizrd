@@ -155,8 +155,6 @@ public abstract class CastActionController : NetworkBehaviour
                 originalCastNode.OnCastCanceled(castToEnd, this); //calls the castCancelled function in the caster Node for clean up etc
             }
             activeCasts.Remove(castToEnd);
-            Debug.Log("REMOVED ACTIVE CAST");
-            Debug.Log(activeCasts.Count);
         }
     }
 

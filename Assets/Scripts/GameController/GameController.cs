@@ -71,7 +71,7 @@ public class GameController : MonoBehaviour
     {
         isEditorActive = !spellEditorWorld.activeSelf;
         spellEditorWorld.SetActive(isEditorActive);
-
+        Debug.Log("ToggleSpellEditor");
         if (isEditorActive)
         {
             SpellGraphController.Instance.EditSpellFromActiveItem();
