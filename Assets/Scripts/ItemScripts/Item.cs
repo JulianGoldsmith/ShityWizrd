@@ -25,6 +25,7 @@ public class Item : NetworkBehaviour
 
     public Transform projectileSpawnPoint;
 
+    int my_player_id { get { return GetComponent<NetworkObject>().InputAuthority.PlayerId; } }
 
     #region Equipping & Communicating
     int sendingmessageid = 0;
@@ -38,6 +39,7 @@ public class Item : NetworkBehaviour
         primaryActionSpell = graph;
         string json = graph.ToJson();
 
+        int playerid = my_player_id;
         // TODO:
         // Additional cleaning (pre and post) of the JSON
         // to reduce bandwidth usage.
@@ -63,7 +65,7 @@ public class Item : NetworkBehaviour
             Buffer.BlockCopy(data, i * chunkSize, chunk, 0, size);
 
             // Send via RPC
-            RPC_SendJsonChunk(sendingmessageid, i, totalChunks, chunk);
+            RPC_SendJsonChunk(sendingmessageid, playerid,  i, totalChunks, chunk);
         }
     }
     public void EquipSpellToPrimaryFromJSON(string json)
@@ -76,8 +78,11 @@ public class Item : NetworkBehaviour
         }
     }
     [Rpc(sources: RpcSources.All, targets: RpcTargets.All)]
-    public void RPC_SendJsonChunk(int messageId, int chunkIndex, int totalChunks, byte[] chunkData)
+    public void RPC_SendJsonChunk(int messageId, int player_ref, int chunkIndex, int totalChunks, byte[] chunkData)
     {
+        if (my_player_id != player_ref)
+            return;
+
         if (messageId > receivingmessageid)
         {
             receivingmessageid = messageId;

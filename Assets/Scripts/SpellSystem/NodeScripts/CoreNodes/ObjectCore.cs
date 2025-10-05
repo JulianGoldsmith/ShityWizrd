@@ -19,6 +19,9 @@ public class ObjectCore : CoreNode
     public GameObject corePrefab;
     public NetworkPrefabRef corePrefabRef;
 
+    [Promotable("Lifetime", DataTypeTag.Lifetime)]
+    public float lifetime = 0;
+
     private bool base_values_from_dependencies_stored = false;
 
     public SpellPosition CastSpawnPosition = SpellPosition.CasterPosition;
@@ -72,6 +75,12 @@ public class ObjectCore : CoreNode
           $"TrigPos={triggerInfo.TriggerPoint} and spell core is {spellCore.transform.position}");*/
 
         AttatchBehavioursAndTriggers(spellCore.gameObject, triggerInfo);
+
+        if(physicsObject != null)
+        {
+            // To catch initial momenta, etc.
+            physicsObject.InitialiseAfterBehavioursAndTriggers();
+        }
     }
 
     public override List<SocketDefinition> GetSockets()

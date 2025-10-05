@@ -1,4 +1,3 @@
-using System.Timers;
 using UnityEngine;
 using Fusion;
 
@@ -34,7 +33,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         // Just re-init the object.
         // This includes assigning properties as well
-        Debug.Log("Physics changed.");
         InitialisePhysicsObject();
     }
     public override void Spawned()
@@ -42,6 +40,8 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // When it spawns, ensure the properties are mapped.
         base.Spawned();
         InitialisePhysicsObject();
+
+        current_bonkedness = starting_bonkedness;
     }
     #endregion
 
@@ -55,6 +55,15 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             UpdatePhysicsMaterial(col.material);
         UpdateVisuals();
         ModifyTransform();
+    }
+    public void InitialiseAfterBehavioursAndTriggers()
+    {
+        // Called after behaviours and triggers have all been attached
+        // and initialised.
+        // Made this to catch initial momentum, but doesn't
+        // actually work because force is applied, but velocity hasn't
+        // changed yet.
+
     }
     public Rigidbody UpdateRigidbody(Rigidbody rb)
     {
@@ -120,10 +129,21 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     }
     #endregion
 
+
     #region Collisions
     // additional things to happen on collision.
     // [placeholder]
+    void OnCollisionEnter(Collision collision)
+    {
+        if (!HasStateAuthority)
+            return;
 
+        float bonk_amount = BonkAmount(collision.impulse.magnitude);
+        if (IfGetBonked(bonk_amount))
+        {
+            OnBonk(bonk_amount);
+        }
+    }
     #endregion
 
     #region Halo Collisions
@@ -131,15 +151,18 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     // to allow sticking to objects.
     public void OnHaloEnter(Collider other)
     {
-        
+        if (!HasStateAuthority)
+            return;
     }
     public void OnHaloExit(Collider other)
     {
-
+        if (!HasStateAuthority)
+            return;
     }
     public void OnHaloStay(Collider other)
     {
-
+        if (!HasStateAuthority)
+            return;
         // If sticky, apply a drag force while halo
         // collider is being triggered.
         // Note that current implementation means it gets pinged
@@ -151,6 +174,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         OnStick(other);
     }
     #endregion
+
 
     #region Material Physics
     void OnStick(Collider other)
@@ -272,9 +296,64 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     // [placeholder]
     // what happens when the object is 'bonked' (hit in a collision).
     // different implementations for players, enemies, objects, spells.
+
+    // bonkedness is the standin for consciousness (player)
+    // and health (object).
+    [Networked] public float current_bonkedness { get; set; }
+    
+    // Everything has 100 starting.
+    private const float starting_bonkedness = 100f;
+    private const float bonk_threshold = 10.0f;
+    protected bool zero_bonkedness { get { return current_bonkedness <= 0.0f;} }
+    bool IfGetBonked(float bonk_amount)
+    {
+        // Consider what the threshold should be.
+        // Since, as is, a heavier object gets a greater bonk when it hits the ground...
+        // Should it just be velocity based?
+        // But then 
+        return bonk_amount > bonk_threshold;
+    }
+    float BonkAmount(float collision_impulse)
+    {
+        // Depends on size and brittleness.
+        // - higher size means more effective health
+        // - higher brittleness means lower effective health.
+        float mass = physicsObjectProperties.mass > 0 ? physicsObjectProperties.mass : 1.0f;
+        return 2 * 25f * collision_impulse * 
+            physicsObjectProperties.physicsobjectmaterial.brittleness /
+            mass;
+    }
+
+    void OnBonk(float bonk_amount)
+    {
+        current_bonkedness -= bonk_amount;
+        Debug.Log($"new bonkedness: {current_bonkedness} {bonk_amount}");
+        // Do stuff when zero-bonkedness.
+        // Different for object versus player.
+
+        // instead now checking within fixedupdatenetwork 
+        // if zero bonkedness.
+        //if (zero_bonkedness)
+        //{
+        //    OnZeroBonk(bonk_amount);
+        //}
+    }
+    protected virtual void OnZeroBonk(float bonk_amount)
+    {
+
+    }
+
     #endregion
 
     #region Sound
     // [placeholder]
+    #endregion
+
+    #region Despawning
+    protected virtual void DespawnObject()
+    {
+        if (HasStateAuthority)
+            Runner.Despawn(Object);
+    }
     #endregion
 }
