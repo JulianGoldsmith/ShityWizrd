@@ -1,11 +1,14 @@
 using Fusion;
+using Fusion.Addons.Physics;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.VisualScripting;
 using UnityEngine;
-using System;
+using static Fusion.NetworkBehaviour;
+using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 
 public class Item : NetworkBehaviour
 {
@@ -19,12 +22,28 @@ public class Item : NetworkBehaviour
 
     public Transform primaryHandle, secondaryHandle;
 
+    [Header("Pickup Variables")]
+    public NetworkRigidbody3D networkedRB;
+
+    public Transform itemModelAndChildComponents;
+
+    [HideInInspector] bool isKinematic;
+    [HideInInspector] bool collideractive;
+    Vector3 secretHiddenSpot = new Vector3(0, 200, 0); //lol dont look here
+
     //public GameObject hitbox;
     [Header("Hitbox ponts for melee sweep")]
     public Transform weaponBase, weaponEnd;
 
     public Transform projectileSpawnPoint;
 
+    [Networked] public NetworkObject HoldingPlayer { get; set; }
+    public NetworkObject lastHoldingPlayer;
+
+    [Networked] public int HolderChangedCount {get; set; }
+
+
+    private ChangeDetector _changeDetector;
 
     #region Equipping & Communicating
     int sendingmessageid = 0;
@@ -100,19 +119,18 @@ public class Item : NetworkBehaviour
     }
     #endregion
 
-
     public void LoadSpells()
     {
 
         if (!string.IsNullOrEmpty(primarySpellID))
         {
-            primaryActionSpell = SpellGraphController.Instance.GetSpellFromAssestsByName(primarySpellID);
+            //primaryActionSpell = SpellGraphController.Instance.GetSpellFromAssestsByName(primarySpellID);
         }
 
 
         if (!string.IsNullOrEmpty(secondarySpellID))
         {
-            secondaryActionSpell = SpellGraphController.Instance.GetSpellFromAssestsByName(secondarySpellID);
+            //secondaryActionSpell = SpellGraphController.Instance.GetSpellFromAssestsByName(secondarySpellID);
         }
     }
 
@@ -121,4 +139,132 @@ public class Item : NetworkBehaviour
         LoadSpells();
     }
 
+    public override void Spawned()
+    {
+        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+        networkedRB = this.GetComponent<NetworkRigidbody3D>();
+    }
+
+    public override void Render()
+    {
+        foreach (var change in _changeDetector.DetectChanges(this))
+        {
+            switch (change)
+            {
+                case nameof(HolderChangedCount):
+                    if(!HasStateAuthority)
+                        PickUpOrDropItem();
+                    break;
+            }
+        }
+        lastHoldingPlayer = HoldingPlayer;
+    }
+
+    public void PickUpOrDropItem()
+    {
+        if(HoldingPlayer != null) //pickup 
+        {
+            PickUpItem(HoldingPlayer);
+        }
+        else //drop
+        {
+            DropItem(lastHoldingPlayer);
+        }
+    }
+
+    public void PickUpItem(NetworkObject playerObject)
+    {
+        
+        CasheNetworkedRBSettings();
+        //If we have state authority then we should disable the rb (isKinematic) and teleport it to 000 and unparent it so it stops transmitting move
+        this.transform.parent = null;
+
+        if (HasStateAuthority)
+        {
+            HoldingPlayer = playerObject;
+            HolderChangedCount++;
+            networkedRB.RBIsKinematic = true;
+            networkedRB.Teleport(secretHiddenSpot, Quaternion.identity);
+        }
+
+        //Everyone takes the child transform (ie without the networked RB) and puts it in their hand.
+        if (playerObject.TryGetComponent(out NetworkedHandsController hands))
+        {
+            Debug.Log($"Holding player {playerObject} picked up item {this.name}");
+
+            Transform handPalm = hands.rightHand.palmTransform;
+            Transform itemHandle = this.primaryHandle;
+
+            
+
+            Quaternion handleRelRot = Quaternion.Inverse(itemModelAndChildComponents.transform.rotation) * itemHandle.rotation;
+            Vector3 handleRelPos = Quaternion.Inverse(itemModelAndChildComponents.transform.rotation) * (itemHandle.position - itemModelAndChildComponents.transform.position);
+            Quaternion modelRot = (handPalm.rotation * Quaternion.Euler(hands.pickUpRotOffset) *  Quaternion.Inverse(handleRelRot));
+            Vector3 modelPos = handPalm.position - (modelRot * handleRelPos);
+
+            itemModelAndChildComponents.transform.SetPositionAndRotation(modelPos, modelRot);
+
+            itemModelAndChildComponents.transform.SetParent(handPalm);
+
+            //Quaternion handleRotationOffset = Quaternion.Inverse(itemHandle.rotation) * transform.rotation;
+            //itemModelAndChildComponents.transform.rotation = handPalm.rotation * handleRotationOffset;
+
+            //itemModelAndChildComponents.transform.localPosition = (transform.position - itemHandle.position);
+
+
+            playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = this;
+            hands.SetHandTarget_ToHold(false, heldHandState);
+        }
+
+        DisableNetworkedRB();
+    }
+    
+    public void DropItem(NetworkObject playerObject)
+    {
+        if (HasStateAuthority)
+        {
+            HoldingPlayer = null;
+            HolderChangedCount++;
+            networkedRB.RBIsKinematic = false;
+            networkedRB.Teleport(playerObject.GetComponent<NetworkedHandsController>().rightHand.transform.position, itemModelAndChildComponents.rotation);
+            Debug.Log($"Item {this.name} at position {transform.position}, item pos on drop {itemModelAndChildComponents.position}");
+            //transform.position = itemModelAndChildComponents.position; //had some strange thing where it wasnt moving so added this. 
+        }
+
+        Debug.Log($"dropped item {this.name}");
+
+        itemModelAndChildComponents.SetParent(this.transform);
+
+        transform.SetParent(null);
+
+        itemModelAndChildComponents.localPosition = Vector3.zero;
+        itemModelAndChildComponents.localRotation = Quaternion.identity;
+
+        if (playerObject != null)
+        {
+            playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = null;
+            playerObject.GetComponent<NetworkedHandsController>().SetHandTarget_ToArmature(false);
+        }
+
+        RestoreNetworkedPhysicsSettings();
+
+    }
+
+    public void CasheNetworkedRBSettings()
+    {
+        isKinematic = networkedRB.Rigidbody.isKinematic;
+        collideractive = networkedRB.GetComponent<Collider>().enabled;
+    }
+
+    public void DisableNetworkedRB()
+    {
+        networkedRB.Rigidbody.isKinematic = true;
+        networkedRB.GetComponent<Collider>().enabled = false;
+    }
+
+    public void RestoreNetworkedPhysicsSettings()
+    {
+        networkedRB.Rigidbody.isKinematic = isKinematic;
+        networkedRB.GetComponent<Collider>().enabled = collideractive;
+    }
 }

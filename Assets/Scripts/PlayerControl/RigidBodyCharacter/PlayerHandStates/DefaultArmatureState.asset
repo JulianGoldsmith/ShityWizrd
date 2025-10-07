@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1a1cd344325b20a43a0af910272df265, type: 3}
-  m_Name: DefaultNetworkHansState
+  m_Name: DefaultArmatureState
   m_EditorClassIdentifier: 
-  positionSpringStrength: 300
-  positionSpringDamper: 10
+  positionSpringStrength: 20
+  positionSpringDamper: 1000
   inertiaStrength: 0
-  rotationSpringStrength: 125
-  rotationSpringDamper: 12
-  handOffsetFromEyes: {x: 0.18, y: -0.19, z: 0.35}
-  handRotationOffset: {x: -41.4, y: 141.2, z: 46.1}
+  rotationSpringStrength: 100
+  rotationSpringDamper: 20
+  handOffsetFromEyes: {x: 0.3, y: -0.15, z: 0.57}
+  handRotationOffset: {x: -36.8, y: 141.3, z: 415}
   handBobSpeed: 1
   handBobAmountX: 0.05
   handBobAmountY: 0.06
@@ -27,29 +27,28 @@ MonoBehaviour:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
-      inSlope: 3.3337858
-      outSlope: 3.3337858
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0.04568902
-    - serializedVersion: 3
-      time: 1
-      value: 10
-      inSlope: 9
-      outSlope: 9
+      value: 0
+      inSlope: 1
+      outSlope: 1
       tangentMode: 34
       weightedMode: 0
-      inWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  maxDistance: 10
-  maxStrengthMultiplier: 10
-  holdClip: {fileID: 0}
-  targetPickUpClip: {fileID: 0}
+  maxDistance: 1
+  maxStrengthMultiplier: 1
   idleClip: {fileID: -623603649343465320, guid: 6da7ebe7a8638f548a1051c713a68fc8, type: 3}
   windupClip: {fileID: 0}
+  holdClip: {fileID: 0}
   releaseClip: {fileID: 0}

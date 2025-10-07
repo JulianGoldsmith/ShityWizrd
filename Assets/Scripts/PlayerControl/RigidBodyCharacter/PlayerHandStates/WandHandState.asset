@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a1cd344325b20a43a0af910272df265, type: 3}
   m_Name: WandHandState
   m_EditorClassIdentifier: 
-  positionSpringStrength: 10
+  positionSpringStrength: 500
   positionSpringDamper: 25
+  inertiaStrength: 1
   rotationSpringStrength: 200
   rotationSpringDamper: 15
-  handOffsetFromShoulder: {x: 0.27, y: -0.33, z: 0.69}
-  handRotationOffset: {x: 19.08, y: -21.5, z: -80.4}
+  handOffsetFromEyes: {x: 0.25, y: -0.3, z: 0.4}
+  handRotationOffset: {x: -167, y: -78.2, z: -96.7}
   handBobSpeed: 1
   handBobAmountX: 0.1
   handBobAmountY: 0.1
@@ -56,7 +57,8 @@ MonoBehaviour:
     m_RotationOrder: 4
   maxDistance: 1
   maxStrengthMultiplier: 50
-  idleClip: {fileID: -1609281748187839663, guid: 0223915bc06d2b648abf4a3415809356, type: 3}
+  holdClip: {fileID: -1609281748187839663, guid: 6da7ebe7a8638f548a1051c713a68fc8, type: 3}
+  targetPickUpClip: {fileID: -1609281748187839663, guid: 6da7ebe7a8638f548a1051c713a68fc8, type: 3}
+  idleClip: {fileID: -1609281748187839663, guid: 6da7ebe7a8638f548a1051c713a68fc8, type: 3}
   windupClip: {fileID: 0}
-  holdClip: {fileID: 0}
   releaseClip: {fileID: 0}

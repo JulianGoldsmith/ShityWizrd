@@ -46,8 +46,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
             
 
-            Vector3 handsoffset = new Vector3(0,0,-1);
-            NetworkObject networkHandsObject = runner.Spawn(_handsPrefab, spawnPosition + handsoffset, Quaternion.identity, player);
+            //Vector3 handsoffset = new Vector3(0,0,-1);
+            //NetworkObject networkHandsObject = runner.Spawn(_handsPrefab, spawnPosition + handsoffset, Quaternion.identity, player);
 
             // We spawn hands first so that the player OnSpawned can grab all the required references.
             // Unfortunately, everyone needs the references so we can't just pass a OnBeforeSpawned delegate
@@ -115,7 +115,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         await _runner.StartGame(new StartGameArgs()
         {
             GameMode = mode,
-            SessionName = "TestRoom2",
+            SessionName = "TestRoom3",
             Scene = scene,
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });

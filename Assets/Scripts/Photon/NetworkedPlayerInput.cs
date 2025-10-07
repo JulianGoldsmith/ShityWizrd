@@ -7,7 +7,7 @@ using UnityEngine.Windows;
 public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
 {
     private NetworkInputData _accumulatedInput;
-    //private RagDollCameraController _characterCameraController;
+   // private CharacterCameraController _characterCameraController;
 
     public override void Spawned()
     {
@@ -16,9 +16,9 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         var networkEvents = Runner.GetComponent<NetworkEvents>();
         networkEvents.OnInput.AddListener(OnInput);
 
-        //GameController.Instance.playerInput = GetComponent<PlayerInput>();
+       // GameController.Instance.playerInput = GetComponent<PlayerInput>();
 
-        //_characterCameraController = this.GetComponent<RagDollCameraController>();
+        //_characterCameraController = Camera.main.GetComponent<CharacterCameraController>();
 
         //Cursor.lockState = CursorLockMode.Locked;
         //Cursor.visible = false;
@@ -92,11 +92,11 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             if (Keyboard.current.dKey.isPressed)
                 moveDirection += Vector3.right;
 
-           // moveDirection = moveDirection.normalized;
+            moveDirection = moveDirection.normalized;
 
-            //float sens = _characterCameraController != null ? _characterCameraController.mouseSensitivity : 2f;
+            //float sens = _characterCameraController != null ? _characterCameraController.cameraLookSensitivity : 2f;
             //Vector2 lookInput = PlayerInputController.global_look;
-            
+
             //float yaw = _accumulatedInput.yawpitch.x + lookInput.x * sens;// * Time.deltaTime;
             //float pitch = _accumulatedInput.yawpitch.y - lookInput.y * sens;// * Time.deltaTime;
 

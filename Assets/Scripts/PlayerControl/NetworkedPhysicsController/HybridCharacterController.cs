@@ -37,9 +37,15 @@ public class HybridCharacterController : NetworkBehaviour
     [Header("PD armature")]
     public List<PDSpring> pDSprings = new List<PDSpring>();
 
-    [Header("Networking")]
+    [Header("Network Input")]
     [Networked] public Vector2 moveInput { get; set; }
     [Networked] public Quaternion lookRot { get; set; }
+    [Networked] private NetworkButtons _lastButtonsInput { get; set; }
+    [Networked] private int _jumpCount { get; set; }
+    private int _lastVisibleJump;
+
+
+    [Header("Network Pos")]
     [SerializeField] public Transform networkedRenderRoot;
     public Vector3 rendererPos;
     public Quaternion rendererRot;
@@ -58,13 +64,19 @@ public class HybridCharacterController : NetworkBehaviour
     [SerializeField] private Transform cameraTransform;
     public RagDollCameraController camController;
 
+    [Header("Hands")]
+    public NetworkedHandsController handController;
+
+    private Vector3 previousVelocity;
+    public Vector3 Acceleration { get; private set; }
 
     public override void Spawned()
     {
-        camController = this.GetComponent<RagDollCameraController>();
+        _lastVisibleJump = _jumpCount;
+
         //general setup
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
-        if (cameraTransform == null) cameraTransform = Camera.main.transform;
+       
 
         //material setup
         if (Object.HasStateAuthority)
@@ -73,28 +85,40 @@ public class HybridCharacterController : NetworkBehaviour
             bodyRot = hipsRb.transform.rotation;
         }
         modelRenderer.material = isHost ? hostMat : clientMat;
+        
+        if (HasInputAuthority)
+        {
+            modelRenderer.enabled = false;
+        }
 
         //Camera Setup
+        camController = this.GetComponent<RagDollCameraController>();
+        if (cameraTransform == null) cameraTransform = Camera.main.transform;
         if (camController != null)
         {
             if (HasInputAuthority)
             {
-                camController.enabled = true;
-                camController.Spawned();
+                //camController.enabled = true;
+                camController.Spawned(true);
             }
             else
             {
-                camController.enabled = false;
+                camController.Spawned(false);
+                //camController.enabled = false;
             }
         }
+
         boneMapper.Spawn(false, targetAnimator.transform, finalAnimator.transform);
         foreach(var spring in pDSprings)
         {
             spring.Init();
         }
+
+        //hands
+        handController.Spawn(networkedRenderRoot, HasInputAuthority);
     }
 
-    NetworkButtons priorButtons;
+   
     public override void FixedUpdateNetwork()
     {
         //Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
@@ -105,11 +129,12 @@ public class HybridCharacterController : NetworkBehaviour
             moveInput = new Vector2(data.direction.x, data.direction.z);
             lookRot = data.lookRotation;
 
-            if (data.buttons.WasPressed(priorButtons, EInputButton.JUMP))
+            if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.JUMP))
             {
-                ApplyJump();
+                ApplyJump(); //animation is applied in Render -> Update Animations()
+                _jumpCount++;
             }
-            priorButtons = data.buttons;
+            _lastButtonsInput = data.buttons;
         }
 
   
@@ -121,8 +146,9 @@ public class HybridCharacterController : NetworkBehaviour
         UpdateTorsoAndHead();
 
         UpdateHands();
-        
-        
+
+        Acceleration = (hipsRb.linearVelocity - previousVelocity) / Runner.DeltaTime;
+        previousVelocity = hipsRb.linearVelocity;
     }
 
     public override void Render()
@@ -140,23 +166,34 @@ public class HybridCharacterController : NetworkBehaviour
 
         var targetPos = rendererPos + hipsOffset;
         var targetRot = rendererRot;
+
+        //update Armature Positions - updates to the render target for smoothing
         targetAnimator.gameObject.transform.position = targetPos;
         targetAnimator.gameObject.transform.rotation = targetRot;
+        finalAnimator.gameObject.transform.position = targetPos;
+        finalAnimator.gameObject.transform.rotation = targetRot;
+
         Vector3 localVel = networkedRenderRoot.transform.InverseTransformDirection(rendererVelocity);
 
         targetAnimator.SetFloat("forwardSpeed", localVel.z / (maxSpeed * 2), 0.1f, Time.deltaTime);
         targetAnimator.SetFloat("rightSpeed", localVel.x / (maxSpeed * 2), 0.1f, Time.deltaTime);
         targetAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
-        targetAnimator.SetBool("IsGrounded", IsGrounded);
+        
         //animationController.UpdateSpineIkTarget(lookRot);
-
-
-        finalAnimator.gameObject.transform.position = targetPos;
-        finalAnimator.gameObject.transform.rotation = targetRot;
         finalAnimator.SetFloat("forwardSpeed", localVel.z / (maxSpeed * 2), 0.1f, Time.deltaTime);
         finalAnimator.SetFloat("rightSpeed", localVel.x / (maxSpeed * 2), 0.1f, Time.deltaTime);
         finalAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
+
+        //Jumping 
+        targetAnimator.SetBool("IsGrounded", IsGrounded);
         finalAnimator.SetBool("IsGrounded", IsGrounded);
+        if (_jumpCount > _lastVisibleJump)
+        {
+            targetAnimator.SetTrigger("Jump");
+            finalAnimator.SetTrigger("Jump");
+            _lastVisibleJump = _jumpCount;
+        }
+
         UpdateSpineIK();
     }
 
@@ -285,8 +322,7 @@ public class HybridCharacterController : NetworkBehaviour
     public void ApplyJump()
     {
         hipsRb.AddForce(jumpForce * Vector3.up, ForceMode.VelocityChange);
-        targetAnimator.SetTrigger("Jump");
-        finalAnimator.SetTrigger("Jump");
+        
         //Debug.Log("Jumped");
     }
 
@@ -385,3 +421,4 @@ public class HybridCharacterController : NetworkBehaviour
         }
     }
 }
+
