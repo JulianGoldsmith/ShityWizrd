@@ -495,7 +495,8 @@ public class NetworkedHandsController : NetworkBehaviour
             if (hand.overrideController != null && pose != null)
             {
                 hand.overrideController["DummyPose"] = pose;
-               // Debug.Log($"SetPose to pickup {pose.name}");
+                // Debug.Log($"SetPose to pickup {pose.name}");
+                Debug.Log($"SetHand to {pose.name}");
             }
         }
     }

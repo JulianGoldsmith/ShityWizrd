@@ -112,7 +112,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
                 {
                     bestDot = dot;
                     bestCandidate = col.GetComponent<Item>();
-                    Debug.Log($"looking for selected found this: {col}");
+                    //Debug.Log($"looking for selected found this: {col}");
                 }
             }
         }
