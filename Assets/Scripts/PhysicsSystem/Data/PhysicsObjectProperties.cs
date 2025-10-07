@@ -59,9 +59,9 @@ public struct PhysicsObjectProperties : INetworkStruct
     {
         get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.elasticity : 0.0f; }
     }
-    public float viscosity
+    public float brittleness
     {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.viscosity : 0.0f; }
+        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.brittleness : 0.0f; }
     }
     public float stickiness
     {

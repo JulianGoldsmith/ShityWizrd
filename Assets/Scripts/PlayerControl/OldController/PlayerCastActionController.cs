@@ -102,13 +102,18 @@ public class PlayerCastActionController : CastActionController
         //}
         
     }
-
+    private void Update()
+    {
+        if (HasInputAuthority && Keyboard.current.tabKey.wasPressedThisFrame)
+            GameController.Instance.ToggleSpellEditor();
+    }
     public void OnToggleEditor(InputAction.CallbackContext context)
     {
-        if (context.performed)
-        {
-            GameController.Instance.ToggleSpellEditor();
-        }
+        //if (context.performed)
+        //{
+        //    Debug.Log("ContextPerformed");
+        //    GameController.Instance.ToggleSpellEditor();
+        //}
     }
 
     public override Vector3 GetAimTarget()
