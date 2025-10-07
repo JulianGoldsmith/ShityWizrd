@@ -38,12 +38,23 @@ public class NetworkedInventoryManager : NetworkBehaviour
     public void Start()
     {
         characterController = GetComponent<HybridCharacterController>();
+
+
     }
 
     public override void Spawned()
     {
         lastPickUpCount = PickUpPressCount;
         lastDropCount = DropPressCount;
+
+        if (!HasInputAuthority)
+            return;
+
+        object[] sgcs = GameObject.FindObjectsOfTypeAll(typeof(SpellGraphController));
+        if (sgcs.Length > 0)
+        {
+            (sgcs[0] as SpellGraphController).inventory = GetComponentInParent<NetworkedInventoryManager>();
+        }
     }
 
     public override void FixedUpdateNetwork()
@@ -151,7 +162,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         //    handController.SetHandTarget_ToWorldPoint(true, currentItemInHand.secondaryHandle);
         //}
 
-        activeItem = (currentItemInHand.gameObject);
+        //activeItem = (currentItemInHand.gameObject);
         activeItemIndex = 0;
     }
 
@@ -167,7 +178,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         itemRb.linearVelocity = characterController.hipsRb.GetComponent<Rigidbody>().linearVelocity;
         Vector3 forwardDir = lookRotation * Vector3.forward;
         itemRb.AddForce(forwardDir * 5f, ForceMode.Impulse);
-        activeItem = null;
+        //activeItem = null;
     }
 
     //public void SetNewHoldingPlayer()

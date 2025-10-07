@@ -4,17 +4,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using System.Security.Cryptography;
-using System.Runtime.Serialization.Formatters;
 using Fusion;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
 
 /// <summary>
 /// Main script controlling player casting, ie sword swing, cast spell etc, works with player movement controller and player animation controller
 /// </summary>
 
 
-[RequireComponent(typeof(InventoryManager))]
+[RequireComponent(typeof(NetworkedInventoryManager))]
 public class PlayerCastActionController : CastActionController
 {
     //public Transform cameraTrans;
@@ -25,17 +22,17 @@ public class PlayerCastActionController : CastActionController
 
     public override void Spawned()
     {
-        if (animator == null) animator = GetComponentInChildren<Animator>();
-        if (inventory == null) inventory = GetComponent<InventoryManager>();
+        //if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (inventory == null) inventory = GetComponent<NetworkedInventoryManager>();
         //if (cameraTrans == null)
         //{
         //    cameraTrans = Camera.main.transform;
         //}
-        if (animationController != null)
-        {
-            animationController = GetComponentInChildren<GenericAnimationController>();
-            animationController.OnAnimationEventTriggered += HandleAnimationEvent;
-        }
+        //if (animationController != null)
+        //{
+        //    animationController = GetComponentInChildren<GenericAnimationController>();
+        //    animationController.OnAnimationEventTriggered += HandleAnimationEvent;
+        //}
     }
     public override void FixedUpdateNetwork()
     {
@@ -118,15 +115,14 @@ public class PlayerCastActionController : CastActionController
     {
         // This won't work right now.
         RaycastHit hit;
-        PlayerCastActionController controller = GetComponent<PlayerCastActionController>();
-        if (controller == null)
-            return lookDirection * Vector3.forward + transform.position;
-        Transform eyes = controller.transform.Find("Eyes").transform;
-        Physics.Raycast(eyes.position, lookDirection * Vector3.forward, out hit);
+
+        HybridCharacterController hcc = GetComponent<HybridCharacterController>();
+        Vector3 viewpoint = hcc.hipsRb.position + hcc.camController.localEyeOffset + hcc.camController.GetEyePosBasedOnPitch(lookDirection);
+        //Physics.Raycast(viewpoint, lookDirection * Vector3.forward, out hit);
         //Ray ray = cameraTrans.GetComponent<Camera>().ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
         //return Physics.Raycast(ray, out RaycastHit hit, 100f) ? hit.point : ray.GetPoint(100f);
-        Vector3 fallback = lookDirection * Vector3.forward * 100f + eyes.position;
-        return Physics.Raycast(eyes.position, lookDirection * Vector3.forward, out hit) ? hit.point : fallback;
+        Vector3 fallback = lookDirection * Vector3.forward * 100f + viewpoint;
+        return Physics.Raycast(viewpoint, lookDirection * Vector3.forward, out hit) ? hit.point : fallback;
     }
 
     public override Vector3 GetForward()

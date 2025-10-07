@@ -12,13 +12,12 @@ using Fusion;
 /// </summary>
 
 
-[RequireComponent(typeof(InventoryManager))]
+[RequireComponent(typeof(NetworkedInventoryManager))]
 public abstract class CastActionController : NetworkBehaviour
 {
-    public Animator animator;
-    public InventoryManager inventory;
-    public GenericAnimationController animationController;
-
+    //public Animator animator;
+    public NetworkedInventoryManager inventory;
+    
     public bool isCasting;
     public bool canCombo;
     public bool isUpperBodyAction;

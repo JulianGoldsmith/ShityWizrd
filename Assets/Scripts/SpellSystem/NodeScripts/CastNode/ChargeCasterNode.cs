@@ -16,13 +16,13 @@ public class ChargeCasterNode : CasterNode
 
     public override void OnCastStarted(SpellState state, CastActionController castController)
     {
-        castController.animationController.overrideController["DummyAction"] = startChargeClip;
-        castController.animationController.overrideController["DummyChargeLoop"] = loopChargeClip;
-        castController.animationController.overrideController["DummyRelease"] = releaseClip;
-        //castController.animationController.animator.runtimeAnimatorController = castController.animationController.overrideController;
+        //castController.animationController.overrideController["DummyAction"] = startChargeClip;
+        //castController.animationController.overrideController["DummyChargeLoop"] = loopChargeClip;
+        //castController.animationController.overrideController["DummyRelease"] = releaseClip;
+        ////castController.animationController.animator.runtimeAnimatorController = castController.animationController.overrideController;
 
-        castController.animationController.PlayAnimationActionState(startChargeClip, upperBodyOnly);
-        castController.animationController.EnterAnimationLoopState(loopChargeClip, upperBodyOnly);
+        //castController.animationController.PlayAnimationActionState(startChargeClip, upperBodyOnly);
+        //castController.animationController.EnterAnimationLoopState(loopChargeClip, upperBodyOnly);
 
         castController.isCasting = true;
         castController.SetCoolDown(Mathf.Infinity);
@@ -34,10 +34,10 @@ public class ChargeCasterNode : CasterNode
     }
     public override void OnCastCanceled(SpellState state, CastActionController castController)
     {
-        if (upperBodyOnly) { castController.animator.SetTrigger("UpperBodyCastRelease"); }
-        else { castController.animator.SetTrigger("FullBodyCastRelease"); }
-        castController.animator.SetBool("IsLoopingFullBodyAction", false);
-        castController.animator.SetBool("IsLoopingUpperBodyAction", false);
+        //if (upperBodyOnly) { castController.animator.SetTrigger("UpperBodyCastRelease"); }
+        //else { castController.animator.SetTrigger("FullBodyCastRelease"); }
+        //castController.animator.SetBool("IsLoopingFullBodyAction", false);
+        //castController.animator.SetBool("IsLoopingUpperBodyAction", false);
         castController.SetCoolDown(cooldown);
         state.Controller.SetCastTimer(releaseClip.length);
         castController.StartComboTimer(comboResetTime);

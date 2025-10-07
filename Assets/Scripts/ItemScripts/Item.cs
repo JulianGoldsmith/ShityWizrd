@@ -179,6 +179,11 @@ public class Item : NetworkBehaviour
         //If we have state authority then we should disable the rb (isKinematic) and teleport it to 000 and unparent it so it stops transmitting move
         this.transform.parent = null;
 
+        if (playerObject.TryGetComponent(out NetworkedInventoryManager inventory))
+        {
+            inventory.activeItem = gameObject;
+        }
+
         if (HasStateAuthority)
         {
             HoldingPlayer = playerObject;
@@ -221,6 +226,11 @@ public class Item : NetworkBehaviour
     
     public void DropItem(NetworkObject playerObject)
     {
+        if (playerObject.TryGetComponent(out NetworkedInventoryManager inventory))
+        {
+            inventory.activeItem = null;
+        }
+
         if (HasStateAuthority)
         {
             HoldingPlayer = null;

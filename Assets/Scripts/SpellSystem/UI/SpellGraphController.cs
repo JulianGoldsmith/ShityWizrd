@@ -79,7 +79,7 @@ public class SpellGraphController : MonoBehaviour
     //dragging vars
     private Transform _nodeBeingDragged;
     private Vector3 _dragOffset;
-    private float _dragPlaneDistance = 1f;
+    private float _dragPlaneDistance = 0.25f;
     public Camera editorCamera;
     public LayerMask runeLayerMask;
     public LayerMask ConnectionLayerMask;
@@ -103,7 +103,7 @@ public class SpellGraphController : MonoBehaviour
     public float socketAttractionSpeed = 0.5f;
     public float socketOrbitRadius = 1.2f;
 
-    public InventoryManager inventory;
+    public NetworkedInventoryManager inventory;
 
     [Header("Subgraph Editor State")]
     private RuneUI _subgraphRootNodeUI; 
@@ -632,7 +632,7 @@ public class SpellGraphController : MonoBehaviour
     private void UpdateDraggedNodePosition(Vector2 screenPos)
     {
         Ray ray = editorCamera.ScreenPointToRay(screenPos);
-        Plane plane = new Plane(editorCamera.transform.forward, editorCamera.transform.position + editorCamera.transform.forward * _dragPlaneDistance);
+        Plane plane = new Plane(Vector3.up, Vector3.up * 0.3f);
 
         if (plane.Raycast(ray, out float enter))
         {

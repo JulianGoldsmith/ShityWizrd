@@ -16,7 +16,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         var networkEvents = Runner.GetComponent<NetworkEvents>();
         networkEvents.OnInput.AddListener(OnInput);
 
-       // GameController.Instance.playerInput = GetComponent<PlayerInput>();
+        GameController.Instance.playerInput = GetComponent<PlayerInput>();
 
         //_characterCameraController = Camera.main.GetComponent<CharacterCameraController>();
 
@@ -119,7 +119,11 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
             _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
             _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
-            
+
+            if (keyboard.tabKey.wasPressedThisFrame)
+            {
+                GameController.Instance.ToggleSpellEditor();
+            }
         }
         _accumulatedInput.lookRotation = Camera.main.transform.rotation;
     }

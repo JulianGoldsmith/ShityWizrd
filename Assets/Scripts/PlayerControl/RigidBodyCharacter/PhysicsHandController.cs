@@ -111,12 +111,6 @@ public class PhysicsHandController : NetworkBehaviour
         ccc.animationController = cac;
         ccc.target = transform.parent;
         ccc.firstPersonAnchor = transform.parent.Find("Eyes");
-
-        object[] sgcs = GameObject.FindObjectsOfTypeAll(typeof(SpellGraphController));
-        if (sgcs.Length > 0)
-        {
-            (sgcs[0] as SpellGraphController).inventory = GetComponentInParent<InventoryManager>();
-        }
     }
 
     private void Init() 

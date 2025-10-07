@@ -63,11 +63,11 @@ public class RagDollCameraController : MonoBehaviour
 
         cameraTransform.position = networkedRenderTargetTransform.transform.position + localEyeOffset + eyeOffsetDueToPitch;
 
-        if (Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            camActive = !camActive;
-            Cursor.lockState = !camActive ? CursorLockMode.None : CursorLockMode.Locked;
-        }
+        //if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        //{
+        //    camActive = !camActive;
+        //    Cursor.lockState = !camActive ? CursorLockMode.None : CursorLockMode.Locked;
+        //}
     }
 
     public Vector3 GetEyePosBasedOnPitch(Quaternion _lookRot)

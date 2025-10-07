@@ -1516,6 +1516,7 @@ GameObject:
   - component: {fileID: 1863557189476980646}
   - component: {fileID: 3152560720557199253}
   - component: {fileID: 4790454350351361300}
+  - component: {fileID: 7391232409836999049}
   m_Layer: 0
   m_Name: HybridCharacter_Prefab
   m_TagString: Untagged
@@ -1720,6 +1721,7 @@ MonoBehaviour:
   - {fileID: 1863557189476980646}
   - {fileID: 3152560720557199253}
   - {fileID: 4790454350351361300}
+  - {fileID: 7391232409836999049}
   - {fileID: 7512236950648821311}
   - {fileID: 8929140887104060016}
   ForceRemoteRenderTimeframe: 0
@@ -1819,7 +1821,19 @@ MonoBehaviour:
     m_ActionId: 10e9f3dc-822e-40c7-89f1-5bfca1826cd4
     m_ActionName: UI/TrackedDeviceOrientation
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: GameController, Assembly-CSharp
+        m_MethodName: ToggleSpellEditor
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 5876f79c-48a5-4331-9f48-89f50c494728
     m_ActionName: 'UI/ToggleEditor[/Keyboard/tab]'
   - m_PersistentCalls:
@@ -1883,7 +1897,19 @@ MonoBehaviour:
     m_ActionId: 7f348cac-0ea1-41f5-a75b-e3375a3675a9
     m_ActionName: 'GamePlay/SecondaryAction[/Mouse/rightButton]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: GameController, Assembly-CSharp
+        m_MethodName: ToggleSpellEditor
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
     m_ActionId: 09922ebb-4b41-4113-ab71-b320fee3a168
     m_ActionName: 'GamePlay/ToggleEditor[/Keyboard/tab]'
   - m_PersistentCalls:
@@ -2082,6 +2108,28 @@ MonoBehaviour:
   currentItemInHand: {fileID: 0}
   _PickUpPressCount: 0
   _DropPressCount: 0
+--- !u!114 &7391232409836999049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646711710736611360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b2ec359664fd9349b89e543c4ad7373, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inventory: {fileID: 4790454350351361300}
+  isCasting: 0
+  canCombo: 0
+  isUpperBodyAction: 0
+  currentAttackCooldown: 0
+  primaryComboCounter: 0
+  comboTimer: 0
+  primaryAttackBuffered: 0
+  primaryAttackReleaseBuffered: 0
+  _nextActionId: 0
 --- !u!1 &1659192456888941227
 GameObject:
   m_ObjectHideFlags: 0

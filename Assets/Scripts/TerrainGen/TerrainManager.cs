@@ -149,7 +149,7 @@ public class TerrainManager : MonoBehaviour
 
         Debug.Log("World generation complete!");
         yield return new WaitForFixedUpdate();
-        GameController.Instance.mainCameraController.characterMovementController.gameObject.transform.position = roomInstances[0].pos + Vector3.up * 4;
+        //GameController.Instance.mainCameraController.characterMovementController.gameObject.transform.position = roomInstances[0].pos + Vector3.up * 4;
     }
 
 

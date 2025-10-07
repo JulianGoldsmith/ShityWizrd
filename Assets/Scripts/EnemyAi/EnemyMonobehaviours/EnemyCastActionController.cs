@@ -14,15 +14,15 @@ public class EnemyCastActionController : CastActionController
 
     private void Awake()
     {
-        if (animator == null) animator = GetComponentInChildren<Animator>();
-        if (inventory == null) inventory = GetComponent<InventoryManager>();
-        if (animationController == null) animationController = GetComponent<EnemyAnimationController>();
+        //if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (inventory == null) inventory = GetComponent<NetworkedInventoryManager>();
+        //if (animationController == null) animationController = GetComponent<EnemyAnimationController>();
         if (agent == null) agent = this.GetComponent<BehaviorGraphAgent>();
-        if (animationController != null)
-        {
-            animationController = GetComponent<GenericAnimationController>();
-            animationController.OnAnimationEventTriggered += HandleAnimationEvent;
-        }
+        //if (animationController != null)
+        //{
+        //    animationController = GetComponent<GenericAnimationController>();
+        //    animationController.OnAnimationEventTriggered += HandleAnimationEvent;
+        //}
     }
 
     private void Update()

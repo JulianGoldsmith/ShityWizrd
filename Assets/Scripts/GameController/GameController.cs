@@ -8,7 +8,7 @@ public class GameController : MonoBehaviour
 
     public PlayerInput playerInput;
 
-    public CharacterCameraController mainCameraController;
+    //public CharacterCameraController mainCameraController;
 
     public GameObject spellEditorWorld; 
 
@@ -41,7 +41,8 @@ public class GameController : MonoBehaviour
     {
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (gamePlayActive) {
+            if (gamePlayActive)
+            {
                 EnableUIInput();
             }
             else
@@ -76,12 +77,12 @@ public class GameController : MonoBehaviour
         {
             SpellGraphController.Instance.EditSpellFromActiveItem();
             EnableUIInput();
-            mainCameraController.SwitchToEditorView();
+            //mainCameraController.SwitchToEditorView();
         }
         else
         {
             EnableGameplayInput();
-            mainCameraController.SwitchToGameplayView();
+            //mainCameraController.SwitchToGameplayView();
         }
     }
 
