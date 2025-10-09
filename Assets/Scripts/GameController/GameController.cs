@@ -1,3 +1,4 @@
+using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -15,6 +16,8 @@ public class GameController : MonoBehaviour
     public bool isEditorActive = false;
 
     public VFXDatabase vfxDatabase;
+
+    public BasicSpawner networkingController;
 
     private void Awake()
     {
@@ -78,7 +81,14 @@ public class GameController : MonoBehaviour
         Debug.Log("ToggleSpellEditor");
         if (isEditorActive)
         {
-            SpellGraphController.Instance.EditSpellFromActiveItem();
+            Vector3 pos = Vector3.zero;
+            if(networkingController._runner.TryGetPlayerObject( networkingController._runner.LocalPlayer, out NetworkObject player))
+            {
+                pos = player.GetComponent<HybridCharacterController>().hipsRb.transform.position;
+                pos.y = 0.2f;
+
+            }
+            SpellGraphController.Instance.EditSpellFromActiveItem(pos + Vector3.forward * 0.5f);
             EnableUIInput();
             //mainCameraController.SwitchToEditorView();
         }

@@ -1309,11 +1309,13 @@ public class SpellGraphController : MonoBehaviour
         }
     }
 
-    public void EditSpellFromActiveItem()
+    public void EditSpellFromActiveItem(Vector3 posToPlaceEditor)
     {
         // TODO:
         // check if this works properly.
         // Needs to make sure you communicate.
+        this.transform.position = posToPlaceEditor;  
+
         SpellGraph spellToEdit = null;
 
         if (inventory != null && inventory.activeItem != null)
@@ -1337,6 +1339,8 @@ public class SpellGraphController : MonoBehaviour
             Debug.Log("No active spell found. Creating a new graph.");
             CreateNewGraph();
         }
+
+
     }
 
     public void ClearGraphView()

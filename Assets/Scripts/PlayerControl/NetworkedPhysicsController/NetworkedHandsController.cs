@@ -175,7 +175,7 @@ public class NetworkedHandsController : NetworkBehaviour
 
             DragDistance += data.scroll;
             if(DragDistance > 20) DragDistance = 20;
-            if (DragDistance < 0) DragDistance = 0;
+            if (DragDistance < -0.5f) DragDistance = -0.5f;
         }
 
         CalculateHandTarget(leftHand, false);
@@ -598,6 +598,7 @@ public class NetworkedHandsController : NetworkBehaviour
                     hand.visableHandObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, -90, -90));
                     break;
                 case (TargetingMode.DRAGG):
+                    hand.visableHandObject.transform.parent = hand.transformLocal.transform;
                     hand.visableHandObject.transform.SetLocalPositionAndRotation(dragHandModelPosOffset, Quaternion.Euler(0, -90, -90));
                     break;
             }

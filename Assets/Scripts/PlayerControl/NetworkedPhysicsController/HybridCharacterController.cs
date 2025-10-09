@@ -11,10 +11,8 @@ public class HybridCharacterController : NetworkBehaviour
     public Rigidbody hipsRb;
     public Vector3 hipsOffset;
 
-    [Header("Hover Settings")]
-    public float rideHeight = 0.4f, groundCheckDistance = 0.6f;
-    public float hipsSuspentionForce = 100f;
-    public float hipsSuspentionDampner = 10f;
+    [Header("Grounded Settings")]
+    public float groundCheckDistance = 0.6f;
     public LayerMask groundLayer;
     [Networked] public bool IsGrounded { get; set; }
 
@@ -24,7 +22,7 @@ public class HybridCharacterController : NetworkBehaviour
     public float jumpForce = 50f;
 
     [Header("Rotation Settings")]
-    public Quaternion bodyRot;
+    private Quaternion bodyRot;
     public float turnStrength = 100f, turnDamping = 10f;
     public AnimationCurve turnBufferCurve;
 
@@ -38,25 +36,25 @@ public class HybridCharacterController : NetworkBehaviour
     public List<PDSpring> pDSprings = new List<PDSpring>();
 
     [Header("Network Input")]
-    [Networked] public Vector2 moveInput { get; set; }
-    [Networked] public Quaternion lookRot { get; set; }
-    [Networked] public NetworkButtons _lastButtonsInput { get; set; }
+    [HideInInspector][Networked] public Vector2 moveInput { get; set; }
+    [HideInInspector][Networked] public Quaternion lookRot { get; set; }
+    [HideInInspector][Networked] public NetworkButtons _lastButtonsInput { get; set; }
     [Networked] private int _jumpCount { get; set; }
     private int _lastVisibleJump;
 
 
     [Header("Network Pos")]
     [SerializeField] public Transform networkedRenderRoot;
-    public Vector3 rendererPos;
-    public Quaternion rendererRot;
-    public Vector3 rendererVelocity;
-    public float rendererYawSpeed;
-    public Vector3 rendererAngularVel;
-    public Vector3 lastRendererPos;
-    Quaternion lastRendererRot;
+    [HideInInspector] public Vector3 rendererPos;
+    [HideInInspector] public Quaternion rendererRot;
+    [HideInInspector] public Vector3 rendererVelocity;
+    [HideInInspector] public float rendererYawSpeed;
+    [HideInInspector] public Vector3 rendererAngularVel;
+    [HideInInspector] public Vector3 lastRendererPos;
+    [HideInInspector] Quaternion lastRendererRot;
     private ChangeDetector _changeDetector;
     [Networked] public bool isHost { get; set; }
-    public bool cashIsHost = false;
+    [HideInInspector] public bool cashIsHost = false;
     public Material hostMat, clientMat;
     public SkinnedMeshRenderer modelRenderer;
 
@@ -344,19 +342,7 @@ public class HybridCharacterController : NetworkBehaviour
     {
         IsGrounded = Physics.Raycast(hipsRb.transform.position, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
         Debug.DrawRay(hipsRb.transform.position, Vector3.down * groundCheckDistance, Color.aliceBlue);
-        //Debug.Log($"Raycasting Doon - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
-        /*
-        if (isGrounded)
-        {
-            float heightDiff = rideHeight - hitInfo.distance;
-            float upwardForce = heightDiff * hipsSuspentionForce;
-
-            float currentVerticalVelocity = Vector3.Dot(hipsRb.linearVelocity, hitInfo.normal);
-            float dampingForce = currentVerticalVelocity * hipsSuspentionDampner;
-
-            Vector3 totalForce = (upwardForce - dampingForce) * Vector3.up;
-            hipsRb.AddForce(totalForce, ForceMode.Acceleration);
-        }*/
+       
     }
 
     private void ApplyHipsMovement()

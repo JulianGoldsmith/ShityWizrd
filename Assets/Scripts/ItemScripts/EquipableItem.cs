@@ -178,11 +178,11 @@ public class EquipableItem : InteractableItem
         }
     }
 
-    public override void FixedUpdateNetwork()
-    {
-        if (updateNextFrame && HasStateAuthority)
-            UpdateRBNextFrame();
-    }
+    //public override void FixedUpdateNetwork()
+    //{
+    //    if (updateNextFrame && !HasStateAuthority)
+    //        UpdateRBNextFrame();
+    //}
 
     public override void PickUpItem(NetworkObject playerObject)
     {
@@ -277,19 +277,17 @@ public class EquipableItem : InteractableItem
         {
             updateNextFrame = true;
         }
-
+        RestoreNetworkedPhysicsSettings();
         handController.SetHandTarget_ToArmature(false);
-
-        updateNextFrame = true;
         
     }
 
 
-    public void UpdateRBNextFrame()
-    {
-        RestoreNetworkedPhysicsSettings();
-        updateNextFrame = false;
-    }
+    //public void UpdateRBNextFrame()
+    //{
+    //    RestoreNetworkedPhysicsSettings();
+    //    updateNextFrame = false;
+    //}
 
 
     public void CasheNetworkedRBSettings()
@@ -307,6 +305,6 @@ public class EquipableItem : InteractableItem
     public void RestoreNetworkedPhysicsSettings()
     {
         networkedRB.Rigidbody.isKinematic = isKinematic;
-        networkedRB.GetComponent<Collider>().enabled = collideractive;
+        networkedRB.GetComponent<Collider>().enabled = true;
     }
 }

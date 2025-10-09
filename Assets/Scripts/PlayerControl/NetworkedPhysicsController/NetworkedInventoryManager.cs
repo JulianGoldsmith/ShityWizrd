@@ -78,10 +78,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
             }
             Prior_buttons = data.buttons;
         }
-    }
 
-    public void FixedUpdate()
-    {
         if (HasStateAuthority)
         {
             if (PickUpPressCount > lastPickUpCount)
@@ -97,6 +94,11 @@ public class NetworkedInventoryManager : NetworkBehaviour
             }
         }
     }
+
+    //public void FixedUpdate()
+    //{
+        
+    //}
 
     private void OnDrawGizmos()
     {
@@ -118,14 +120,14 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
         else
         {
-            Collider[] nearbyItems = Physics.OverlapSphere(characterController.hipsRb.transform.position, pickupRadius, itemLayer);
+            Collider[] nearbyItems = Physics.OverlapSphere(characterController.GetEyePos(), pickupRadius, itemLayer);
 
             float bestDot = -1f;
 
             foreach (var col in nearbyItems)
             {
 
-                Vector3 directionToItem = (col.transform.position - characterController.hipsRb.transform.position).normalized;
+                Vector3 directionToItem = (col.transform.position - characterController.GetEyePos()).normalized;
                 Vector3 forwardDir = lookRotation * Vector3.forward;
                 float dot = Vector3.Dot(forwardDir, directionToItem);
 
@@ -207,7 +209,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         currentItemInHand.DropItem(this.GetComponent<NetworkObject>());
 
-        
+        handController.DragDistance = 0;
     }
 
     //public void SetNewHoldingPlayer()
