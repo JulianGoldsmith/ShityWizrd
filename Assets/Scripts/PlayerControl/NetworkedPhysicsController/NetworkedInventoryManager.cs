@@ -23,8 +23,8 @@ public class NetworkedInventoryManager : NetworkBehaviour
     [SerializeField] private float pickupAngle = 45f;
     [SerializeField] public LayerMask itemLayer;
 
-    public Item currentItemInHand = null;
-    private Item potentialItemToPickup = null;
+    public InteractableItem currentItemInHand = null;
+    private InteractableItem potentialItemToPickup = null;
 
     Quaternion lookRotation;
 
@@ -100,40 +100,74 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
     private void OnDrawGizmos()
     {
-        //Gizmos.color = Color.yellow;
-        //Gizmos.DrawSphere(characterController.hipsRb.transform.position, pickupRadius);
+        //Gizmos.color = Color.green;
+       //Gizmos.DrawSphere(characterController.hipsRb.transform.position, pickupRadius);
     }
 
     private void LookForItems()
     {
-        Collider[] nearbyItems = Physics.OverlapSphere(characterController.hipsRb.transform.position, pickupRadius, itemLayer);
-        Item bestCandidate = null;
-        float bestDot = -1f;
+        InteractableItem bestCandidate = null;
+        Debug.DrawRay(characterController.GetEyePos(), (characterController.GetLookRot().normalized * Vector3.forward * pickupRadius), Color.red);
 
-        foreach (var col in nearbyItems)
+        bool overrideUpdatePos = false;
+
+        if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hit, pickupRadius, itemLayer))
         {
+            bestCandidate = hit.collider.GetComponent<InteractableItem>();
+            overrideUpdatePos = true; //if finding by raycast it should be more accurate
+        }
+        else
+        {
+            Collider[] nearbyItems = Physics.OverlapSphere(characterController.hipsRb.transform.position, pickupRadius, itemLayer);
 
-            Vector3 directionToItem = (col.transform.position - characterController.hipsRb.transform.position).normalized;
-            Vector3 forwardDir = lookRotation * Vector3.forward;
-            float dot = Vector3.Dot(forwardDir, directionToItem);
+            float bestDot = -1f;
 
-            if (dot > Mathf.Cos(pickupAngle * Mathf.Deg2Rad))
+            foreach (var col in nearbyItems)
             {
-                if (dot > bestDot)
+
+                Vector3 directionToItem = (col.transform.position - characterController.hipsRb.transform.position).normalized;
+                Vector3 forwardDir = lookRotation * Vector3.forward;
+                float dot = Vector3.Dot(forwardDir, directionToItem);
+
+                if (dot > Mathf.Cos(pickupAngle * Mathf.Deg2Rad))
                 {
-                    bestDot = dot;
-                    bestCandidate = col.GetComponent<Item>();
-                    //Debug.Log($"looking for selected found this: {col}");
+                    if (dot > bestDot && col.TryGetComponent<InteractableItem>(out InteractableItem newBest))
+                    {
+                        bestDot = dot;
+                        bestCandidate = newBest;
+                        //Debug.Log($"looking for selected found this: {col}");
+                    }
                 }
             }
         }
+        
 
-        if (bestCandidate != null && potentialItemToPickup != bestCandidate)
+        if ((bestCandidate != null && potentialItemToPickup != bestCandidate) ||  overrideUpdatePos)
         {
-            potentialItemToPickup = bestCandidate;
+            //decide if item or physics grabbable 
 
-            handController.SetHandTarget_ToPickUpPoint(false, potentialItemToPickup.primaryHandle, potentialItemToPickup.heldHandState);
-            Debug.Log($"looking for selected set the hands to pick up : {potentialItemToPickup.name}");
+            potentialItemToPickup = bestCandidate;
+            if (potentialItemToPickup is EquipableItem equipable)
+            {
+                handController.SetHandTarget_ToPickUpPoint(false, equipable.primaryHandle, equipable.heldHandState);
+                Debug.Log($"looking for selected set the hands to pick up : {potentialItemToPickup.name}");
+            }
+            else if(potentialItemToPickup is DraggableItem draggable)
+            {
+                Debug.Log($"looking for selected set the hands to DRAGG : {potentialItemToPickup.name}");
+                if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hitted, pickupRadius*2, itemLayer))
+                {
+                    handController.SetHandTarget_ToDraggPoint(false, draggable, hitted.point);
+                }
+                else if (Physics.Raycast(characterController.GetEyePos(), draggable.transform.position - characterController.GetEyePos(), out RaycastHit hitted2, pickupRadius * 2, itemLayer))
+                {
+                    handController.SetHandTarget_ToDraggPoint(false, draggable, hitted2.point);
+                }
+                else //fallback if somehownot hit by ray
+                {
+                    handController.SetHandTarget_ToDraggPoint(false, draggable, draggable.transform.position);
+                }
+            }
         }
         else if (bestCandidate == null && potentialItemToPickup != null && currentItemInHand == null)
         {
@@ -163,22 +197,17 @@ public class NetworkedInventoryManager : NetworkBehaviour
         //}
 
         //activeItem = (currentItemInHand.gameObject);
-        activeItemIndex = 0;
     }
 
     private void DropItem() //only runs on state authority
     {
         if (currentItemInHand == null) return;
 
-        Item droppedItem = currentItemInHand;
+        InteractableItem droppedItem = currentItemInHand;
 
         currentItemInHand.DropItem(this.GetComponent<NetworkObject>());
 
-        Rigidbody itemRb = droppedItem.GetComponent<Rigidbody>();
-        itemRb.linearVelocity = characterController.hipsRb.GetComponent<Rigidbody>().linearVelocity;
-        Vector3 forwardDir = lookRotation * Vector3.forward;
-        itemRb.AddForce(forwardDir * 5f, ForceMode.Impulse);
-        //activeItem = null;
+        
     }
 
     //public void SetNewHoldingPlayer()

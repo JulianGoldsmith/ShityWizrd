@@ -217,7 +217,7 @@ public class RuneUI : MonoBehaviour
     {
         var controller = SpellGraphController.Instance;
         Ray ray = controller.editorCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane plane = new Plane(-controller.editorCamera.transform.forward, transform.position);
+        Plane plane = new Plane(Vector3.up, transform.position);
         if (plane.Raycast(ray, out float enter)) { return ray.GetPoint(enter); }
         return transform.position;
     }
@@ -226,10 +226,17 @@ public class RuneUI : MonoBehaviour
     {
 
         var controller = SpellGraphController.Instance;
-        Transform editorPlane = controller.editorCamera.transform;
         float angleRad = angle * Mathf.Deg2Rad;
 
-        Vector3 worldOffset = controller.socketOrbitRadius * (editorPlane.right * Mathf.Cos(angleRad) + editorPlane.up * Mathf.Sin(angleRad));
+
+        //Transform editorPlane = controller.editorCamera.transform;
+
+
+        //float angleRad = angle * Mathf.Deg2Rad;
+
+        //Vector3 worldOffset = controller.socketOrbitRadius * (editorPlane.right * Mathf.Cos(angleRad) + editorPlane.up * Mathf.Sin(angleRad));
+
+        Vector3 worldOffset = controller.socketOrbitRadius * (Vector3.right * Mathf.Cos(angleRad) + Vector3.forward * Mathf.Sin(angleRad));
 
         return transform.InverseTransformDirection(worldOffset);
     }

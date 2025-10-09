@@ -1,6 +1,7 @@
 using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 using UnityEngine.Windows;
 
 [DefaultExecutionOrder(-10)]
@@ -93,6 +94,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 moveDirection += Vector3.right;
 
             moveDirection = moveDirection.normalized;
+            _accumulatedInput.direction = moveDirection;
 
             //float sens = _characterCameraController != null ? _characterCameraController.cameraLookSensitivity : 2f;
             //Vector2 lookInput = PlayerInputController.global_look;
@@ -111,19 +113,29 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             //camRight.Normalize();
             //moveDirection = (camForward * moveDirection.z + camRight * moveDirection.x).normalized;
 
-            _accumulatedInput.direction = moveDirection;
-
-            _accumulatedInput.buttons.Set(EInputButton.LEFT_CLICK, mouse.leftButton.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.RIGHT_CLICK, mouse.rightButton.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.JUMP, keyboard.spaceKey.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
-
             if (keyboard.tabKey.wasPressedThisFrame)
             {
                 GameController.Instance.ToggleSpellEditor();
             }
+
+            Vector2 scroll = Mouse.current?.scroll.ReadValue() ?? Vector2.zero;
+
+            
+
+            if (!GameController.Instance.isEditorActive)
+            {
+                _accumulatedInput.buttons.Set(EInputButton.LEFT_CLICK, mouse.leftButton.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.RIGHT_CLICK, mouse.rightButton.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.JUMP, keyboard.spaceKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.ADD, scroll.y > 0f);
+                _accumulatedInput.buttons.Set(EInputButton.SUBTRACT, scroll.y < 0f);
+                _accumulatedInput.scroll = scroll.y/5f;
+            }
+
+            
         }
         _accumulatedInput.lookRotation = Camera.main.transform.rotation;
     }

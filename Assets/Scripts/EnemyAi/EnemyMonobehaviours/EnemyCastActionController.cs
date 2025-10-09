@@ -25,12 +25,12 @@ public class EnemyCastActionController : CastActionController
         //}
     }
 
-    private void Update()
-    {
-        base.Update();
-        agent.SetVariableValue(variableName: isCastingVariableName, isCasting);
-        agent.SetVariableValue(variableName: isCastOffCoolDownVariableName, (currentAttackCooldown<=0));
-    }
+    //private void Update()
+    //{
+    //    base.Update();
+    //    agent.SetVariableValue(variableName: isCastingVariableName, isCasting);
+    //    agent.SetVariableValue(variableName: isCastOffCoolDownVariableName, (currentAttackCooldown<=0));
+    //}
 
 
     public override Vector3 GetAimTarget()

@@ -9,13 +9,15 @@ using Fusion.Addons.Physics;
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
+    public static BasicSpawner Instance { get; private set; }
+
     public NetworkRunner _runner;
     private static NetworkRunner static_runner;
 
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     [SerializeField] private NetworkPrefabRef _handsPrefab;
     [SerializeField] private NetworkPrefabRef _itemPrefab;
-    private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
+    public Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
     public static NetworkObject Spawn(NetworkPrefabRef prefab, Vector3 pos, Quaternion rot, NetworkRunner.OnBeforeSpawned onBeforeSpawned = null)
     {
@@ -61,6 +63,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             // Keep track of the player avatars for easy access
             _spawnedCharacters.Add(player, networkPlayerObject);
 
+            runner.SetPlayerObject(player, networkPlayerObject);
             // Share equipped spells? (i.e. full spell-graph?)
         }
     }
@@ -95,6 +98,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     async void StartGame(GameMode mode)
     {
+        Instance = this;
         // Create the Fusion runner and let it know that we will be providing user input
         _runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;

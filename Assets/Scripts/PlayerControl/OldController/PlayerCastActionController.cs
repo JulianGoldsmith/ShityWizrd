@@ -104,8 +104,8 @@ public class PlayerCastActionController : CastActionController
     }
     private void Update()
     {
-        if (HasInputAuthority && Keyboard.current.tabKey.wasPressedThisFrame)
-            GameController.Instance.ToggleSpellEditor();
+        //if (HasInputAuthority && Keyboard.current.tabKey.wasPressedThisFrame)
+        //    GameController.Instance.ToggleSpellEditor();
     }
     public void OnToggleEditor(InputAction.CallbackContext context)
     {

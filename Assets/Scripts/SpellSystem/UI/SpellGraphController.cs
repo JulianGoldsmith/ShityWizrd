@@ -674,7 +674,7 @@ public class SpellGraphController : MonoBehaviour
         if (!_isConnecting) return;
 
         Ray ray = editorCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane plane = new Plane(-editorCamera.transform.forward, _connectionStartSocket.transform.position);
+        Plane plane = new Plane(Vector3.up, _connectionStartSocket.transform.position);
         if (plane.Raycast(ray, out float enter))
         {
             _dummyEndPoint.position = ray.GetPoint(enter);
@@ -1296,7 +1296,7 @@ public class SpellGraphController : MonoBehaviour
     {
         if (inventory != null && inventory.activeItem != null)
         {
-            Item itemComponent = inventory.activeItem.GetComponent<Item>();
+            EquipableItem itemComponent = inventory.activeItem.GetComponent<EquipableItem>();
             if (itemComponent != null)
             {
                 itemComponent.EquipSpellToPrimary(currentGraph);
@@ -1318,7 +1318,7 @@ public class SpellGraphController : MonoBehaviour
 
         if (inventory != null && inventory.activeItem != null)
         {
-            Item itemComponent = inventory.activeItem.GetComponent<Item>();
+            EquipableItem itemComponent = inventory.activeItem.GetComponent<EquipableItem>();
 
             if (itemComponent != null)
             {
@@ -1378,7 +1378,7 @@ public class SpellGraphController : MonoBehaviour
         newGraph.entryPointControllerNodeGuid = entryPointData.guid;
         newGraph.entryPointControllerNode = (EntryPointControlNode)entryPointClone;
 
-        Item item = inventory.activeItem.GetComponent<Item>();
+        EquipableItem item = inventory.activeItem.GetComponent<EquipableItem>();
         item.primaryActionSpell = newGraph;
         Debug.Log($"Created new blank spell assigned to '{item.name}'.");
 

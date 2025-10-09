@@ -10,7 +10,7 @@ public class ChannelCastNode : CasterNode
     public override void OnCastStarted(SpellState state, CastActionController castController)
     {
 
-        Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<Item>().projectileSpawnPoint.position;
+        Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().projectileSpawnPoint.position;
         Quaternion spawnRotation = Quaternion.LookRotation(castController.GetForward());
 
         var triggerInfo = new SpellTriggerInfo(true, state, spawnPosition, spawnRotation, castController.GetForward() * state.CastChargeLevel, castController.gameObject);

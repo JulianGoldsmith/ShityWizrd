@@ -40,7 +40,7 @@ public class HybridCharacterController : NetworkBehaviour
     [Header("Network Input")]
     [Networked] public Vector2 moveInput { get; set; }
     [Networked] public Quaternion lookRot { get; set; }
-    [Networked] private NetworkButtons _lastButtonsInput { get; set; }
+    [Networked] public NetworkButtons _lastButtonsInput { get; set; }
     [Networked] private int _jumpCount { get; set; }
     private int _lastVisibleJump;
 
@@ -69,6 +69,8 @@ public class HybridCharacterController : NetworkBehaviour
 
     private Vector3 previousVelocity;
     public Vector3 Acceleration { get; private set; }
+
+    bool FIRSTFRAME = true;
 
     public override void Spawned()
     {
@@ -116,6 +118,11 @@ public class HybridCharacterController : NetworkBehaviour
 
         //hands
         handController.Spawn(networkedRenderRoot, HasInputAuthority);
+
+        if (HasInputAuthority)
+        {
+            GameController.Instance.playerInput = this.GetComponent<PlayerInput>();
+        }
     }
 
    
@@ -127,7 +134,8 @@ public class HybridCharacterController : NetworkBehaviour
         {
             data.direction.Normalize();
             moveInput = new Vector2(data.direction.x, data.direction.z);
-            lookRot = data.lookRotation;
+            lookRot = IsFinite(data.lookRotation) ? data.lookRotation : Quaternion.identity;
+            
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.JUMP))
             {
@@ -216,10 +224,13 @@ public class HybridCharacterController : NetworkBehaviour
     public void CasheMovement()
     {
         if (!networkedRenderRoot) return;
-
+        if (Time.deltaTime <= 1e-6f ) return;
+     
         // Read the smoothed proxy pose here
         rendererPos = networkedRenderRoot.position;
         rendererRot = networkedRenderRoot.rotation;
+
+         float dtRender = Mathf.Max(Time.deltaTime, 1e-6f);
 
         // Approximate render-space velocity (good enough for PD damping)
         var p = networkedRenderRoot.position;
@@ -227,12 +238,15 @@ public class HybridCharacterController : NetworkBehaviour
         lastRendererPos = p;
 
 
+       
+
         Quaternion deltaRotation = rendererRot * Quaternion.Inverse(lastRendererRot);
         deltaRotation.ToAngleAxis(out float angleInDegrees, out Vector3 axis);
         if (angleInDegrees > 180f)
         {
             angleInDegrees -= 360f;
         }
+
         Vector3 angularVelocityInRadians = axis.normalized * (angleInDegrees * Mathf.Deg2Rad / Time.deltaTime);
         rendererAngularVel = angularVelocityInRadians*0.57f;
         rendererYawSpeed = rendererAngularVel.y;
@@ -384,6 +398,19 @@ public class HybridCharacterController : NetworkBehaviour
     {
 
     }
+
+    public Quaternion GetLookRot()
+    {
+        return HasInputAuthority ? cameraTransform.rotation : lookRot;
+    }
+
+    public Vector3 GetEyePos()
+    {
+        return hipsRb.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority?cameraTransform.rotation:lookRot);
+    }
+
+    static bool IsFinite(Quaternion q) => float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
+    static bool IsFinite(Vector3 v) => float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.z);
 
     [System.Serializable]
     public class PDSpring

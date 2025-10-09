@@ -1245,8 +1245,10 @@ GameObject:
   m_Component:
   - component: {fileID: 7776531535915384778}
   - component: {fileID: 8929140887104060016}
+  - component: {fileID: 3090657543235449836}
+  - component: {fileID: 4452364581775218617}
   m_Layer: 0
-  m_Name: Hand.L
+  m_Name: NetHand.L
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1286,6 +1288,59 @@ MonoBehaviour:
   SyncParent: 0
   _autoAOIOverride: 0
   DisableSharedModeInterpolation: 0
+--- !u!23 &3090657543235449836
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1167165189851373368}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9d2b2911e8e01ce45b71af5f9f6f6211, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &4452364581775218617
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1167165189851373368}
+  m_Mesh: {fileID: 4711208715938537054, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
 --- !u!1 &1280789000807724721
 GameObject:
   m_ObjectHideFlags: 0
@@ -1742,8 +1797,8 @@ MonoBehaviour:
   lookInput: {x: 0, y: 0}
   mouseSensitivity: 0.12
   lookSmoothing: 0.1
-  minPitch: -90
-  maxPitch: 90
+  minPitch: -89
+  maxPitch: 89
   useRbMoveRotation: 1
   maxYawDegreesPerSec: 720
   pitchOffset: {x: -0.5, y: 0.3, z: 0}
@@ -1962,31 +2017,61 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   leftHand:
-    transform: {fileID: 7776531535915384778}
+    transformNet:
+      transform: {fileID: 7776531535915384778}
+      velocity: {x: 0, y: 0, z: 0}
+      angularVelocity: {x: 0, y: 0, z: 0}
+    transformLocal:
+      transform: {fileID: 8480918257638864026}
+      velocity: {x: 0, y: 0, z: 0}
+      angularVelocity: {x: 0, y: 0, z: 0}
     armatureTarget: {fileID: 6407252471545326264}
     shoulderTransform: {fileID: 6434544327627440826}
     palmTransform: {fileID: 8627302058066179969}
     visableHandObject: {fileID: 5622025825299492821}
     handRenderer: {fileID: 0}
+    localVelocity: {x: 0, y: 0, z: 0}
+    localAngularVelocity: {x: 0, y: 0, z: 0, w: 0}
+    draggingTransform: {fileID: 0}
+    localDragPoint: {x: 0, y: 0, z: 0}
+    cashePalmOffset: {x: 0, y: 0, z: 0}
     currentFrametargetPos: {x: 0, y: 0, z: 0}
     currentFrametargetRot: {x: 0, y: 0, z: 0, w: 0}
     temporaryTarget: {fileID: 0}
     animator: {fileID: 0}
     overrideController: {fileID: 0}
+    armatureHandIK: {fileID: 5126220595884701272}
+    casheDefaultHandIKTarget: {fileID: 0}
+    temporaryArmtureHandTarget: {fileID: 0}
     armLength: 0
     isLeft: 0
   rightHand:
-    transform: {fileID: 8659491985050597362}
+    transformNet:
+      transform: {fileID: 8659491985050597362}
+      velocity: {x: 0, y: 0, z: 0}
+      angularVelocity: {x: 0, y: 0, z: 0}
+    transformLocal:
+      transform: {fileID: 5939485940401014908}
+      velocity: {x: 0, y: 0, z: 0}
+      angularVelocity: {x: 0, y: 0, z: 0}
     armatureTarget: {fileID: 5123766772450068310}
     shoulderTransform: {fileID: 2395928630764844244}
     palmTransform: {fileID: 2758009865484806958}
     visableHandObject: {fileID: 6088027783048525232}
     handRenderer: {fileID: 0}
+    localVelocity: {x: 0, y: 0, z: 0}
+    localAngularVelocity: {x: 0, y: 0, z: 0, w: 0}
+    draggingTransform: {fileID: 0}
+    localDragPoint: {x: 0, y: 0, z: 0}
+    cashePalmOffset: {x: 0, y: 0, z: 0}
     currentFrametargetPos: {x: 0, y: 0, z: 0}
     currentFrametargetRot: {x: 0, y: 0, z: 0, w: 0}
     temporaryTarget: {fileID: 0}
     animator: {fileID: 0}
     overrideController: {fileID: 0}
+    armatureHandIK: {fileID: 7309631738157648261}
+    casheDefaultHandIKTarget: {fileID: 0}
+    temporaryArmtureHandTarget: {fileID: 0}
     armLength: 0
     isLeft: 0
   defaultHandState: {fileID: 11400000, guid: 072fe238f7282244092660cc1837c744, type: 2}
@@ -2024,9 +2109,63 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  pickUpSpringStrength: 500
+  pickUpSpringStrength: 175
   pickUpDamp: 30
   pickUpRotOffset: {x: 0, y: 90, z: 0}
+  dragTargetOffset: {x: 0, y: 0, z: 1}
+  dragHandPosOffset: {x: 0, y: -0.15, z: 0}
+  dragStength: 50
+  dragDamp: 10
+  dragRange: 10
+  dragStrengthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 9
+      outSlope: 9
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 10
+      inSlope: 9
+      outSlope: 9
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  dragRotationalStrength: 50
+  dragRotationStrengthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0.3860987
+      outSlope: 0.3860987
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.055268977
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   characterController: {fileID: 2616703058331641411}
   playerRoot: {fileID: 1652055986857824785}
   armDistFalloff:
@@ -2058,13 +2197,11 @@ MonoBehaviour:
   _RightHandMode: 0
   leftHandState: {fileID: 0}
   rightHandState: {fileID: 0}
-  _velocityLeft: {x: 0, y: 0, z: 0}
-  _velocityRight: {x: 0, y: 0, z: 0}
-  _angularVelocityLeft: {x: 0, y: 0, z: 0}
-  _angularVelocityRight: {x: 0, y: 0, z: 0}
   charMeshRenderer: {fileID: 0}
   activeMeshState: 0
   pickUpOffset: {x: -0.05, y: -0.08, z: -0.08}
+  rigBuilder: {fileID: 7463217267464151348}
+  pickUpWristRotOffset: {x: 210, y: 270, z: -90}
 --- !u!114 &3152560720557199253
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2101,7 +2238,7 @@ MonoBehaviour:
   handController: {fileID: 1863557189476980646}
   characterController: {fileID: 2616703058331641411}
   pickupRadius: 2.5
-  pickupAngle: 45
+  pickupAngle: 25
   itemLayer:
     serializedVersion: 2
     m_Bits: 65536
@@ -2836,6 +2973,37 @@ Transform:
   - {fileID: 7472047263524464876}
   m_Father: {fileID: 1646978452067102879}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2695241316824387476
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5939485940401014908}
+  m_Layer: 0
+  m_Name: LocalHand.R
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5939485940401014908
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2695241316824387476}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5934459564257731540}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2773531882586434872
 GameObject:
   m_ObjectHideFlags: 0
@@ -3187,6 +3355,8 @@ Transform:
   - {fileID: 5159536579405216069}
   - {fileID: 8659491985050597362}
   - {fileID: 7776531535915384778}
+  - {fileID: 5939485940401014908}
+  - {fileID: 8480918257638864026}
   m_Father: {fileID: 7522157495638441171}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3512285350464348907
@@ -4398,8 +4568,10 @@ GameObject:
   m_Component:
   - component: {fileID: 8659491985050597362}
   - component: {fileID: 7512236950648821311}
+  - component: {fileID: 8007724262722849981}
+  - component: {fileID: 4651358080722092167}
   m_Layer: 0
-  m_Name: Hand.R
+  m_Name: NetHand.R
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4439,6 +4611,59 @@ MonoBehaviour:
   SyncParent: 0
   _autoAOIOverride: 0
   DisableSharedModeInterpolation: 0
+--- !u!23 &8007724262722849981
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4733479392577907192}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9d2b2911e8e01ce45b71af5f9f6f6211, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &4651358080722092167
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4733479392577907192}
+  m_Mesh: {fileID: 4711208715938537054, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
 --- !u!1 &4744051016653252816
 GameObject:
   m_ObjectHideFlags: 0
@@ -6216,6 +6441,37 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 5159536579405216069}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7215688499753705418
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8480918257638864026}
+  m_Layer: 0
+  m_Name: LocalHand.L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8480918257638864026
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7215688499753705418}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5934459564257731540}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7216250062945852857
 GameObject:

@@ -26,20 +26,23 @@ public class GameController : MonoBehaviour
         {
             Instance = this;
         }
-        playerInput = Object.FindAnyObjectByType<PlayerInput>();
+        //playerInput = Object.FindAnyObjectByType<PlayerInput>();
     }
 
     void Start()
     {
         if(spellEditorWorld != null)
             spellEditorWorld.SetActive(false);
+
         if (playerInput != null)
             EnableGameplayInput();
     }
 
     void Update()
     {
-        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        if (playerInput == null) return;
+
+        if (Keyboard.current.escapeKey.wasPressedThisFrame )
         {
             if (gamePlayActive)
             {

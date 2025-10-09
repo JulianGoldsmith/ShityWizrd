@@ -9,7 +9,7 @@ public class MeleeSweepST : SpellTrigger
     private Transform weaponBase;
     private Vector3 previousTipPosition;
     private Vector3 previousBasePosition;
-    private Item item;
+    private EquipableItem item;
 
     private readonly HashSet<Collider> collidersHitThisSwing = new HashSet<Collider>();
 

@@ -48,7 +48,7 @@ public class ChargeCasterNode : CasterNode
         state.CastChargeLevel = Mathf.Clamp01(chargeDuration / maxChargeTime);
 
         //Debug.Log($"Fired with charge level: {state.chargeLevel}");
-        state.CastItem = state.Controller.inventory.activeItem.GetComponent<Item>();
+        state.CastItem = state.Controller.inventory.activeItem.GetComponent<EquipableItem>();
 
 
 
