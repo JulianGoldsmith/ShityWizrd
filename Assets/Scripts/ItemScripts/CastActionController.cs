@@ -12,13 +12,12 @@ using Fusion;
 /// </summary>
 
 
-[RequireComponent(typeof(InventoryManager))]
+[RequireComponent(typeof(NetworkedInventoryManager))]
 public abstract class CastActionController : NetworkBehaviour
 {
-    public Animator animator;
-    public InventoryManager inventory;
-    public GenericAnimationController animationController;
-
+    //public Animator animator;
+    public NetworkedInventoryManager inventory;
+    
     public bool isCasting;
     public bool canCombo;
     public bool isUpperBodyAction;
@@ -38,7 +37,7 @@ public abstract class CastActionController : NetworkBehaviour
     private Dictionary<string, List<Action>> _pendingAnimationActions = new Dictionary<string, List<Action>>();
     private GameObject _activeHitboxInstance;
 
-    public void Update()
+    public override void Render()
     {
         if (currentAttackCooldown > 0f)
         {
@@ -75,7 +74,7 @@ public abstract class CastActionController : NetworkBehaviour
             primaryComboCounter = 0;
         }
 
-        Item item = inventory.activeItem?.GetComponent<Item>(); //Get the active item from the inventory manager
+        EquipableItem item = inventory.activeItem?.GetComponent<EquipableItem>(); //Get the active item from the inventory manager
         if (item == null || item.primaryActionSpell == null)
         {
             Debug.Log("No active spell or item found for this cast");

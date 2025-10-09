@@ -8,6 +8,9 @@ public enum EInputButton
     JUMP = 2,
     PICKUP = 3,
     DROP = 4,
+    SPRINT = 5,
+    ADD = 6, 
+    SUBTRACT = 7,
 }
 public struct NetworkInputData : INetworkInput
 {
@@ -15,4 +18,5 @@ public struct NetworkInputData : INetworkInput
     public Quaternion lookRotation;
     public NetworkButtons buttons;
     public Vector2 yawpitch;
+    public float scroll;
 }

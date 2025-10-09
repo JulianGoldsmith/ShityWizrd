@@ -9,13 +9,15 @@ using Fusion.Addons.Physics;
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
+    public static BasicSpawner Instance { get; private set; }
+
     public NetworkRunner _runner;
     private static NetworkRunner static_runner;
 
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     [SerializeField] private NetworkPrefabRef _handsPrefab;
     [SerializeField] private NetworkPrefabRef _itemPrefab;
-    private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
+    public Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
     public static NetworkObject Spawn(NetworkPrefabRef prefab, Vector3 pos, Quaternion rot, NetworkRunner.OnBeforeSpawned onBeforeSpawned = null)
     {
@@ -46,8 +48,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
             
 
-            Vector3 handsoffset = new Vector3(0,0,-1);
-            NetworkObject networkHandsObject = runner.Spawn(_handsPrefab, spawnPosition + handsoffset, Quaternion.identity, player);
+            //Vector3 handsoffset = new Vector3(0,0,-1);
+            //NetworkObject networkHandsObject = runner.Spawn(_handsPrefab, spawnPosition + handsoffset, Quaternion.identity, player);
 
             // We spawn hands first so that the player OnSpawned can grab all the required references.
             // Unfortunately, everyone needs the references so we can't just pass a OnBeforeSpawned delegate
@@ -61,6 +63,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             // Keep track of the player avatars for easy access
             _spawnedCharacters.Add(player, networkPlayerObject);
 
+            runner.SetPlayerObject(player, networkPlayerObject);
             // Share equipped spells? (i.e. full spell-graph?)
         }
     }
@@ -95,6 +98,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     async void StartGame(GameMode mode)
     {
+        Instance = this;
         // Create the Fusion runner and let it know that we will be providing user input
         _runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;
@@ -115,7 +119,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         await _runner.StartGame(new StartGameArgs()
         {
             GameMode = mode,
-            SessionName = "TestRoom2",
+            SessionName = "TestRoom3",
             Scene = scene,
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });

@@ -7,7 +7,7 @@ public class SpellState
     public CastActionController Controller { get; } //this means we can always get the player / enemies pos and rot + GetForward etc
 
     //Snapshot on cast varibales geenrally set by the CasterNode
-    public Item CastItem { get; set; } //this means we can always get the items pos and rot
+    public EquipableItem CastItem { get; set; } //this means we can always get the items pos and rot
     public Vector3 CastPosition { get; set; } //Position in world space when the spell is created
     public Quaternion CastRotation { get; set; } //Rotation in world space when the spell is created
     public Vector3 CastAimTargetPos { get; set; } //this will the point where our camera was looking when cast. or AI equivalent
@@ -23,7 +23,7 @@ public class SpellState
 
     public CasterNode OriginalCasterNode { get; set; }  //Node responsible for casting the spell. 
 
-    public SpellState(CastActionController controller, Item item, CasterNode originalCasterNode)
+    public SpellState(CastActionController controller, EquipableItem item, CasterNode originalCasterNode)
     {
         this.Controller = controller;
         this.CastItem = item;

@@ -63,6 +63,8 @@ public class NetworkedRagdollController : NetworkBehaviour
 
     private Rigidbody rootRigidbody;
 
+    
+
     public override void Spawned()
     {
         //general setup
@@ -81,12 +83,13 @@ public class NetworkedRagdollController : NetworkBehaviour
         //Camera Setup
         if (HasInputAuthority)
         {
-            camController.enabled = true;
-            camController.Spawned();
+            //camController.enabled = true;
+            camController.Spawned(true);
         }
         else
         {
-            camController.enabled = false;
+            camController.Spawned(false);
+            //camController.enabled = false;
         }
 
         //HandsSetup

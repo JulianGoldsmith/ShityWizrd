@@ -349,9 +349,9 @@ public class PlayerMovementController : MonoBehaviour
                  .FirstOrDefault(t => t.name == rHandSlotNameOnRig);
 
         playerActionController = GetComponent<PlayerCastActionController>();
-        playerActionController.animator = animator;
-        playerActionController.animationController = animatorRootMotionScript;
-        playerActionController.inventory = inventoryManager;
+        //playerActionController.animator = animator;
+        //playerActionController.animationController = animatorRootMotionScript;
+        //playerActionController.inventory = inventoryManager;
     }
 
     public Vector3 CalculateCameraLookPoint()

@@ -79,7 +79,7 @@ public class SpellGraphController : MonoBehaviour
     //dragging vars
     private Transform _nodeBeingDragged;
     private Vector3 _dragOffset;
-    private float _dragPlaneDistance = 1f;
+    private float _dragPlaneDistance = 0.25f;
     public Camera editorCamera;
     public LayerMask runeLayerMask;
     public LayerMask ConnectionLayerMask;
@@ -103,7 +103,7 @@ public class SpellGraphController : MonoBehaviour
     public float socketAttractionSpeed = 0.5f;
     public float socketOrbitRadius = 1.2f;
 
-    public InventoryManager inventory;
+    public NetworkedInventoryManager inventory;
 
     [Header("Subgraph Editor State")]
     private RuneUI _subgraphRootNodeUI; 
@@ -632,7 +632,7 @@ public class SpellGraphController : MonoBehaviour
     private void UpdateDraggedNodePosition(Vector2 screenPos)
     {
         Ray ray = editorCamera.ScreenPointToRay(screenPos);
-        Plane plane = new Plane(editorCamera.transform.forward, editorCamera.transform.position + editorCamera.transform.forward * _dragPlaneDistance);
+        Plane plane = new Plane(Vector3.up, Vector3.up * 0.3f);
 
         if (plane.Raycast(ray, out float enter))
         {
@@ -674,7 +674,7 @@ public class SpellGraphController : MonoBehaviour
         if (!_isConnecting) return;
 
         Ray ray = editorCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane plane = new Plane(-editorCamera.transform.forward, _connectionStartSocket.transform.position);
+        Plane plane = new Plane(Vector3.up, _connectionStartSocket.transform.position);
         if (plane.Raycast(ray, out float enter))
         {
             _dummyEndPoint.position = ray.GetPoint(enter);
@@ -1296,7 +1296,7 @@ public class SpellGraphController : MonoBehaviour
     {
         if (inventory != null && inventory.activeItem != null)
         {
-            Item itemComponent = inventory.activeItem.GetComponent<Item>();
+            EquipableItem itemComponent = inventory.activeItem.GetComponent<EquipableItem>();
             if (itemComponent != null)
             {
                 itemComponent.EquipSpellToPrimary(currentGraph);
@@ -1309,16 +1309,18 @@ public class SpellGraphController : MonoBehaviour
         }
     }
 
-    public void EditSpellFromActiveItem()
+    public void EditSpellFromActiveItem(Vector3 posToPlaceEditor)
     {
         // TODO:
         // check if this works properly.
         // Needs to make sure you communicate.
+        this.transform.position = posToPlaceEditor;  
+
         SpellGraph spellToEdit = null;
 
         if (inventory != null && inventory.activeItem != null)
         {
-            Item itemComponent = inventory.activeItem.GetComponent<Item>();
+            EquipableItem itemComponent = inventory.activeItem.GetComponent<EquipableItem>();
 
             if (itemComponent != null)
             {
@@ -1337,6 +1339,8 @@ public class SpellGraphController : MonoBehaviour
             Debug.Log("No active spell found. Creating a new graph.");
             CreateNewGraph();
         }
+
+
     }
 
     public void ClearGraphView()
@@ -1378,7 +1382,7 @@ public class SpellGraphController : MonoBehaviour
         newGraph.entryPointControllerNodeGuid = entryPointData.guid;
         newGraph.entryPointControllerNode = (EntryPointControlNode)entryPointClone;
 
-        Item item = inventory.activeItem.GetComponent<Item>();
+        EquipableItem item = inventory.activeItem.GetComponent<EquipableItem>();
         item.primaryActionSpell = newGraph;
         Debug.Log($"Created new blank spell assigned to '{item.name}'.");
 

@@ -6,7 +6,7 @@ public class MeleeHitBoxCore : CoreNode
 {
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
-        Item weapon = triggerInfo.State.CastItem;
+        EquipableItem weapon = triggerInfo.State.CastItem;
         if (weapon == null)
         {
             Debug.LogError("MeleeHitBoxCore: Cannot find the weapon/item that cast this spell.");

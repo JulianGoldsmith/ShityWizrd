@@ -111,12 +111,6 @@ public class PhysicsHandController : NetworkBehaviour
         ccc.animationController = cac;
         ccc.target = transform.parent;
         ccc.firstPersonAnchor = transform.parent.Find("Eyes");
-
-        object[] sgcs = GameObject.FindObjectsOfTypeAll(typeof(SpellGraphController));
-        if (sgcs.Length > 0)
-        {
-            (sgcs[0] as SpellGraphController).inventory = GetComponentInParent<InventoryManager>();
-        }
     }
 
     private void Init() 
@@ -201,7 +195,7 @@ public class PhysicsHandController : NetworkBehaviour
 
         Vector3 handBobOffset = CalculateBobOffset(hand);
 
-        Vector3 handOffsetFromShoulder = hand.currentHandState.handOffsetFromShoulder;
+        Vector3 handOffsetFromShoulder = hand.currentHandState.handOffsetFromEyes;
         // mirror the X offset for the left hand
         Vector3 offset = new Vector3(
             isLeft ? -handOffsetFromShoulder.x : handOffsetFromShoulder.x,
@@ -347,7 +341,7 @@ public class PhysicsHandController : NetworkBehaviour
 
     public Vector3 CalculateHandOffset(Hand hand, bool isLeft)
     {
-        Vector3 handOffsetFromShoulder = hand.currentHandState.handOffsetFromShoulder;
+        Vector3 handOffsetFromShoulder = hand.currentHandState.handOffsetFromEyes;
         Vector3 offset = new Vector3(
             isLeft ? -handOffsetFromShoulder.x : handOffsetFromShoulder.x,
             handOffsetFromShoulder.y,

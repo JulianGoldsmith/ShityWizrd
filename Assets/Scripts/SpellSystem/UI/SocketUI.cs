@@ -65,7 +65,7 @@ public class SocketUI : MonoBehaviour
     {
         var controller = SpellGraphController.Instance;
         Ray ray = controller.editorCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane plane = new Plane(-controller.editorCamera.transform.forward, ParentRune.transform.position);
+        Plane plane = new Plane(Vector3.up, ParentRune.transform.position);
         if (plane.Raycast(ray, out float enter))
         {
             return ray.GetPoint(enter);

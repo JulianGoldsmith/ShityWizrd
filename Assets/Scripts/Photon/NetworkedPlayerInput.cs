@@ -1,37 +1,28 @@
 using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 using UnityEngine.Windows;
 
 [DefaultExecutionOrder(-10)]
 public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
 {
     private NetworkInputData _accumulatedInput;
-    private CharacterCameraController _characterCameraController;
+   // private CharacterCameraController _characterCameraController;
 
     public override void Spawned()
     {
-        if (HasInputAuthority == false)
-        {
-            // FOR TESTING STUPIDNESS.
-            Camera cam = GetComponentInChildren<Camera>();
-            if (cam != null)
-            {
-                Destroy(cam.gameObject);
-            }
-            return;
-        }
-
+        if (!HasInputAuthority) return;
         // Register to Fusion input poll callback.
         var networkEvents = Runner.GetComponent<NetworkEvents>();
         networkEvents.OnInput.AddListener(OnInput);
 
         GameController.Instance.playerInput = GetComponent<PlayerInput>();
 
-        _characterCameraController = Camera.main.GetComponent<CharacterCameraController>();
+        //_characterCameraController = Camera.main.GetComponent<CharacterCameraController>();
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        //Cursor.lockState = CursorLockMode.Locked;
+        //Cursor.visible = false;
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -103,36 +94,55 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 moveDirection += Vector3.right;
 
             moveDirection = moveDirection.normalized;
-
-            float sens = _characterCameraController != null ? _characterCameraController.cameraLookSensitivity : 2f;
-            Vector2 lookInput = PlayerInputController.global_look;
-            
-            float yaw = _accumulatedInput.yawpitch.x + lookInput.x * sens;// * Time.deltaTime;
-            float pitch = _accumulatedInput.yawpitch.y - lookInput.y * sens;// * Time.deltaTime;
-
-            _accumulatedInput.yawpitch = new Vector2(yaw, pitch);
-
-            Vector3 camForward = _characterCameraController.transform.forward;
-            Vector3 camRight = _characterCameraController.transform.right;
-
-            camForward.y = 0;
-            camRight.y = 0;
-            camForward.Normalize();
-            camRight.Normalize();
-            moveDirection = (camForward * moveDirection.z + camRight * moveDirection.x).normalized;
             _accumulatedInput.direction = moveDirection;
 
-            _accumulatedInput.buttons.Set(EInputButton.LEFT_CLICK, mouse.leftButton.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.RIGHT_CLICK, mouse.rightButton.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.JUMP, keyboard.spaceKey.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
-            _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
+            //float sens = _characterCameraController != null ? _characterCameraController.cameraLookSensitivity : 2f;
+            //Vector2 lookInput = PlayerInputController.global_look;
+
+            //float yaw = _accumulatedInput.yawpitch.x + lookInput.x * sens;// * Time.deltaTime;
+            //float pitch = _accumulatedInput.yawpitch.y - lookInput.y * sens;// * Time.deltaTime;
+
+            //_accumulatedInput.yawpitch = new Vector2(yaw, pitch);
+
+            //Vector3 camForward = _characterCameraController.transform.forward;
+            //Vector3 camRight = _characterCameraController.transform.right;
+
+            //camForward.y = 0;
+            //camRight.y = 0;
+            //camForward.Normalize();
+            //camRight.Normalize();
+            //moveDirection = (camForward * moveDirection.z + camRight * moveDirection.x).normalized;
+
+            if (keyboard.tabKey.wasPressedThisFrame)
+            {
+                GameController.Instance.ToggleSpellEditor();
+            }
+
+            Vector2 scroll = Mouse.current?.scroll.ReadValue() ?? Vector2.zero;
+
+            
+
+            if (!GameController.Instance.isEditorActive)
+            {
+                _accumulatedInput.buttons.Set(EInputButton.LEFT_CLICK, mouse.leftButton.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.RIGHT_CLICK, mouse.rightButton.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.JUMP, keyboard.spaceKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.ADD, scroll.y > 0f);
+                _accumulatedInput.buttons.Set(EInputButton.SUBTRACT, scroll.y < 0f);
+                _accumulatedInput.scroll = scroll.y/5f;
+            }
+
+            
         }
+        _accumulatedInput.lookRotation = Camera.main.transform.rotation;
     }
 
     private void OnInput(NetworkRunner runner, NetworkInput networkInput)
     {
-        _accumulatedInput.lookRotation = Camera.main.transform.rotation;
+        
 
         // Fusion polls accumulated input. This callback can be executed multiple times in a row if there is a performance spike.
         networkInput.Set(_accumulatedInput);

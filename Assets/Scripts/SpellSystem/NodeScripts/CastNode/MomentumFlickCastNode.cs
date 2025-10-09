@@ -21,7 +21,7 @@ public class MomentumFlickCastNode : CasterNode
     {
         var handController = castController.GetComponentInChildren<PhysicsHandController>();
         if (handController == null || flickCastHandState == null) return;
-        itemHandState = state.Controller.inventory.activeItem.GetComponent<Item>().heldHandState;
+        itemHandState = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().heldHandState;
         handController.SetHandState(handController.rightHand, flickCastHandState);
         state.chargeCastVFX = SpellSystemHelpers.CreateVFX(ModifierType.Arcane, VFXContext.CastChargeEffect, state.CastItem.projectileSpawnPoint, 1);
         //handController.leftHand.currentHandState = pointHandState;
@@ -51,7 +51,7 @@ public class MomentumFlickCastNode : CasterNode
 
         castController.ChangeHandStateAfterDelay(handController, rightHand, itemHandState, returnToNormalDelay);
 
-        Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<Item>().projectileSpawnPoint.position;
+        Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().projectileSpawnPoint.position;
         Quaternion spawnRotation = Quaternion.LookRotation(flickVector.normalized);
 
         var triggerInfo = new SpellTriggerInfo(true, state, spawnPosition, spawnRotation, flickVector * throwForce, castController.gameObject);

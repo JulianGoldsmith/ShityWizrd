@@ -25,8 +25,8 @@ public class InventoryManager : NetworkBehaviour
     [SerializeField] private float pickupAngle = 45f;
     [SerializeField] private LayerMask itemLayer;
 
-    private Item currentItemInHand = null;
-    private Item potentialItemToPickup = null;
+    private EquipableItem currentItemInHand = null;
+    private EquipableItem potentialItemToPickup = null;
 
     Quaternion lookRotation;
     int pickupkey_pressed = 0;
@@ -89,7 +89,7 @@ public class InventoryManager : NetworkBehaviour
         // before, it was camera position. For simplicity, put it as transform position,
         // though that will be incorrect since it has a different anchor to the camera.
         Collider[] nearbyItems = Physics.OverlapSphere(transform.position, pickupRadius, itemLayer);
-        Item bestCandidate = null;
+        EquipableItem bestCandidate = null;
         float bestDot = -1f;
 
         foreach (var col in nearbyItems)
@@ -104,7 +104,7 @@ public class InventoryManager : NetworkBehaviour
                 if (dot > bestDot)
                 {
                     bestDot = dot;
-                    bestCandidate = col.GetComponent<Item>();
+                    bestCandidate = col.GetComponent<EquipableItem>();
                     //Debug.Log($"looking for selected found this: {col}");
                 }
             }

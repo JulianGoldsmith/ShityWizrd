@@ -1,3 +1,4 @@
+using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,13 +9,15 @@ public class GameController : MonoBehaviour
 
     public PlayerInput playerInput;
 
-    public CharacterCameraController mainCameraController;
+    //public CharacterCameraController mainCameraController;
 
     public GameObject spellEditorWorld; 
 
     public bool isEditorActive = false;
 
     public VFXDatabase vfxDatabase;
+
+    public BasicSpawner networkingController;
 
     private void Awake()
     {
@@ -26,22 +29,26 @@ public class GameController : MonoBehaviour
         {
             Instance = this;
         }
-        playerInput = Object.FindAnyObjectByType<PlayerInput>();
+        //playerInput = Object.FindAnyObjectByType<PlayerInput>();
     }
 
     void Start()
     {
         if(spellEditorWorld != null)
             spellEditorWorld.SetActive(false);
+
         if (playerInput != null)
             EnableGameplayInput();
     }
 
     void Update()
     {
-        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        if (playerInput == null) return;
+
+        if (Keyboard.current.escapeKey.wasPressedThisFrame )
         {
-            if (gamePlayActive) {
+            if (gamePlayActive)
+            {
                 EnableUIInput();
             }
             else
@@ -74,14 +81,21 @@ public class GameController : MonoBehaviour
         Debug.Log("ToggleSpellEditor");
         if (isEditorActive)
         {
-            SpellGraphController.Instance.EditSpellFromActiveItem();
+            Vector3 pos = Vector3.zero;
+            if(networkingController._runner.TryGetPlayerObject( networkingController._runner.LocalPlayer, out NetworkObject player))
+            {
+                pos = player.GetComponent<HybridCharacterController>().hipsRb.transform.position;
+                pos.y = 0.2f;
+
+            }
+            SpellGraphController.Instance.EditSpellFromActiveItem(pos + Vector3.forward * 0.5f);
             EnableUIInput();
-            mainCameraController.SwitchToEditorView();
+            //mainCameraController.SwitchToEditorView();
         }
         else
         {
             EnableGameplayInput();
-            mainCameraController.SwitchToGameplayView();
+            //mainCameraController.SwitchToGameplayView();
         }
     }
 

@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a1cd344325b20a43a0af910272df265, type: 3}
   m_Name: GrabHandState
   m_EditorClassIdentifier: 
-  positionSpringStrength: 5
-  positionSpringDamper: 25
+  positionSpringStrength: 100
+  positionSpringDamper: 10
+  inertiaStrength: 0
   rotationSpringStrength: 200
   rotationSpringDamper: 15
-  handOffsetFromShoulder: {x: 0.3, y: -0.15, z: 0.57}
-  handRotationOffset: {x: -32.7, y: 13, z: -50}
+  handOffsetFromEyes: {x: 0.3, y: -0.15, z: 0.57}
+  handRotationOffset: {x: -41.4, y: 141.2, z: 46.1}
   handBobSpeed: 0
   handBobAmountX: 0
   handBobAmountY: 0
@@ -26,22 +27,13 @@ MonoBehaviour:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
-      inSlope: -6.5809693
-      outSlope: -6.5809693
+      value: 10
+      inSlope: -25.63793
+      outSlope: -25.63793
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
-      outWeight: 0.051917855
-    - serializedVersion: 3
-      time: 0.17822579
-      value: 0.5363387
-      inSlope: -0.19639477
-      outSlope: -0.19639477
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.11621499
-      outWeight: 0.079511754
+      outWeight: 0.034663443
     - serializedVersion: 3
       time: 1.001648
       value: 0.5
@@ -54,9 +46,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  maxDistance: 1
-  maxStrengthMultiplier: 100
-  idleClip: {fileID: -1609281748187839663, guid: 0223915bc06d2b648abf4a3415809356, type: 3}
+  maxDistance: 10
+  maxStrengthMultiplier: 30
+  idleClip: {fileID: -1609281748187839663, guid: 6da7ebe7a8638f548a1051c713a68fc8, type: 3}
   windupClip: {fileID: 0}
   holdClip: {fileID: 0}
   releaseClip: {fileID: 0}

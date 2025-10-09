@@ -6,6 +6,7 @@ using UnityEngine;
 public class ChargeCastNode : CasterNode
 {
     public float chargeValue;
+    public float chargeSpeed = 2f;
 
     public float chargeMult = 10f;
 
@@ -20,13 +21,13 @@ public class ChargeCastNode : CasterNode
     {
         base.OnCastUpdate(state, castController);
         //handController.SetTemporaryRotation(handController.leftHand, flickVector.normalized);
-        state.CastChargeLevel += Time.deltaTime;
+        state.CastChargeLevel += Time.deltaTime * chargeSpeed;
     }
 
     public override void OnCastCanceled(SpellState state, CastActionController castController)
     {
 
-        Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<Item>().projectileSpawnPoint.position;
+        Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().projectileSpawnPoint.position;
         Quaternion spawnRotation = Quaternion.LookRotation(castController.GetForward());
 
         var triggerInfo = new SpellTriggerInfo(true, state, spawnPosition, spawnRotation, castController.GetForward()*state.CastChargeLevel* chargeMult, castController.gameObject);
