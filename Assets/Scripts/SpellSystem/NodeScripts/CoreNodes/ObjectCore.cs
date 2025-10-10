@@ -1,8 +1,8 @@
 using Fusion;
 using System.Collections.Generic;
 using System.Reflection;
-using Unity.VisualScripting;
 using UnityEngine;
+using static Fusion.NetworkRunner;
 
 /// <summary>
 /// A core node, that instantiates a gameObject as a base. The GameObject will need have relevent components like rb, colliders and mesh renderer
@@ -38,10 +38,32 @@ public class ObjectCore : CoreNode
         Quaternion rot = SpellSystemHelpers.GetSpellRotation(
             triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
 
+        // Prior implementation
         // Create a lambda expression to be ran onspawn, then replicated across instances.
-        NetworkRunner.OnBeforeSpawned beforespawned = (Runner, NObject) => InitialisePhysicsObjectOnSpawn(NObject, triggerInfo);
+        //NetworkRunner.OnBeforeSpawned beforespawned = (Runner, NObject) => InitialisePhysicsObjectOnSpawn(NObject, triggerInfo);
 
-        NetworkObject spellCore = BasicSpawner.Spawn(corePrefabRef, pos, rot, beforespawned);
+        //NetworkObject spellCore = BasicSpawner.Spawn(corePrefabRef, pos, rot, beforespawned);
+
+        // Now we use the NetworkObjectBuffer to grab pre-spawned objects where possible.
+        // falls back to just spawn as before when not possible.
+        NetworkObject spellCore = null;
+        if (triggerInfo != null 
+            && triggerInfo.State != null 
+            && triggerInfo.State.CastItem != null)
+        {
+            Debug.Log("Trying to buffer spawn");
+            NetworkObjectBuffer buffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
+            spellCore = buffer.Get(corePrefabRef, pos, rot);
+        }
+        
+        if(spellCore == null)
+        {
+            // Fallback if we couldn't buffer-spawn it.
+            // -> just do it manually.
+            Debug.LogError("Couldn't buffer spawn so falling back.");
+            spellCore = BasicSpawner.Spawn(corePrefabRef, pos, rot);
+        }
+        InitialisePhysicsObjectOnSpawn(spellCore, triggerInfo);
     }
 
     public void InitialisePhysicsObjectOnSpawn(NetworkObject spellCore, SpellTriggerInfo triggerInfo)
