@@ -59,6 +59,23 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (GetInput(out NetworkInputData data))
+        {
+            lookRotation = data.lookRotation;
+
+            if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP))
+            {
+                if(characterController.bonkedState != BONKEDSTATE.BONKED)
+                    PickUpPressCount++;
+            }
+            if (data.buttons.WasReleased(Prior_buttons, EInputButton.DROP))
+            {
+                if (characterController.bonkedState != BONKEDSTATE.BONKED)
+                DropPressCount++;
+            }
+            Prior_buttons = data.buttons;
+        }
+
         if (characterController.bonkedState == BONKEDSTATE.BONKED)
         {
             if(currentItemInHand != null)
@@ -69,6 +86,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
             {
                 potentialItemToPickup = null;
             }
+            return;
         }
 
         if (currentItemInHand != null && !currentItemInHand.isActiveAndEnabled)
@@ -78,21 +96,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         {
             LookForItems();
         }
-
-        if (GetInput(out NetworkInputData data))
-        {
-            lookRotation = data.lookRotation;
-
-            if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP))
-            {
-                PickUpPressCount++;
-            }
-            if (data.buttons.WasReleased(Prior_buttons, EInputButton.DROP))
-            {
-                DropPressCount++;
-            }
-            Prior_buttons = data.buttons;
-        }
+       
 
         if (HasStateAuthority)
         {
@@ -159,7 +163,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
         
 
-        if ((bestCandidate != null && potentialItemToPickup != bestCandidate) ||  overrideUpdatePos)
+        if ((bestCandidate != null && potentialItemToPickup != bestCandidate) || overrideUpdatePos)
         {
             //decide if item or physics grabbable 
 

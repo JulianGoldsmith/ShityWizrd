@@ -124,6 +124,8 @@ public class NetworkedRagDoll : NetworkBehaviour
             rb3d.Teleport(targetTransform.position, targetTransform.rotation);
             rb3d.RBIsKinematic = !_hasStateAuth;
             rb.GetComponent<Collider>().enabled = true;
+            rb.angularVelocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             no.RemoveInputAuthority();
             no.ForceRemoteRenderTimeframe = true;
         }

@@ -78,7 +78,6 @@ public class HybridCharacterController : NetworkBehaviour
 
     [Header("Bonked Variables")]
     [Networked, OnChangedRender(nameof(OnBonkedChanged))] public BONKEDSTATE bonkedState { get; set; }
-    private BONKEDSTATE _lastBonkedState;
     int _swapAtTick = -1;
     bool wasKinematic;
     public Transform ragDollHips;
@@ -143,7 +142,6 @@ public class HybridCharacterController : NetworkBehaviour
 
       
         ragDollController = transform.GetComponent<NetworkedRagDoll>();
-        _lastBonkedState = bonkedState;
         if (bonkedState == BONKEDSTATE.ALIVE)
         {
             ragDollController.DeactivateRagDoll();
@@ -174,7 +172,8 @@ public class HybridCharacterController : NetworkBehaviour
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
             {
-                GetBonked(); //animation is applied in Render -> Update Animations()
+                if( bonkedState != BONKEDSTATE.BONKED)
+                    GetBonked(); //animation is applied in Render -> Update Animations()
             }
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.UN_SELF_BONK))
@@ -235,6 +234,7 @@ public class HybridCharacterController : NetworkBehaviour
 
     public void GetBonked()
     {
+ 
         Debug.Log("Ran got bonked");
 
         foreach(PDSpring headAndTorso in pDSprings)
