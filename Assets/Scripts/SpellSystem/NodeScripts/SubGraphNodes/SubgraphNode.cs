@@ -82,6 +82,15 @@ public class SubgraphNode : SpellNode
         }
         return sockets;
     }
+
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        // This is used for Buffers.
+        // Subgraphs don't 'exist' outside of spelleditor,
+        // so this is left blank.
+        Debug.LogError("Trying to get the dependent nodes of a subgraph.");
+        return new List<SpellNode>();
+    }
 }
 
 [System.Serializable]

@@ -19,4 +19,9 @@ public abstract class FilterNode : SpellNode
                 )
             };
     }
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        return new List<SpellNode>();
+    }
+
 }

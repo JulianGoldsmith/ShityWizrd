@@ -28,4 +28,9 @@ public class EntryPointControlNode : SpellNode
 
         return sockets;
     }
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        return orderedEntries.ConvertAll(node => (node as SpellNode));
+    }
+
 }

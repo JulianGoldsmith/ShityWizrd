@@ -22,6 +22,11 @@ public abstract class ValueNode : SpellNode
                 )
             };
     }
+
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        return new List<SpellNode>();
+    }
 }
 
 public abstract class ValueNode<T> : ValueNode

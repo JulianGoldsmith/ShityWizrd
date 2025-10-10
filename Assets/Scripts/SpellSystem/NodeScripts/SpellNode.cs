@@ -230,6 +230,8 @@ public abstract class SpellNode : ScriptableObject
         spellNodeBase.name = this.name;
         return spellNodeBase;
     }
+
+    public abstract List<SpellNode> GetAllDependentNodes();
 }
 
 public enum RuneCategoryTag
