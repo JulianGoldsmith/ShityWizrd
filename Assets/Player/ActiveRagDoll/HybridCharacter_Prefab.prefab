@@ -1611,10 +1611,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hipsRb: {fileID: 3043645679196564912}
   hipsOffset: {x: 0, y: -0.5904688, z: 0}
-  rideHeight: 0
   groundCheckDistance: 1.5
-  hipsSuspentionForce: 100
-  hipsSuspentionDampner: 10
   groundLayer:
     serializedVersion: 2
     m_Bits: 130943
@@ -1622,8 +1619,7 @@ MonoBehaviour:
   maxSpeed: 2.25
   acceleration: 100
   braking: 20
-  jumpForce: 17
-  bodyRot: {x: 0, y: 0, z: 0, w: 0}
+  jumpForce: 7
   turnStrength: 300
   turnDamping: 15
   turnBufferCurve:
@@ -2112,7 +2108,7 @@ MonoBehaviour:
   pickUpSpringStrength: 175
   pickUpDamp: 30
   pickUpItemRotOffset: {x: 0, y: 90, z: 0}
-  dragTargetOffset: {x: 0, y: 0, z: 1}
+  dragTargetOffset: {x: 0, y: 0, z: 1.5}
   _DragDistance: 0
   dragHandModelPosOffset: {x: 0, y: -0.2, z: 0}
   dragStength: 50
