@@ -22,16 +22,16 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     public override void FixedUpdateNetwork()
     {
         base.FixedUpdateNetwork();
-
+        
         if (should_despawn_next_tick || lifetime_timer.Expired(Runner))
             DespawnObject();
         else if (zero_bonkedness)
             should_despawn_next_tick = true;
     }
 
-    protected override void OnZeroBonk(float bonk_amount)
+    protected override void OnZeroBonk()
     {
-        base.OnZeroBonk(bonk_amount);
+        base.OnZeroBonk();
 
         Debug.Log("OnZeroBonk");
 

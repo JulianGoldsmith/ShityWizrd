@@ -28,6 +28,12 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     private Rigidbody rigidbody;
     public PhysicsMaterial physicsMaterial;
 
+    // bonkedness is the standin for consciousness (player)
+    // and health (object).
+    [Networked, OnChangedRender(nameof(OnBonkednessChanged))] 
+    public float current_bonkedness { get; set; }
+    protected bool zero_bonkedness { get { return current_bonkedness <= 0.0f; } }
+
     #region Data Networking
     public void OnPhysicsObjectPropertiesChanged()
     {
@@ -51,7 +57,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         UpdateRigidbody(GetComponent<Rigidbody>());
         Collider col = GetComponent<Collider>();
-        if (col != null) 
+        if (col != null)
             UpdatePhysicsMaterial(col.material);
         UpdateVisuals();
         ModifyTransform();
@@ -133,12 +139,13 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     #region Collisions
     // additional things to happen on collision.
     // [placeholder]
-    void OnCollisionEnter(Collision collision)
+    public void OnCollisionEnter(Collision collision)
     {
         if (!HasStateAuthority)
             return;
-
-        float bonk_amount = BonkAmount(collision.impulse.magnitude);
+        PhysicsObject other = collision.gameObject.GetComponent<PhysicsObject>();
+        float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.physicsObjectProperties);
+        Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
         if (IfGetBonked(bonk_amount))
         {
             OnBonk(bonk_amount);
@@ -297,14 +304,12 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     // what happens when the object is 'bonked' (hit in a collision).
     // different implementations for players, enemies, objects, spells.
 
-    // bonkedness is the standin for consciousness (player)
-    // and health (object).
-    [Networked] public float current_bonkedness { get; set; }
+
     
     // Everything has 100 starting.
-    private const float starting_bonkedness = 100f;
+    protected const float starting_bonkedness = 100f;
     private const float bonk_threshold = 10.0f;
-    protected bool zero_bonkedness { get { return current_bonkedness <= 0.0f;} }
+
     bool IfGetBonked(float bonk_amount)
     {
         // Consider what the threshold should be.
@@ -313,13 +318,23 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // But then 
         return bonk_amount > bonk_threshold;
     }
-    float BonkAmount(float collision_impulse)
+    float BonkAmount(float collision_impulse, PhysicsObjectProperties? other_properties)
     {
         // Depends on size and brittleness.
         // - higher size means more effective health
         // - higher brittleness means lower effective health.
         float mass = physicsObjectProperties.mass > 0 ? physicsObjectProperties.mass : 1.0f;
-        return 2 * 25f * collision_impulse * 
+
+        // bonk is proportional to the hardness of both objects.
+        float hardness_factor = physicsObjectProperties.hardness > 0 ? physicsObjectProperties.hardness : PhysicsObjectMaterial.default_hardness;
+        if(other_properties != null)
+            hardness_factor *= (other_properties?.hardness > 0 ? other_properties?.hardness : PhysicsObjectMaterial.default_hardness) ?? PhysicsObjectMaterial.default_hardness;
+
+        // quadratic.
+        // this is a bad idea since falling on an object would come with a different bonk calc.
+        float wall_or_floor_penalty = (other_properties == null)? 0.02f: 1.0f;
+
+        return 150f * collision_impulse * hardness_factor * wall_or_floor_penalty *
             physicsObjectProperties.physicsobjectmaterial.brittleness /
             mass;
     }
@@ -338,11 +353,29 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         //    OnZeroBonk(bonk_amount);
         //}
     }
-    protected virtual void OnZeroBonk(float bonk_amount)
+    protected virtual void OnZeroBonk()
     {
-
+        Debug.Log("OnZeroBonk");
     }
-
+    protected virtual void OnRecoverFromBonk()
+    {
+        Debug.Log("OnRecoverFromBank");
+    }
+    public virtual void OnBonkednessChanged(NetworkBehaviourBuffer previous)
+    {
+        var last_known_bonkedness = GetPropertyReader<float>(nameof(current_bonkedness)).Read(previous);
+        Log.Info($"counter changed: {current_bonkedness}, prev: {last_known_bonkedness}");
+        if (zero_bonkedness && last_known_bonkedness > 0)
+        {
+            // got bonked
+            OnZeroBonk();
+        }
+        else if(!zero_bonkedness && last_known_bonkedness < 0)
+        {
+            // recovered from bonk
+            OnRecoverFromBonk();
+        }
+    }
     #endregion
 
     #region Sound

@@ -848,6 +848,7 @@ GameObject:
   - component: {fileID: 4163231050491851074}
   - component: {fileID: 6278773161791462718}
   - component: {fileID: 7590610314122102636}
+  - component: {fileID: 9178766415564807422}
   m_Layer: 18
   m_Name: Hips
   m_TagString: Untagged
@@ -939,6 +940,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 4163231050491851074}
+  - {fileID: 9178766415564807422}
   ForceRemoteRenderTimeframe: 0
 --- !u!136 &7590610314122102636
 CapsuleCollider:
@@ -963,6 +965,19 @@ CapsuleCollider:
   m_Height: 89
   m_Direction: 1
   m_Center: {x: 0, y: -14.57, z: 0}
+--- !u!114 &9178766415564807422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 478001248160501526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parent_physics_object: {fileID: 978287595077112396}
 --- !u!1 &521634073245831260
 GameObject:
   m_ObjectHideFlags: 0
@@ -1608,6 +1623,7 @@ GameObject:
   - component: {fileID: 5839510285626572502}
   - component: {fileID: 8597320800927555678}
   - component: {fileID: 3881298190494315836}
+  - component: {fileID: 2773484757616388450}
   m_Layer: 18
   m_Name: Torso
   m_TagString: Untagged
@@ -1824,7 +1840,21 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 8597320800927555678}
+  - {fileID: 2773484757616388450}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &2773484757616388450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 873886839314581017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parent_physics_object: {fileID: 978287595077112396}
 --- !u!1 &905910670213713628
 GameObject:
   m_ObjectHideFlags: 0
@@ -2811,6 +2841,7 @@ GameObject:
   - component: {fileID: 4790454350351361300}
   - component: {fileID: 7391232409836999049}
   - component: {fileID: 3683111111694485463}
+  - component: {fileID: 978287595077112396}
   m_Layer: 0
   m_Name: HybridCharacter_Prefab
   m_TagString: Untagged
@@ -3039,6 +3070,7 @@ MonoBehaviour:
   - {fileID: 4790454350351361300}
   - {fileID: 7391232409836999049}
   - {fileID: 3683111111694485463}
+  - {fileID: 978287595077112396}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6340558049541726636
 MonoBehaviour:
@@ -3305,6 +3337,7 @@ MonoBehaviour:
     temporaryArmtureHandTarget: {fileID: 0}
     armLength: 0
     isLeft: 0
+    enabled: 1
   rightHand:
     transformNet:
       transform: {fileID: 8659491985050597362}
@@ -3334,6 +3367,7 @@ MonoBehaviour:
     temporaryArmtureHandTarget: {fileID: 0}
     armLength: 0
     isLeft: 0
+    enabled: 1
   defaultHandState: {fileID: 11400000, guid: 072fe238f7282244092660cc1837c744, type: 2}
   grabHandState: {fileID: 11400000, guid: 56332dce5df223a49a1acd08b21a1d22, type: 2}
   pickUpItemForceDistace:
@@ -3458,6 +3492,7 @@ MonoBehaviour:
   _RightHandMode: 0
   leftHandState: {fileID: 0}
   rightHandState: {fileID: 0}
+  handsEnabled: 1
   charMeshRenderer: {fileID: 0}
   activeMeshState: 0
   pickUpOffset: {x: -0.05, y: -0.08, z: -0.08}
@@ -3545,66 +3580,77 @@ MonoBehaviour:
   - rb: {fileID: 3460493331872914410}
     no: {fileID: 3506394039301340367}
     rb3d: {fileID: 1350998633460356207}
+    equivalentbone: {fileID: 3043645679196564912}
     initiatedKinematic: 0
     targetTransform: {fileID: 2771771266030615101}
     IK: {fileID: 1204839581891670168}
   - rb: {fileID: 894066621651410636}
     no: {fileID: 7979582212316098075}
     rb3d: {fileID: 4747926594557811147}
+    equivalentbone: {fileID: 0}
     initiatedKinematic: 0
     targetTransform: {fileID: 8665747925320337783}
     IK: {fileID: 8733805864550757163}
   - rb: {fileID: 138822665561089189}
     no: {fileID: 7506382331180296409}
     rb3d: {fileID: 6295293922711230899}
+    equivalentbone: {fileID: 0}
     initiatedKinematic: 0
     targetTransform: {fileID: 4737317305713011190}
     IK: {fileID: 2072841567888561501}
   - rb: {fileID: 6618521636764240242}
     no: {fileID: 987116176467255923}
     rb3d: {fileID: 69763219910673650}
+    equivalentbone: {fileID: 0}
     initiatedKinematic: 0
     targetTransform: {fileID: 3131494295594797590}
     IK: {fileID: 4515434273356632795}
   - rb: {fileID: 1260003088825838602}
     no: {fileID: 1785322536977770957}
     rb3d: {fileID: 1309918475194196183}
+    equivalentbone: {fileID: 0}
     initiatedKinematic: 0
     targetTransform: {fileID: 7628798975238333464}
     IK: {fileID: 1612821325485179056}
   - rb: {fileID: 8708491900976824877}
     no: {fileID: 763719708240783891}
     rb3d: {fileID: 3307083685774087448}
+    equivalentbone: {fileID: 7235407350734734213}
     initiatedKinematic: 0
     targetTransform: {fileID: 9174935193631655429}
     IK: {fileID: 666459202233092525}
   - rb: {fileID: 1832505589023291986}
     no: {fileID: 4959541397011118031}
     rb3d: {fileID: 496154536474606166}
+    equivalentbone: {fileID: 8991214940629826326}
     initiatedKinematic: 0
     targetTransform: {fileID: 6065873711853976298}
     IK: {fileID: 4550200406799615111}
   - rb: {fileID: 2142489029386460292}
     no: {fileID: 6939092902447532235}
     rb3d: {fileID: 1128052398570455923}
+    equivalentbone: {fileID: 0}
     initiatedKinematic: 0
     targetTransform: {fileID: 9039046410454843372}
     IK: {fileID: 70022517536773872}
   - rb: {fileID: 1365948961773064302}
     no: {fileID: 7262159026468711615}
     rb3d: {fileID: 1987962922693220410}
+    equivalentbone: {fileID: 0}
     initiatedKinematic: 0
     targetTransform: {fileID: 4438848001855493558}
     IK: {fileID: 1787980481414593030}
   - rb: {fileID: 1094442448382252980}
     no: {fileID: 2133879048525985984}
     rb3d: {fileID: 7654217507778680249}
+    equivalentbone: {fileID: 0}
     initiatedKinematic: 0
     targetTransform: {fileID: 4406958198374881430}
     IK: {fileID: 8154408253372976379}
   - rb: {fileID: 9048504351946444021}
     no: {fileID: 8175579339834059624}
     rb3d: {fileID: 564085082453925355}
+    equivalentbone: {fileID: 0}
     initiatedKinematic: 0
     targetTransform: {fileID: 4142704990405242930}
     IK: {fileID: 5960345456063285763}
@@ -3612,6 +3658,24 @@ MonoBehaviour:
   targetArmatureRoot: {fileID: 2290347683378947481}
   rig: {fileID: 6445432549004568726}
   active: 0
+--- !u!114 &978287595077112396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646711710736611360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555192956e27541428a30177a29851ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _physicsObjectProperties:
+    material_label: 4
+    size: 1
+  physicsMaterial: {fileID: 0}
+  _current_bonkedness: 0
+  hybridCharacterController: {fileID: 2616703058331641411}
 --- !u!1 &1659192456888941227
 GameObject:
   m_ObjectHideFlags: 0
@@ -6472,6 +6536,7 @@ GameObject:
   - component: {fileID: 1608579576366237689}
   - component: {fileID: 1760011597899091561}
   - component: {fileID: 2360452429377904417}
+  - component: {fileID: 3652780947522453518}
   m_Layer: 18
   m_Name: Head
   m_TagString: Untagged
@@ -6686,7 +6751,21 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 1760011597899091561}
+  - {fileID: 3652780947522453518}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &3652780947522453518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4106814886037817591}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parent_physics_object: {fileID: 978287595077112396}
 --- !u!1 &4171129976920668416
 GameObject:
   m_ObjectHideFlags: 0

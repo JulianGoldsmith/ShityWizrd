@@ -18,10 +18,15 @@ public class PhysicsObjectMaterial : ScriptableObject
     // (to be used by physics system)
     [Header("Physics Properties")]
     public float density; // affects mass, so inertia, moment of inertia, weight.
-    public float hardness; // brittleness, affects sound
+    public const float default_density = 1.0f;
+    public float hardness; // brittleness, affects sound, affects bonk impact amount.
+    public const float default_hardness = 1f;
     public float elasticity; // bounciness during collisions
+    public const float default_elasticity = 0.0f;
     public float brittleness; // how easily it is destroyed on collision.
+    public const float default_brittleness = 0.1f;
     [Range(0,1)]public float stickiness; // defines collision friction. (dynamic friction)
+    public const float default_stickiness = 0.0f;
 
     #endregion
 
@@ -46,6 +51,8 @@ public enum PHYSICS_OBJECT_MATERIAL
     STONE = 1,
     GLASS = 2,
     GOO = 3,
+
+    PLAYER = 4,
 
     MAX_N
 }

@@ -236,8 +236,9 @@ public class HybridCharacterController : NetworkBehaviour
     {
  
         Debug.Log("Ran got bonked");
+        ragDollController.ActivateRagDoll();
 
-        foreach(PDSpring headAndTorso in pDSprings)
+        foreach (PDSpring headAndTorso in pDSprings)
         {
             var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
             headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
@@ -249,7 +250,6 @@ public class HybridCharacterController : NetworkBehaviour
         hipsNRB.RBIsKinematic = true;
         hipsNRB.GetComponent<Collider>().enabled = false;
 
-        ragDollController.ActivateRagDoll();
         if (HasStateAuthority)
         {
             bonkedState = BONKEDSTATE.BONKED;

@@ -95,6 +95,7 @@ public class NetworkedRagDoll : NetworkBehaviour
         public Rigidbody rb;
         public NetworkObject no;
         public NetworkRigidbody3D rb3d;
+        public Rigidbody equivalentbone;
 
         public bool initiatedKinematic = false;
 
@@ -126,6 +127,8 @@ public class NetworkedRagDoll : NetworkBehaviour
             rb.GetComponent<Collider>().enabled = true;
             rb.angularVelocity = Vector3.zero;
             rb.linearVelocity = Vector3.zero;
+            if (equivalentbone != null)
+                rb.AddForce(equivalentbone.linearVelocity, ForceMode.VelocityChange);
             no.RemoveInputAuthority();
             no.ForceRemoteRenderTimeframe = true;
         }

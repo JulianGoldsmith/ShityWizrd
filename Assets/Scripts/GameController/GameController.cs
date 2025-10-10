@@ -82,10 +82,10 @@ public class GameController : MonoBehaviour
         if (isEditorActive)
         {
             Vector3 pos = Vector3.zero;
-            if(networkingController._runner.TryGetPlayerObject( networkingController._runner.LocalPlayer, out NetworkObject player))
+            if(networkingController._runner.TryGetPlayerObject(networkingController._runner.LocalPlayer, out NetworkObject player))
             {
                 pos = player.GetComponent<HybridCharacterController>().hipsRb.transform.position;
-                pos.y = 0.2f;
+                pos.y -= 0.58f;
 
             }
             SpellGraphController.Instance.EditSpellFromActiveItem(pos + Vector3.forward * 0.5f);
