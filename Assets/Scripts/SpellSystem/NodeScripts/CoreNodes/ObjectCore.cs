@@ -10,7 +10,7 @@ using static Fusion.NetworkRunner;
 
 
 [CreateAssetMenu(fileName = "ObjectCore", menuName = "SpellNodes/CoreNodes/ObjectCore")]
-public class ObjectCore : CoreNode
+public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 {
     // Should this be a networkprefabref
     // Should there be a generic objectcore networkprefabref,
@@ -18,6 +18,7 @@ public class ObjectCore : CoreNode
     // or a unique networkprefabref per thing that can be spawned?
     public GameObject corePrefab;
     public NetworkPrefabRef corePrefabRef;
+    public NetworkPrefabRef prefabRefToBuffer { get { return corePrefabRef; } }
 
     [Promotable("Lifetime", DataTypeTag.Lifetime)]
     public float lifetime = 0;
@@ -28,6 +29,7 @@ public class ObjectCore : CoreNode
     public SpellRotation CastSpawnRotation = SpellRotation.CasterRotation;
     public SpellPosition TriggerSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
+
 
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {

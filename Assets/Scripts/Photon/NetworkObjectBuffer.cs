@@ -1,10 +1,9 @@
 
 using Fusion;
 using Fusion.Addons.Physics;
+using System;
 using System.Collections.Generic;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 /// <summary>
 /// Pre-spawns network object in advance so they can be immediately used on Input Authority without a spawn delay.
@@ -82,6 +81,9 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
         Debug.Log("Buffer spawning...");
 
+        // amend localbuffer to avoid flicker
+        _localBuffer[_bufferhead] = null;
+
         // replace its spot in the buffer with a new copy of it.
         _buffer.Set(_bufferhead, null);
         ReplaceBuffer(prefabref, _bufferhead);
@@ -130,7 +132,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     public override void Render()
     {
-        //ReconcileLocalAndNetworkBuffers();
+        ReconcileLocalAndNetworkBuffers();
     }
     public void ReconcileLocalAndNetworkBuffers()
     {
@@ -156,7 +158,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
             _localBuffer[i] = networkInstance;
 
-            if (networkInstance != null)
+            if (networkInstance != null && networkInstance.IsValid == false)
             {
                 // New instance was added to the buffer, we need to make sure
                 // that the object is inactive on all clients (including proxies)
@@ -185,7 +187,16 @@ public class NetworkObjectBuffer : NetworkBehaviour
         if (!VerifySumTotalPartialBufferLengths())
             throw new System.Exception("[NetworkObjectBuffer] Sum total partial buffer lengths greater than capacity.");
 
+        if (_bufferSize == 0 || prefab_ids == null || prefab_ids.Length == 0)
+            return;
+
         FillBuffer();
+    }
+    public void Initialise(SpellGraph graph)
+    {
+        if (graph != null)
+            LoadFromSpellGraph(graph);
+        Initialise();
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -256,6 +267,9 @@ public class NetworkObjectBuffer : NetworkBehaviour
         if (HasStateAuthority == false)
             return;
         _buffer.Set(index, PrepareInstance(prefabref));
+        
+        // amend localbuffer to avoid flicker
+        _localBuffer[index] = _buffer[index];
     }
 
     void ClearBuffer()
@@ -300,6 +314,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
         return instance;
     }
 
+    #region Kinematics
     void ResetKinematicsByte()
     {
         initial_kinematic_states = 0;
@@ -318,4 +333,122 @@ public class NetworkObjectBuffer : NetworkBehaviour
     {
         return (initial_kinematic_states & (1 << prefab_index)) != 0;
     }
+    #endregion
+
+    #region Loading from Spell
+    const int _max_iterations_search_in_graph = 50;
+    const int _first_prefab_priority = 4;
+    const int _other_prefab_priority = 1;
+    public void LoadFromSpellGraph(SpellGraph graph)
+    {
+        if (graph == null)
+            return;
+
+        // Grab all the prefabs, their weights, and
+        // create a buffer based on that.
+
+        // Here we can assign weighting depending on
+        // what needs to be buffered more.
+        // We prioritise the first object most (for
+        // smooth casting), but might also want
+        // to prioritise runes that spawn many objects
+        // simultaneously (e.g. an explosion).
+
+        // assigns:
+        //prefab_ids
+        //prefab_counts
+        //_buffer_size
+
+        Dictionary<NetworkPrefabRef, float> found_prefabrefs_with_priorities = new Dictionary<NetworkPrefabRef, float>();
+        float total_priority = 0;
+        float current_priority = 0;
+
+        List<SpellNode> queued_search = new List<SpellNode>();
+
+        int infinite_loop_fallback = 0;
+        SpellNode next_node = graph.entryPointControllerNode;
+        NetworkPrefabRef next_ref;
+
+        while(next_node != null && infinite_loop_fallback < _max_iterations_search_in_graph)
+        {
+            current_priority = 0;
+
+            // Break out of while loop if it's been going too long.
+            if (infinite_loop_fallback >= _max_iterations_search_in_graph)
+                break;
+            infinite_loop_fallback++;
+            
+            // This node has a prefabref to buffer, so add it to the dict.
+            if(next_node is IHasPrefabRefToBuffer)
+            {
+                // Give more priority to the first prefab found.
+                // TODO:
+                //  - Add more here to weight objects that might
+                // be spawned many-at-a-time simultaneously
+                // e.g. an explosion that creates many.
+                if (total_priority <= 0)
+                    current_priority = _first_prefab_priority;
+                else
+                    current_priority = _other_prefab_priority;
+
+                next_ref = (next_node as IHasPrefabRefToBuffer).prefabRefToBuffer;
+                if (!found_prefabrefs_with_priorities.ContainsKey(next_ref))
+                    found_prefabrefs_with_priorities.Add(next_ref, 0);
+                
+                found_prefabrefs_with_priorities[next_ref] += current_priority;
+                total_priority += current_priority;
+            }
+
+            // Add all dependent nodes to the queue.
+            // Currently this will eventually get everything in the spell
+            // though I don't see a case where a some node types
+            // could even have a prefabref.
+            // So currently generic but could be streamlined for speed.
+            // All clientside though, at least.
+            queued_search.AddRange(next_node.GetAllDependentNodes());
+
+            if (queued_search.Count > 0)
+            {
+                // Continue search.
+                next_node = queued_search[0];
+                queued_search.RemoveAt(0);
+            }
+            else
+            {
+                // nothing left to search, so leave the loop.
+                next_node = null;
+                break;
+            }
+        }
+
+        DistributeDictArossPrefabArrays(found_prefabrefs_with_priorities, total_priority);
+    }
+
+    void DistributeDictArossPrefabArrays(Dictionary<NetworkPrefabRef, float> found_prefabrefs_with_priorities, float total_priority)
+    {
+        int count = found_prefabrefs_with_priorities.Count;
+        prefab_ids = new NetworkPrefabRef[count];
+        prefab_counts = new int[count];
+        _bufferSize = 0;
+        int index = 0;
+        // if total_priority is less than count, 
+        // then we don't try to fill the capacity, we
+        // just leave as-is.
+        // Otherwise we distribute out the CAPACITY based on
+        // priority.
+        float priority_to_count_factor = Mathf.Min(CAPACITY / total_priority, 1);
+        foreach (KeyValuePair<NetworkPrefabRef, float> keyValuePair in found_prefabrefs_with_priorities)
+        {
+            prefab_ids[index] = keyValuePair.Key;
+            prefab_counts[index] = Mathf.RoundToInt(keyValuePair.Value * priority_to_count_factor);
+            _bufferSize += prefab_counts[index];
+            index++;
+        }
+
+        if(_bufferSize > CAPACITY)
+        {
+            throw new System.Exception($"Tried to make buffer larger than CAPACITY {_bufferSize} / {CAPACITY}");
+        }
+    }
+    #endregion
 }

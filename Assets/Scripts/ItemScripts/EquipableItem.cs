@@ -317,6 +317,6 @@ public class EquipableItem : InteractableItem
         primaryActionSpell = graph;
 
         if (networkObjectBuffer != null)
-            networkObjectBuffer.Initialise();
+            networkObjectBuffer.Initialise(graph);
     }
 }
