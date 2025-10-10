@@ -77,6 +77,8 @@ public class NetworkedHandsController : NetworkBehaviour
 
         [HideInInspector] public float armLength;
         [HideInInspector] public bool isLeft;
+
+        public bool enabled = true;
     }
 
     [SerializeField] public NetHand leftHand, rightHand;
@@ -110,7 +112,7 @@ public class NetworkedHandsController : NetworkBehaviour
     [SerializeField] public HandState leftHandState;
     [SerializeField] public HandState rightHandState;
 
-
+    public bool handsEnabled = true;
 
 
     bool isInitilized = false;
@@ -139,7 +141,6 @@ public class NetworkedHandsController : NetworkBehaviour
     public void LateUpdate()
     {
         if (!isInitilized) return;
-
         if (!hasInputAuthority) return;
 
         CalculateHandTarget(leftHand, true);
@@ -161,22 +162,15 @@ public class NetworkedHandsController : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (!isInitilized) return;
-
         if (GetInput(out NetworkInputData data) && HasStateAuthority)
         {
-            //if (data.buttons.WasPressed(characterController._lastButtonsInput, EInputButton.ADD))
-            //{
-            //    DragDistance += 0.4f;
-            //}
-            //if (data.buttons.WasPressed(characterController._lastButtonsInput, EInputButton.SUBTRACT))
-            //{
-            //    DragDistance -= 0.4f;
-            //}
-
             DragDistance += data.scroll;
             if(DragDistance > 20) DragDistance = 20;
             if (DragDistance < -0.5f) DragDistance = -0.5f;
         }
+
+        ValidateHandTarget(leftHand);
+        ValidateHandTarget(rightHand);
 
         CalculateHandTarget(leftHand, false);
         CalculateHandTarget(rightHand, false);  //networkd and local are the same
@@ -193,15 +187,11 @@ public class NetworkedHandsController : NetworkBehaviour
         leftHand.transformNet.transform.rotation = newRotLNet;
         rightHand.transformNet.transform.rotation = newRotRNet;
 
-
         //Local hand physics
-        
     }
 
     public override void Render()
     {
-        //UpdateLocalHands();
-
         DetermineHandVisability();
 
         ApplyShowHidArms();
@@ -211,6 +201,46 @@ public class NetworkedHandsController : NetworkBehaviour
 
         SwitchToLocalOrNetHands(leftHand, LeftHandMode, HasInputAuthority, HasStateAuthority);
         SwitchToLocalOrNetHands(rightHand, RightHandMode, HasInputAuthority, HasStateAuthority);
+    }
+
+    private void ValidateHandTarget(NetHand hand)
+    {
+        TargetingMode targetingMode = hand.isLeft ? LeftHandMode : RightHandMode;
+
+        var inventoryManager = GetComponent<NetworkedInventoryManager>();
+
+        switch (targetingMode)
+        {
+            case TargetingMode.HOLD:
+                if(inventoryManager.currentItemInHand == null)
+                {
+                    if(hand.isLeft)
+                        LeftHandMode = TargetingMode.ARMATURE;
+                    else
+                        RightHandMode = TargetingMode.ARMATURE;
+                }
+                break;
+
+
+            case TargetingMode.PICKUP:
+                if (inventoryManager.potentialItemToPickup == null)
+                {
+                    if (hand.isLeft)
+                        LeftHandMode = TargetingMode.ARMATURE;
+                    else
+                        RightHandMode = TargetingMode.ARMATURE;
+                }
+                break;
+
+
+            case TargetingMode.DRAGG:
+                break;
+
+
+            case TargetingMode.ARMATURE:
+                break;
+            
+        }
     }
 
     private void CalculateHandTarget(NetHand hand, bool localHand)
@@ -481,27 +511,9 @@ public class NetworkedHandsController : NetworkBehaviour
 
         if (isLeft) LeftHandMode = TargetingMode.DRAGG;
         else RightHandMode = TargetingMode.DRAGG;
+
+        SetHandPose(isLeft, defaultHandState.idleClip);
     }
-
-    //public void AttachItemToHand(bool isLeft, Item item)
-    //{
-    //    Rigidbody itemRb = item.GetComponent<Rigidbody>();
-    //    itemRb.isKinematic = true;
-    //    itemRb.GetComponent<Collider>().enabled = false;
-
-    //    var hand = isLeft ? leftHand : rightHand;
-
-    //    Transform snapPoint = hand.palmTransform;
-
-    //    item.transform.SetParent(snapPoint);
-    //}
-
-    //public void DetachItemFromHand(bool isLeft)
-    //{
-    //    var hand = isLeft ? leftHand : rightHand;
-    //}
-
-
 
     #region attatch / detatch / show / hide arms / switch to local
 
@@ -539,6 +551,15 @@ public class NetworkedHandsController : NetworkBehaviour
         var propBlock = new MaterialPropertyBlock();
         charMeshRenderer.GetPropertyBlock(propBlock);
         float alpha = 0.5f;
+
+        if (!handsEnabled)
+        {
+            leftHand.handRenderer.enabled = false;
+            rightHand.handRenderer.enabled = false;
+            return;
+        }
+
+
         switch (activeMeshState)
         {
             case ActiveMeshState.FULLBODY:
@@ -591,20 +612,28 @@ public class NetworkedHandsController : NetworkBehaviour
                 case (TargetingMode.PICKUP):
                     hand.visableHandObject.transform.parent = hand.transformNet.transform;
                     hand.visableHandObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, -90, -90));
+                    SwitchNetHandToRemoteTimeFrame(hand, true);
                     break;
                 case TargetingMode.HOLD:
                 case TargetingMode.ARMATURE:
                     hand.visableHandObject.transform.parent = hand.transformLocal.transform;
                     hand.visableHandObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, -90, -90));
+                    SwitchNetHandToRemoteTimeFrame(hand, false);
                     break;
                 case (TargetingMode.DRAGG):
                     hand.visableHandObject.transform.parent = hand.transformLocal.transform;
                     hand.visableHandObject.transform.SetLocalPositionAndRotation(dragHandModelPosOffset, Quaternion.Euler(0, -90, -90));
+                    SwitchNetHandToRemoteTimeFrame(hand, false);
                     break;
             }
         }
         //this is an offset for the model
 
+    }
+
+    private void SwitchNetHandToRemoteTimeFrame(NetHand hand, bool _enabel)
+    {
+        hand.transformNet.transform.GetComponent<NetworkObject>().ForceRemoteRenderTimeframe = _enabel;
     }
 
     #endregion
@@ -640,6 +669,7 @@ public class NetworkedHandsController : NetworkBehaviour
                 SetHandPose(isLeft, defaultHandState.idleClip); /////////////////
                 break;
             case TargetingMode.ARMATURE:
+            case TargetingMode.DRAGG:
                 SetHandPose(isLeft, defaultHandState.idleClip);
                 break;
 
@@ -674,6 +704,15 @@ public class NetworkedHandsController : NetworkBehaviour
 
     #endregion
 
+    public void DisableHands()
+    {
+        handsEnabled = false;
+    }
+
+    public void EnableHands()
+    {
+        handsEnabled = true;
+    }
 
     public Vector3 pickUpWristRotOffset;
     public void SetHandArmatureTargetToReachOrItem(bool isLeft, bool isReach) //orients the armature hand to either the "hand object" or direction to object. 

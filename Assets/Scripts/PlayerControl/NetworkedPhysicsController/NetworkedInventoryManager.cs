@@ -24,7 +24,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
     [SerializeField] public LayerMask itemLayer;
 
     public InteractableItem currentItemInHand = null;
-    private InteractableItem potentialItemToPickup = null;
+    public InteractableItem potentialItemToPickup = null;
 
     Quaternion lookRotation;
 
@@ -59,6 +59,21 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (characterController.bonkedState == BONKEDSTATE.BONKED)
+        {
+            if(currentItemInHand != null)
+            {
+                DropItem();
+            }
+            if(potentialItemToPickup != null)
+            {
+                potentialItemToPickup = null;
+            }
+        }
+
+        if (currentItemInHand != null && !currentItemInHand.isActiveAndEnabled)
+            currentItemInHand = null;
+
         if (currentItemInHand == null)
         {
             LookForItems();
