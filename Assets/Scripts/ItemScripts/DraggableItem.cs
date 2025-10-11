@@ -57,7 +57,20 @@ public class DraggableItem : InteractableItem
             numberOfHolders = numberOfHolders+1;
             var controller = player.GetComponent<HybridCharacterController>();
             var handController = player.GetComponent<NetworkedHandsController>();
-            Vector3 targetHoldPos = controller.GetEyePos() + (controller.GetLookRot() * (handController.dragTargetOffset + new Vector3(0,0, handController.DragDistance)));
+            Vector3 eyePos = controller.GetEyePos();
+
+            float pitch = controller.GetLookRot().eulerAngles.x;
+            if (pitch > 180f)
+            {
+                pitch -= 360f;
+            }
+            pitch = -pitch;
+           
+            pitch = (pitch + 90f) / 180f;
+
+
+            float addedHeightBasedOnPitch = handController.dragPitchToHeightModifierCurve.Evaluate(pitch);
+            Vector3 targetHoldPos = eyePos + (controller.GetLookRot() * (handController.dragTargetOffset + new Vector3(0, addedHeightBasedOnPitch, handController.DragDistance)));
 
 
 

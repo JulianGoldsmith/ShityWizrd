@@ -145,7 +145,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             return;
         PhysicsObject other = collision.gameObject.GetComponent<PhysicsObject>();
         float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.physicsObjectProperties);
-        Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
+        //Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
         if (IfGetBonked(bonk_amount))
         {
             OnBonk(bonk_amount);

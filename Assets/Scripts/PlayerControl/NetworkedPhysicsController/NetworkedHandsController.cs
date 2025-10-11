@@ -99,6 +99,7 @@ public class NetworkedHandsController : NetworkBehaviour
     public AnimationCurve dragStrengthCurve;
     public float dragRotationalStrength = 50;
     public AnimationCurve dragRotationStrengthCurve = AnimationCurve.Linear(0, 0, 1, 1);
+    public AnimationCurve dragPitchToHeightModifierCurve; 
 
     [Header("Cashe Values")]
     public HybridCharacterController characterController;

@@ -92,7 +92,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
             return;
         }
 
-        if (currentItemInHand != null && !currentItemInHand.isActiveAndEnabled)
+        if (currentItemInHand != null && !currentItemInHand.gameObject.activeInHierarchy)
             currentItemInHand = null;
 
         if (currentItemInHand == null)
@@ -202,6 +202,8 @@ public class NetworkedInventoryManager : NetworkBehaviour
             handController.SetHandTarget_ToArmature(false);
             potentialItemToPickup = null;
             currentItemInHand = null;
+            handController.leftHand.draggingTransform = null;
+            handController.rightHand.draggingTransform = null;
         }
     }
 
