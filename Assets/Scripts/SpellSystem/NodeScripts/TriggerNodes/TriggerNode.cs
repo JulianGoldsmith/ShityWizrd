@@ -47,5 +47,12 @@ public abstract class TriggerNode : SpellNode
             };
     }
 
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        List<SpellNode> dependencies = new List<SpellNode>();
+        if (filterNodes != null) dependencies.AddRange(filterNodes.ConvertAll(node => node as SpellNode));
+        if (outcomeNodes != null) dependencies.AddRange(outcomeNodes);
+        return dependencies;
+    }
 
 } 

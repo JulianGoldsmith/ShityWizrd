@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5171556808483213913}
   - component: {fileID: 2973735011368766121}
   - component: {fileID: 8305654668865484682}
+  - component: {fileID: 5981614230997947567}
   m_Layer: 16
   m_Name: UnEggWand_Heirachy
   m_TagString: Untagged
@@ -106,6 +107,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 5868808666809287068}
   - {fileID: 2973735011368766121}
+  - {fileID: 5981614230997947567}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2973735011368766121
 MonoBehaviour:
@@ -121,13 +123,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   itemName: EggWand
-  primarySpellID: 
+  primarySpellID: SimpleEGG
   secondarySpellID: 
   primaryActionSpell: {fileID: 0}
   secondaryActionSpell: {fileID: 0}
   heldHandState: {fileID: 11400000, guid: 903f93413bbf6744f8f636324924477b, type: 2}
   primaryHandle: {fileID: 70880927531738438}
   secondaryHandle: {fileID: 0}
+  networkObjectBuffer: {fileID: 5981614230997947567}
   itemModelAndChildComponents: {fileID: 5220390951732050473}
   weaponBase: {fileID: 0}
   weaponEnd: {fileID: 0}
@@ -135,6 +138,8 @@ MonoBehaviour:
   _HoldingPlayer: {fileID: 0}
   lastHoldingPlayer: {fileID: 0}
   _HolderChangedCount: 0
+  updateNextFrame: 0
+  throwDir: {x: 0, y: 0, z: 0}
 --- !u!136 &8305654668865484682
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -158,6 +163,21 @@ CapsuleCollider:
   m_Height: 0.5845
   m_Direction: 1
   m_Center: {x: 0, y: 0.2625, z: 0}
+--- !u!114 &5981614230997947567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6367780370427943061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce08014abd62a7345b11ebdb9a342a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prefab_ids: []
+  prefab_counts: 
+  _bufferSize: 8
 --- !u!1001 &1772570345489050402
 PrefabInstance:
   m_ObjectHideFlags: 0

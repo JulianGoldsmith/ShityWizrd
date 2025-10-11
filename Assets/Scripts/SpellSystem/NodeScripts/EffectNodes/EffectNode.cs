@@ -45,4 +45,9 @@ public abstract class EffectNode : SpellNode
         }
         return sockets;
     }
+
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        return new List<SpellNode>();
+    }
 }

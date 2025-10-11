@@ -42,6 +42,11 @@ public abstract class BehaviourNode : SpellNode
         }
         return sockets;
     }
+
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        return new List<SpellNode>();
+    }
 }
 
       
