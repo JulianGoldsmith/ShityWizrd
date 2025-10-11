@@ -176,7 +176,7 @@ public class DraggableItem : InteractableItem
            ///////////////////////////MAKE DRAGGG///////////
         }
 
-        playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = this;
+        playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = this.GetComponent<NetworkObject>();
         Debug.Log($"picked up draggable item and currentItemInHand is {playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand.name}");
         //set the player's hand controller to dragging. 
 

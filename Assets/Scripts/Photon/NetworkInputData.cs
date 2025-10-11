@@ -11,6 +11,8 @@ public enum EInputButton
     SPRINT = 5,
     ADD = 6, 
     SUBTRACT = 7,
+    SELF_BONK = 8,
+    UN_SELF_BONK = 9,
 }
 public struct NetworkInputData : INetworkInput
 {

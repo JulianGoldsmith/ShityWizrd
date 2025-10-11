@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb7dafeb9fe3f7b49807e9972f931d40, type: 3}
-  m_Name: POM-Glass
+  m_Name: POM-Player
   m_EditorClassIdentifier: 
-  material_name: Glass
-  label: 2
-  density: 0.5
+  material_name: Player
+  label: 4
+  density: 10
   hardness: 1
   elasticity: 0
-  brittleness: 1
+  brittleness: 0.2
   stickiness: 0
-  vfx_material: {fileID: 2100000, guid: 6cd723d6419897c4f8252139d2a41dbf, type: 2}
-  casts_shadows: 0
-  shatter_particle_color: {r: 1, g: 1, b: 1, a: 0.5019608}
+  vfx_material: {fileID: 0}
+  casts_shadows: 1
+  shatter_particle_color: {r: 1, g: 1, b: 1, a: 1}

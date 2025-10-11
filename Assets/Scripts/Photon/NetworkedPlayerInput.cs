@@ -130,8 +130,8 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
-                _accumulatedInput.buttons.Set(EInputButton.ADD, scroll.y > 0f);
-                _accumulatedInput.buttons.Set(EInputButton.SUBTRACT, scroll.y < 0f);
+                _accumulatedInput.buttons.Set(EInputButton.SELF_BONK, keyboard.rKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.UN_SELF_BONK, keyboard.fKey.isPressed);
                 _accumulatedInput.scroll = scroll.y/5f;
             }
 

@@ -2,8 +2,16 @@ using Fusion;
 using Fusion.Addons.Physics;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
+using UnityEngine.Animations.Rigging;
 using UnityEngine.InputSystem;
+
+public enum BONKEDSTATE
+{
+    ALIVE, 
+    BONKED,
+}
 
 public class HybridCharacterController : NetworkBehaviour
 {
@@ -56,7 +64,7 @@ public class HybridCharacterController : NetworkBehaviour
     [Networked] public bool isHost { get; set; }
     [HideInInspector] public bool cashIsHost = false;
     public Material hostMat, clientMat;
-    public SkinnedMeshRenderer modelRenderer;
+    public SkinnedMeshRenderer modelRenderer, ragDollRenderer;
 
     [Header("Camera")]
     [SerializeField] private Transform cameraTransform;
@@ -68,7 +76,17 @@ public class HybridCharacterController : NetworkBehaviour
     private Vector3 previousVelocity;
     public Vector3 Acceleration { get; private set; }
 
-    bool FIRSTFRAME = true;
+    [Header("Bonked Variables")]
+    [Networked, OnChangedRender(nameof(OnBonkedChanged))] public BONKEDSTATE bonkedState { get; set; }
+    int _swapAtTick = -1;
+    bool wasKinematic;
+    public Transform ragDollHips;
+    [SerializeField] private GameObject ragDoll;
+    public NetworkedRagDoll ragDollController;
+    public Rig aliveRig, bonkedRig;
+
+    ChangeDetector
+        changeDetector;
 
     public override void Spawned()
     {
@@ -84,7 +102,7 @@ public class HybridCharacterController : NetworkBehaviour
             isHost = Object.HasInputAuthority;
             bodyRot = hipsRb.transform.rotation;
         }
-        modelRenderer.material = isHost ? hostMat : clientMat;
+        modelRenderer.material = ragDollRenderer.material = isHost ? hostMat : clientMat;
         
         if (HasInputAuthority)
         {
@@ -121,6 +139,17 @@ public class HybridCharacterController : NetworkBehaviour
         {
             GameController.Instance.playerInput = this.GetComponent<PlayerInput>();
         }
+
+      
+        ragDollController = transform.GetComponent<NetworkedRagDoll>();
+        if (bonkedState == BONKEDSTATE.ALIVE)
+        {
+            ragDollController.DeactivateRagDoll();
+        }
+        else
+        {
+            ragDollController.ActivateRagDoll();
+        }
     }
 
    
@@ -140,18 +169,30 @@ public class HybridCharacterController : NetworkBehaviour
                 ApplyJump(); //animation is applied in Render -> Update Animations()
                 _jumpCount++;
             }
+
+            if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
+            {
+                if( bonkedState != BONKEDSTATE.BONKED)
+                    GetBonked(); //animation is applied in Render -> Update Animations()
+            }
+
+            if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.UN_SELF_BONK))
+            {
+                GetUnBonked(); //animation is applied in Render -> Update Animations()
+            }
             _lastButtonsInput = data.buttons;
         }
 
-  
+
+
+        if (bonkedState == BONKEDSTATE.BONKED) return;
+
         ApplyLookRotation(); //sets the hips rb to the rotation of the camera - currently hard sets this with no forces. 
 
         UpdateHips(); //applys suspention forces to the hips. 
         ApplyHipsMovement(); //applys input to aim for a target velocity along  x,z basically a PD to velocity
 
         UpdateTorsoAndHead();
-
-        UpdateHands();
 
         Acceleration = (hipsRb.linearVelocity - previousVelocity) / Runner.DeltaTime;
         previousVelocity = hipsRb.linearVelocity;
@@ -163,6 +204,87 @@ public class HybridCharacterController : NetworkBehaviour
         //transform.rotation = hipsRb.transform.rotation;
         CasheMovement();
         UpdateAnimator();
+        UpdateBonkedMesh();
+    }
+
+    private void UpdateBonkedMesh()
+    {
+        if (_swapAtTick >= 0 && Runner.Tick >= _swapAtTick)
+        {
+            _swapAtTick = -1;
+            bool showRagdoll = (bonkedState == BONKEDSTATE.BONKED);
+            modelRenderer.enabled = HasInputAuthority? false : !showRagdoll;
+            ragDollRenderer.enabled = showRagdoll;
+        }
+    }
+
+    private void OnBonkedChanged()
+    {
+        if (HasStateAuthority) return;
+        if(bonkedState == BONKEDSTATE.BONKED)
+        {
+            GetBonked();
+        }
+        else
+        {
+            GetUnBonked();
+        }
+    }
+
+
+    public void GetBonked()
+    {
+ 
+        Debug.Log("Ran got bonked");
+        ragDollController.ActivateRagDoll();
+
+        foreach (PDSpring headAndTorso in pDSprings)
+        {
+            var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
+            headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
+            rb3d.RBIsKinematic = true;
+            rb3d.GetComponent<Collider>().enabled = false;
+        }
+        var hipsNRB = hipsRb.GetComponent<NetworkRigidbody3D>();
+        wasKinematic = hipsNRB.RBIsKinematic;
+        hipsNRB.RBIsKinematic = true;
+        hipsNRB.GetComponent<Collider>().enabled = false;
+
+        if (HasStateAuthority)
+        {
+            bonkedState = BONKEDSTATE.BONKED;
+        }
+        _swapAtTick = Runner.Tick + 1;
+
+        handController.DisableHands();
+
+    }
+
+    public void GetUnBonked()
+    {
+        ragDollController.DeactivateRagDoll();
+        if (HasStateAuthority)
+        {
+            bonkedState = BONKEDSTATE.ALIVE;
+        }
+        _swapAtTick = Runner.Tick + 1;
+
+
+        foreach (PDSpring headAndTorso in pDSprings)
+        {
+            var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
+            rb3d.RBIsKinematic = headAndTorso.wasKinematicOnDisable;
+            rb3d.GetComponent<Collider>().enabled = true;
+            //if(HasStateAuthority || HasInputAuthority)
+            //    rb3d.Teleport(headAndTorso.ragdollEquivelent.position, headAndTorso.ragdollEquivelent.rotation);
+        }
+        var hipsNRB = hipsRb.GetComponent<NetworkRigidbody3D>();
+        hipsNRB.RBIsKinematic = wasKinematic;
+        hipsNRB.GetComponent<Collider>().enabled = true;
+        //if (HasStateAuthority || HasInputAuthority)
+        //    hipsNRB.Teleport(ragDollHips.position, ragDollHips.rotation);
+
+        handController.EnableHands();
     }
 
 
@@ -267,8 +389,8 @@ public class HybridCharacterController : NetworkBehaviour
 
     public void ApplyLookRotation()
     {
+        
 
-       // Debug.Log($"Look ROtation Running - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
 
         var _lookRot = HasInputAuthority ? cameraTransform.rotation : lookRot;
 
@@ -282,23 +404,11 @@ public class HybridCharacterController : NetworkBehaviour
         bool isMoveing = moveInput.sqrMagnitude > 0.01f;
         if (isMoveing) 
         {
-            //targetBodyRot = Quaternion.LookRotation(flatLookDir); // RotateToLookDirectionOnPlane(_lookRot);
             targetLookDir = flatLookDir;
         }
         else 
         {
-            //targetBodyRot = RotateToLookDirectionOnPlane(_lookRot);
-            /*
-            float angleDiff = Vector3.SignedAngle(flatBodyDir, flatLookDir, Vector3.up);
-
-            float turnRateMultiplier = turnBufferCurve.Evaluate(Mathf.Abs(angleDiff)/180);
-
-            float turnAngle = turnRateMultiplier * turnStrength;
-            //Mathf.Sign(angleDiff) * (Mathf.Abs(angleDiff) - lookBufferAngle);*/
-            //targetBodyRot = Quaternion.LookRotation(flatLookDir);
-
-            // targetBodyRot = RotateToLookDirectionOnPlane(_lookRot);
-            //targetBodyRot = RotateToLookDirectionOnPlaneBuffered(flatBodyDir, flatLookDir, targetBodyRot);
+            
             targetLookDir = GetBufferedTargetLookDir(flatBodyDir, flatLookDir);
         }
 
@@ -315,7 +425,6 @@ public class HybridCharacterController : NetworkBehaviour
         Vector3 torque = Vector3.up * (proportionalTorque - derivativeTorque);
 
         hipsRb.AddTorque(torque, ForceMode.Acceleration);
-        //hipsRb.MoveRotation(targetBodyRot);
     }
 
     public Vector3 GetBufferedTargetLookDir(Vector3 _flatBodyDir, Vector3 _flatLookDir)
@@ -380,10 +489,6 @@ public class HybridCharacterController : NetworkBehaviour
         }
     }
 
-    private void UpdateHands()
-    {
-
-    }
 
     public Quaternion GetLookRot()
     {
@@ -395,6 +500,8 @@ public class HybridCharacterController : NetworkBehaviour
         return hipsRb.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority?cameraTransform.rotation:lookRot);
     }
 
+    
+   
     static bool IsFinite(Quaternion q) => float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
     static bool IsFinite(Vector3 v) => float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.z);
 
@@ -411,6 +518,11 @@ public class HybridCharacterController : NetworkBehaviour
 
         private Quaternion startJointRotation;
         private Quaternion startTargetRotation;
+
+
+        public bool wasKinematicOnDisable;
+
+        public Transform ragdollEquivelent;
 
         public void Init()
         {
