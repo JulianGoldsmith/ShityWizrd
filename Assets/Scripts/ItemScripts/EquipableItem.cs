@@ -230,7 +230,7 @@ public class EquipableItem : InteractableItem
             itemModelAndChildComponents.transform.SetParent(handPalm);
 
 
-            playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = this;
+            playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = this.GetComponent<NetworkObject>();
             hands.SetHandTarget_ToHold(false, heldHandState);
         }
 

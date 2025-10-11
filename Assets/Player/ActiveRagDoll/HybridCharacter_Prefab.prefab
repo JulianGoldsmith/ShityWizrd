@@ -849,7 +849,7 @@ GameObject:
   - component: {fileID: 6278773161791462718}
   - component: {fileID: 7590610314122102636}
   - component: {fileID: 9178766415564807422}
-  m_Layer: 18
+  m_Layer: 19
   m_Name: Hips
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1624,7 +1624,7 @@ GameObject:
   - component: {fileID: 8597320800927555678}
   - component: {fileID: 3881298190494315836}
   - component: {fileID: 2773484757616388450}
-  m_Layer: 18
+  m_Layer: 19
   m_Name: Torso
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3370,6 +3370,7 @@ MonoBehaviour:
     enabled: 1
   defaultHandState: {fileID: 11400000, guid: 072fe238f7282244092660cc1837c744, type: 2}
   grabHandState: {fileID: 11400000, guid: 56332dce5df223a49a1acd08b21a1d22, type: 2}
+  inventoryManager: {fileID: 4790454350351361300}
   pickUpItemForceDistace:
     serializedVersion: 2
     m_Curve:
@@ -3538,8 +3539,9 @@ MonoBehaviour:
   itemLayer:
     serializedVersion: 2
     m_Bits: 327680
-  currentItemInHand: {fileID: 0}
-  potentialItemToPickup: {fileID: 0}
+  _currentItemInHand: {fileID: 0}
+  _potentialItemToPickup: {fileID: 0}
+  _localHandPosOnItem: {x: 0, y: 0, z: 0}
   _PickUpPressCount: 0
   _DropPressCount: 0
 --- !u!114 &7391232409836999049
@@ -6195,7 +6197,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3479120769040424271}
-  m_Layer: 18
+  m_Layer: 19
   m_Name: HeadTrgt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6537,7 +6539,7 @@ GameObject:
   - component: {fileID: 1760011597899091561}
   - component: {fileID: 2360452429377904417}
   - component: {fileID: 3652780947522453518}
-  m_Layer: 18
+  m_Layer: 19
   m_Name: Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7775,7 +7777,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4128106360762053726}
-  m_Layer: 18
+  m_Layer: 19
   m_Name: TorsoTrgt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10071,7 +10073,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1652055986857824785}
-  m_Layer: 0
+  m_Layer: 19
   m_Name: NetworkedTargerRndr
   m_TagString: Untagged
   m_Icon: {fileID: 0}
