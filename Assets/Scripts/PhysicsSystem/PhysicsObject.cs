@@ -1,5 +1,7 @@
 using UnityEngine;
 using Fusion;
+using System.Collections.Generic;
+using System;
 
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
@@ -27,6 +29,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public PhysicsObjectProperties physicsObjectProperties { get; set; }
     private Rigidbody rigidbody;
     public PhysicsMaterial physicsMaterial;
+    protected List<PhysicsSubObject> physicsSubObjects = new List<PhysicsSubObject>();
 
     // bonkedness is the standin for consciousness (player)
     // and health (object).
@@ -387,6 +390,30 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         if (HasStateAuthority)
             Runner.Despawn(Object);
+    }
+    #endregion
+
+    #region PhysicsSubObjects
+    public void SubscribeSubObject(PhysicsSubObject subObject)
+    {
+        if (physicsSubObjects == null)
+            physicsSubObjects = new List<PhysicsSubObject>();
+        physicsSubObjects.Add(subObject);
+    }
+    public void ApplyToSelfAndAllSubObjects(Action<GameObject> method)
+    {
+        method(gameObject);
+        for (int i = 0; i < physicsSubObjects.Count; i++)
+        {
+            method(physicsSubObjects[i].gameObject);
+        }
+    }
+    public void ApplyAcrossAllSubObjects(Action<PhysicsSubObject> method)
+    {
+        for (int i = 0; i < physicsSubObjects.Count; i++)
+        {
+            method(physicsSubObjects[i]);
+        }
     }
     #endregion
 }

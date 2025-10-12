@@ -6,6 +6,14 @@ public class PhysicsSubObject : NetworkBehaviour
     // multiple rigid bodies to trigger collisions
     // for a physicsobject (e.g. hands, arms, legs).
     [SerializeField] PhysicsObject parent_physics_object;
+
+    public override void Spawned()
+    {
+        base.Spawned();
+        if (parent_physics_object != null)
+            parent_physics_object.SubscribeSubObject(this);
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         if (collision.impulse.magnitude > 0.01)

@@ -290,7 +290,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2061895790}
   m_HandleRect: {fileID: 2061895788}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -4274,6 +4274,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1525623454}
   - component: {fileID: 1525623453}
+  - component: {fileID: 1525623455}
   m_Layer: 0
   m_Name: DataDictionary
   m_TagString: Untagged
@@ -4314,6 +4315,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1525623455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525623452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f219ebf6ca34b854fab489ec9b8259f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  all_auras:
+  - {fileID: 11400000, guid: 3afcaf91d4a1dd346917ca6ac7bb521f, type: 2}
 --- !u!1 &1532455541
 GameObject:
   m_ObjectHideFlags: 0
@@ -5475,7 +5490,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 689472142}
   m_HandleRect: {fileID: 689472141}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
