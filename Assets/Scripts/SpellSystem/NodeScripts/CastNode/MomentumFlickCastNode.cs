@@ -23,7 +23,7 @@ public class MomentumFlickCastNode : CasterNode
         if (handController == null || flickCastHandState == null) return;
         itemHandState = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().heldHandState;
         handController.SetHandState(handController.rightHand, flickCastHandState);
-        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(ModifierType.Arcane, VFXContext.CastChargeEffect, state.CastItem.projectileSpawnPoint, 1);
+        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(VFXContext.CastChargeEffect, ModifierType.Arcane, state.CastItem.projectileSpawnPoint, 1);
         //handController.leftHand.currentHandState = pointHandState;
     }
 

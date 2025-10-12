@@ -73,7 +73,8 @@ public class AuraContainer : NetworkBehaviour
             // Add any that the host added.
             if (local_active_aura_ids[i] != networked_active_aura_ids[i])
             {
-                if (networked_active_aura_ids[i] == AURA_ID.NULL)
+                if (networked_active_aura_ids[i] == AURA_ID.NULL
+                    && local_active_aura_ids[i] != AURA_ID.NULL)
                 {
                     // new is null, so remove.
                     RemoveAuraAtIndex(i);
@@ -88,7 +89,6 @@ public class AuraContainer : NetworkBehaviour
                     }
 
                     AttachAura(networked_active_aura_ids[i]);
-
                 }
             }
         }

@@ -16,7 +16,6 @@ public class ObjectCore : CoreNode
     // Should there be a generic objectcore networkprefabref,
     // then we replace its components at run time? 
     // or a unique networkprefabref per thing that can be spawned?
-    public GameObject corePrefab;
     public NetworkPrefabRef corePrefabRef;
 
     [Promotable("Lifetime", DataTypeTag.Lifetime)]

@@ -6,7 +6,7 @@ using System.Linq;
 public static class SpellSystemHelpers
 {
 
-    public static GameObject CreateVFX(ModifierType type, VFXContext context, Transform parent, float sizeMult)
+    public static GameObject CreateVFX(VFXContext context, ModifierType type, Transform parent, float sizeMult)
     {
         if (GameController.Instance.vfxDatabase == null)
         {
@@ -15,7 +15,7 @@ public static class SpellSystemHelpers
         }
         VFXDatabase vfxDatabase = GameController.Instance.vfxDatabase;
 
-        GameObject vfxPrefab = vfxDatabase.GetVFX(type, context);
+        GameObject vfxPrefab = vfxDatabase.GetVFX(context, type);
 
         if (vfxPrefab != null)
         {

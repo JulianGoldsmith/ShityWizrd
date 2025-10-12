@@ -13,5 +13,7 @@ public class OverlapSphereNode : TriggerNode
         sphereChecker.filterNodes = this.filterNodes;
         sphereChecker.outcomeNodes = this.outcomeNodes;
         sphereChecker.size = size;
+
+        PassThroughVFX(sphereChecker);
     }
 }

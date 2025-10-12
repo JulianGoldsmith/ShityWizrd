@@ -164,7 +164,7 @@ public class HybridCharacterController : NetworkBehaviour
             lookRot = IsFinite(data.lookRotation) ? data.lookRotation : Quaternion.identity;
             
 
-            if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.JUMP))
+            if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.JUMP) && IsGrounded)
             {
                 ApplyJump(); //animation is applied in Render -> Update Animations()
                 _jumpCount++;
@@ -442,7 +442,8 @@ public class HybridCharacterController : NetworkBehaviour
 
     public void ApplyJump()
     {
-        hipsRb.AddForce(jumpForce * Vector3.up, ForceMode.VelocityChange);
+        if(IsGrounded)
+            hipsRb.AddForce(jumpForce * Vector3.up, ForceMode.VelocityChange);
         
         //Debug.Log("Jumped");
     }

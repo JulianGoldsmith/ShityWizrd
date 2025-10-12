@@ -13,7 +13,7 @@ public class ChargeCastNode : CasterNode
     public override void OnCastStarted(SpellState state, CastActionController castController)
     {
  
-        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(ModifierType.Arcane, VFXContext.CastChargeEffect, state.CastItem.projectileSpawnPoint, 1);
+        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(VFXContext.CastChargeEffect, ModifierType.Arcane, state.CastItem.projectileSpawnPoint, 1);
         state.CastChargeLevel = 0;
     }
 

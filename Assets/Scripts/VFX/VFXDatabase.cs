@@ -9,34 +9,34 @@ public class VFXDatabase : ScriptableObject
     public GameObject globalDefaultVFX;
 
     [SerializeField]
-    private List<ModifierVFXSet> vfxSets;
+    private List<ContextualVFXSet> vfxSets;
 
-    private Dictionary<ModifierType, Dictionary<VFXContext, GameObject>> _vfxDictionary;
+    private Dictionary<VFXContext, Dictionary<ModifierType, GameObject>> _vfxDictionary;
 
     private void OnEnable()
     {
-        _vfxDictionary = new Dictionary<ModifierType, Dictionary<VFXContext, GameObject>>();
-        foreach (var vfxSet in vfxSets)
+        _vfxDictionary = new Dictionary<VFXContext, Dictionary<ModifierType, GameObject>>();
+        foreach(var vfxSet in vfxSets)
         {
-            var contextDict = new Dictionary<VFXContext, GameObject>();
-            foreach (var mapping in vfxSet.contextualVFXs)
+            var modifiervfxlists = new Dictionary<ModifierType, GameObject>();
+            foreach (var mapping in vfxSet.modifierVFXs)
             {
-                contextDict[mapping.context] = mapping.vfxPrefab;
+                modifiervfxlists[mapping.modifierType] = mapping.vfxPrefab;
             }
-            _vfxDictionary[vfxSet.modifierType] = contextDict;
+            _vfxDictionary[vfxSet.context] = modifiervfxlists;
         }
     }
 
 
     // Gets a contextspecific VFX based on the modifier type.
 
-    public GameObject GetVFX(ModifierType type, VFXContext context)
+    public GameObject GetVFX(VFXContext context, ModifierType type)
     {
 
-        if (_vfxDictionary.TryGetValue(type, out var contextDict))
+        if (_vfxDictionary.TryGetValue(context, out var contextDict))
         {
 
-            if (contextDict.TryGetValue(context, out var vfx) && vfx != null)
+            if (contextDict.TryGetValue(type, out var vfx) && vfx != null)
             {
                 return vfx; 
             }
@@ -48,18 +48,18 @@ public class VFXDatabase : ScriptableObject
 }
 
 [System.Serializable]
-public class ContextualVFXMapping
+public class ContextualVFXSet
 {
     public VFXContext context;
-    public GameObject vfxPrefab;
+    public List<ModifierVFXMapping> modifierVFXs;
 }
 
 
 [System.Serializable]
-public class ModifierVFXSet
+public class ModifierVFXMapping
 {
     public ModifierType modifierType;
-    public List<ContextualVFXMapping> contextualVFXs;
+    public GameObject vfxPrefab;
 }
 
 
@@ -81,4 +81,6 @@ public enum VFXContext
 
 
     HitImpact,
+
+    AuraBubble,
 }

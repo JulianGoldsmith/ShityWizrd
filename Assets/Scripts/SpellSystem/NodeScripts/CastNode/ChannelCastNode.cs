@@ -19,7 +19,7 @@ public class ChannelCastNode : CasterNode
         state.CastPosition = spawnPosition;
         state.isHeld = true;
 
-        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(ModifierType.Arcane, VFXContext.CastChargeEffect, state.CastItem.projectileSpawnPoint, 1);
+        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(VFXContext.CastChargeEffect, ModifierType.Arcane, state.CastItem.projectileSpawnPoint, 1);
         state.CastChargeLevel = 0;
 
         foreach (var node in outcomeCoreNodes)

@@ -19,7 +19,7 @@ public class MomentumThrowCastNode : CasterNode
         anchorGO.transform.rotation = handController.rightHand.physicsProxy.rotation;
 
         handController.LockHandToTarget(handController.rightHand, anchorGO.transform);
-        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(ModifierType.Arcane, VFXContext.CastChargeEffect, state.CastItem.projectileSpawnPoint, 1);
+        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(VFXContext.CastChargeEffect, ModifierType.Arcane, state.CastItem.projectileSpawnPoint, 1);
         handController.SetHandState(handController.leftHand, pointHandState);
     }
 

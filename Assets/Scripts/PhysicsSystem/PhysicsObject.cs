@@ -27,7 +27,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))] 
     public PhysicsObjectProperties physicsObjectProperties { get; set; }
-    private Rigidbody rigidbody;
+    public Rigidbody rb;
     public PhysicsMaterial physicsMaterial;
     [SerializeField] protected List<PhysicsSubObject> physicsSubObjects = new List<PhysicsSubObject>();
 
@@ -54,6 +54,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     }
     #endregion
 
+
     #region Initialisation
     // Assign parameter values to Rigidbody and Unity PhysicsMaterials
     public void InitialisePhysicsObject()
@@ -74,19 +75,19 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // changed yet.
 
     }
-    public Rigidbody UpdateRigidbody(Rigidbody rb)
+    public Rigidbody UpdateRigidbody(Rigidbody _rb)
     {
-        if (rb == null) return null;
+        if (_rb == null) return null;
 
-        rigidbody = rb;
+        rb = _rb;
 
-        rigidbody.mass = physicsObjectProperties.mass;
-        rigidbody.linearDamping = physicsObjectProperties.hardness;
-        rigidbody.angularDamping = physicsObjectProperties.mass * 0.05f;
+        rb.mass = physicsObjectProperties.mass;
+        rb.linearDamping = physicsObjectProperties.hardness;
+        rb.angularDamping = physicsObjectProperties.mass * 0.05f;
 
-        rigidbody.useGravity = true;
+        rb.useGravity = true;
 
-        return rigidbody;
+        return rb;
     }
 
     public PhysicsMaterial UpdatePhysicsMaterial(PhysicsMaterial mat)
@@ -225,9 +226,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         if(other_po != null)
         {
-            if (other_po.rigidbody != null)
+            if (other_po.rb != null)
             {
-                other_rb = other_po.rigidbody;
+                other_rb = other_po.rb;
                 other_velocity = other_rb.linearVelocity;
             }
 
@@ -248,7 +249,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         float total_mass = physicsObjectProperties.mass + other_mass;
 
         // Here's some standard momentum sharing physics:
-        Vector3 my_momentum = rigidbody.linearVelocity * physicsObjectProperties.mass;
+        Vector3 my_momentum = rb.linearVelocity * physicsObjectProperties.mass;
         Vector3 other_momentum = other_velocity * other_mass;
         Vector3 total_momentum = my_momentum + other_momentum;
 
@@ -258,7 +259,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         Vector3 my_new_momentum = my_momentum * (1 - shared_stickiness_factor) + 
             total_momentum * shared_stickiness_factor * physicsObjectProperties.mass / total_mass;
 
-        rigidbody.linearVelocity = my_new_momentum / physicsObjectProperties.mass;
+        rb.linearVelocity = my_new_momentum / physicsObjectProperties.mass;
 
         if (other_po != null)
         {

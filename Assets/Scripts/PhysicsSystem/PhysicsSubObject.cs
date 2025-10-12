@@ -6,12 +6,15 @@ public class PhysicsSubObject : NetworkBehaviour
     // multiple rigid bodies to trigger collisions
     // for a physicsobject (e.g. hands, arms, legs).
     public PhysicsObject parent_physics_object;
+    public Rigidbody rb;
 
     public override void Spawned()
     {
         base.Spawned();
         if (parent_physics_object != null)
             parent_physics_object.SubscribeSubObject(this);
+
+        rb = GetComponent<Rigidbody>();
     }
 
     void OnCollisionEnter(Collision collision)

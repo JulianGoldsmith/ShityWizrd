@@ -7,11 +7,19 @@ public abstract class TriggerNode : SpellNode
     public List<FilterNode> filterNodes = new();
     public List<SpellNode> outcomeNodes = new();
 
+    public VFXContext vfx_context;
+    public ModifierType default_vfx_modifier_type;
+
     public abstract void SetUp(GameObject spellCore, SpellState state);
 
     public void Execute()
     {
 
+    }
+
+    public virtual void PassThroughVFX(SpellTrigger spelltrigger_mono)
+    {
+        spelltrigger_mono.OnAttach(this);
     }
 
     public override List<SocketDefinition> GetSockets()

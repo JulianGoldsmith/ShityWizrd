@@ -14,7 +14,7 @@ public class OverlapSphereST : SpellTrigger
 
     public float size = 1.0f;
     Collider[] non_alloc_colliders = new Collider[MAX_TARGETS];
-    
+        
     public override void OnTick()
     {
         base.OnTick();
