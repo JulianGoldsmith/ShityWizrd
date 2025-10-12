@@ -29,7 +29,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public PhysicsObjectProperties physicsObjectProperties { get; set; }
     private Rigidbody rigidbody;
     public PhysicsMaterial physicsMaterial;
-    protected List<PhysicsSubObject> physicsSubObjects = new List<PhysicsSubObject>();
+    [SerializeField] protected List<PhysicsSubObject> physicsSubObjects = new List<PhysicsSubObject>();
 
     // bonkedness is the standin for consciousness (player)
     // and health (object).
@@ -148,7 +148,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             return;
         PhysicsObject other = collision.gameObject.GetComponent<PhysicsObject>();
         float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.physicsObjectProperties);
-        Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
+
         if (IfGetBonked(bonk_amount))
         {
             OnBonk(bonk_amount);
@@ -367,7 +367,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public virtual void OnBonkednessChanged(NetworkBehaviourBuffer previous)
     {
         var last_known_bonkedness = GetPropertyReader<float>(nameof(current_bonkedness)).Read(previous);
-        Log.Info($"counter changed: {current_bonkedness}, prev: {last_known_bonkedness}");
+        //Log.Info($"counter changed: {current_bonkedness}, prev: {last_known_bonkedness}");
         if (zero_bonkedness && last_known_bonkedness > 0)
         {
             // got bonked

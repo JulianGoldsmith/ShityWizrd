@@ -5,7 +5,7 @@ public class PhysicsSubObject : NetworkBehaviour
     // A component of a physics object, allowing
     // multiple rigid bodies to trigger collisions
     // for a physicsobject (e.g. hands, arms, legs).
-    [SerializeField] PhysicsObject parent_physics_object;
+    public PhysicsObject parent_physics_object;
 
     public override void Spawned()
     {

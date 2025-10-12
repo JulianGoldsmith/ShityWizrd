@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-
 public abstract class SpellTrigger : MonoBehaviour
 {
     public SpellState state;
@@ -9,5 +8,5 @@ public abstract class SpellTrigger : MonoBehaviour
 
     public List<SpellNode> outcomeNodes;
 
-
+    public virtual void OnTick() { }
 }

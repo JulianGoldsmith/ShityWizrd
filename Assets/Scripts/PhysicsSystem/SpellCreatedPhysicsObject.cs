@@ -4,11 +4,14 @@ using UnityEngine;
 using UnityEngine.VFX;
 
 
-public class SpellCreatedPhysicsObject : PhysicsObject
+public class SpellCreatedPhysicsObject : PhysicsObject, IAfterSpawned
 {
     [SerializeField] GameObject shatterVFX;
     [Networked] private TickTimer lifetime_timer { get; set; }
     bool should_despawn_next_tick = false;
+
+    private SpellTrigger[] spelltriggers;
+
     public void AssignProperties(ObjectCore createdby)
     {
         // Carryover any spell-modifiers into the properties?
@@ -19,14 +22,32 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         lifetime_timer = TickTimer.CreateFromSeconds(Runner, createdby.lifetime);
     }
 
+    public void AfterSpawned()
+    {
+        spelltriggers = GetComponents<SpellTrigger>();
+    }
+
     public override void FixedUpdateNetwork()
     {
         base.FixedUpdateNetwork();
         
+        OnTickTriggerComponents();
+
         if (should_despawn_next_tick || lifetime_timer.Expired(Runner))
             DespawnObject();
         else if (zero_bonkedness)
             should_despawn_next_tick = true;
+    }
+
+    protected void OnTickTriggerComponents()
+    {
+        if (spelltriggers == null || spelltriggers.Length == 0)
+            return;
+
+        for (int i = 0; i < spelltriggers.Length; i++)
+        {
+            spelltriggers[i].OnTick();
+        }
     }
 
     protected override void OnZeroBonk()
@@ -59,7 +80,7 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     {
         base.Despawned(runner, hasState);
 
-        Debug.Log($"Despawned with {current_bonkedness} bonkedness");
+        //Debug.Log($"Despawned with {current_bonkedness} bonkedness");
 
         // Can't read in current_bonkedness because this despawned
         // is called before the networked properties are updated
@@ -69,4 +90,6 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         if (zero_bonkedness)
             CreateShatterParticles(Mathf.Max(0, -current_bonkedness));
     }
+
+
 }

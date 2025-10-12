@@ -400,7 +400,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
@@ -409,7 +409,7 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 808194189}
     - target: {fileID: 3256514463769092792, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: m_Interpolate
       value: 0
@@ -1081,7 +1081,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
@@ -1089,6 +1089,10 @@ PrefabInstance:
       objectReference: {fileID: 491005608}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
+      value: 
+      objectReference: {fileID: 491005609}
+    - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[4]'
       value: 
       objectReference: {fileID: 491005599}
     - target: {fileID: 3256514463769092792, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -1214,6 +1218,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &491005609 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -5027240436109435661, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 491005588}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 491005589}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &534054813
@@ -2287,6 +2302,17 @@ MonoBehaviour:
   m_ObsoleteUseShadowQualitySettings: 0
   m_ObsoleteCustomShadowResolution: 512
   m_ObsoleteContactShadows: 0
+--- !u!114 &808194189 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -5027240436109435661, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 54417538}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &837799605
 GameObject:
   m_ObjectHideFlags: 0
@@ -3382,10 +3408,12 @@ MonoBehaviour:
   availableTriggerNodes:
   - {fileID: 11400000, guid: 62f104b76d5196f46a3792c386ef7114, type: 2}
   - {fileID: 11400000, guid: daee87a99bc0fe44aa7d666693c1f211, type: 2}
+  - {fileID: 11400000, guid: 432abcf751a1ff04abe7c9bc01fc7574, type: 2}
   availableFilterNodes:
   - {fileID: 11400000, guid: ba6af3579b5b7ba44bcf4f23966612f1, type: 2}
   availableEffectNodes:
   - {fileID: 11400000, guid: 50d1b39aa447006439b3512465475b6f, type: 2}
+  - {fileID: 11400000, guid: 7d7be8810ab391a4fbc3cb4f068e0cb2, type: 2}
   availableValueNodes:
   - {fileID: 11400000, guid: 2c043430d9798db43aa33122d4ae7e3f, type: 2}
   - {fileID: 11400000, guid: 0c5b4cdc5e614864098e279c4110fc75, type: 2}
@@ -8169,6 +8197,10 @@ PrefabInstance:
     - target: {fileID: 1888927423885705802, guid: e5b64127b779fc8449824725501a8a0a, type: 3}
       propertyPath: SortKey
       value: 2031369607
+      objectReference: {fileID: 0}
+    - target: {fileID: 1888927423885705802, guid: e5b64127b779fc8449824725501a8a0a, type: 3}
+      propertyPath: NetworkedBehaviours.Array.size
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 2133879048525985984, guid: e5b64127b779fc8449824725501a8a0a, type: 3}
       propertyPath: SortKey

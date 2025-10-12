@@ -121,7 +121,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   itemName: EggWand
-  primarySpellID: 
+  primarySpellID: AntigravityEgg
   secondarySpellID: 
   primaryActionSpell: {fileID: 0}
   secondaryActionSpell: {fileID: 0}
@@ -135,6 +135,8 @@ MonoBehaviour:
   _HoldingPlayer: {fileID: 0}
   lastHoldingPlayer: {fileID: 0}
   _HolderChangedCount: 0
+  updateNextFrame: 0
+  throwDir: {x: 0, y: 0, z: 0}
 --- !u!136 &8305654668865484682
 CapsuleCollider:
   m_ObjectHideFlags: 0

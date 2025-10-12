@@ -17,7 +17,7 @@ public class AuraContainer : NetworkBehaviour
     NetworkArray<TickTimer> networked_active_aura_timers { get; }
 
     // basically a local copy of the network active aura ids:
-    AURA_ID[] local_active_aura_ids = new AURA_ID[CAPACITY];
+    [SerializeField] AURA_ID[] local_active_aura_ids = new AURA_ID[CAPACITY];
 
     // NOTE: current implementation doesn't allow modification
     // of aura values nor storing of values within an aura.
@@ -47,10 +47,13 @@ public class AuraContainer : NetworkBehaviour
         // Run the auras each tick.
         // Have to go back to front in case they dissappear.
 
-        for (int i = networked_active_aura_ids.Length - 1; i >= 0; i++)
+        for (int i = networked_active_aura_ids.Length - 1; i >= 0; i--)
         {
             if (networked_active_aura_ids[i] == AURA_ID.NULL)
+            {
                 continue;
+            }
+            Debug.Log($"Ticking aura {networked_active_aura_ids[i]} at time {networked_active_aura_timers[i].RemainingTime(Runner)}");
             AuraLookUp.Get(networked_active_aura_ids[i])?.OnTick(this);
             if (networked_active_aura_timers[i].Expired(Runner))
                 RemoveAuraAtIndex(i);
@@ -110,24 +113,30 @@ public class AuraContainer : NetworkBehaviour
         // check if already exists.
         int index;
         index = GetExistingSlot(aura.unique_label);
+        Debug.Log($"Attaching aura to {name}");
         if (index > -1)
         {
             // Already exists, so just update.
+            Debug.Log($"existing index found for {aura.unique_label} at index {index}");
             CreateAuraAtIndex(aura, index);
             return;
         }
 
         index = GetFirstEmptySlot();
-        if (index == -1)
+        if (index < 0)
             throw new System.Exception("Not enough capacity for Aura.");
 
+        Debug.Log($"empty slot found for {aura.unique_label} at {index}");
         CreateAuraAtIndex(aura, index);
         aura.OnApply(this);
     }
     void CreateAuraAtIndex(Aura aura, int index)
     {
         if (HasStateAuthority)
+        {
+            networked_active_aura_ids.Set(index, aura.unique_label);
             networked_active_aura_timers.Set(index, CreateTimer(aura));
+        }
         else
             local_active_aura_ids[index] = aura.unique_label;
     }
@@ -157,6 +166,8 @@ public class AuraContainer : NetworkBehaviour
             auraid = networked_active_aura_ids[index];
         else
             auraid = local_active_aura_ids[index];
+
+        Debug.Log($"Removing aura at {index} {auraid}");
 
         if (auraid == AURA_ID.NULL)
             throw new System.Exception($"Null aura at index {index}");

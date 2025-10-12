@@ -17,11 +17,26 @@ public class ApplyAuraNode : EffectNode
 
             if(target.TryGetComponent<AuraContainer>(out AuraContainer ac))
             {
-                for (int i = 0; i < auras.Length; i++)
+                AttachAurasTo(ac);
+            }
+            else if (target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject pso))
+            {
+                // Didn't hit the object, but hit a subobject of it.
+                PhysicsObject po = pso.parent_physics_object;
+                if(po != null && po.TryGetComponent<AuraContainer>(out AuraContainer ac_parent))
                 {
-                    ac.AttachAura(auras[i]);
+                    AttachAurasTo(ac_parent);
                 }
             }
+        }
+    }
+
+    void AttachAurasTo(AuraContainer ac)
+    {
+        for (int i = 0; i < auras.Length; i++)
+        {
+            Debug.Log($"Found AC {ac.name} -> attach aura {auras[i].unique_label}");
+            ac.AttachAura(auras[i]);
         }
     }
 }

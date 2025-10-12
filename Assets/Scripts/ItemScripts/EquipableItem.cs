@@ -130,7 +130,7 @@ public class EquipableItem : InteractableItem
 
         if (!string.IsNullOrEmpty(primarySpellID))
         {
-            //primaryActionSpell = SpellGraphController.Instance.GetSpellFromAssestsByName(primarySpellID);
+            primaryActionSpell = SpellGraphController.Instance.GetSpellFromAssestsByName(primarySpellID);
         }
 
 
