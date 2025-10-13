@@ -137,7 +137,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hit, pickupRadius, itemLayer))
         {
-            Debug.Log($"best candidate = {hit.collider.gameObject.name}");
+            //Debug.Log($"best candidate = {hit.collider.gameObject.name}");
             bestCandidate = hit.collider.GetComponent<InteractableItem>();
             overrideUpdatePos = true; //if finding by raycast it should be more accurate
         }
@@ -170,17 +170,17 @@ public class NetworkedInventoryManager : NetworkBehaviour
         if ((bestCandidate != null && potentialItemToPickup != bestCandidate) || overrideUpdatePos)
         {
             //decide if item or physics grabbable 
-            Debug.Log($"Best candidate found {bestCandidate.gameObject.name}");
+            //Debug.Log($"Best candidate found {bestCandidate.gameObject.name}");
             potentialItemToPickup = bestCandidate.gameObject.GetComponent<NetworkObject>();
             if (bestCandidate is EquipableItem equipable)
             {
                 handController.SetHandTarget_ToPickUpPoint(false, equipable.primaryHandle, equipable.heldHandState);
 
-                Debug.Log($"looking for selected set the hands to pick up : {potentialItemToPickup.name}");
+                //Debug.Log($"looking for selected set the hands to pick up : {potentialItemToPickup.name}");
             }
             else if(bestCandidate is DraggableItem draggable)
             {
-                Debug.Log($"looking for selected set the hands to DRAGG : {potentialItemToPickup.name}");
+                //Debug.Log($"looking for selected set the hands to DRAGG : {potentialItemToPickup.name}");
                 if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hitted, pickupRadius*2, itemLayer))
                 {
                     handController.SetHandTarget_ToDraggPoint(false, draggable, hitted.point);

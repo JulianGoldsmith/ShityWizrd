@@ -2,7 +2,6 @@ using UnityEngine;
 using Fusion;
 using System.Collections.Generic;
 using System;
-using static UnityEditor.PlayerSettings;
 
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
@@ -67,7 +66,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         UpdateVisuals();
         ModifyTransform();
     }
-    public void InitialiseAfterBehavioursAndTriggers()
+    public virtual void InitialiseAfterBehavioursAndTriggers()
     {
         // Called after behaviours and triggers have all been attached
         // and initialised.

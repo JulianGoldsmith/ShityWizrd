@@ -6,7 +6,7 @@ using System.Linq;
 public static class SpellSystemHelpers
 {
 
-    public static GameObject CreateVFX(VFXContext context, ModifierType type, Transform parent, float sizeMult)
+    public static GameObject CreateVFX(VFXContext context, ModifierType type, Transform parent, float sizeMult, bool ignore_parent_scale = false)
     {
         if (GameController.Instance.vfxDatabase == null)
         {
@@ -25,12 +25,27 @@ public static class SpellSystemHelpers
             {
                 vfxInstance.transform.position = parent.position;
                 vfxInstance.transform.rotation = parent.rotation;
+
+                if (ignore_parent_scale)
+                {
+                    // divide through by parent scale, to shrink back to base scale.
+                    Vector3 new_scale = vfxPrefab.transform.localScale;
+                    new_scale.x /= parent.localScale.x;
+                    new_scale.y /= parent.localScale.y;
+                    new_scale.z /= parent.localScale.z;
+                    vfxInstance.transform.localScale = new_scale;
+                }
             }
+
             VFXController vfxController = vfxInstance.AddComponent<VFXController>();
             if (vfxController != null)
             {
                 vfxController.SizeMult = sizeMult;
+
+                vfxController.Initialize();
             }
+
+
 
             return vfxInstance;
         }

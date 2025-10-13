@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.VFX;
 
 
-public class SpellCreatedPhysicsObject : PhysicsObject, IAfterSpawned
+public class SpellCreatedPhysicsObject : PhysicsObject
 {
     [SerializeField] GameObject shatterVFX;
     [Networked] private TickTimer lifetime_timer { get; set; }
@@ -22,9 +22,14 @@ public class SpellCreatedPhysicsObject : PhysicsObject, IAfterSpawned
         lifetime_timer = TickTimer.CreateFromSeconds(Runner, createdby.lifetime);
     }
 
-    public void AfterSpawned()
+    public override void InitialiseAfterBehavioursAndTriggers()
     {
+        base.InitialiseAfterBehavioursAndTriggers();
         spelltriggers = GetComponents<SpellTrigger>();
+        //for(int i = 0; i < spelltriggers.Length; i++)
+        //{
+        //    spelltriggers[i].OnAttach();
+        //}
     }
 
     public override void FixedUpdateNetwork()
@@ -39,6 +44,31 @@ public class SpellCreatedPhysicsObject : PhysicsObject, IAfterSpawned
             should_despawn_next_tick = true;
     }
 
+    [Networked, OnChangedRender(nameof(OnTickClientCatchup))] public int tick { get; set; } //int that increments everytime a ticktrigger is called.
+    // (client will probably be one tick behind...)
+    public override void Render()
+    {
+        base.Render();
+    }
+    public void OnTickClientCatchup()
+    {
+        // Only run for clients.
+        // Pseudo tick tracker.
+        // This is surely incorrect, 
+        // since we'll run a load of missed 
+        // ticks altogether.
+        // Could just run one.
+        if (HasStateAuthority)
+            return;
+        if (tick == Runner.Tick)
+            return;
+
+        int tick_diff = Mathf.Max(0, Runner.Tick - tick);
+        for (int i = 0; i < tick_diff; i++)
+        {
+            OnTickTriggerComponents();
+        }
+    }
     protected void OnTickTriggerComponents()
     {
         if (spelltriggers == null || spelltriggers.Length == 0)
@@ -48,6 +78,7 @@ public class SpellCreatedPhysicsObject : PhysicsObject, IAfterSpawned
         {
             spelltriggers[i].OnTick();
         }
+        tick = Runner.Tick;
     }
 
     protected override void OnZeroBonk()

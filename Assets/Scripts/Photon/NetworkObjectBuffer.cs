@@ -188,7 +188,10 @@ public class NetworkObjectBuffer : NetworkBehaviour
             throw new System.Exception("[NetworkObjectBuffer] Sum total partial buffer lengths greater than capacity.");
 
         if (_bufferSize == 0 || prefab_ids == null || prefab_ids.Length == 0)
+        {
+            Debug.Log($"Buffer not filled. _bufferSize {_bufferSize} pref count {prefab_ids.Length}");
             return;
+        }
 
         FillBuffer();
     }
@@ -223,6 +226,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     void FillBuffer()
     {
+        Debug.Log("Filling buffer");
         if (HasStateAuthority)
             ResetKinematicsByte();
 
@@ -359,28 +363,45 @@ public class NetworkObjectBuffer : NetworkBehaviour
         //prefab_counts
         //_buffer_size
 
+        Debug.Log("loading buffer from spellgraph.");
+
         Dictionary<NetworkPrefabRef, float> found_prefabrefs_with_priorities = new Dictionary<NetworkPrefabRef, float>();
         float total_priority = 0;
         float current_priority = 0;
 
+        int search_count_remaining = 0;
         List<SpellNode> queued_search = new List<SpellNode>();
 
         int infinite_loop_fallback = 0;
         SpellNode next_node = graph.entryPointControllerNode;
         NetworkPrefabRef next_ref;
 
-        while(next_node != null && infinite_loop_fallback < _max_iterations_search_in_graph)
+        while((next_node != null || search_count_remaining > 0) && infinite_loop_fallback < _max_iterations_search_in_graph)
         {
+            Debug.Log($"iteration {infinite_loop_fallback} and found {found_prefabrefs_with_priorities.Count}");
             current_priority = 0;
+
+            if (search_count_remaining > 0 && next_node == null)
+            {
+                // just to catch weird cases of null nodes.
+                // Continue search.
+                search_count_remaining = queued_search.Count;
+                next_node = queued_search[0];
+                queued_search.RemoveAt(0);
+                continue;
+            }
 
             // Break out of while loop if it's been going too long.
             if (infinite_loop_fallback >= _max_iterations_search_in_graph)
                 break;
             infinite_loop_fallback++;
-            
+
+            Debug.Log($"next node is {next_node.name} {next_node is IHasPrefabRefToBuffer}");
+
             // This node has a prefabref to buffer, so add it to the dict.
             if(next_node is IHasPrefabRefToBuffer)
             {
+                Debug.Log("has prefabreftobuffer");
                 // Give more priority to the first prefab found.
                 // TODO:
                 //  - Add more here to weight objects that might
@@ -406,10 +427,12 @@ public class NetworkObjectBuffer : NetworkBehaviour
             // So currently generic but could be streamlined for speed.
             // All clientside though, at least.
             queued_search.AddRange(next_node.GetAllDependentNodes());
+            Debug.Log($"queued search count {queued_search.Count}");
 
             if (queued_search.Count > 0)
             {
                 // Continue search.
+                search_count_remaining = queued_search.Count;
                 next_node = queued_search[0];
                 queued_search.RemoveAt(0);
             }

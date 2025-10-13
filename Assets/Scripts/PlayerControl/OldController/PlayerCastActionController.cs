@@ -40,12 +40,10 @@ public class PlayerCastActionController : CastActionController
         {
             if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
             {
-                Debug.Log($"pressed {primary_attack_pressed} {prior_buttons.Bits} {data.buttons.Bits}");
                 primary_attack_pressed++;
             }
             if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
             {
-                Debug.Log($"released {primary_attack_pressed} {prior_buttons.Bits} {data.buttons.Bits}");
                 primary_attack_released++;
             }
             prior_buttons = data.buttons;
@@ -58,7 +56,6 @@ public class PlayerCastActionController : CastActionController
             if (currentAttackCooldown <= 0)
             {
                 primary_attack_pressed = 0;
-                Debug.Log($"start cast {primary_attack_pressed} {primary_attack_released}");
                 StartCast(primary_attack_released > 0);
                 if (primary_attack_released > 0)
                     primary_attack_released = 0;
