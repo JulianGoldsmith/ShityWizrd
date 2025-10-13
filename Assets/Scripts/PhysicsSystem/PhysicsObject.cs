@@ -226,7 +226,13 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         // removing stickiness from non-physics objects for now.
         if (other_po == null)
-            return;
+        {
+            PhysicsSubObject pso = other.GetComponent<PhysicsSubObject>();
+            if (pso == null)
+                return;
+            other_rb = pso.rb;
+            other_po = pso.parent_physics_object;
+        }
 
         if(other_po != null)
         {

@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5171556808483213913}
   - component: {fileID: 2973735011368766121}
   - component: {fileID: 8305654668865484682}
+  - component: {fileID: 7052599741528315864}
   m_Layer: 16
   m_Name: UnEggWand_Heirachy
   m_TagString: Untagged
@@ -106,6 +107,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 5868808666809287068}
   - {fileID: 2973735011368766121}
+  - {fileID: 7052599741528315864}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2973735011368766121
 MonoBehaviour:
@@ -160,6 +162,19 @@ CapsuleCollider:
   m_Height: 0.5845
   m_Direction: 1
   m_Center: {x: 0, y: 0.2625, z: 0}
+--- !u!114 &7052599741528315864
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6367780370427943061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  local_active_aura_ids: 0000000000000000000000000000000000000000000000000000000000000000
 --- !u!1001 &1772570345489050402
 PrefabInstance:
   m_ObjectHideFlags: 0
