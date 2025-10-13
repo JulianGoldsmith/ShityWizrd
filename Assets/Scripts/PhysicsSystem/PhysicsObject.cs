@@ -30,7 +30,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public Rigidbody rb;
     public PhysicsMaterial physicsMaterial;
     [SerializeField] protected List<PhysicsSubObject> physicsSubObjects = new List<PhysicsSubObject>();
-
+    protected Tick? tick_spawned = null;
     // bonkedness is the standin for consciousness (player)
     // and health (object).
     [Networked, OnChangedRender(nameof(OnBonkednessChanged))] 
@@ -48,6 +48,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         // When it spawns, ensure the properties are mapped.
         base.Spawned();
+        tick_spawned = Runner.Tick;
         InitialisePhysicsObject();
 
         current_bonkedness = starting_bonkedness;
@@ -155,42 +156,68 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     }
     #endregion
 
-    #region Halo Collisions
-    // Physics objects are given halo colliders which are just triggers
-    // to allow sticking to objects.
-    public void OnHaloEnter(Collider other)
+    public override void FixedUpdateNetwork()
     {
-        if (!HasStateAuthority)
-            return;
+        RunHaloCollisions();
     }
-    public void OnHaloExit(Collider other)
-    {
-        if (!HasStateAuthority)
-            return;
-    }
-    public void OnHaloStay(Collider other)
-    {
-        if (!HasStateAuthority)
-            return;
-        // If sticky, apply a drag force while halo
-        // collider is being triggered.
-        // Note that current implementation means it gets pinged
-        // away at high velocity if stickiness is too high.
-        // At about 10, it actually becomes sticky.
-        // Might need a maxmin.
-        //rigidbody.AddForce(-rigidbody.linearVelocity * physicsObjectProperties.stickiness);
-        //rigidbody.linearVelocity = rigidbody.linearVelocity * Mathf.Clamp01(1 - physicsObjectProperties.stickiness);
-        OnStick(other);
-    }
-    #endregion
+
 
 
     #region Material Physics
+    const int MAX_HALO_COLLISIONS = 8; // max number objects that can be in halo.
+    Collider[] non_alloc_colliders = new Collider[MAX_HALO_COLLISIONS];
+    public float halo_radius_scale_modifier = 1; // halo_size, applied to greatest localscale x/y/z.
+    bool ShouldRunHaloCollisions()
+    {
+        // currently only run if sticky.
+        // can add more.
+        return physicsObjectProperties.stickiness > 0;
+    }
+    float halo_radius()
+    {
+        return 0.2f * halo_radius_scale_modifier * Mathf.Max(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+    }
+    void RunHaloCollisions()
+    {
+        // This is used for stickiness, but could be
+        // used for other physics processes.
+        // can also layer mask if necessary.
+
+        if (!ShouldRunHaloCollisions())
+            return;
+        // LayerMask mask
+        int hit = Physics.OverlapSphereNonAlloc(
+            transform.position, 
+            halo_radius(), 
+            non_alloc_colliders,
+            SpellSystemHelpers.GeneralCollisionLayerMask());
+
+        if (hit <= 0)
+            return;
+
+        for (int i = 0; i < hit; ++i)
+        {
+            OnStick(non_alloc_colliders[i]);
+        }
+    }
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.blueViolet;
+        Gizmos.DrawWireSphere(transform.position, halo_radius());
+    }
     void OnStick(Collider other)
     {
         // If I'm not sticky, don't do anything.
         if (physicsObjectProperties.stickiness == 0)
             return;
+
+        if ((Runner.Tick - tick_spawned) <= 1)
+        {
+            // skip the first tick of stickiness.
+            // avoids sticking to player and cast-item.
+            // there is defintely a better way to do this ofc.
+            return;
+        }
 
         // If this is sticky and the halo has triggered, then:
         // - Check if the other is a physicsobject
@@ -267,14 +294,17 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         Vector3 my_new_momentum = my_momentum * (1 - shared_stickiness_factor) + 
             total_momentum * shared_stickiness_factor * physicsObjectProperties.mass / total_mass;
 
-        rb.linearVelocity = my_new_momentum / physicsObjectProperties.mass;
+        Vector3 velocity_diff = (my_new_momentum / physicsObjectProperties.mass) - rb.linearVelocity;
+        ApplyForceToSelfAndSubObjects(velocity_diff, ForceMode.VelocityChange);
 
         if (other_po != null)
         {
             // Also deal with the other.
             Vector3 other_new_momentum = other_momentum * (1 - shared_stickiness_factor) +
                 total_momentum * shared_stickiness_factor * other_mass / total_mass;
-            other_rb.linearVelocity = other_new_momentum / other_mass;
+            //other_rb.linearVelocity = other_new_momentum / other_mass;
+            Vector3 velocity_diff_other = (other_new_momentum / other_mass) - other_rb.linearVelocity;
+            other_rb.AddForce(velocity_diff_other, ForceMode.VelocityChange);
         }
 
         // Sense checking:

@@ -5,7 +5,22 @@ using System.Linq;
 
 public static class SpellSystemHelpers
 {
-
+    private static LayerMask? _mask = null;
+    public static LayerMask GeneralCollisionLayerMask()
+    {
+        if (_mask != null)
+            return _mask??LayerMask.GetMask("Item");
+        _mask = LayerMask.GetMask(
+            new string[]
+            {
+                "Item",
+                "CharacterProxys",
+                "Ragdoll"
+                //"Environment"
+            }
+        );
+        return _mask ?? LayerMask.GetMask("Item");
+    }
     public static GameObject CreateVFX(VFXContext context, ModifierType type, Transform parent, float sizeMult, bool ignore_parent_scale = false)
     {
         if (GameController.Instance.vfxDatabase == null)

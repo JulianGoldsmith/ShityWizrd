@@ -20,8 +20,15 @@ public class OverlapSphereST : SpellTrigger
         base.OnTick();
         // only runs on host...
 
-        // can also layer mask if necessary.
-        int hit = Physics.OverlapSphereNonAlloc(transform.position, size, non_alloc_colliders);
+        // should add a layer mask
+        // LayerMask mask
+        // currently just hits all colliders and skips if not relevant,
+        // which uses up non_alloc capacity.
+        int hit = Physics.OverlapSphereNonAlloc(
+            transform.position, 
+            size, // this maybe should've been half size, since its radius not width.
+            non_alloc_colliders, 
+            SpellSystemHelpers.GeneralCollisionLayerMask());
         
         if (hit <= 0)
             return;
@@ -38,7 +45,7 @@ public class OverlapSphereST : SpellTrigger
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.red;
+        Gizmos.color = Color.blueViolet;
         Gizmos.DrawWireSphere(transform.position, size);
     }
 

@@ -25,6 +25,7 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     public override void InitialiseAfterBehavioursAndTriggers()
     {
         base.InitialiseAfterBehavioursAndTriggers();
+        tick_spawned = Runner.Tick; // reset the spawned tick, since might be buffering objects.
         spelltriggers = GetComponents<SpellTrigger>();
         //for(int i = 0; i < spelltriggers.Length; i++)
         //{
