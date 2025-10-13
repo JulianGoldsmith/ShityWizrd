@@ -130,6 +130,7 @@ MonoBehaviour:
   heldHandState: {fileID: 11400000, guid: 903f93413bbf6744f8f636324924477b, type: 2}
   primaryHandle: {fileID: 70880927531738438}
   secondaryHandle: {fileID: 0}
+  networkObjectBuffer: {fileID: 5981614230997947567}
   itemModelAndChildComponents: {fileID: 5220390951732050473}
   weaponBase: {fileID: 0}
   weaponEnd: {fileID: 0}
@@ -162,7 +163,7 @@ CapsuleCollider:
   m_Height: 0.5845
   m_Direction: 1
   m_Center: {x: 0, y: 0.2625, z: 0}
---- !u!114 &7052599741528315864
+--- !u!114 &5981614230997947567
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -175,6 +176,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   local_active_aura_ids: 0000000000000000000000000000000000000000000000000000000000000000
+  m_Script: {fileID: 11500000, guid: ce08014abd62a7345b11ebdb9a342a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prefab_ids: []
+  prefab_counts: 
+  _bufferSize: 8
 --- !u!1001 &1772570345489050402
 PrefabInstance:
   m_ObjectHideFlags: 0

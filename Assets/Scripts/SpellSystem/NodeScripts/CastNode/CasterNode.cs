@@ -69,6 +69,11 @@ public abstract class CasterNode : SpellNode
 
         return sockets;
     }
+
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        return outcomeCoreNodes;
+    }
 }
 
 

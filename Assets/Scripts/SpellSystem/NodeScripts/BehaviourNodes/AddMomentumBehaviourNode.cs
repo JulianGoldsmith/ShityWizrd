@@ -27,6 +27,7 @@ public class AddMomentumSBMono : SpellBehaviour
 
         if (rb != null)
         {
+            Debug.Log($"momentum add {velocity / Mathf.Sqrt(mass)}");
             rb.AddForce(velocity/Mathf.Sqrt(mass), ForceMode.VelocityChange); //ignores mass (ie adds momentum)
             // just applies velocity, not momentum since mass is ignored.
             // This means that you can fling any-weight object at the same initial velocity.

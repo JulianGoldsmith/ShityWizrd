@@ -179,4 +179,14 @@ public abstract class CoreNode : SpellNode
 
         return newInstance;
     }
+
+    public override List<SpellNode> GetAllDependentNodes()
+    {
+        List<SpellNode> dependencies = new List<SpellNode>();
+        if (defaultBehaviourNodes != null) dependencies.AddRange(defaultBehaviourNodes.ConvertAll(node => node as SpellNode));
+        if (defaultTriggerNodes != null) dependencies.AddRange(defaultTriggerNodes.ConvertAll(node => node as SpellNode));
+        if (behaviourNodes != null) dependencies.AddRange(behaviourNodes.ConvertAll(node => node as SpellNode));
+        if (triggerNodes != null) dependencies.AddRange(triggerNodes.ConvertAll(node => node as SpellNode));
+        return dependencies;
+    }
 }

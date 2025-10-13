@@ -22,6 +22,8 @@ public class EquipableItem : InteractableItem
 
     public Transform primaryHandle, secondaryHandle;
 
+    public NetworkObjectBuffer networkObjectBuffer;
+
     [Header("Pickup Variables")]
     public Transform itemModelAndChildComponents;
 
@@ -56,7 +58,7 @@ public class EquipableItem : InteractableItem
         Debug.Log("Equipping spell");
         // Set the spell as primary spell and communicate
         // the changes to all other instances via RPC call.
-        primaryActionSpell = graph;
+        SetAndInitialise(graph);
         string json = graph.ToJson();
 
         int playerid = my_player_id;
@@ -94,7 +96,7 @@ public class EquipableItem : InteractableItem
         SpellGraph graph = SpellGraph.FromJson(json);
         if(graph != null )
         {
-            primaryActionSpell = graph;
+            SetAndInitialise(graph);
         }
     }
     [Rpc(sources: RpcSources.All, targets: RpcTargets.All)]
@@ -149,6 +151,7 @@ public class EquipableItem : InteractableItem
     {
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         networkedRB = this.GetComponent<NetworkRigidbody3D>();
+        networkObjectBuffer = this.GetComponent<NetworkObjectBuffer>();
     }
 
     public override void Render()
@@ -230,7 +233,7 @@ public class EquipableItem : InteractableItem
             itemModelAndChildComponents.transform.SetParent(handPalm);
 
 
-            playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = this;
+            playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = this.GetComponent<NetworkObject>();
             hands.SetHandTarget_ToHold(false, heldHandState);
         }
 
@@ -306,5 +309,14 @@ public class EquipableItem : InteractableItem
     {
         networkedRB.Rigidbody.isKinematic = isKinematic;
         networkedRB.GetComponent<Collider>().enabled = true;
+    }
+
+
+    void SetAndInitialise(SpellGraph graph)
+    {
+        primaryActionSpell = graph;
+
+        if (networkObjectBuffer != null)
+            networkObjectBuffer.Initialise(graph);
     }
 }

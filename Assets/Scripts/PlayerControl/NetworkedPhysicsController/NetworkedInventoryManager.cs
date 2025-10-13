@@ -1,6 +1,7 @@
 using Fusion;
 using UnityEngine;
 
+[DefaultExecutionOrder(-10)]
 public class NetworkedInventoryManager : NetworkBehaviour
 {
     //public List<GameObject> equippedItems = new List<GameObject>();
@@ -23,8 +24,10 @@ public class NetworkedInventoryManager : NetworkBehaviour
     [SerializeField] private float pickupAngle = 45f;
     [SerializeField] public LayerMask itemLayer;
 
-    public InteractableItem currentItemInHand = null;
-    public InteractableItem potentialItemToPickup = null;
+    [Networked] public NetworkObject currentItemInHand { get; set; }
+    [Networked] public NetworkObject potentialItemToPickup { get; set; }
+
+    [Networked] public Vector3 localHandPosOnItem { get; set; }
 
     Quaternion lookRotation;
 
@@ -89,7 +92,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
             return;
         }
 
-        if (currentItemInHand != null && !currentItemInHand.isActiveAndEnabled)
+        if (currentItemInHand != null && !currentItemInHand.gameObject.activeInHierarchy)
             currentItemInHand = null;
 
         if (currentItemInHand == null)
@@ -134,6 +137,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hit, pickupRadius, itemLayer))
         {
+            Debug.Log($"best candidate = {hit.collider.gameObject.name}");
             bestCandidate = hit.collider.GetComponent<InteractableItem>();
             overrideUpdatePos = true; //if finding by raycast it should be more accurate
         }
@@ -166,23 +170,26 @@ public class NetworkedInventoryManager : NetworkBehaviour
         if ((bestCandidate != null && potentialItemToPickup != bestCandidate) || overrideUpdatePos)
         {
             //decide if item or physics grabbable 
-
-            potentialItemToPickup = bestCandidate;
-            if (potentialItemToPickup is EquipableItem equipable)
+            Debug.Log($"Best candidate found {bestCandidate.gameObject.name}");
+            potentialItemToPickup = bestCandidate.gameObject.GetComponent<NetworkObject>();
+            if (bestCandidate is EquipableItem equipable)
             {
                 handController.SetHandTarget_ToPickUpPoint(false, equipable.primaryHandle, equipable.heldHandState);
+
                 Debug.Log($"looking for selected set the hands to pick up : {potentialItemToPickup.name}");
             }
-            else if(potentialItemToPickup is DraggableItem draggable)
+            else if(bestCandidate is DraggableItem draggable)
             {
                 Debug.Log($"looking for selected set the hands to DRAGG : {potentialItemToPickup.name}");
                 if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hitted, pickupRadius*2, itemLayer))
                 {
                     handController.SetHandTarget_ToDraggPoint(false, draggable, hitted.point);
+                    localHandPosOnItem = draggable.transform.InverseTransformPoint(hitted.point);
                 }
                 else if (Physics.Raycast(characterController.GetEyePos(), draggable.transform.position - characterController.GetEyePos(), out RaycastHit hitted2, pickupRadius * 2, itemLayer))
                 {
                     handController.SetHandTarget_ToDraggPoint(false, draggable, hitted2.point);
+                    localHandPosOnItem = draggable.transform.InverseTransformPoint(hitted2.point);
                 }
                 else //fallback if somehownot hit by ray
                 {
@@ -194,6 +201,9 @@ public class NetworkedInventoryManager : NetworkBehaviour
         {
             handController.SetHandTarget_ToArmature(false);
             potentialItemToPickup = null;
+            currentItemInHand = null;
+            handController.leftHand.draggingTransform = null;
+            handController.rightHand.draggingTransform = null;
         }
     }
 
@@ -204,31 +214,22 @@ public class NetworkedInventoryManager : NetworkBehaviour
         currentItemInHand = potentialItemToPickup;
         potentialItemToPickup = null;
 
-        //SetNewHoldingPlayer();
+        currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>());
 
-        currentItemInHand.PickUpItem(this.GetComponent<NetworkObject>());
-
-        //handController.AttachItemToHand(false, currentItemInHand);
-        //handController.SetHandTarget_ToHold(false, currentItemInHand.heldHandState);
-
-
-        //if (currentItemInHand.secondaryHandle != null)
-        //{
-        //    handController.SetHandTarget_ToWorldPoint(true, currentItemInHand.secondaryHandle);
-        //}
-
-        //activeItem = (currentItemInHand.gameObject);
+        
     }
 
     private void DropItem() //only runs on state authority
     {
         if (currentItemInHand == null) return;
 
-        InteractableItem droppedItem = currentItemInHand;
+        InteractableItem droppedItem = currentItemInHand.GetComponent<InteractableItem>();
 
-        currentItemInHand.DropItem(this.GetComponent<NetworkObject>());
+        droppedItem.DropItem(this.GetComponent<NetworkObject>());
 
         handController.DragDistance = 0;
+
+        currentItemInHand = null;
     }
 
     //public void SetNewHoldingPlayer()

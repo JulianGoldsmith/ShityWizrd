@@ -15,10 +15,10 @@ using Fusion;
 public class PlayerCastActionController : CastActionController
 {
     //public Transform cameraTrans;
-    NetworkButtons prior_buttons;
-    int primary_attack_pressed { get; set; }
-    int primary_attack_released { get; set; }
-    Quaternion lookDirection;
+    [Networked] NetworkButtons prior_buttons { get; set; }
+    [Networked] int primary_attack_pressed {  get; set; }
+    [Networked] int primary_attack_released { get; set; }
+    [Networked] Quaternion lookDirection { get; set; }
 
     public override void Spawned()
     {
@@ -40,26 +40,25 @@ public class PlayerCastActionController : CastActionController
         {
             if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
             {
+                Debug.Log($"pressed {primary_attack_pressed} {prior_buttons.Bits} {data.buttons.Bits}");
                 primary_attack_pressed++;
             }
             if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
             {
+                Debug.Log($"released {primary_attack_pressed} {prior_buttons.Bits} {data.buttons.Bits}");
                 primary_attack_released++;
             }
             prior_buttons = data.buttons;
 
             lookDirection = data.lookRotation;
         }
-    }
 
-    public void FixedUpdate()
-    {
         if (primary_attack_pressed > 0)
         {
             if (currentAttackCooldown <= 0)
             {
                 primary_attack_pressed = 0;
-                Debug.Log("Try start cast");
+                Debug.Log($"start cast {primary_attack_pressed} {primary_attack_released}");
                 StartCast(primary_attack_released > 0);
                 if (primary_attack_released > 0)
                     primary_attack_released = 0;
@@ -70,6 +69,25 @@ public class PlayerCastActionController : CastActionController
             primary_attack_released = 0;
             EndCast();
         }
+    }
+
+    public void FixedUpdate()
+    {
+        //if (primary_attack_pressed > 0)
+        //{
+        //    if (currentAttackCooldown <= 0)
+        //    {
+        //        primary_attack_pressed = 0;
+        //        StartCast(primary_attack_released > 0);
+        //        if (primary_attack_released > 0)
+        //            primary_attack_released = 0;
+        //    }
+        //}
+        //else if (primary_attack_released > 0)
+        //{
+        //    primary_attack_released = 0;
+        //    EndCast();
+        //}
     }
 
 
