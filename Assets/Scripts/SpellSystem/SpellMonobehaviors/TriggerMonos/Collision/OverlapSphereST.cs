@@ -64,7 +64,7 @@ public class OverlapSphereST : SpellTrigger
         if (isValidTarget)
         {
             Quaternion hitRotation = Quaternion.LookRotation(hitNormal);
-            var triggerInfo = new SpellTriggerInfo(false, this.state, hitPosition, this.transform.rotation, hitRotation, target);
+            var triggerInfo = new SpellTriggerInfo(false, gameObject, this.state, hitPosition, this.transform.rotation, hitRotation, target);
 
             foreach (EffectNode effect in outcomeNodes.OfType<EffectNode>())
             {

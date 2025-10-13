@@ -13,7 +13,15 @@ public class ChannelCastNode : CasterNode
         Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().projectileSpawnPoint.position;
         Quaternion spawnRotation = Quaternion.LookRotation(castController.GetForward());
 
-        var triggerInfo = new SpellTriggerInfo(true, state, spawnPosition, spawnRotation, castController.GetForward() * state.CastChargeLevel, castController.gameObject);
+        var triggerInfo = new SpellTriggerInfo(
+            true, 
+            castController.gameObject, 
+            state, 
+            spawnPosition, 
+            spawnRotation, 
+            castController.GetForward() * state.CastChargeLevel, 
+            castController.gameObject
+        );
         triggerInfo.State.CastAimTargetPos = castController.GetAimTarget();
         state.CastRotation = spawnRotation;
         state.CastPosition = spawnPosition;

@@ -54,7 +54,15 @@ public class MomentumFlickCastNode : CasterNode
         Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().projectileSpawnPoint.position;
         Quaternion spawnRotation = Quaternion.LookRotation(flickVector.normalized);
 
-        var triggerInfo = new SpellTriggerInfo(true, state, spawnPosition, spawnRotation, flickVector * throwForce, castController.gameObject);
+        var triggerInfo = new SpellTriggerInfo(
+            true, 
+            castController.gameObject, 
+            state, 
+            spawnPosition, 
+            spawnRotation, 
+            flickVector * throwForce, 
+            castController.gameObject
+        );
         triggerInfo.State.CastAimTargetPos = castController.GetAimTarget();
         state.CastRotation = spawnRotation;
         state.CastPosition = spawnPosition;

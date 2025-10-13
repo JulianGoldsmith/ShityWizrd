@@ -2,6 +2,7 @@ using UnityEngine;
 using Fusion;
 using System.Collections.Generic;
 using System;
+using static UnityEditor.PlayerSettings;
 
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
@@ -425,6 +426,19 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         {
             method(physicsSubObjects[i]);
         }
+    }
+    public void ApplyForceToSelfAndSubObjects(Vector3 force, ForceMode forceMode)
+    {
+        if (rb != null)
+            rb.AddForce(force, forceMode);
+
+        Action<PhysicsSubObject> action = obj => ApplyForce(obj, force, forceMode);
+        ApplyAcrossAllSubObjects(action);
+    }
+    void ApplyForce(PhysicsSubObject pso, Vector3 force, ForceMode forceMode)
+    {
+        if (pso.rb != null)
+            pso.rb.AddForce(force, forceMode);
     }
     #endregion
 }

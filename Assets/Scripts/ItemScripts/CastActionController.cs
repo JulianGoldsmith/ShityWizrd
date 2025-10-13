@@ -190,7 +190,7 @@ public abstract class CastActionController : NetworkBehaviour
         yield return new WaitForSeconds(delay);
         state.CastPosition = state.CastItem.projectileSpawnPoint.position;
         state.CastRotation = this.transform.rotation;
-        var triggerInfo = new SpellTriggerInfo(true, state, state.CastItem.projectileSpawnPoint.position, this.transform.rotation, this.gameObject);
+        var triggerInfo = new SpellTriggerInfo(true, gameObject, state, state.CastItem.projectileSpawnPoint.position, this.transform.rotation, this.gameObject);
         triggerInfo.State.CastAimTargetPos = GetAimTarget();
         if (node is CoreNode coreNode)
         {
@@ -234,7 +234,7 @@ public abstract class CastActionController : NetworkBehaviour
             {
                 state.CastPosition = state.CastItem.projectileSpawnPoint.position;
                 state.CastRotation = this.transform.rotation;
-                var triggerInfo = new SpellTriggerInfo(true, state, state.CastItem.projectileSpawnPoint.position, this.transform.rotation, this.gameObject);
+                var triggerInfo = new SpellTriggerInfo(true, gameObject, state, state.CastItem.projectileSpawnPoint.position, this.transform.rotation, this.gameObject);
                 triggerInfo.State.CastAimTargetPos = GetAimTarget();
 
                 if (node is CoreNode coreNode)

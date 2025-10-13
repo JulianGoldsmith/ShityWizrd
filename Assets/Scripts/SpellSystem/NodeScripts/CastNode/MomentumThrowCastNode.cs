@@ -63,7 +63,15 @@ public class MomentumThrowCastNode : CasterNode
 
         Debug.Log($"Throw vector is {throwVector}");
 
-        var triggerInfo = new SpellTriggerInfo(true, state, endPoint, spawnRotation, throwVector* throwStrength * throwForce, castController.gameObject);
+        var triggerInfo = new SpellTriggerInfo(
+            true,
+            castController.gameObject,
+            state, 
+            endPoint, 
+            spawnRotation, 
+            throwVector* throwStrength * throwForce, 
+            castController.gameObject
+        );
         triggerInfo.State.CastAimTargetPos = castController.GetAimTarget();
         state.CastPosition = state.CastItem.projectileSpawnPoint.position;
         state.CastRotation = spawnRotation;
