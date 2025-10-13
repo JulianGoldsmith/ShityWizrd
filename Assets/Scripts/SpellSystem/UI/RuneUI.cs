@@ -91,7 +91,8 @@ public class RuneUI : MonoBehaviour
         var validTargets = _sockets.Where(s => SpellGraphController.Instance.IsConnectionValid(startSocket, s)).ToList();
 
         Vector3 dirToNew = (startSocket.ParentRune.transform.position - transform.position).normalized;
-        float incomingAngle = Mathf.Atan2(dirToNew.z, dirToNew.x) * Mathf.Rad2Deg;
+        Vector3 dir_in_plane = Quaternion.Inverse(SpellGraphController.Instance.transform.rotation) * dirToNew;
+        float incomingAngle = Mathf.Atan2(dir_in_plane.z, dir_in_plane.x) * Mathf.Rad2Deg;
 
         foreach (var targetSocket in validTargets)
         {
@@ -191,6 +192,7 @@ public class RuneUI : MonoBehaviour
             if (local != null && target != null)
             {
                 Vector3 dir = (target.transform.position - transform.position).normalized;
+                Vector3 dir_in_place = Quaternion.Inverse(SpellGraphController.Instance.transform.rotation) * dir;
                 locked[local] = Mathf.Atan2(dir.z, dir.x) * Mathf.Rad2Deg;
             }
         }
@@ -205,6 +207,7 @@ public class RuneUI : MonoBehaviour
                     if (local != null)
                     {
                         Vector3 dir = (otherRune.transform.position - transform.position).normalized;
+                        Vector3 dir_in_place = Quaternion.Inverse(SpellGraphController.Instance.transform.rotation) * dir;
                         locked[local] = Mathf.Atan2(dir.z, dir.x) * Mathf.Rad2Deg;
                     }
                 }
@@ -217,7 +220,8 @@ public class RuneUI : MonoBehaviour
     {
         var controller = SpellGraphController.Instance;
         Ray ray = controller.editorCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane plane = new Plane(Vector3.up, transform.position);
+        //Plane plane = new Plane(Vector3.up, transform.position);
+        Plane plane = new Plane(controller.editorCamera.transform.forward, transform.position);
         if (plane.Raycast(ray, out float enter)) { return ray.GetPoint(enter); }
         return transform.position;
     }
@@ -238,7 +242,8 @@ public class RuneUI : MonoBehaviour
 
         Vector3 worldOffset = controller.socketOrbitRadius * (Vector3.right * Mathf.Cos(angleRad) + Vector3.forward * Mathf.Sin(angleRad));
 
-        return transform.InverseTransformDirection(worldOffset);
+        //return transform.InverseTransformDirection(worldOffset);
+        return worldOffset;
     }
 
     public SocketUI FindSocketByName(string name) => _sockets.FirstOrDefault(s => s.SocketData.Name == name || s.SocketData.TargetFieldName == name);
