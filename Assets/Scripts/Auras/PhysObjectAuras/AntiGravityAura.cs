@@ -12,6 +12,7 @@ public class AntiGravityAura : Aura
     const float drag_force_speed_scaling_factor = 6.0f;
     public override void OnApply(AuraContainer container)
     {
+        Debug.Log($"OnApply aura by {name}");
         ModifyGravityOnPhysicsObjectAndChildren(container, false);
     }
     public override void OnTick(AuraContainer container)
@@ -48,6 +49,7 @@ public class AntiGravityAura : Aura
     {
         Rigidbody rb = obj.GetComponent<Rigidbody>();
         if (rb == null) return;
+        Debug.Log($"Setting gravity to within aura on {obj.name} by {name}");
         rb.useGravity = useGravity;
     }
     void ApplyDragForceOnTick(GameObject obj)
@@ -55,7 +57,6 @@ public class AntiGravityAura : Aura
         Rigidbody rb = obj.GetComponent<Rigidbody>();
         if (rb == null) return;
         float drag_force = drag_force_curve.Evaluate(rb.linearVelocity.magnitude / drag_force_speed_scaling_factor);
-        Debug.Log($"applying drag at force {drag_force} from speed {rb.linearVelocity.magnitude}");
         if (drag_force > 0)
             rb.AddForce(-rb.linearVelocity * drag_force * drag_force_scaling_factor, ForceMode.Acceleration);
     }

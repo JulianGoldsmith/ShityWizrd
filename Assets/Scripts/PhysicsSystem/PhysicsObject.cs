@@ -85,8 +85,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         rb.linearDamping = physicsObjectProperties.hardness;
         rb.angularDamping = physicsObjectProperties.mass * 0.05f;
 
-        rb.useGravity = true;
-
         return rb;
     }
 
