@@ -8,7 +8,7 @@ public class AntiGravityAura : Aura
 {
     // this is a global instance, so must track all simultaneously.
     public AnimationCurve drag_force_curve = new AnimationCurve();
-    const float drag_force_scaling_factor = 10.0f;
+    const float drag_force_scaling_factor = 15.0f;
     const float drag_force_speed_scaling_factor = 6.0f;
     public override void OnApply(AuraContainer container)
     {

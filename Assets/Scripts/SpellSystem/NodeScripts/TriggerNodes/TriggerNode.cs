@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 public abstract class TriggerNode : SpellNode
@@ -17,14 +18,14 @@ public abstract class TriggerNode : SpellNode
 
     }
 
-    public virtual void PassThroughVFX(SpellTrigger spelltrigger_mono)
+    public virtual void PassThroughVFX(SpellTrigger spelltrigger_mono, float _size)
     {
-        spelltrigger_mono.OnAttach(this);
+        spelltrigger_mono.OnAttach(this, _size);
     }
 
     public override List<SocketDefinition> GetSockets()
     {
-        return new List<SocketDefinition>
+        List<SocketDefinition> sockets = new List<SocketDefinition>
             {
                 new SocketDefinition(
                     name: "Exec In",
@@ -53,6 +54,24 @@ public abstract class TriggerNode : SpellNode
                     owningNodeGUID: this.InstanceGuid
                 ),
             };
+
+        var coreModifiableFields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+        foreach (var field in coreModifiableFields)
+        {
+            var promotableAttr = field.GetCustomAttribute<PromotableAttribute>(); if (promotableAttr != null)
+            {
+                sockets.Add(new SocketDefinition(
+                    name: promotableAttr.DisplayName,
+                    type: SocketType.Data,
+                    direction: SocketDirection.Input,
+                    tag: promotableAttr.Tag,
+                    dataType: field.FieldType,
+                    owningNodeGUID: this.InstanceGuid,
+                    targetFieldName: field.Name
+                ));
+            }
+        }
+        return sockets;
     }
 
 

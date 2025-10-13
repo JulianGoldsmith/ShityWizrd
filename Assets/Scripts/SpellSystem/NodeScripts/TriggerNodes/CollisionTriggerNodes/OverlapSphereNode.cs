@@ -8,12 +8,14 @@ public class OverlapSphereNode : TriggerNode
     public float size;
     public override void SetUp(GameObject spellCore, SpellState state)
     {
+        ApplyPromotableValues();
+
         OverlapSphereST sphereChecker = spellCore.AddComponent<OverlapSphereST>();
         sphereChecker.state = state;
         sphereChecker.filterNodes = this.filterNodes;
         sphereChecker.outcomeNodes = this.outcomeNodes;
         sphereChecker.size = size;
 
-        PassThroughVFX(sphereChecker);
+        PassThroughVFX(sphereChecker, size);
     }
 }

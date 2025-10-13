@@ -10,7 +10,7 @@ public class OverlapSphereST : SpellTrigger
     // be hit.
     // since this is called every tick, we use non-alloc
     // to reduce garbage collection and frame spikes.
-    const int MAX_TARGETS = 8;
+    const int MAX_TARGETS = 16;
 
     public float size = 1.0f;
     Collider[] non_alloc_colliders = new Collider[MAX_TARGETS];

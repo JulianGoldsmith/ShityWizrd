@@ -224,6 +224,10 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         Vector3 other_velocity = Vector3.zero;
         float other_stickiness = 0;
 
+        // removing stickiness from non-physics objects for now.
+        if (other_po == null)
+            return;
+
         if(other_po != null)
         {
             if (other_po.rb != null)
