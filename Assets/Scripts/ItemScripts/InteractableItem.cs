@@ -8,5 +8,5 @@ public abstract class InteractableItem : NetworkBehaviour
 
     public abstract void PickUpItem(NetworkObject playerObject);
 
-    public abstract void DropItem(NetworkObject playerObject);
+    public abstract void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority);
 }

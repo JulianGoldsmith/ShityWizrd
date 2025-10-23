@@ -142,7 +142,47 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
 
     private void OnInput(NetworkRunner runner, NetworkInput networkInput)
     {
-        
+        var playerObj = runner.GetPlayerObject(runner.LocalPlayer);
+        if (playerObj != null &&
+            playerObj.TryGetComponent(out NetworkedHandsController hands) &&
+            playerObj.TryGetComponent(out HybridCharacterController controller) &&
+            playerObj.TryGetComponent(out NetworkedInventoryManager inv))
+        {
+            if (hands.RightHandMode == TargetingMode.DRAGG && inv.currentItemInHand != null)
+            {
+                Debug.Log("sending drag Input");
+                
+                Vector3 eyePos = controller.GetEyePos();
+                Quaternion lookRot = controller.GetLookRot();
+
+                float pitch = lookRot.eulerAngles.x;
+                if (pitch > 180f) pitch -= 360f;
+                pitch = -pitch;
+                float pitch01 = (pitch + 90f) / 180f;
+
+                float addedHeight = hands.dragPitchToHeightModifierCurve.Evaluate(pitch01);
+
+                Vector3 offset = hands.dragTargetOffset + new Vector3(0f, addedHeight, hands.DragDistance);
+
+                Vector3 targetPos = eyePos + (lookRot * offset);
+                _accumulatedInput.dragTargetPos = targetPos;
+
+                // FACING: aim from the item COM to the eye (same as your server logic conceptually)
+                var itemNO = inv.currentItemInHand;
+                var item = itemNO.GetComponent<DraggableItem>();
+                Vector3 com = (item != null && item.rb != null) ? item.rb.worldCenterOfMass : itemNO.transform.position;
+
+                Vector3 facing = (eyePos - com);
+                _accumulatedInput.dragFacingDir = facing.sqrMagnitude > 1e-6f ? facing.normalized : Vector3.forward;
+            }
+            else
+            {
+                _accumulatedInput.dragTargetPos = Vector3.zero;
+                _accumulatedInput.dragFacingDir = Vector3.zero;
+            }
+
+            Debug.Log($"drag pos {_accumulatedInput.dragTargetPos} drag rot {_accumulatedInput.dragFacingDir}");
+        }
 
         // Fusion polls accumulated input. This callback can be executed multiple times in a row if there is a performance spike.
         networkInput.Set(_accumulatedInput);

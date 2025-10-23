@@ -66,15 +66,15 @@ public class NetworkedInventoryManager : NetworkBehaviour
         {
             lookRotation = data.lookRotation;
 
-            if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP))
+            if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP)  )
             {
                 if(characterController.bonkedState != BONKEDSTATE.BONKED)
                     PickUpPressCount++;
             }
-            if (data.buttons.WasReleased(Prior_buttons, EInputButton.DROP))
+            if (data.buttons.WasReleased(Prior_buttons, EInputButton.DROP)  )
             {
                 if (characterController.bonkedState != BONKEDSTATE.BONKED)
-                DropPressCount++;
+                    DropPressCount++;
             }
             Prior_buttons = data.buttons;
         }
@@ -101,17 +101,38 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
        
 
-        if (HasStateAuthority)
+        if ((true))
         {
             if (PickUpPressCount > lastPickUpCount)
             {
                 lastPickUpCount++;
+                Debug.Log($"Lastpickup count = {lastPickUpCount} and PickUpPressCount = {PickUpPressCount} these should be the same");
                 PickupItem();
             }
             if (DropPressCount > lastDropCount)
             {
                 lastDropCount++;
+                Debug.Log($"Last drop count = {lastDropCount} and DropPressCount = {DropPressCount} these should be the same");
                 DropItem();
+
+                //if (HasStateAuthority) {
+                //    DropItem();
+                //}
+                //else if(HasInputAuthority) 
+                //{
+                //    var rb = currentItemInHand.GetComponent<Rigidbody>();
+                //    var vel = rb.linearVelocity;
+                //    var ang = rb.angularVelocity;
+                //    var pos = rb.position;
+                //    var rot = rb.rotation;
+                //    var dropTick = Runner.Tick;
+
+                //   
+                //    LocalImmediateDrop(currentItemInHand);
+
+                //   
+                //    currentItemInHand.GetComponent<DraggableItem>().RPC_RequestDrop(dropTick, pos, rot, vel, ang, Object.InputAuthority);
+                //}
 
             }
         }
@@ -207,16 +228,14 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
     }
 
-    private void PickupItem() //only runs on state authority
+    private void PickupItem() //only runs on state authority or input auth now (change this back to just state if not working)
     {
         if (potentialItemToPickup == null) return;
 
         currentItemInHand = potentialItemToPickup;
         potentialItemToPickup = null;
 
-        currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>());
-
-        
+        currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>()); //meat and potatoes 
     }
 
     private void DropItem() //only runs on state authority
@@ -225,12 +244,17 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         InteractableItem droppedItem = currentItemInHand.GetComponent<InteractableItem>();
 
-        droppedItem.DropItem(this.GetComponent<NetworkObject>());
+        droppedItem.DropItem(this.GetComponent<NetworkObject>(), HasInputAuthority, HasStateAuthority);
 
         handController.DragDistance = 0;
 
-        currentItemInHand = null;
+        if (HasStateAuthority)
+        {
+            currentItemInHand = null;
+        }
     }
+
+    
 
     //public void SetNewHoldingPlayer()
     //{

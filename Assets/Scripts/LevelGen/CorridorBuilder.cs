@@ -89,13 +89,13 @@ public class CorridorBuilder : MonoBehaviour
 
         if (pieceToPlace != null)
         {
-            Vector3 position = new Vector3(x , 0, y );
+            Vector3 position = new Vector3(x +  0.5f, 0, y + 0.5f);
             Instantiate(pieceToPlace, position, rotation, corridorParent);
         }
         else
         {
             Debug.LogWarning($"<color=red>No piece found for bitmask {mask} - ({x},{y}) placed default floor</color>");
-            Vector3 position = new Vector3(x , 0, y );
+            Vector3 position = new Vector3(x + 0.5f, 0, y + 0.5f);
             Instantiate(intersectionPiece, position, Quaternion.identity, corridorParent);
         }
     }

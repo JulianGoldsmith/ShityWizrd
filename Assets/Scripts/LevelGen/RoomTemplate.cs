@@ -2,12 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.Rendering.HighDefinition;
 
 public class RoomTemplate : MonoBehaviour
 {
     public Bounds RoomBounds;
     public List<ConnectionPoint> Connections = new List<ConnectionPoint>();
     public List<RuntimeConnectionState> runtimeConnections;
+
+
+    public Transform spawnPointInRoom; //not all rooms need this assigning - probably just the start room
+
+
     private void OnDrawGizmos()
     {
         Gizmos.color = new Color(0, 1, 0, 0.3f); // Blue, semi-transparent
@@ -27,7 +33,7 @@ public class RoomTemplate : MonoBehaviour
         {
             foreach (var connectionState in runtimeConnections)
             {
-                Color gizmoColor = connectionState.IsOpen ? GetColorForType(connectionState.templateData.Type) : Color.red;
+                Color gizmoColor = connectionState.IsOpenForSearch ? GetColorForType(connectionState.templateData.Type) : (connectionState.IsConnected? Color.green:Color.red);
                 DrawConnectionGizmo(connectionState.templateData, gizmoColor);
             }
         }
@@ -51,12 +57,14 @@ public class RoomTemplate : MonoBehaviour
         }
     }
 
-    public void CloseConnection(ConnectionPoint connectionToClose)
+    public void CloseConnectionFromSearch(ConnectionPoint connectionToClose, bool sucsessfullConnection)
     {
         var connectionState = runtimeConnections.FirstOrDefault(rc => rc.templateData == connectionToClose);
         if (connectionState != null)
         {
-            connectionState.IsOpen = false;
+            connectionState.IsOpenForSearch = false;
+
+            connectionState.IsConnected = sucsessfullConnection;
         }
     }
 
@@ -139,7 +147,7 @@ public class RoomTemplate : MonoBehaviour
     {
         switch (type)
         {
-            case ConnectionType.SingleDoor: return Color.green;
+            case ConnectionType.SingleDoor: return Color.blue;
             case ConnectionType.DoubleDoor: return Color.yellow;
             case ConnectionType.Archway: return Color.magenta;
             case ConnectionType.Corridor: return Color.cyan;
@@ -156,13 +164,19 @@ public class ConnectionPoint
     public Vector3 LocalPosition;
     public Vector3 Normal; 
     public ConnectionType Type;
+    public GameObject closedConnectionPrefab;
     public int width = 1;
+    public bool offsetByWidth = false;
 
     public Vector3 GetLocalPosition()
     {
         if (connectionObject != null)
         {
-            return connectionObject.transform.localPosition;
+            if (offsetByWidth)
+            {
+                return connectionObject.transform.localPosition + (connectionObject.transform.localRotation * Vector3.up * ((width/2f) ));
+            }
+            return connectionObject.transform.localPosition ;
         }
         return LocalPosition;
     }
@@ -171,9 +185,34 @@ public class ConnectionPoint
     {
         if (connectionObject != null)
         {
+            if (offsetByWidth)
+            {
+                return connectionObject.transform.localRotation * Vector3.up;
+            }
             return connectionObject.transform.localRotation * Vector3.forward;
         }
         return Normal;
+    }
+
+    public void ReplaceConnectionModel(bool open, Transform roomTransfrom)
+    {
+        if (!open)
+        {
+            GameObject closedConnection = GameObject.Instantiate(closedConnectionPrefab);
+
+            closedConnection.transform.parent = roomTransfrom;
+
+            closedConnection.transform.localPosition = connectionObject != null ? connectionObject.transform.localPosition : LocalPosition;
+
+            closedConnection.transform.localRotation = connectionObject != null ? connectionObject.transform.localRotation : Quaternion.LookRotation(GetNormal(), Vector3.up);
+        
+            if(connectionObject != null)
+            {
+                GameObject.Destroy(connectionObject);
+            }
+
+            connectionObject = closedConnection;
+        }
     }
 }
 
@@ -181,6 +220,7 @@ public enum ConnectionType
 {
     SingleDoor,
     DoubleDoor,
+    TrippleDoor,
     Archway,
     Corridor
 }
@@ -188,5 +228,6 @@ public enum ConnectionType
 public class RuntimeConnectionState
 {
     public ConnectionPoint templateData; 
-    public bool IsOpen = true;
+    public bool IsOpenForSearch = true; //This means active in the list - ie not a write off 
+    public bool IsConnected = false; //this means if its connected to a door or corridor
 }

@@ -21,4 +21,7 @@ public struct NetworkInputData : INetworkInput
     public NetworkButtons buttons;
     public Vector2 yawpitch;
     public float scroll;
+
+    public Vector3 dragTargetPos; 
+    public Vector3 dragFacingDir;
 }

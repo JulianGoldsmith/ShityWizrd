@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 using UnityEngine.InputSystem;
+using System;
+
 public class LevelGenerator : MonoBehaviour
 {
     [Header("Level Bounds")]
@@ -39,7 +41,20 @@ public class LevelGenerator : MonoBehaviour
     public bool manualStepMode = true;
     public KeyCode stepKey = KeyCode.Space;
 
+    [Header("Seeded RNG")]
+    public bool useSeed = true;
+    public int seed = 12345;
+    private DeterministicRng _rng;
 
+
+    public int maxKeyRoomPlacementAttempts = 25;
+
+
+    [Header("SpawnPoint stuffs")]
+    public bool IsLevelGenerated { get; private set; } = false;
+    public Transform StartRoomSpawnPoint { get; private set; }
+    public event Action OnLevelReady;
+    PlacedRoomInstance startRoom;
 
 
     public CorridorBuilder corridorBuilder;
@@ -102,10 +117,10 @@ public class LevelGenerator : MonoBehaviour
     }
 
 
-    public void StartGeneration()
+    public void StartGeneration(int _seed = -1)
     {
         StopAllCoroutines();
-        StartCoroutine(GenerateLevelCoroutine());
+        StartCoroutine(GenerateLevelCoroutine(_seed));
     }
 
     public void StopGeneration()
@@ -120,8 +135,12 @@ public class LevelGenerator : MonoBehaviour
         IsGenerating = false;
     }
 
-    private IEnumerator GenerateLevelCoroutine()
+    private IEnumerator GenerateLevelCoroutine(int _seed = -1)
     {
+        this.seed = _seed;
+        _rng = new DeterministicRng(seed);
+        Debug.Log($"Level seed = {seed} (rng initialized)");
+
         if (IsGenerating)
         {
             Debug.LogWarning("<color=red>already generating</color>");
@@ -144,12 +163,26 @@ public class LevelGenerator : MonoBehaviour
 
         
         corridorBuilder.BuildCorridors(_grid, gridSize);
+
+        BrickUpEntrances();
         Debug.Log("Corridor visuals built");
 
 
         IsGenerating = false;
-    }
 
+        if (startRoom != null)
+        {
+            StartRoomSpawnPoint = startRoom.roomObject.GetComponent<RoomTemplate>().spawnPointInRoom;
+            Debug.Log(StartRoomSpawnPoint.position);
+            IsLevelGenerated = true;
+            OnLevelReady?.Invoke();
+        }
+        else
+        {
+            Debug.LogError("Level generation complete but no Start Room was found!");
+        }
+
+    }
 
     private void ClearExistingLevel()
     {
@@ -161,80 +194,139 @@ public class LevelGenerator : MonoBehaviour
 
     private IEnumerator PlaceKeyRoomsCoroutine()
     {
-
-        Debug.Log("Placing Key Rooms");
-
-        List<RoomToPlace> roomsToPlaceQueue = new List<RoomToPlace>();
-        foreach (var config in keyRoomConfigs)
+        for (int attemptIndex = 0; attemptIndex < maxKeyRoomPlacementAttempts; attemptIndex++) 
         {
-            for (int i = 0; i < config.targetCount; i++)
+           
+            _rng = new DeterministicRng(seed + attemptIndex);
+
+
+            _grid = new int[gridSize.x, gridSize.y];                                        
+            _placedRooms.Clear();                                                           
+            _frontier.Clear();                                                               
+            _deadEndConnections.Clear();
+
+            List<GameObject> attemptSpawnedRooms = new List<GameObject>();
+
+
+            Debug.Log("Placing Key Rooms");
+            List<RoomToPlace> roomsToPlaceQueue = new List<RoomToPlace>();
+            foreach (var config in keyRoomConfigs)
             {
-                if (config.prefabs.Count > 0)
+                for (int i = 0; i < config.targetCount; i++)
                 {
-                    RoomTemplate prefab = config.prefabs[0]; // NEEDS randomizing //////////////////////////////////////////////////////////////////////////////////
-                    roomsToPlaceQueue.Add(new RoomToPlace
+                    if (config.prefabs.Count > 0)
                     {
-                        Prefab = prefab,
-                        Type = config.roomType,
-                        Requirements = config.distanceRequirements,
-                        BoundingRadius = prefab.GetBoundingRadius() 
-                    });
-                }
-            }
-        }
 
-        // Sort by the single largets distance requirement found in each room's list
-        roomsToPlaceQueue = roomsToPlaceQueue.OrderByDescending(room =>
-            room.Requirements.Count > 0 ? room.Requirements.Max(req => req.minDistance) : 0
-        ).ToList();
-
-        List<PlacedPoint> placedPoints = new List<PlacedPoint>();
-        foreach (var roomToPlace in roomsToPlaceQueue)
-        {
-            Vector2Int? potentialPosition = FindValidPointForRoom(roomToPlace, placedPoints);
-   
-            if (potentialPosition.HasValue)
-            {
-                Vector3Int gridPosition = new Vector3Int(potentialPosition.Value.x, 0, potentialPosition.Value.y);
-                bool wasPlaced = false;
-
-
-                List<int> rotations = new List<int> { 0, 90, 180, 270 };
-                rotations.Shuffle(); 
-
-                foreach (var angle in rotations)
-                {
-                    Quaternion initialRotation = Quaternion.Euler(0, angle, 0);
-
-                    if (!CheckForCollision(roomToPlace.Prefab, gridPosition, initialRotation))
-                    {
-                        Debug.Log($"Placing {roomToPlace.Type} at {gridPosition} with rotation {angle}");
-                        PlaceOneRoom(roomToPlace.Prefab, gridPosition, initialRotation, 0);
-
-                        placedPoints.Add(new PlacedPoint
+                        RoomTemplate prefab = config.prefabs[0]; // NEEDS randomizing //////////////////////////////////////////////////////////////////////////////////
+                        roomsToPlaceQueue.Add(new RoomToPlace
                         {
-                            Position = potentialPosition.Value,
-                            Type = roomToPlace.Type,
-                            Requirements = roomToPlace.Requirements,
-                            BoundingRadius = roomToPlace.BoundingRadius
+                            Prefab = prefab,
+                            Type = config.roomType,
+                            Requirements = config.distanceRequirements,
+                            BoundingRadius = prefab.GetBoundingRadius()
                         });
-
-                        wasPlaced = true;
-                        yield return new WaitForSeconds(stepPauseDuration);
-                        break; 
                     }
                 }
+            }
 
-                if (!wasPlaced)
+            // Sort by the single largets distance requirement found in each room's list
+            roomsToPlaceQueue = roomsToPlaceQueue.OrderByDescending(room =>
+                room.Requirements.Count > 0 ? room.Requirements.Max(req => req.minDistance) : 0
+            ).ToList();
+
+
+            bool allPlacedThisAttempt = true;
+
+
+            List<PlacedPoint> placedPoints = new List<PlacedPoint>();
+            foreach (var roomToPlace in roomsToPlaceQueue)
+            {
+                Vector2Int? potentialPosition = FindValidPointForRoom(roomToPlace, placedPoints);
+
+                if (potentialPosition.HasValue)
                 {
-                    Debug.LogWarning($"failed Point {gridPosition} for {roomToPlace.Type} was valid for distance but all 4 rotations collided");
+                    Vector3Int gridPosition = new Vector3Int(potentialPosition.Value.x, 0, potentialPosition.Value.y);
+                    bool wasPlaced = false;
+
+
+                    List<int> rotations = new List<int> { 0, 90, 180, 270 };
+                    rotations.Shuffle(_rng);
+
+
+
+                    foreach (var angle in rotations)
+                    {
+                        Quaternion initialRotation = Quaternion.Euler(0, angle, 0);
+
+                        if (!CheckForCollision(roomToPlace.Prefab, gridPosition, initialRotation))
+                        {
+                            //Debug.Log($"Placing {roomToPlace.Type} at {gridPosition} with rotation {angle}");
+                            RoomTemplate instance = PlaceOneRoom(roomToPlace.Prefab, gridPosition, initialRotation, 0); 
+                            attemptSpawnedRooms.Add(instance.gameObject);
+
+                            placedPoints.Add(new PlacedPoint
+                            {
+                                Position = potentialPosition.Value,
+                                Type = roomToPlace.Type,
+                                Requirements = roomToPlace.Requirements,
+                                BoundingRadius = roomToPlace.BoundingRadius
+                            });
+
+                            wasPlaced = true;
+
+                          
+
+                            if (manualStepMode)
+                                yield return new WaitForKeyPress(stepKey);
+                            else
+                                yield return new WaitForSeconds(stepPauseDuration);
+
+                            break;
+                        }
+                    }
+
+                    if (!wasPlaced)
+                    {
+                        Debug.LogWarning($"failed Point {gridPosition} for {roomToPlace.Type} was valid for distance but all 4 rotations collided");
+                        allPlacedThisAttempt = false;                                     
+                        break;
+                    }
+                    else
+                    {
+                        if (roomToPlace.Type == RoomType.Start)
+                        {
+                            startRoom = _placedRooms.Last();
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"Failed to find a valid position for room {roomToPlace.Prefab.name} - {roomToPlace.Type} - check keyrooms values");
+                    allPlacedThisAttempt = false; 
+                    break;
                 }
             }
-            else
+            if (allPlacedThisAttempt)                                                   
             {
-                Debug.LogWarning($"Failed to find a valid position for room {roomToPlace.Prefab.name} - {roomToPlace.Type} - check keyrooms values");
+                Debug.Log($"<color=green>All key rooms placed on attempt {attemptIndex + 1}</color>"); 
+                yield break; // success; exit coroutine                                       
             }
+            Debug.LogWarning($"Attempt {attemptIndex + 1}/{maxKeyRoomPlacementAttempts} failed. Rolling back and retrying...");
+
+            foreach (var go in attemptSpawnedRooms)                                      
+            {
+                if (go != null) Destroy(go);                                              
+            }
+
+            _grid = new int[gridSize.x, gridSize.y];                                    
+            _placedRooms.Clear();                                                        
+            _frontier.Clear();                                                            
+            _deadEndConnections.Clear();                                                  
+
+            if (!manualStepMode) yield return new WaitForSeconds(stepPauseDuration);
         }
+        Debug.LogError($"<color=red>Failed to place all key rooms after {maxKeyRoomPlacementAttempts} attempts.</color>"); // <<< NEW
+
     }
 
 
@@ -263,7 +355,7 @@ public class LevelGenerator : MonoBehaviour
             }
             else
             {
-                connection.OwningRoom.CloseConnection(connection.ConnectionData);
+                connection.OwningRoom.CloseConnectionFromSearch(connection.ConnectionData, false);
                 _deadEndConnections.Add(connection);
             }
 
@@ -317,18 +409,18 @@ public class LevelGenerator : MonoBehaviour
             return singleConn;
         }
 
-        if (Random.value < earlyConnectionBias)
+        if (_rng.NextFloat01() < earlyConnectionBias)
         {
             int minDepth = _frontier.Min(c => c.depth);
             var earliestConnections = _frontier.Where(c => c.depth == minDepth).ToList();
-            int randomIndex = Random.Range(0, earliestConnections.Count);
+            int randomIndex = _rng.NextInt(0, earliestConnections.Count);
             FrontierConnection chosenConnection = earliestConnections[randomIndex];
             _frontier.Remove(chosenConnection);
             return chosenConnection;
         }
         else
         {
-            int randomIndex = Random.Range(0, _frontier.Count);
+            int randomIndex = _rng.NextInt(0, _frontier.Count);
             FrontierConnection chosenConnection = _frontier[randomIndex];
             _frontier.RemoveAt(randomIndex);
             return chosenConnection;
@@ -338,16 +430,27 @@ public class LevelGenerator : MonoBehaviour
     private bool TryPlaceRoomAtConnection(FrontierConnection connection)
     {
         List<RoomTemplate> roomsToTry = new List<RoomTemplate>(standardRooms);
-        roomsToTry.Shuffle();
+        roomsToTry.Shuffle(_rng);
 
         foreach (var roomPrefab in roomsToTry)
         {
-            var newRoomConnections = new List<ConnectionPoint>(roomPrefab.Connections);
-            newRoomConnections.Shuffle();
+            //var newRoomConnections = new List<ConnectionPoint>(roomPrefab.Connections);
+            //newRoomConnections.Shuffle();
 
-            foreach (var newRoomConnection in newRoomConnections)
+            var indices = Enumerable.Range(0, roomPrefab.Connections.Count).ToList();
+            indices.Shuffle(_rng);
+
+            //for (int i = 0; i < newRoomConnections.Count; i++)
+            //{
+            //    var newRoomConnection = newRoomConnections[i];
+            //    if (newRoomConnection.Type != connection.Type) continue;
+
+            for (int prefabIndexIter = 0; prefabIndexIter < indices.Count; prefabIndexIter++)
             {
+                int prefabIndex = indices[prefabIndexIter];
+                var newRoomConnection = roomPrefab.Connections[prefabIndex];
                 if (newRoomConnection.Type != connection.Type) continue;
+
 
                 Quaternion requiredRotation = Quaternion.LookRotation(-connection.WorldNormal, Vector3.up) * Quaternion.Inverse(Quaternion.LookRotation(newRoomConnection.GetNormal(), Vector3.up));
                 requiredRotation = Quaternion.Euler(0f, Mathf.Round(requiredRotation.eulerAngles.y / 90f) * 90f,0f);
@@ -358,11 +461,15 @@ public class LevelGenerator : MonoBehaviour
                 if (CheckForCollision(roomPrefab, finalPosition, requiredRotation)) continue;
 
 
-                connection.OwningRoom.CloseConnection(connection.ConnectionData);
+                connection.OwningRoom.CloseConnectionFromSearch(connection.ConnectionData, true);
 
-                RoomTemplate newRoomInstance = PlaceOneRoom(roomPrefab, finalPosition, requiredRotation, connection.depth + 1);
+                RoomTemplate newRoomInstance = PlaceOneRoom(roomPrefab, finalPosition, requiredRotation, connection.depth + 1, prefabIndex);
 
-                newRoomInstance.CloseConnection(newRoomConnection);
+                //int idx = roomPrefab.Connections.IndexOf(newRoomConnection);
+
+                //ConnectionPoint instanceConn = newRoomInstance.Connections[idx];
+
+                //newRoomInstance.CloseConnectionFromSearch(instanceConn, true);
 
                 return true;
             }
@@ -422,7 +529,7 @@ public class LevelGenerator : MonoBehaviour
 
         for (int i = 0; i < attempts; i++)
         {
-            Vector2Int candidate = new Vector2Int(Random.Range(0, gridSize.x), Random.Range(0, gridSize.y));
+            Vector2Int candidate = new Vector2Int(_rng.NextInt(0, gridSize.x), _rng.NextInt(0, gridSize.y));
             bool isDistanceValid = true;
 
             foreach (var placedPoint in existingPoints)
@@ -451,8 +558,11 @@ public class LevelGenerator : MonoBehaviour
                 continue;
             }
 
-          
-            Quaternion randomRotation = Quaternion.Euler(0, Random.Range(0, 4) * 90, 0);
+
+            int[] rotChoices = { 0, 90, 180, 270 };
+            int rotIndex = _rng.NextInt(0, rotChoices.Length); 
+            Quaternion randomRotation = Quaternion.Euler(0, rotChoices[rotIndex], 0);
+
             if (CheckForCollision(roomToPlace.Prefab, new Vector3Int(candidate.x, 0, candidate.y), randomRotation))
             {
                 //Debug.Log($"Attempt {i + 1}/{attempts} Candidate {candidate} distance checks ok but failed physical collision check");
@@ -467,7 +577,7 @@ public class LevelGenerator : MonoBehaviour
         return null;
     }
 
-    private RoomTemplate PlaceOneRoom(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation, int depth)
+    private RoomTemplate PlaceOneRoom(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation, int depth, int prefabConnToAttach = -1)
     {
         GameObject roomInstanceGO = Instantiate(roomPrefab.gameObject, gridPosition, rotation, this.transform);
         RoomTemplate roomInstance = roomInstanceGO.GetComponent<RoomTemplate>();
@@ -493,9 +603,18 @@ public class LevelGenerator : MonoBehaviour
             roomObject = roomInstanceGO,
             depth = depth
         });
-        foreach (var conn in roomInstance.runtimeConnections)
+
+
+        for (int i = 0; i < roomInstance.runtimeConnections.Count; i++)
         {
-            if (conn.IsOpen)
+            var conn = roomInstance.runtimeConnections[i];
+            if (i == prefabConnToAttach)
+            {
+                roomInstance.CloseConnectionFromSearch(conn.templateData, true);
+                continue;
+            }
+            
+            if (conn.IsOpenForSearch)
             {
                 _frontier.Add(new FrontierConnection
                 {
@@ -531,15 +650,31 @@ public class LevelGenerator : MonoBehaviour
 
             //Debug.Log($"Potential Corridor Found between {startConnection.OwningRoom.name} and {endConnection.OwningRoom.name} attempting A*");
 
-            int offset = Mathf.CeilToInt(corridorConfig.width / 2.0f);
 
-            Vector3Int startGridPos = Vector3Int.RoundToInt(startConnection.WorldPosition) + Vector3Int.RoundToInt(startConnection.WorldNormal * offset);
-            Vector3Int endGridPos = Vector3Int.RoundToInt(endConnection.WorldPosition) + Vector3Int.RoundToInt(endConnection.WorldNormal * offset);
 
-            int directDistance = GetMDistance(new Vector2Int(startGridPos.x, startGridPos.z), new Vector2Int(endGridPos.x, endGridPos.z));
+
+
+            int half = (corridorConfig.width - 1) / 2;
+            int stepFromDoor = half;
+
+            //int offset = Mathf.CeilToInt(corridorConfig.width / 2.0f);
+
+            //Vector3Int startGridPos = Vector3Int.RoundToInt(startConnection.WorldPosition) + Vector3Int.RoundToInt(startConnection.WorldNormal * offset);
+            //Vector3Int endGridPos = Vector3Int.RoundToInt(endConnection.WorldPosition) + Vector3Int.RoundToInt(endConnection.WorldNormal * offset);
+
+
+            Vector2Int stepOutDoor = (NormalToGridDelta(startConnection.WorldNormal) * stepFromDoor);
+            Vector2Int startGridPos = WorldToGrid(startConnection.WorldPosition) + stepOutDoor;
+
+            Vector2Int stepOutDoorEnd = (NormalToGridDelta(endConnection.WorldNormal) * stepFromDoor);
+            Vector2Int endGridPos = WorldToGrid(endConnection.WorldPosition) + stepOutDoorEnd;
+
+
+            int directDistance = GetMDistance(startGridPos, endGridPos);
             int maxAllowedPathLength = Mathf.RoundToInt(directDistance * pathfindingLengthMultiplier);
 
-            List<PathNode> path = FindPath(new Vector2Int(startGridPos.x, startGridPos.z), new Vector2Int(endGridPos.x, endGridPos.z), corridorConfig.width, maxAllowedPathLength);
+
+            List<PathNode> path = FindPath(startGridPos, endGridPos, corridorConfig.width, maxAllowedPathLength);
 
             if (path != null) // valid path
             {
@@ -548,12 +683,11 @@ public class LevelGenerator : MonoBehaviour
 
                 foreach (var pathNode in path)
                 {
-                    int startOffset = -corridorConfig.width / 2;
-                    int endOffset = (corridorConfig.width - 1) / 2;
+                    int brushOffset = (corridorConfig.width - 1) / 2;
 
-                    for (int x = startOffset; x <= endOffset; x++)
+                    for (int x = -brushOffset; x <= brushOffset; x++)
                     {
-                        for (int y = startOffset; y <= endOffset; y++)
+                        for (int y = -brushOffset; y <= brushOffset; y++)
                         {
                             Vector2Int tile = pathNode.position + new Vector2Int(x, y);
                             if (tile.x >= 0 && tile.x < gridSize.x && tile.y >= 0 && tile.y < gridSize.y)
@@ -564,8 +698,8 @@ public class LevelGenerator : MonoBehaviour
                     }
                 }
 
-                startConnection.OwningRoom.CloseConnection(startConnection.ConnectionData);
-                endConnection.OwningRoom.CloseConnection(endConnection.ConnectionData);
+                startConnection.OwningRoom.CloseConnectionFromSearch(startConnection.ConnectionData, true);
+                endConnection.OwningRoom.CloseConnectionFromSearch(endConnection.ConnectionData, true);
                 if (targetConnectionList == _frontier)
                 {
                     _frontier.Remove(endConnection);
@@ -598,7 +732,7 @@ public class LevelGenerator : MonoBehaviour
         {
             for (int y = 0; y < gridSize.y; y++)
             {
-                if (_grid[x, y] == 2)
+                if (_grid[x, y] >= 2)
                 {
                     float distance = Vector2Int.Distance(new Vector2Int(startPosInt.x, startPosInt.z), new Vector2Int(x, y));
                     if (distance < minDistance)
@@ -612,7 +746,7 @@ public class LevelGenerator : MonoBehaviour
 
         if (closestCorridorCell.HasValue && minDistance <= maxLength)
         {
-            Debug.Log($"Potential corridor connectin -  Target corridor cell: {closestCorridorCell.Value} Attempting pathfinding");
+            //Debug.Log($"Potential corridor connectin -  Target corridor cell: {closestCorridorCell.Value} Attempting pathfinding");
 
             int offset = Mathf.CeilToInt(corridorConfig.width / 2.0f);
             Vector3Int startGridPos = startPosInt + Vector3Int.RoundToInt(startConnection.WorldNormal * offset);
@@ -629,12 +763,11 @@ public class LevelGenerator : MonoBehaviour
 
                 foreach (var pathNode in path)
                 {
-                    int startOffset = -corridorConfig.width / 2;
-                    int endOffset = (corridorConfig.width - 1) / 2;
+                    int brushOffset = (corridorConfig.width - 1) / 2;
 
-                    for (int x = startOffset; x <= endOffset; x++)
+                    for (int x = -brushOffset; x <= brushOffset; x++)
                     {
-                        for (int y = startOffset; y <= endOffset; y++)
+                        for (int y = -brushOffset; y <= brushOffset; y++)
                         {
                             Vector2Int tile = pathNode.position + new Vector2Int(x, y);
                             if (tile.x >= 0 && tile.x < gridSize.x && tile.y >= 0 && tile.y < gridSize.y)
@@ -645,7 +778,7 @@ public class LevelGenerator : MonoBehaviour
                     }
                 }
 
-                startConnection.OwningRoom.CloseConnection(startConnection.ConnectionData);
+                startConnection.OwningRoom.CloseConnectionFromSearch(startConnection.ConnectionData, true);
                 return true;
             }
             else
@@ -751,17 +884,18 @@ public class LevelGenerator : MonoBehaviour
         return null; // No path found
     }
 
-    private bool IsRegionClear(Vector2Int center, int width)
+    private bool IsRegionClear(Vector2Int center, int width, Vector2Int? goal = null)
     {
-        int startOffset = -width / 2;
-        int endOffset = (width - 1) / 2;
+        int brushOffset = (width - 1) / 2;
 
-        for (int x = startOffset; x <= endOffset; x++)
+        for (int x = -brushOffset; x <= brushOffset; x++)
         {
-            for (int y = startOffset; y <= endOffset; y++)
+            for (int y = -brushOffset; y <= brushOffset; y++)
             {
                 Vector2Int checkPos = center + new Vector2Int(x, y);
                 if (checkPos.x < 0 || checkPos.x >= gridSize.x || checkPos.y < 0 || checkPos.y >= gridSize.y) return false;
+
+                if (goal.HasValue && checkPos == goal.Value) continue;
 
                 if (_grid[checkPos.x, checkPos.y] != 0)
                 {
@@ -799,6 +933,41 @@ public class LevelGenerator : MonoBehaviour
     {
         return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
     }
+
+    private static Vector2Int WorldToGrid(Vector3 world)
+    {
+        return new Vector2Int(Mathf.FloorToInt(world.x), Mathf.FloorToInt(world.z));
+    }
+    private static Vector2Int NormalToGridDelta(Vector3 n)
+    {
+        // pick the dominant axis and return ±1 step on that axis
+        if (Mathf.Abs(n.x) > Mathf.Abs(n.z))
+            return new Vector2Int(n.x >= 0 ? 1 : -1, 0);
+        else
+            return new Vector2Int(0, n.z >= 0 ? 1 : -1);
+    }
+
+    private void BrickUpEntrances()
+    {
+        Debug.Log($"--- Bricking up {_deadEndConnections.Count} dead-end connections ---");
+
+        foreach (var placedRoom in _placedRooms)
+        {
+            if (placedRoom.roomObject == null) continue;
+
+            RoomTemplate roomInstance = placedRoom.roomObject.GetComponent<RoomTemplate>();
+            if (roomInstance == null || roomInstance.runtimeConnections == null) continue;
+
+            foreach (var connectionState in roomInstance.runtimeConnections)
+            {
+                if (!connectionState.IsConnected)
+                {
+                    connectionState.templateData.ReplaceConnectionModel(false, roomInstance.transform);
+                }
+            }
+        }
+    }
+
 }
 
 [System.Serializable]
@@ -875,6 +1044,34 @@ public class WaitForKeyPress : CustomYieldInstruction
                 return false; 
             }
             return true; 
+        }
+    }
+}
+
+
+public sealed class DeterministicRng
+{
+    private System.Random _rng;
+    public DeterministicRng(int seed) => _rng = new System.Random(seed);
+
+    public int NextInt(int minInclusive, int maxExclusive)
+        => _rng.Next(minInclusive, maxExclusive); // [min, max)
+
+    public float NextFloat01()
+        => (float)_rng.NextDouble(); // [0,1)
+
+    public T Choice<T>(IList<T> list)
+        => list.Count == 0 ? default : list[_rng.Next(0, list.Count)];
+}
+
+public static class RngExtensions
+{
+    public static void Shuffle<T>(this IList<T> list, DeterministicRng rng)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = rng.NextInt(0, i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
         }
     }
 }
