@@ -35,6 +35,27 @@ public abstract class CoreNode : SpellNode
             triggerNode.SetUp(spellCore, triggerInfo.State);
         }
     }
+    public void AttatchBehavioursAndTriggers(GameObject spellCore, SpellState state)
+    {
+        // triggerless setup.
+        // need to find a way to pass triggerinfo across network.
+        foreach (BehaviourNode behaviourNode in defaultBehaviourNodes)
+        {
+            behaviourNode.SetUp(spellCore, null);
+        }
+        foreach (TriggerNode triggerNode in defaultTriggerNodes)
+        {
+            triggerNode.SetUp(spellCore, state);
+        }
+        foreach (BehaviourNode behaviourNode in behaviourNodes)
+        {
+            behaviourNode.SetUp(spellCore, null);
+        }
+        foreach (TriggerNode triggerNode in triggerNodes)
+        {
+            triggerNode.SetUp(spellCore, state);
+        }
+    }
 
     public override List<SocketDefinition> GetSockets()
     {

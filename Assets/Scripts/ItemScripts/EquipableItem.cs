@@ -92,7 +92,6 @@ public class EquipableItem : InteractableItem
     }
     public void EquipSpellToPrimaryFromJSON(string json)
     {
-        Debug.Log(json);
         SpellGraph graph = SpellGraph.FromJson(json);
         if(graph != null )
         {
@@ -133,6 +132,7 @@ public class EquipableItem : InteractableItem
         if (!string.IsNullOrEmpty(primarySpellID))
         {
             primaryActionSpell = SpellGraphController.Instance.GetSpellFromAssestsByName(primarySpellID);
+            SetAndInitialise(primaryActionSpell);
         }
 
 

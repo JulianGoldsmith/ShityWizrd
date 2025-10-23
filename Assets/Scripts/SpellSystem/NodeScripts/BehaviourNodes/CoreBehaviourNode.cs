@@ -33,7 +33,7 @@ public class CoreBehaviourNode : BehaviourNode
 
         if (coreVFX != VFXContext.None)
         {
-            var vfx = SpellSystemHelpers.CreateVFX(ModifierType.Arcane, coreVFX, spellCore.transform, finalSize);
+            var vfx = SpellSystemHelpers.CreateVFX(coreVFX, ModifierType.Arcane, spellCore.transform, finalSize);
             if (vfx != null)
                 spellCore.GetComponent<MeshRenderer>().enabled = false; //for now if we get the VFX we dont need the mesh renderer
         }

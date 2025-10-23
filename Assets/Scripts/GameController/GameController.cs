@@ -96,11 +96,14 @@ public class GameController : MonoBehaviour
             Vector3 pos = Vector3.zero;
             if(networkingController._runner.TryGetPlayerObject(networkingController._runner.LocalPlayer, out NetworkObject player))
             {
-                pos = player.GetComponent<HybridCharacterController>().hipsRb.transform.position;
-                pos.y -= 0.58f;
+                //HybridCharacterController hcc = player.GetComponent<HybridCharacterController>();
+                //pos = hcc.hipsRb.transform.position;
+                //pos.y -= 0.58f;
+
+                pos = Camera.main.transform.position + Camera.main.transform.forward * 1.5f; 
 
             }
-            SpellGraphController.Instance.EditSpellFromActiveItem(pos + Vector3.forward * 0.5f);
+            SpellGraphController.Instance.EditSpellFromActiveItem(pos);
             EnableUIInput();
             //mainCameraController.SwitchToEditorView();
         }

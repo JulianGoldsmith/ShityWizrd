@@ -29,7 +29,7 @@ public class ChargeCasterNode : CasterNode
 
         state.ChargeStartTime = Time.time;
 
-        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(ModifierType.Arcane, VFXContext.CastChargeEffect, state.CastItem.projectileSpawnPoint, 1);
+        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(VFXContext.CastChargeEffect, ModifierType.Arcane, state.CastItem.projectileSpawnPoint, 1);
 
     }
     public override void OnCastCanceled(SpellState state, CastActionController castController)

@@ -632,18 +632,19 @@ public class SpellGraphController : MonoBehaviour
     private void UpdateDraggedNodePosition(Vector2 screenPos)
     {
         Ray ray = editorCamera.ScreenPointToRay(screenPos);
-        Plane plane = new Plane(Vector3.up, Vector3.up * 0.3f);
+        //Plane plane = new Plane(Vector3.up, Vector3.up * 0.3f);
+        Plane plane = new Plane(editorCamera.transform.forward, transform.position);
 
         if (plane.Raycast(ray, out float enter))
         {
             Vector3 hitPointOnPlane = ray.GetPoint(enter);
-            Vector3 newPosition = hitPointOnPlane + _dragOffset;
+            Vector3 newPosition = hitPointOnPlane + transform.rotation * _dragOffset;
             _nodeBeingDragged.position = newPosition;
 
             var runeUI = _nodeBeingDragged.GetComponent<RuneUI>();
             if (runeUI != null)
             {
-                runeUI.InstanceData.position = newPosition;
+                runeUI.InstanceData.position = _nodeBeingDragged.localPosition;
             }
         }
     }
@@ -655,7 +656,8 @@ public class SpellGraphController : MonoBehaviour
 
         _nodeBeingDragged = newRuneUI.transform;
 
-        Plane plane = new Plane(Vector3.up, editorWorldParent.position);
+        //Plane plane = new Plane(Vector3.up, editorWorldParent.position);
+        Plane plane = new Plane(editorCamera.transform.forward, editorWorldParent.position);
         Ray ray = editorCamera.ScreenPointToRay(screenPos);
         if (plane.Raycast(ray, out float enter))
         {
@@ -674,7 +676,8 @@ public class SpellGraphController : MonoBehaviour
         if (!_isConnecting) return;
 
         Ray ray = editorCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Plane plane = new Plane(Vector3.up, _connectionStartSocket.transform.position);
+        //Plane plane = new Plane(Vector3.up, _connectionStartSocket.transform.position);
+        Plane plane = new Plane(editorCamera.transform.forward, _connectionStartSocket.transform.position);
         if (plane.Raycast(ray, out float enter))
         {
             _dummyEndPoint.position = ray.GetPoint(enter);
@@ -827,7 +830,8 @@ public class SpellGraphController : MonoBehaviour
 
         currentGraph = ScriptableObject.CreateInstance<SpellGraph>();
 
-        RuneUI entryPointRune = CreateRune(entryPointTemplate, editorWorldParent.position); 
+        //RuneUI entryPointRune = CreateRune(entryPointTemplate, editorWorldParent.position); 
+        RuneUI entryPointRune = CreateRune(entryPointTemplate, Vector3.zero); 
 
         currentGraph.entryPointControllerNodeGuid = entryPointRune.InstanceData.guid;
         currentGraph.entryPointControllerNode = (EntryPointControlNode)entryPointRune.NodeClone;
@@ -956,7 +960,11 @@ public class SpellGraphController : MonoBehaviour
         }
 
 
-        GameObject runeObject = Instantiate(runePrefab, position, Quaternion.identity, ActiveGraphParent);
+        GameObject runeObject = Instantiate(runePrefab, 
+            position, 
+            transform.rotation, 
+            ActiveGraphParent);
+        runeObject.transform.localPosition = position;
         runeObject.name = $"Rune_{nodeTemplate.nodeName}";
 
         var meshFilter = runeObject.GetComponent<MeshFilter>();
@@ -1071,7 +1079,7 @@ public class SpellGraphController : MonoBehaviour
         {
             if (currentGraph.runeUIsByGuid.TryGetValue(nodeData.guid, out RuneUI runeUI))
             {
-                nodeData.position = runeUI.transform.position;
+                nodeData.position = runeUI.transform.localPosition;
             }
 
             graphToSave.nodes.Add(nodeData);
@@ -1182,7 +1190,12 @@ public class SpellGraphController : MonoBehaviour
 
     private void CreateRuneVisuals(SpellNode nodeClone, NodeInstanceData instanceData)
     {
-        GameObject runeObject = Instantiate(runePrefab, instanceData.position, Quaternion.identity, ActiveGraphParent);
+        GameObject runeObject = Instantiate(
+            runePrefab,
+            transform.rotation * instanceData.position + transform.position, 
+            transform.rotation, 
+            ActiveGraphParent);
+        runeObject.transform.localPosition = instanceData.position;
         runeObject.name = $"Rune_{nodeClone.nodeName}";
 
         var meshFilter = runeObject.GetComponent<MeshFilter>();
@@ -1314,7 +1327,8 @@ public class SpellGraphController : MonoBehaviour
         // TODO:
         // check if this works properly.
         // Needs to make sure you communicate.
-        this.transform.position = posToPlaceEditor;  
+        this.transform.position = posToPlaceEditor;
+        this.transform.rotation = Camera.main.transform.rotation * Quaternion.Euler(-90f,0,0);
 
         SpellGraph spellToEdit = null;
 

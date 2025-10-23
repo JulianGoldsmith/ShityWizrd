@@ -19,7 +19,7 @@ public class MomentumThrowCastNode : CasterNode
         anchorGO.transform.rotation = handController.rightHand.physicsProxy.rotation;
 
         handController.LockHandToTarget(handController.rightHand, anchorGO.transform);
-        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(ModifierType.Arcane, VFXContext.CastChargeEffect, state.CastItem.projectileSpawnPoint, 1);
+        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(VFXContext.CastChargeEffect, ModifierType.Arcane, state.CastItem.projectileSpawnPoint, 1);
         handController.SetHandState(handController.leftHand, pointHandState);
     }
 
@@ -63,7 +63,15 @@ public class MomentumThrowCastNode : CasterNode
 
         Debug.Log($"Throw vector is {throwVector}");
 
-        var triggerInfo = new SpellTriggerInfo(true, state, endPoint, spawnRotation, throwVector* throwStrength * throwForce, castController.gameObject);
+        var triggerInfo = new SpellTriggerInfo(
+            true,
+            castController.gameObject,
+            state, 
+            endPoint, 
+            spawnRotation, 
+            throwVector* throwStrength * throwForce, 
+            castController.gameObject
+        );
         triggerInfo.State.CastAimTargetPos = castController.GetAimTarget();
         state.CastPosition = state.CastItem.projectileSpawnPoint.position;
         state.CastRotation = spawnRotation;

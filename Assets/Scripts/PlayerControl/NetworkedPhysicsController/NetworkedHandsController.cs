@@ -717,7 +717,7 @@ public class NetworkedHandsController : NetworkBehaviour
             {
                 hand.overrideController["DummyPose"] = pose;
                 // Debug.Log($"SetPose to pickup {pose.name}");
-                Debug.Log($"SetHand to {pose.name}");
+                //Debug.Log($"SetHand to {pose.name}");
             }
         }
     }
