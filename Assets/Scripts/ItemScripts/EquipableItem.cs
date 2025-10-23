@@ -177,7 +177,7 @@ public class EquipableItem : InteractableItem
         }
         else //drop
         {
-            DropItem(lastHoldingPlayer);
+            DropItem(lastHoldingPlayer, HasInputAuthority, HasStateAuthority);
         }
     }
 
@@ -241,7 +241,7 @@ public class EquipableItem : InteractableItem
             DisableNetworkedRB();
     }
     
-    public override void DropItem(NetworkObject playerObject)
+    public override void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority)
     {
 
         var characterController = playerObject.GetComponent<HybridCharacterController>();

@@ -1,8 +1,6 @@
 using Fusion;
 using Fusion.Addons.Physics;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 using UnityEngine.InputSystem;
@@ -20,12 +18,18 @@ public class HybridCharacterController : NetworkBehaviour
     public Vector3 hipsOffset;
 
     [Header("Grounded Settings")]
-    public float groundCheckDistance = 0.6f;
+    public float groundCheckDistance = 1f;
     public LayerMask groundLayer;
     [Networked] public bool IsGrounded { get; set; }
 
+    [Header("Suspension Settings")]
+    public float rideHeight = 0.8f; // The target height the hips will float at
+    public float rideSpringStrength = 100f; // How stiff the suspension spring is
+    public float rideSpringDamper = 10f; // How much the spring is damped to prevent bouncing
+    public float suspensionCastRadius = 0.25f; // The radius of the spherecast
+
     [Header("Movement Settings")]
-    public float maxSpeed = 3f;
+    public float maxWalkSpeed = 3f, maxSprintSpeed = 5f;
     public float acceleration = 20, braking = 20;
     public float jumpForce = 50f;
 
@@ -42,12 +46,15 @@ public class HybridCharacterController : NetworkBehaviour
 
     [Header("PD armature")]
     public List<PDSpring> pDSprings = new List<PDSpring>();
+    [Networked] Quaternion initialTorsoRot {  get; set; }
+    [Networked] Quaternion initialHeadRot { get; set; }
 
     [Header("Network Input")]
     [HideInInspector][Networked] public Vector2 moveInput { get; set; }
     [HideInInspector][Networked] public Quaternion lookRot { get; set; }
     [HideInInspector][Networked] public NetworkButtons _lastButtonsInput { get; set; }
     [Networked] private int _jumpCount { get; set; }
+    [Networked] public bool sprint { get; set; }
     private int _lastVisibleJump;
 
 
@@ -69,6 +76,8 @@ public class HybridCharacterController : NetworkBehaviour
     [Header("Camera")]
     [SerializeField] private Transform cameraTransform;
     public RagDollCameraController camController;
+    [SerializeField] public Transform cameraAnchorTransform;
+    [SerializeField] private float cameraAnchorSmoothSpeed = 20f;
 
     [Header("Hands")]
     public NetworkedHandsController handController;
@@ -77,16 +86,19 @@ public class HybridCharacterController : NetworkBehaviour
     public Vector3 Acceleration { get; private set; }
 
     [Header("Bonked Variables")]
-    [Networked, OnChangedRender(nameof(OnBonkedChanged))] public BONKEDSTATE bonkedState { get; set; }
-    int _swapAtTick = -1;
-    bool wasKinematic;
-    public Transform ragDollHips;
-    [SerializeField] private GameObject ragDoll;
-    public NetworkedRagDoll ragDollController;
-    public Rig aliveRig, bonkedRig;
+    public CharacterBonkController bonkController;
+    
 
     ChangeDetector
         changeDetector;
+
+    [Header("For Teleporting")]
+    private bool _teleportRequested = false;
+    private Vector3 _teleportTargetPos;
+    private Quaternion _teleportTargetRot;
+
+    [Header("Disable/Enable CC")]
+    private int disableCC = -1; // -1 = enabled - > 0 = disabled for X ticks.
 
     public override void Spawned()
     {
@@ -95,19 +107,6 @@ public class HybridCharacterController : NetworkBehaviour
         //general setup
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
        
-
-        //material setup
-        if (Object.HasStateAuthority)
-        {
-            isHost = Object.HasInputAuthority;
-            bodyRot = hipsRb.transform.rotation;
-        }
-        modelRenderer.material = ragDollRenderer.material = isHost ? hostMat : clientMat;
-        
-        if (HasInputAuthority)
-        {
-            modelRenderer.enabled = false;
-        }
 
         //Camera Setup
         camController = this.GetComponent<RagDollCameraController>();
@@ -127,10 +126,18 @@ public class HybridCharacterController : NetworkBehaviour
         }
 
         boneMapper.Spawn(false, targetAnimator.transform, finalAnimator.transform);
-        foreach(var spring in pDSprings)
+
+        for(int i = 0; i < pDSprings.Count;  i++)
         {
-            spring.Init();
+            var spring = pDSprings[i];
+            spring.Init(hipsRb.transform, HasInputAuthority);
         }
+        if (HasStateAuthority)
+        {
+            initialTorsoRot = pDSprings[1].startJointRotation;
+            initialHeadRot = pDSprings[0].startJointRotation;
+        }
+        
 
         //hands
         handController.Spawn(networkedRenderRoot, HasInputAuthority);
@@ -140,21 +147,32 @@ public class HybridCharacterController : NetworkBehaviour
             GameController.Instance.playerInput = this.GetComponent<PlayerInput>();
         }
 
-      
-        ragDollController = transform.GetComponent<NetworkedRagDoll>();
-        if (bonkedState == BONKEDSTATE.ALIVE)
-        {
-            ragDollController.DeactivateRagDoll();
-        }
-        else
-        {
-            ragDollController.ActivateRagDoll();
-        }
+
+        this.cameraAnchorTransform.parent = null;
+
+        bonkController = this.GetComponent<CharacterBonkController>();
     }
 
    
     public override void FixedUpdateNetwork()
     {
+
+        if (_teleportRequested)
+        {
+            ExecuteTeleport(_teleportTargetPos, _teleportTargetRot);
+
+            _teleportRequested = false;
+
+            return;
+        }
+
+
+        if (disableCC > 0)
+        {
+            disableCC--; // Count down the timer
+            return;      // Skip ALL simulation logic for this tick
+        }
+
         //Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
         DetectVariablesChangedOnNetwork();
         if (GetInput(out NetworkInputData data))
@@ -162,7 +180,8 @@ public class HybridCharacterController : NetworkBehaviour
             data.direction.Normalize();
             moveInput = new Vector2(data.direction.x, data.direction.z);
             lookRot = IsFinite(data.lookRotation) ? data.lookRotation : Quaternion.identity;
-            
+
+            sprint = data.buttons.IsSet(EInputButton.SPRINT);
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.JUMP) && IsGrounded)
             {
@@ -172,7 +191,7 @@ public class HybridCharacterController : NetworkBehaviour
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
             {
-                if( bonkedState != BONKEDSTATE.BONKED)
+                if(bonkController.BonkedState != BONKEDSTATE.BONKED)
                     GetBonked(); //animation is applied in Render -> Update Animations()
             }
 
@@ -184,8 +203,8 @@ public class HybridCharacterController : NetworkBehaviour
         }
 
 
-
-        if (bonkedState == BONKEDSTATE.BONKED) return;
+        //changed
+        if (bonkController.BonkedState == BONKEDSTATE.BONKED) return;
 
         ApplyLookRotation(); //sets the hips rb to the rotation of the camera - currently hard sets this with no forces. 
 
@@ -193,6 +212,8 @@ public class HybridCharacterController : NetworkBehaviour
         ApplyHipsMovement(); //applys input to aim for a target velocity along  x,z basically a PD to velocity
 
         UpdateTorsoAndHead();
+
+        UpdateSpineIK();
 
         Acceleration = (hipsRb.linearVelocity - previousVelocity) / Runner.DeltaTime;
         previousVelocity = hipsRb.linearVelocity;
@@ -202,89 +223,50 @@ public class HybridCharacterController : NetworkBehaviour
     {
         //transform.position = hipsRb.transform.position;
         //transform.rotation = hipsRb.transform.rotation;
+        if (disableCC > 0)
+        {
+
+            return;      
+        }
+        UpdateCameraAnchor();
         CasheMovement();
         UpdateAnimator();
-        UpdateBonkedMesh();
+
     }
 
-    private void UpdateBonkedMesh()
+    private void UpdateCameraAnchor()
     {
-        if (_swapAtTick >= 0 && Runner.Tick >= _swapAtTick)
-        {
-            _swapAtTick = -1;
-            bool showRagdoll = (bonkedState == BONKEDSTATE.BONKED);
-            modelRenderer.enabled = HasInputAuthority? false : !showRagdoll;
-            ragDollRenderer.enabled = showRagdoll;
-        }
-    }
+        //if (!cameraAnchorTransform || !networkedRenderRoot) return;
 
-    private void OnBonkedChanged()
-    {
-        if (HasStateAuthority) return;
-        if(bonkedState == BONKEDSTATE.BONKED)
+        float dt = Time.deltaTime;
+        Vector3 targetPos = networkedRenderRoot.position;
+        Quaternion targetRot = networkedRenderRoot.rotation;
+
+        if (HasInputAuthority)
         {
-            GetBonked();
+            // For the local player, the networkedRenderRoot is jittery due to prediction/reconciliation.
+            // We MUST smoothly Lerp the camera anchor towards it to hide the jitter.
+            cameraAnchorTransform.position = Vector3.Lerp(cameraAnchorTransform.position, targetPos, dt * cameraAnchorSmoothSpeed);
+            cameraAnchorTransform.rotation = Quaternion.Slerp(cameraAnchorTransform.rotation, targetRot, dt * cameraAnchorSmoothSpeed);
         }
         else
         {
-            GetUnBonked();
+            // For remote players, the networkedRenderRoot is already interpolated by Fusion.
+            // We can just snap the anchor directly to it.
+            cameraAnchorTransform.position = targetPos;
+            cameraAnchorTransform.rotation = targetRot;
         }
     }
 
 
     public void GetBonked()
     {
- 
-        Debug.Log("Ran got bonked");
-        ragDollController.ActivateRagDoll();
-
-        foreach (PDSpring headAndTorso in pDSprings)
-        {
-            var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
-            headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
-            rb3d.RBIsKinematic = true;
-            rb3d.GetComponent<Collider>().enabled = false;
-        }
-        var hipsNRB = hipsRb.GetComponent<NetworkRigidbody3D>();
-        wasKinematic = hipsNRB.RBIsKinematic;
-        hipsNRB.RBIsKinematic = true;
-        hipsNRB.GetComponent<Collider>().enabled = false;
-
-        if (HasStateAuthority)
-        {
-            bonkedState = BONKEDSTATE.BONKED;
-        }
-        _swapAtTick = Runner.Tick + 1;
-
-        handController.DisableHands();
-
+        bonkController.GetBonked();
     }
 
     public void GetUnBonked()
     {
-        ragDollController.DeactivateRagDoll();
-        if (HasStateAuthority)
-        {
-            bonkedState = BONKEDSTATE.ALIVE;
-        }
-        _swapAtTick = Runner.Tick + 1;
-
-
-        foreach (PDSpring headAndTorso in pDSprings)
-        {
-            var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
-            rb3d.RBIsKinematic = headAndTorso.wasKinematicOnDisable;
-            rb3d.GetComponent<Collider>().enabled = true;
-            //if(HasStateAuthority || HasInputAuthority)
-            //    rb3d.Teleport(headAndTorso.ragdollEquivelent.position, headAndTorso.ragdollEquivelent.rotation);
-        }
-        var hipsNRB = hipsRb.GetComponent<NetworkRigidbody3D>();
-        hipsNRB.RBIsKinematic = wasKinematic;
-        hipsNRB.GetComponent<Collider>().enabled = true;
-        //if (HasStateAuthority || HasInputAuthority)
-        //    hipsNRB.Teleport(ragDollHips.position, ragDollHips.rotation);
-
-        handController.EnableHands();
+        bonkController.GetUnBonked();
     }
 
 
@@ -303,13 +285,13 @@ public class HybridCharacterController : NetworkBehaviour
 
         Vector3 localVel = networkedRenderRoot.transform.InverseTransformDirection(rendererVelocity);
 
-        targetAnimator.SetFloat("forwardSpeed", localVel.z / (maxSpeed * 2), 0.1f, Time.deltaTime);
-        targetAnimator.SetFloat("rightSpeed", localVel.x / (maxSpeed * 2), 0.1f, Time.deltaTime);
+        targetAnimator.SetFloat("forwardSpeed", localVel.z / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
+        targetAnimator.SetFloat("rightSpeed", localVel.x / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
         targetAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
         
         //animationController.UpdateSpineIkTarget(lookRot);
-        finalAnimator.SetFloat("forwardSpeed", localVel.z / (maxSpeed * 2), 0.1f, Time.deltaTime);
-        finalAnimator.SetFloat("rightSpeed", localVel.x / (maxSpeed * 2), 0.1f, Time.deltaTime);
+        finalAnimator.SetFloat("forwardSpeed", localVel.z / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
+        finalAnimator.SetFloat("rightSpeed", localVel.x / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
         finalAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
 
         //Jumping 
@@ -322,23 +304,26 @@ public class HybridCharacterController : NetworkBehaviour
             _lastVisibleJump = _jumpCount;
         }
 
-        UpdateSpineIK();
+        
     }
 
     public void UpdateSpineIK()
     {
         Vector3 lookDir;
 
-        if (HasInputAuthority)
-        {
-            lookDir = cameraTransform.forward;
-        }
-        else
-        {
-            lookDir = lookRot * Vector3.forward;
-        }
+        //if (HasInputAuthority)
+        //{
+        //    lookDir = cameraTransform.forward;
+        //}
+        //else
+        //{
+        //    lookDir = lookRot * Vector3.forward;
+        //}
 
-        spineIKTarget.position = (rendererPos + headOffset) + (lookDir * 5);
+        lookDir = lookRot * Vector3.forward;
+
+        if(HasStateAuthority)
+            spineIKTarget.position = (networkedRenderRoot.position + headOffset) + (lookDir * 5);
     }
 
     public void CasheMovement()
@@ -389,11 +374,9 @@ public class HybridCharacterController : NetworkBehaviour
 
     public void ApplyLookRotation()
     {
-        
-
 
         var _lookRot = HasInputAuthority ? cameraTransform.rotation : lookRot;
-
+        //var _lookRot = lookRot;
         Vector3 flatLookDir = Vector3.ProjectOnPlane(_lookRot * Vector3.forward, Vector3.up).normalized;
         Vector3 flatBodyDir = Vector3.ProjectOnPlane(networkedRenderRoot.rotation * Vector3.forward, Vector3.up).normalized;
 
@@ -444,22 +427,47 @@ public class HybridCharacterController : NetworkBehaviour
     {
         if(IsGrounded)
             hipsRb.AddForce(jumpForce * Vector3.up, ForceMode.VelocityChange);
-        
+
         //Debug.Log("Jumped");
     }
 
     public void UpdateHips()
     {
-        IsGrounded = Physics.Raycast(hipsRb.transform.position, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
+        // IsGrounded = Physics.Raycast(hipsRb.transform.position, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
+
+        Vector3 castOrigin = hipsRb.transform.position;
+        IsGrounded = Physics.SphereCast(castOrigin, suspensionCastRadius, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
         Debug.DrawRay(hipsRb.transform.position, Vector3.down * groundCheckDistance, Color.aliceBlue);
-       
+
+        if (IsGrounded)
+        {
+
+            float currentDistance = hitInfo.distance;
+
+            float heightError = rideHeight - currentDistance;
+
+            float springForce = heightError * rideSpringStrength;
+
+            float currentVerticalVelocity = Vector3.Dot(hipsRb.linearVelocity, Vector3.up);
+
+            float damperForce = -currentVerticalVelocity * rideSpringDamper;
+
+            Vector3 finalForce = Vector3.up * (springForce + damperForce);
+
+            hipsRb.AddForce(Vector3.up * (springForce + damperForce), ForceMode.Acceleration);
+
+            if(hitInfo.transform.TryGetComponent<Rigidbody>(out Rigidbody hitRb))
+            {
+                hitRb.AddForce(hipsRb.mass * -0.98f * Vector3.up, ForceMode.Acceleration);
+            }
+        }
     }
 
     private void ApplyHipsMovement()
     {
 
         //Debug.Log($"Apply movement - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
-        Vector2 _moveInput =   moveInput;
+        Vector2 _moveInput = moveInput;
         Quaternion _lookRot = lookRot;
         _moveInput.Normalize();
         Vector3 camForward = _lookRot * Vector3.forward;
@@ -471,7 +479,7 @@ public class HybridCharacterController : NetworkBehaviour
         camRight.Normalize();
 
         Vector3 moveDirection = (camForward * _moveInput.y + camRight * _moveInput.x);
-        Vector3 targetVelocity = moveDirection * maxSpeed;
+        Vector3 targetVelocity = moveDirection * (sprint? maxSprintSpeed :  maxWalkSpeed);
 
         Vector3 currentVelocity = new Vector3(hipsRb.linearVelocity.x, 0, hipsRb.linearVelocity.z);
         Vector3 velocityError = targetVelocity - currentVelocity;
@@ -484,10 +492,12 @@ public class HybridCharacterController : NetworkBehaviour
 
     private void UpdateTorsoAndHead()
     {
-        foreach(var springs in pDSprings)
-        {
-            springs.UpdateBoneDrive();
+     
+        for (int i = 0; i < pDSprings.Count; i++) { 
+            var springs = pDSprings[i];
+            springs.UpdateBoneDrive(i == 1 ? initialTorsoRot: initialHeadRot);
         }
+
     }
 
 
@@ -498,11 +508,72 @@ public class HybridCharacterController : NetworkBehaviour
 
     public Vector3 GetEyePos()
     {
-        return hipsRb.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority?cameraTransform.rotation:lookRot);
+        return networkedRenderRoot.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority ? cameraTransform.rotation : lookRot);
+        //return hipsRb.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority?cameraTransform.rotation:lookRot);
     }
 
-    
-   
+    public void TeleportTo(Vector3 position, Quaternion rotation)
+    {
+        if (!Object.HasStateAuthority) return;
+        DisableCCFor(64);
+        _teleportRequested = true;
+        _teleportTargetPos = position;
+        _teleportTargetRot = rotation;
+    }
+
+    public void ExecuteTeleport(Vector3 position, Quaternion rotation)
+    {
+        if (!Object.HasStateAuthority) return;
+        Debug.Log($"Teleporting player to: {position}");
+
+
+       //this.transform.GetComponent<NetworkTransform>().Teleport(position);
+
+        Vector3 targetPos = position /* - this.transform.position + Vector3.up*0.6f*/;
+
+        var hipsNRB = hipsRb.GetComponent<NetworkRigidbody3D>();
+        if (hipsNRB != null)
+        {
+            hipsNRB.Teleport(targetPos, rotation);
+            hipsNRB.Rigidbody.linearVelocity = Vector3.zero;
+            hipsNRB.Rigidbody.angularVelocity = Vector3.zero;
+        }
+        else
+        {
+            hipsRb.transform.SetPositionAndRotation(targetPos, rotation);
+        }
+
+        foreach (var spring in pDSprings)
+        {
+            if (spring.nrb == null) return;
+
+            Vector3 newWorldPos = targetPos ;
+            Quaternion newWorldRot = rotation ;
+
+            spring.nrb.Teleport(newWorldPos, newWorldRot);
+            spring.nrb.Rigidbody.linearVelocity = Vector3.zero;
+            spring.nrb.Rigidbody.angularVelocity = Vector3.zero;
+        }
+
+        if (targetAnimator != null)
+        {
+            targetAnimator.transform.SetPositionAndRotation(targetPos, rotation);
+        }
+        if (finalAnimator != null)
+        {
+            finalAnimator.transform.SetPositionAndRotation(targetPos, rotation);
+        }
+        if (handController != null)
+        {
+            handController.TeleportHands(targetPos, hipsRb.transform.position);
+        }
+    }
+
+    public void DisableCCFor(int ticks)
+    {
+        disableCC = ticks;
+    }
+
     static bool IsFinite(Quaternion q) => float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
     static bool IsFinite(Vector3 v) => float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.z);
 
@@ -517,26 +588,34 @@ public class HybridCharacterController : NetworkBehaviour
 
         public AnimationCurve angularErrorMultiplier = AnimationCurve.Linear(0f, 1f, 1f, 10f);
 
-        private Quaternion startJointRotation;
+        public Quaternion startJointRotation;
         private Quaternion startTargetRotation;
 
-
         public bool wasKinematicOnDisable;
-
         public Transform ragdollEquivelent;
 
-        public void Init()
+        [HideInInspector] public NetworkRigidbody3D nrb;
+        [HideInInspector] public Vector3 localOffsetFromHips;
+        [HideInInspector] public Quaternion localRotationFromHips;
+
+        public void Init(Transform hipsTransform,bool hasStateAuth)
         {
             startJointRotation = joint.transform.localRotation;
             startTargetRotation = target.localRotation;
+
+            localOffsetFromHips = hipsTransform.InverseTransformPoint(joint.transform.position);
+            localRotationFromHips = Quaternion.Inverse(hipsTransform.rotation) * joint.transform.rotation;
+            //joint.gameObject.GetComponent<NetworkObject>().RemoveInputAuthority();
+
+            nrb = joint.GetComponent<NetworkRigidbody3D>();
         }
 
-        public void UpdateBoneDrive()
+        public void UpdateBoneDrive(Quaternion startRot)
         {
             //Quaternion currentTargetLocalRot = target.localRotation;
             //Quaternion deltaRotation = currentTargetLocalRot * Quaternion.Inverse(startTargetRotation);
 
-            joint.SetTargetRotationLocal(target.localRotation, startJointRotation);
+            joint.SetTargetRotationLocal(target.localRotation, startRot);
             float angleErr = Mathf.Abs(Quaternion.Angle(joint.transform.rotation, target.rotation)) /180;
             float forceMult = angularErrorMultiplier.Evaluate(angleErr);
 
@@ -547,4 +626,3 @@ public class HybridCharacterController : NetworkBehaviour
         }
     }
 }
-

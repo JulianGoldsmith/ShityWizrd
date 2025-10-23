@@ -6,8 +6,8 @@ using UnityEngine.InputSystem;
 
 public class RagDollCameraController : MonoBehaviour
 {
-    [SerializeField] private Transform networkedRenderTargetTransform;
-    private Transform cameraTransform;       
+    [SerializeField] private Transform cameraAnchor;
+    public Transform cameraTransform;       
 
     public Vector3 localEyeOffset = new Vector3(0f, 1.55f, 0f);
 
@@ -54,14 +54,12 @@ public class RagDollCameraController : MonoBehaviour
         finalPitch = Mathf.SmoothDampAngle(finalPitch, targetPitch, ref pitchVel, lookSmoothing);
 
 
-        
-
         cameraTransform.rotation = Quaternion.Euler(finalPitch, finalYaw, 0f);
 
         Vector3 eyeOffsetDueToPitch = GetEyePosBasedOnPitch(cameraTransform.rotation);
 
 
-        cameraTransform.position = networkedRenderTargetTransform.transform.position + localEyeOffset + eyeOffsetDueToPitch;
+        cameraTransform.position = cameraAnchor.transform.position + localEyeOffset + eyeOffsetDueToPitch;
 
         //if (Keyboard.current.escapeKey.wasPressedThisFrame)
         //{

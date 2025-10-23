@@ -1,11 +1,10 @@
 using Fusion;
+using Fusion.Addons.Physics;
 using Fusion.Sockets;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.InputSystem;
-using Fusion.Addons.Physics;
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
@@ -19,6 +18,12 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private NetworkPrefabRef _itemPrefab;
     public Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
+    private List<double> pings = new List<double>();
+    private float lastPingUpdateTime = 0f;
+    private int displayedPing = 0;
+
+
+
     public static NetworkObject Spawn(NetworkPrefabRef prefab, Vector3 pos, Quaternion rot, NetworkRunner.OnBeforeSpawned onBeforeSpawned = null)
     {
         // Deal with spawning objects.
@@ -27,7 +32,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         // How do we cast spells?
         // Do we just send a request to the host to start casting?
         // Or do we cast, then have the host correct it?
-        if(static_runner == null || !static_runner.IsServer)
+        if (static_runner == null || !static_runner.IsServer)
             return null;
 
         // Do we need to assign input authority here?
@@ -45,8 +50,17 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             // Create a unique position for the player
-            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
-            
+            Vector3 spawnPosition;
+            LevelGenerator levelGen = GameController.Instance.levelGenerator;
+
+            if (levelGen != null && levelGen.IsLevelGenerated)
+            {
+                spawnPosition = levelGen.StartRoomSpawnPoint.transform.position;
+            }
+            else
+            {
+                spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
+            }
 
             //Vector3 handsoffset = new Vector3(0,0,-1);
             //NetworkObject networkHandsObject = runner.Spawn(_handsPrefab, spawnPosition + handsoffset, Quaternion.identity, player);
@@ -56,8 +70,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             // or do it here, we need everyone to find those references themselves for each player OnSpawn.
             // That's done, at the moment, in PhysicsHandController.
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-            
-            Vector3 itemoffset = new Vector3(0,2,-2);
+
+            Vector3 itemoffset = new Vector3(0, 2, -2);
             NetworkObject networkItem = runner.Spawn(_itemPrefab, spawnPosition + itemoffset, Quaternion.identity, player);
 
             // Keep track of the player avatars for easy access
@@ -65,6 +79,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
             runner.SetPlayerObject(player, networkPlayerObject);
             // Share equipped spells? (i.e. full spell-graph?)
+            // GameController.Instance.OnPlayerSpawned(networkPlayerObject);
         }
     }
 
@@ -94,7 +109,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
     public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { }
 
-    
+
 
     async void StartGame(GameMode mode)
     {
@@ -140,6 +155,53 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             if (GUI.Button(new Rect(0, 40, 200, 40), "Join"))
             {
                 StartGame(GameMode.Client);
+            }
+        }
+        else
+        {
+
+            if (_runner.LocalPlayer.IsRealPlayer)
+            {
+                pings.Add(_runner.GetPlayerRtt(_runner.LocalPlayer));
+
+                float currentTime = Time.time;
+
+                // Check if 1 second has passed
+                if (currentTime - lastPingUpdateTime >= 1.0f)
+                {
+                    // Calculate the average of the batch
+                    double averageRTT = 0;
+                    if (pings.Count > 0)
+                    {
+                        double sum = 0;
+                        foreach (double rtt in pings)
+                        {
+                            sum += rtt;
+                        }
+                        averageRTT = sum / pings.Count;
+                    }
+
+                    displayedPing = (int)(averageRTT * 1000);
+                    pings.Clear();
+                    lastPingUpdateTime = currentTime;
+                }
+
+                GUI.Label(new Rect(0, 0, 200, 40), $"Ping: {displayedPing} ms");
+            }
+
+            if (_runner.IsServer)
+            {
+                if (GameController.Instance.levelGenerator != null)
+                {
+                    if (GUI.Button(new Rect(0, 0, 200, 40), $"Gen Level Seed: {GameController.Instance.levelGenerator.seed} "))
+                    {
+                        GameController.Instance.levelNetworkController.HostGenerateNewLevel(GameController.Instance.levelGenerator.seed);
+                    }
+                    if (GUI.Button(new Rect(0, 40, 200, 40), $"Gen Level Random Seed"))
+                    {
+                        GameController.Instance.levelNetworkController.HostGenerateNewLevel(UnityEngine.Random.Range(int.MinValue, int.MaxValue));
+                    }
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Linq;
 
 public class GameController : MonoBehaviour
 {
@@ -19,6 +20,9 @@ public class GameController : MonoBehaviour
 
     public BasicSpawner networkingController;
 
+    public LevelGenerator levelGenerator;
+    public LevelNetworkController levelNetworkController;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -29,7 +33,15 @@ public class GameController : MonoBehaviour
         {
             Instance = this;
         }
-        //playerInput = Object.FindAnyObjectByType<PlayerInput>();
+        if (levelGenerator != null)
+        {
+            levelGenerator.OnLevelReady += TeleportExistingPlayers;
+        }
+        if (levelNetworkController == null)
+        {
+            levelNetworkController = GetComponent<LevelNetworkController>(); ;
+        }
+        
     }
 
     void Start()
@@ -102,6 +114,23 @@ public class GameController : MonoBehaviour
         }
     }
 
-    
+    private void TeleportExistingPlayers()
+    {
+        if (networkingController == null || networkingController._runner == null || !networkingController._runner.IsServer)
+            return;
+
+        Debug.Log("Level is ready. Teleporting all existing players...");
+
+        Vector3 spawnPoint = levelGenerator.StartRoomSpawnPoint.position;
+
+        foreach (var playerObject in networkingController._spawnedCharacters.Values)
+        {
+            if (playerObject != null && playerObject.TryGetComponent<HybridCharacterController>(out var controller))
+            {
+                controller.TeleportTo(spawnPoint, Quaternion.identity);
+            }
+        }
+    }
+
 }
 
