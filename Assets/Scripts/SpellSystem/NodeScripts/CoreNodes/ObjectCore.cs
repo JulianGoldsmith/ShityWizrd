@@ -32,8 +32,6 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
-        ApplyPromotableValues(); //apply promotable values from connected runes 
-
         Vector3 pos = SpellSystemHelpers.GetSpellPosition(
             triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
         Quaternion rot = SpellSystemHelpers.GetSpellRotation(

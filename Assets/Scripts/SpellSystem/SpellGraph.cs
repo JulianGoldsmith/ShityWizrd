@@ -68,6 +68,13 @@ public class SpellGraph : ScriptableObject
         return entries[index];
     }
 
+    public void CompileSpell()
+    {
+        foreach(KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
+        {
+            kv.Value.Compile();
+        }
+    }
 
 
     //specific node instance in the graph by its guid

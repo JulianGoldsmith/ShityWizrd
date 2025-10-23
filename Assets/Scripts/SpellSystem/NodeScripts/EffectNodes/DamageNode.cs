@@ -9,8 +9,6 @@ public class DamageEffectNode : EffectNode
 
     public override void Execute(List<SpellTriggerInfo> triggerInfos)
     {
-        ApplyPromotableValues();
-
         foreach (var info in triggerInfos)
         {
             GameObject target = info.HitObject;

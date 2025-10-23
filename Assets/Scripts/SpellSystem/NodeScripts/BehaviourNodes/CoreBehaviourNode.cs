@@ -18,7 +18,6 @@ public class CoreBehaviourNode : BehaviourNode
 
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        ApplyPromotableValues();
         spellCore.transform.position = SpellSystemHelpers.GetSpellPosition(
             triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
         spellCore.transform.rotation = SpellSystemHelpers.GetSpellRotation(

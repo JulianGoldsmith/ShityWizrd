@@ -113,11 +113,11 @@ public class AuraContainer : NetworkBehaviour
         // check if already exists.
         int index;
         index = GetExistingSlot(aura.unique_label);
-        Debug.Log($"Attaching aura to {name}");
+        //Debug.Log($"Attaching aura to {name}");
         if (index > -1)
         {
             // Already exists, so just update.
-            Debug.Log($"existing index found for {aura.unique_label} at index {index}");
+            //Debug.Log($"existing index found for {aura.unique_label} at index {index}");
             CreateAuraAtIndex(aura, index);
             return;
         }
@@ -126,7 +126,7 @@ public class AuraContainer : NetworkBehaviour
         if (index < 0)
             throw new System.Exception("Not enough capacity for Aura.");
 
-        Debug.Log($"empty slot found for {aura.unique_label} at {index}");
+        //Debug.Log($"empty slot found for {aura.unique_label} at {index}");
         CreateAuraAtIndex(aura, index);
         aura.OnApply(this);
     }

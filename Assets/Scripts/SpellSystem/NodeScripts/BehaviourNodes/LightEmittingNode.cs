@@ -12,7 +12,6 @@ public class LightEmittingNode : BehaviourNode
     public float lumenPower = 3000f;
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        ApplyPromotableValues();
         var gravity = spellCore.AddComponent<LightEmiitingSB>();
         gravity.Init(triggerInfo, lumenPower, radius);
     }

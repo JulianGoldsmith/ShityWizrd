@@ -41,7 +41,6 @@ public class MomentumFlickCastNode : CasterNode
 
     public override void OnCastCanceled(SpellState state, CastActionController castController)
     {
-        ApplyPromotableValues();
         var handController = castController.GetComponentInChildren<PhysicsHandController>();
         if (handController == null || flickCastHandState == null) return;
 

@@ -7,15 +7,13 @@ public class ApplyAuraNode : EffectNode
     [SerializeField] Aura[] auras;
     public override void Execute(List<SpellTriggerInfo> triggerInfo)
     {
-        ApplyPromotableValues();
-
         foreach (var info in triggerInfo)
         {
             GameObject target = info.HitObject;
 
             if (target == null) continue;
 
-            if(target.TryGetComponent<AuraContainer>(out AuraContainer ac))
+            if (target.TryGetComponent<AuraContainer>(out AuraContainer ac))
             {
                 AttachAurasTo(ac);
             }
@@ -23,7 +21,7 @@ public class ApplyAuraNode : EffectNode
             {
                 // Didn't hit the object, but hit a subobject of it.
                 PhysicsObject po = pso.parent_physics_object;
-                if(po != null && po.TryGetComponent<AuraContainer>(out AuraContainer ac_parent))
+                if (po != null && po.TryGetComponent<AuraContainer>(out AuraContainer ac_parent))
                 {
                     AttachAurasTo(ac_parent);
                 }
@@ -35,7 +33,7 @@ public class ApplyAuraNode : EffectNode
     {
         for (int i = 0; i < auras.Length; i++)
         {
-            Debug.Log($"Found AC {ac.name} -> attach aura {auras[i].unique_label}");
+            //Debug.Log($"Found AC {ac.name} -> attach aura {auras[i].unique_label}");
             ac.AttachAura(auras[i]);
         }
     }

@@ -5,6 +5,7 @@ using UnityEngine;
 public abstract class EffectNode : SpellNode
 {
     public CasterTriggerMethod casterTriggerMethod = CasterTriggerMethod.OnCast;
+    
     public abstract void Execute( List<SpellTriggerInfo> triggerInfo);
 
     public void Execute( SpellTriggerInfo singleTriggerInfo)

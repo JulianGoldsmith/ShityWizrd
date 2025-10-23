@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Rendering.VirtualTexturing;
 
@@ -25,6 +26,11 @@ public abstract class SpellNode : ScriptableObject
     public Mesh overrideMesh = null;
     public Material overrideMaterial = null;
     public float ovverideVisualScale = 1f;
+
+    public virtual void Compile()
+    {
+        ApplyPromotableValues();
+    }
 
     ////Promotable attribues settings setting 
     public virtual void StoreBaseValues()
@@ -94,9 +100,9 @@ public abstract class SpellNode : ScriptableObject
                     return (T)obj;
 
                 var found = valueContainers.FirstOrDefault(c => c.TargetFieldName == field.Name);
-                Debug.Log($"[{GetType().Name}] Apply: field={field.Name}, type={field.FieldType}, " +
-                          $"base={baseValue}, " +
-                          $"binder={(found != null)}, mods={(found?.ModifyingNodes?.Count ?? 0)}");
+                //Debug.Log($"[{GetType().Name}] Apply: field={field.Name}, type={field.FieldType}, " +
+                //          $"base={baseValue}, " +
+                //          $"binder={(found != null)}, mods={(found?.ModifyingNodes?.Count ?? 0)}");
 
                 if (field.FieldType == typeof(float))
                 {

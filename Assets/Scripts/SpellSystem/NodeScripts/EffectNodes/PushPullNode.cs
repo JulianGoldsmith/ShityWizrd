@@ -20,15 +20,13 @@ public class PushPullNode : EffectNode
 
     public override void Execute(List<SpellTriggerInfo> triggerInfos)
     {
-        ApplyPromotableValues();
-
         foreach (var info in triggerInfos)
         {
             GameObject target = info.HitObject;
 
             if (target == null) continue;
 
-            if(target.TryGetComponent<Rigidbody>(out Rigidbody rb))
+            if (target.TryGetComponent<Rigidbody>(out Rigidbody rb))
             {
                 rb.AddForce(CalcForce(info.Source, target), forceMode);
             }

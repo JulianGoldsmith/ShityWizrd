@@ -7,7 +7,6 @@ public class GravityNode : BehaviourNode
     public float gravityAcceleration = 98.1f;
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        ApplyPromotableValues();
         var gravity = spellCore.AddComponent<GravitySB>();
         gravity.Init(triggerInfo, gravityAcceleration);
     }

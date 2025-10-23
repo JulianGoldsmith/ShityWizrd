@@ -80,7 +80,9 @@ public abstract class CastActionController : NetworkBehaviour
             Debug.Log("No active spell or item found for this cast");
             return;
         }
-            
+
+        // Compiled all spell by doing promotablevalues.
+        item.primaryActionSpell.CompileSpell();
 
         var entries = item.primaryActionSpell.GetComboEntries(); //Get the entry point of the spell from the entryPointController
         if (entries.Count == 0)

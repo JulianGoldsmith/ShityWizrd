@@ -25,11 +25,18 @@ public class OverlapSphereST : SpellTrigger
         // currently just hits all colliders and skips if not relevant,
         // which uses up non_alloc capacity.
         int hit = Physics.OverlapSphereNonAlloc(
-            transform.position, 
+            transform.position,
             size, // this maybe should've been half size, since its radius not width.
-            non_alloc_colliders, 
+            non_alloc_colliders,
             SpellSystemHelpers.GeneralCollisionLayerMask());
-        
+
+        //non_alloc_colliders = Physics.OverlapSphere(
+        //    transform.position,
+        //    size, // this maybe should've been half size, since its radius not width.
+        //    SpellSystemHelpers.GeneralCollisionLayerMask());
+
+        //int hit = non_alloc_colliders.Length;
+
         if (hit <= 0)
             return;
 
@@ -70,7 +77,11 @@ public class OverlapSphereST : SpellTrigger
 
         if (isValidTarget)
         {
-            Quaternion hitRotation = Quaternion.LookRotation(hitNormal);
+            Quaternion hitRotation;
+            if (hitNormal.magnitude == 0)
+                hitRotation = Quaternion.identity;
+            else
+                hitRotation = Quaternion.LookRotation(hitNormal);
             var triggerInfo = new SpellTriggerInfo(false, gameObject, this.state, hitPosition, this.transform.rotation, hitRotation, target);
 
             foreach (EffectNode effect in outcomeNodes.OfType<EffectNode>())

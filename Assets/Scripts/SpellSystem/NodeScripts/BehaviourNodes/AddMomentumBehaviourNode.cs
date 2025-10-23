@@ -5,7 +5,6 @@ public class AddMomentumBehaviourNode : BehaviourNode
 {
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        ApplyPromotableValues();
         var momentumMono = spellCore.AddComponent<AddMomentumSBMono>();
         momentumMono.Init(triggerInfo);
     }

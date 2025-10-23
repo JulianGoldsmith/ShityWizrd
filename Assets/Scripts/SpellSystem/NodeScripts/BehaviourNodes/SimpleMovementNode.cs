@@ -9,7 +9,6 @@ public class SimpleMovementNode : BehaviourNode
 
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        ApplyPromotableValues();
         var simpleMovement = spellCore.AddComponent<SimpleMovementSB>();
         simpleMovement.triggerInfo = triggerInfo;
         simpleMovement.speed = speed;
