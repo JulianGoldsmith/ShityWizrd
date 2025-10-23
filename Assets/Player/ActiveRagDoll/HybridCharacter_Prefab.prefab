@@ -2995,6 +2995,7 @@ GameObject:
   - component: {fileID: 3683111111694485463}
   - component: {fileID: 978287595077112396}
   - component: {fileID: 6685984473246634530}
+  - component: {fileID: 7064564967240851666}
   m_Layer: 0
   m_Name: HybridCharacter_Prefab
   m_TagString: Untagged
@@ -3180,12 +3181,7 @@ MonoBehaviour:
   cameraAnchorTransform: {fileID: 2286215986112748054}
   cameraAnchorSmoothSpeed: 20
   handController: {fileID: 1863557189476980646}
-  _bonkedState: 0
-  ragDollHips: {fileID: 5140873757360382617}
-  ragDoll: {fileID: 2176092362605009375}
-  ragDollController: {fileID: 3683111111694485463}
-  aliveRig: {fileID: 9061470612894622992}
-  bonkedRig: {fileID: 1780117188910826171}
+  bonkController: {fileID: 0}
 --- !u!114 &5430316478385969607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3243,6 +3239,7 @@ MonoBehaviour:
   - {fileID: 3683111111694485463}
   - {fileID: 978287595077112396}
   - {fileID: 6685984473246634530}
+  - {fileID: 7064564967240851666}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6340558049541726636
 MonoBehaviour:
@@ -3910,8 +3907,30 @@ MonoBehaviour:
   robeRenderer: {fileID: 3837092585687513976}
   hostMat: {fileID: 2100000, guid: e09614160cb77a0498ad88d9b300cff8, type: 2}
   clientMat: {fileID: 2100000, guid: 099c94d8d75be114b827069f92f46f83, type: 2}
-  _IsHost:
-    _value: 0
+  _IsHost: 0
+--- !u!114 &7064564967240851666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646711710736611360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e194d49a7d7076d479a7071deb44422c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  characterController: {fileID: 0}
+  _BonkedState: 0
+  ragDollHips: {fileID: 5140873757360382617}
+  ragDoll: {fileID: 2176092362605009375}
+  ragDollController: {fileID: 3683111111694485463}
+  aliveRig: {fileID: 9061470612894622992}
+  bonkedRig: {fileID: 1780117188910826171}
+  animatedSkeletonRoot: {fileID: 2290347683378947481}
+  ragdollSkeletonRoot: {fileID: 9204112786400458771}
+  clothingRenderers:
+  - {fileID: 3837092585687513976}
 --- !u!1 &1659192456888941227
 GameObject:
   m_ObjectHideFlags: 0

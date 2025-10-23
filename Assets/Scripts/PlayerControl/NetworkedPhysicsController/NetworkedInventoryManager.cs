@@ -68,18 +68,18 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP)  )
             {
-                if(characterController.bonkedState != BONKEDSTATE.BONKED)
+                if(characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
                     PickUpPressCount++;
             }
             if (data.buttons.WasReleased(Prior_buttons, EInputButton.DROP)  )
             {
-                if (characterController.bonkedState != BONKEDSTATE.BONKED)
+                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
                     DropPressCount++;
             }
             Prior_buttons = data.buttons;
         }
 
-        if (characterController.bonkedState == BONKEDSTATE.BONKED)
+        if (characterController.bonkController.BonkedState == BONKEDSTATE.BONKED)
         {
             if(currentItemInHand != null)
             {

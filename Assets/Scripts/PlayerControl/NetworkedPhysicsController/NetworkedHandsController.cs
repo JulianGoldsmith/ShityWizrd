@@ -138,7 +138,7 @@ public class NetworkedHandsController : NetworkBehaviour
         hasInputAuthority= _hasInputAuthroity;
         charMeshRenderer = characterController.modelRenderer;
         activeMeshState = ActiveMeshState.FULLBODY;
-        SetHandModelMaterial(charMeshRenderer.material);
+        //SetHandModelMaterial(charMeshRenderer.material);
     }
 
     public void LateUpdate() //think of this as local 

@@ -86,13 +86,8 @@ public class HybridCharacterController : NetworkBehaviour
     public Vector3 Acceleration { get; private set; }
 
     [Header("Bonked Variables")]
-    [Networked, OnChangedRender(nameof(OnBonkedChanged))] public BONKEDSTATE bonkedState { get; set; }
-    int _swapAtTick = -1;
-    bool wasKinematic;
-    public Transform ragDollHips;
-    [SerializeField] private GameObject ragDoll;
-    public NetworkedRagDoll ragDollController;
-    public Rig aliveRig, bonkedRig;
+    public CharacterBonkController bonkController;
+    
 
     ChangeDetector
         changeDetector;
@@ -112,19 +107,6 @@ public class HybridCharacterController : NetworkBehaviour
         //general setup
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
        
-
-        //material setup
-        //if (Object.HasStateAuthority)
-        //{
-        //    isHost = Object.HasInputAuthority;
-        //    bodyRot = hipsRb.transform.rotation;
-        //}
-        //modelRenderer.material = ragDollRenderer.material = isHost ? hostMat : clientMat;
-        
-        //if (HasInputAuthority)
-        //{
-        //    modelRenderer.enabled = false;
-        //}
 
         //Camera Setup
         camController = this.GetComponent<RagDollCameraController>();
@@ -165,19 +147,10 @@ public class HybridCharacterController : NetworkBehaviour
             GameController.Instance.playerInput = this.GetComponent<PlayerInput>();
         }
 
-      
-        ragDollController = transform.GetComponent<NetworkedRagDoll>();
-        if (bonkedState == BONKEDSTATE.ALIVE)
-        {
-            ragDollController.DeactivateRagDoll();
-        }
-        else
-        {
-            ragDollController.ActivateRagDoll();
-        }
 
         this.cameraAnchorTransform.parent = null;
 
+        bonkController = this.GetComponent<CharacterBonkController>();
     }
 
    
@@ -218,7 +191,7 @@ public class HybridCharacterController : NetworkBehaviour
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
             {
-                if( bonkedState != BONKEDSTATE.BONKED)
+                if(bonkController.BonkedState != BONKEDSTATE.BONKED)
                     GetBonked(); //animation is applied in Render -> Update Animations()
             }
 
@@ -230,8 +203,8 @@ public class HybridCharacterController : NetworkBehaviour
         }
 
 
-
-        if (bonkedState == BONKEDSTATE.BONKED) return;
+        //changed
+        if (bonkController.BonkedState == BONKEDSTATE.BONKED) return;
 
         ApplyLookRotation(); //sets the hips rb to the rotation of the camera - currently hard sets this with no forces. 
 
@@ -258,7 +231,7 @@ public class HybridCharacterController : NetworkBehaviour
         UpdateCameraAnchor();
         CasheMovement();
         UpdateAnimator();
-        UpdateBonkedMesh();
+
     }
 
     private void UpdateCameraAnchor()
@@ -285,84 +258,15 @@ public class HybridCharacterController : NetworkBehaviour
         }
     }
 
-    private void UpdateBonkedMesh()
-    {
-        if (_swapAtTick >= 0 && Runner.Tick >= _swapAtTick)
-        {
-            _swapAtTick = -1;
-            bool showRagdoll = (bonkedState == BONKEDSTATE.BONKED);
-            modelRenderer.enabled = HasInputAuthority? false : !showRagdoll;
-            ragDollRenderer.enabled = showRagdoll;
-        }
-    }
-
-    private void OnBonkedChanged()
-    {
-        if (HasStateAuthority) return;
-        if(bonkedState == BONKEDSTATE.BONKED)
-        {
-            GetBonked();
-        }
-        else
-        {
-            GetUnBonked();
-        }
-    }
-
 
     public void GetBonked()
     {
- 
-        Debug.Log("Ran got bonked");
-        ragDollController.ActivateRagDoll();
-
-        foreach (PDSpring headAndTorso in pDSprings)
-        {
-            var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
-            headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
-            rb3d.RBIsKinematic = true;
-            rb3d.GetComponent<Collider>().enabled = false;
-        }
-        var hipsNRB = hipsRb.GetComponent<NetworkRigidbody3D>();
-        wasKinematic = hipsNRB.RBIsKinematic;
-        hipsNRB.RBIsKinematic = true;
-        hipsNRB.GetComponent<Collider>().enabled = false;
-
-        if (HasStateAuthority)
-        {
-            bonkedState = BONKEDSTATE.BONKED;
-        }
-        _swapAtTick = Runner.Tick + 1;
-
-        handController.DisableHands();
-
+        bonkController.GetBonked();
     }
 
     public void GetUnBonked()
     {
-        ragDollController.DeactivateRagDoll();
-        if (HasStateAuthority)
-        {
-            bonkedState = BONKEDSTATE.ALIVE;
-        }
-        _swapAtTick = Runner.Tick + 1;
-
-
-        foreach (PDSpring headAndTorso in pDSprings)
-        {
-            var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
-            rb3d.RBIsKinematic = headAndTorso.wasKinematicOnDisable;
-            rb3d.GetComponent<Collider>().enabled = true;
-            //if(HasStateAuthority || HasInputAuthority)
-            //    rb3d.Teleport(headAndTorso.ragdollEquivelent.position, headAndTorso.ragdollEquivelent.rotation);
-        }
-        var hipsNRB = hipsRb.GetComponent<NetworkRigidbody3D>();
-        hipsNRB.RBIsKinematic = wasKinematic;
-        hipsNRB.GetComponent<Collider>().enabled = true;
-        //if (HasStateAuthority || HasInputAuthority)
-        //    hipsNRB.Teleport(ragDollHips.position, ragDollHips.rotation);
-
-        handController.EnableHands();
+        bonkController.GetUnBonked();
     }
 
 
@@ -547,7 +451,14 @@ public class HybridCharacterController : NetworkBehaviour
 
             float damperForce = -currentVerticalVelocity * rideSpringDamper;
 
+            Vector3 finalForce = Vector3.up * (springForce + damperForce);
+
             hipsRb.AddForce(Vector3.up * (springForce + damperForce), ForceMode.Acceleration);
+
+            if(hitInfo.transform.TryGetComponent<Rigidbody>(out Rigidbody hitRb))
+            {
+                hitRb.AddForce(hipsRb.mass * -0.98f * Vector3.up, ForceMode.Acceleration);
+            }
         }
     }
 

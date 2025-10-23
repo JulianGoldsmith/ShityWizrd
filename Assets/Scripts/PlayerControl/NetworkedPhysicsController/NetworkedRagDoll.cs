@@ -13,16 +13,12 @@ public class NetworkedRagDoll : NetworkBehaviour
 
     public bool active;
 
-
-
     public void Spawn() { }
 
     public override void Spawned()
     {
         ragdollRoot.parent = null;
         ragdollRoot.GetComponent<NetworkObject>().RemoveInputAuthority();
-
-        
     }
 
     public void ActivateRagDoll()
@@ -32,12 +28,11 @@ public class NetworkedRagDoll : NetworkBehaviour
         {
             bone.WakeBone(HasStateAuthority);
         }
-        //foreach (RagDollBone bone in bones)
-        //{
-        //    bone.rb3d.gameObject.SetActive(true);
-        //}
         ragdollRoot.gameObject.SetActive(true);
-
+        foreach (RagDollBone bone in bones)
+        {
+            bone.AddForcesAndApplyPhycis();
+        }
 
     }
 
@@ -112,25 +107,33 @@ public class NetworkedRagDoll : NetworkBehaviour
 
         public void SleepBone(bool _hasStateAuth)
         {
+            rb.angularVelocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             initiatedKinematic = rb.isKinematic;
             rb3d.RBIsKinematic = true;
             rb.GetComponent<Collider>().enabled = false;
+           
 
-            
             //rb3d.Teleport(new Vector3(0, 1000,0), Quaternion.identity);
         }
 
-        public void WakeBone(bool _hasStateAuth)
+        public void WakeBone(bool _hasStateAuth) //needs to happen beofre activating
         {
-            rb3d.Teleport(targetTransform.position, targetTransform.rotation);
+            rb3d.transform.SetPositionAndRotation(targetTransform.position, targetTransform.rotation);
             rb3d.RBIsKinematic = !_hasStateAuth;
             rb.GetComponent<Collider>().enabled = true;
             rb.angularVelocity = Vector3.zero;
             rb.linearVelocity = Vector3.zero;
-            if (equivalentbone != null)
-                rb.AddForce(equivalentbone.linearVelocity, ForceMode.VelocityChange);
+            
             no.RemoveInputAuthority();
             no.ForceRemoteRenderTimeframe = true;
+        }
+
+        public void AddForcesAndApplyPhycis() //needs to happen after awaken
+        {
+            rb3d.Teleport(targetTransform.position, targetTransform.rotation);
+            if (equivalentbone != null)
+                rb.AddForce(equivalentbone.linearVelocity, ForceMode.VelocityChange);
         }
 
     }
