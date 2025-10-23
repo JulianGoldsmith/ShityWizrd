@@ -978,6 +978,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parent_physics_object: {fileID: 978287595077112396}
+  rb: {fileID: 0}
 --- !u!1 &521634073245831260
 GameObject:
   m_ObjectHideFlags: 0
@@ -1855,6 +1856,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parent_physics_object: {fileID: 978287595077112396}
+  rb: {fileID: 0}
 --- !u!1 &905910670213713628
 GameObject:
   m_ObjectHideFlags: 0
@@ -2842,6 +2844,7 @@ GameObject:
   - component: {fileID: 7391232409836999049}
   - component: {fileID: 3683111111694485463}
   - component: {fileID: 978287595077112396}
+  - component: {fileID: 6956570812525240400}
   m_Layer: 0
   m_Name: HybridCharacter_Prefab
   m_TagString: Untagged
@@ -2882,7 +2885,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hipsRb: {fileID: 3043645679196564912}
   hipsOffset: {x: 0, y: -0.5904688, z: 0}
-  groundCheckDistance: 1.5
+  groundCheckDistance: 0.8
   groundLayer:
     serializedVersion: 2
     m_Bits: 130943
@@ -3071,6 +3074,7 @@ MonoBehaviour:
   - {fileID: 7391232409836999049}
   - {fileID: 3683111111694485463}
   - {fileID: 978287595077112396}
+  - {fileID: 6956570812525240400}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6340558049541726636
 MonoBehaviour:
@@ -3717,9 +3721,24 @@ MonoBehaviour:
   _physicsObjectProperties:
     material_label: 4
     size: 1
+  rb: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  physicsSubObjects: []
   _current_bonkedness: 0
   hybridCharacterController: {fileID: 2616703058331641411}
+--- !u!114 &6956570812525240400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646711710736611360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  local_active_aura_ids: 0000000000000000000000000000000000000000000000000000000000000000
 --- !u!1 &1659192456888941227
 GameObject:
   m_ObjectHideFlags: 0
@@ -6810,6 +6829,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parent_physics_object: {fileID: 978287595077112396}
+  rb: {fileID: 0}
 --- !u!1 &4171129976920668416
 GameObject:
   m_ObjectHideFlags: 0

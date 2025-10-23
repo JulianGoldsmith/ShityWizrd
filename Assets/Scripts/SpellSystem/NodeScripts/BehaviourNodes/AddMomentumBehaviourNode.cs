@@ -19,6 +19,9 @@ public class AddMomentumSBMono : SpellBehaviour
 
     public void Init(SpellTriggerInfo _triggerInfo)
     {
+        if (_triggerInfo == null)
+            return;
+
         triggerInfo = _triggerInfo;
         velocity = _triggerInfo.TriggerVector;
 

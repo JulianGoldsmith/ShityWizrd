@@ -232,6 +232,41 @@ public abstract class SpellNode : ScriptableObject
     }
 
     public abstract List<SpellNode> GetAllDependentNodes();
+
+    const int infinite_search_catch = 100;
+    public SpellNode GetNodeInChain(string instance_guid)
+    {
+        if (instance_guid == null || instance_guid == "")
+            return null;
+
+        // Look through all dependent nodes, and their dependencies recursively 
+        // until the given instance guid is found.
+        List<SpellNode> search = GetAllDependentNodes();
+        if (search.Count == 0)
+            return null;
+
+        int infinite_loop_counter = 0;
+        SpellNode next_node = search[0];
+        while(next_node != null)
+        {
+            if (infinite_loop_counter >= infinite_search_catch)
+                return null;
+            infinite_loop_counter++;
+
+            if (next_node.InstanceGuid == instance_guid)
+                return next_node;
+
+            search.AddRange(next_node.GetAllDependentNodes());
+
+            if(search.Count > 0)
+            {
+                next_node = search[0];
+                search.RemoveAt(0);
+                continue;
+            }
+        }
+        return null;
+    }
 }
 
 public enum RuneCategoryTag

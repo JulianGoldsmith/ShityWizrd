@@ -36,16 +36,16 @@ public class PlayerCastActionController : CastActionController
     }
     public override void FixedUpdateNetwork()
     {
+        ApplyResets();
+
         if (GetInput(out NetworkInputData data))
         {
             if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
             {
-                Debug.Log($"pressed {primary_attack_pressed} {prior_buttons.Bits} {data.buttons.Bits}");
                 primary_attack_pressed++;
             }
             if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
             {
-                Debug.Log($"released {primary_attack_pressed} {prior_buttons.Bits} {data.buttons.Bits}");
                 primary_attack_released++;
             }
             prior_buttons = data.buttons;
@@ -53,41 +53,59 @@ public class PlayerCastActionController : CastActionController
             lookDirection = data.lookRotation;
         }
 
+        OnInputTryCast();
+    }
+
+    public override void Render()
+    {
+        base.Render();
+
+        // clients all
+        if (HasStateAuthority || HasInputAuthority)
+            return;
+
+        // all clients also try cast the spell.
+        OnInputTryCast();
+        ApplyResets();
+    }
+    bool reset_attack_pressed = false;
+    bool reset_attack_released = false;
+    void ApplyResets()
+    {
+        // this is so that the host (input)
+        // doesn't read the click then immediately
+        // change it to zero.
+        // Instead, they read the change, used it,
+        // queue for it to reset, then at the next tick
+        // (before they check the next input), they
+        // reset it.
+        if (reset_attack_pressed)
+            primary_attack_pressed = 0;
+        if(reset_attack_released) 
+            primary_attack_released = 0;
+    }
+    void OnInputTryCast()
+    {
+        if(!HasInputAuthority)
+            Debug.Log($"trycast {name} {primary_attack_pressed} {primary_attack_released}");
         if (primary_attack_pressed > 0)
         {
             if (currentAttackCooldown <= 0)
             {
-                primary_attack_pressed = 0;
-                Debug.Log($"start cast {primary_attack_pressed} {primary_attack_released}");
+                reset_attack_pressed=true;
+                //primary_attack_pressed = 0;
                 StartCast(primary_attack_released > 0);
                 if (primary_attack_released > 0)
-                    primary_attack_released = 0;
+                    //primary_attack_released = 0;
+                    reset_attack_released = true;
             }
         }
         else if (primary_attack_released > 0)
         {
-            primary_attack_released = 0;
+            reset_attack_released=true;
+            //primary_attack_released = 0;
             EndCast();
         }
-    }
-
-    public void FixedUpdate()
-    {
-        //if (primary_attack_pressed > 0)
-        //{
-        //    if (currentAttackCooldown <= 0)
-        //    {
-        //        primary_attack_pressed = 0;
-        //        StartCast(primary_attack_released > 0);
-        //        if (primary_attack_released > 0)
-        //            primary_attack_released = 0;
-        //    }
-        //}
-        //else if (primary_attack_released > 0)
-        //{
-        //    primary_attack_released = 0;
-        //    EndCast();
-        //}
     }
 
 

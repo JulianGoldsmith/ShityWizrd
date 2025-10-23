@@ -1,9 +1,11 @@
+using Fusion;
 using System.Collections.Generic;
 using UnityEngine;
 
 //The data on this specific spell cast stored passed down in each triggerInfo (which holds information on specific triggers)
 public class SpellState
 {
+    public SpellStateID SpellStateID;
     public CastActionController Controller { get; } //this means we can always get the player / enemies pos and rot + GetForward etc
 
     //Snapshot on cast varibales geenrally set by the CasterNode
@@ -25,6 +27,7 @@ public class SpellState
 
     public SpellState(CastActionController controller, EquipableItem item, CasterNode originalCasterNode)
     {
+        this.SpellStateID = new SpellStateID(controller);
         this.Controller = controller;
         this.CastItem = item;
 
@@ -65,5 +68,25 @@ public class SpellState
             value = default;      // Assign a default value
             return false;         // Return false for failure
         }
+    }
+}
+
+public struct SpellStateID : INetworkStruct
+{
+    public NetworkBehaviourId nb_id;
+    public int cast_id;
+    public SpellStateID(NetworkBehaviour nb, int? guid_override = null)
+    {
+        // create a unique id.
+        nb_id = nb.Id;
+        if (guid_override != null)
+            cast_id = guid_override.Value;
+        else
+            cast_id= CreateNewGuid(nb);
+    }
+    static int CreateNewGuid(NetworkBehaviour nb)
+    {
+        // increment guid, return prior.
+        return SpellStateManager.instance.GetNextSpellStateId(nb);
     }
 }

@@ -16,7 +16,6 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
     // Should there be a generic objectcore networkprefabref,
     // then we replace its components at run time? 
     // or a unique networkprefabref per thing that can be spawned?
-    public GameObject corePrefab;
     public NetworkPrefabRef corePrefabRef;
     public NetworkPrefabRef prefabRefToBuffer { get { return corePrefabRef; } }
 
@@ -103,7 +102,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         if(physicsObject != null)
         {
             // To catch initial momenta, etc.
-            physicsObject.InitialiseAfterBehavioursAndTriggers();
+            physicsObject.InitialiseAfterBehavioursAndTriggers(this, triggerInfo.State);
         }
     }
 
