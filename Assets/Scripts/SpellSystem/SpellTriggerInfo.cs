@@ -4,7 +4,7 @@ using UnityEngine;
 //holds information on the event that triggered the core of the spell 
 //For example projectile hits floor and creates explosion this is passed to create the explosion in the right place
 public class SpellTriggerInfo
-{
+{ 
     public SpellState State { get; private set; }
     public GameObject Source {  get; private set; } //Gives the source that created the trigger, e.g. the spell/physicsobject that called the trigger event.
     public bool IsCast {  get; private set; } //Tells us if what triggered this was a CastNode from player or AI

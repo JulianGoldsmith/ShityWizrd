@@ -53,7 +53,7 @@ public class AuraContainer : NetworkBehaviour
             {
                 continue;
             }
-            Debug.Log($"Ticking aura {networked_active_aura_ids[i]} at time {networked_active_aura_timers[i].RemainingTime(Runner)}");
+            //Debug.Log($"Ticking aura {networked_active_aura_ids[i]} at time {networked_active_aura_timers[i].RemainingTime(Runner)}");
             AuraLookUp.Get(networked_active_aura_ids[i])?.OnTick(this);
             if (networked_active_aura_timers[i].Expired(Runner))
                 RemoveAuraAtIndex(i);

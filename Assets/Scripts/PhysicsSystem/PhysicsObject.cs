@@ -67,15 +67,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         UpdateVisuals();
         ModifyTransform();
     }
-    public virtual void InitialiseAfterBehavioursAndTriggers()
-    {
-        // Called after behaviours and triggers have all been attached
-        // and initialised.
-        // Made this to catch initial momentum, but doesn't
-        // actually work because force is applied, but velocity hasn't
-        // changed yet.
-
-    }
     public Rigidbody UpdateRigidbody(Rigidbody _rb)
     {
         if (_rb == null) return null;

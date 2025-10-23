@@ -102,7 +102,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         if(physicsObject != null)
         {
             // To catch initial momenta, etc.
-            physicsObject.InitialiseAfterBehavioursAndTriggers();
+            physicsObject.InitialiseAfterBehavioursAndTriggers(this, triggerInfo.State);
         }
     }
 

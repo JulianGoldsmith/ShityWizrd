@@ -102,6 +102,9 @@ public abstract class CastActionController : NetworkBehaviour
 
         int actionId = _nextActionId;
         SpellState newCast = new SpellState(this, item, entryCast);
+        
+        SpellStateManager.instance.AddSpellState(newCast);
+
         activeCasts.Add(newCast);
         isCasting = true;
         newCast.isHeld = true;

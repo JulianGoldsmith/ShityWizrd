@@ -378,7 +378,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
         while((next_node != null || search_count_remaining > 0) && infinite_loop_fallback < _max_iterations_search_in_graph)
         {
-            Debug.Log($"iteration {infinite_loop_fallback} and found {found_prefabrefs_with_priorities.Count}");
+            //Debug.Log($"iteration {infinite_loop_fallback} and found {found_prefabrefs_with_priorities.Count}");
             current_priority = 0;
 
             if (search_count_remaining > 0 && next_node == null)
@@ -396,12 +396,12 @@ public class NetworkObjectBuffer : NetworkBehaviour
                 break;
             infinite_loop_fallback++;
 
-            Debug.Log($"next node is {next_node.name} {next_node is IHasPrefabRefToBuffer}");
+            //Debug.Log($"next node is {next_node.name} {next_node is IHasPrefabRefToBuffer}");
 
             // This node has a prefabref to buffer, so add it to the dict.
             if(next_node is IHasPrefabRefToBuffer)
             {
-                Debug.Log("has prefabreftobuffer");
+                //Debug.Log("has prefabreftobuffer");
                 // Give more priority to the first prefab found.
                 // TODO:
                 //  - Add more here to weight objects that might
@@ -427,7 +427,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
             // So currently generic but could be streamlined for speed.
             // All clientside though, at least.
             queued_search.AddRange(next_node.GetAllDependentNodes());
-            Debug.Log($"queued search count {queued_search.Count}");
+            //Debug.Log($"queued search count {queued_search.Count}");
 
             if (queued_search.Count > 0)
             {
