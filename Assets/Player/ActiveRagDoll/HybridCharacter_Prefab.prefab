@@ -980,6 +980,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parent_physics_object: {fileID: 978287595077112396}
+  rb: {fileID: 0}
 --- !u!1 &521634073245831260
 GameObject:
   m_ObjectHideFlags: 0
@@ -1859,6 +1860,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parent_physics_object: {fileID: 978287595077112396}
+  rb: {fileID: 0}
 --- !u!1 &905910670213713628
 GameObject:
   m_ObjectHideFlags: 0
@@ -2996,6 +2998,7 @@ GameObject:
   - component: {fileID: 978287595077112396}
   - component: {fileID: 6685984473246634530}
   - component: {fileID: 7064564967240851666}
+  - component: {fileID: 4969265624486796617}
   m_Layer: 0
   m_Name: HybridCharacter_Prefab
   m_TagString: Untagged
@@ -3240,6 +3243,7 @@ MonoBehaviour:
   - {fileID: 978287595077112396}
   - {fileID: 6685984473246634530}
   - {fileID: 7064564967240851666}
+  - {fileID: 4969265624486796617}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6340558049541726636
 MonoBehaviour:
@@ -3887,8 +3891,11 @@ MonoBehaviour:
   _physicsObjectProperties:
     material_label: 4
     size: 1
+  rb: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  physicsSubObjects: []
   _current_bonkedness: 0
+  halo_radius_scale_modifier: 1
   hybridCharacterController: {fileID: 2616703058331641411}
 --- !u!114 &6685984473246634530
 MonoBehaviour:
@@ -3931,6 +3938,19 @@ MonoBehaviour:
   ragdollSkeletonRoot: {fileID: 9204112786400458771}
   clothingRenderers:
   - {fileID: 3837092585687513976}
+--- !u!114 &4969265624486796617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646711710736611360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  local_active_aura_ids: 0000000000000000000000000000000000000000000000000000000000000000
 --- !u!1 &1659192456888941227
 GameObject:
   m_ObjectHideFlags: 0
@@ -7023,6 +7043,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parent_physics_object: {fileID: 978287595077112396}
+  rb: {fileID: 0}
 --- !u!1 &4171129976920668416
 GameObject:
   m_ObjectHideFlags: 0
