@@ -86,6 +86,9 @@ public class LevelGenerator : MonoBehaviour
                 Color gizmoColor;
                 switch (_grid[x, y])
                 {
+                    case 0:
+                        gizmoColor = new Color(1, 1, 1, 0.2f);
+                        break;
                     case 1: // Room
                         gizmoColor = new Color(0, 1, 0, 0.2f); // Faint green
                         break;
@@ -477,19 +480,172 @@ public class LevelGenerator : MonoBehaviour
         return false;
     }
 
-    private bool CheckForCollision(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation)
+
+
+
+
+
+
+
+    private HashSet<Vector2Int> GetRotatedFootprintCells(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation)
     {
-        BoundsInt roomGridBounds = CalculateRotatedBounds(gridPosition, roomPrefab, rotation);
-        for (int x = roomGridBounds.xMin; x < roomGridBounds.xMax; x++)
+        HashSet<Vector2Int> occupiedCells = new HashSet<Vector2Int>();
+
+        if (roomPrefab.filled == null || roomPrefab.filled.Length == 0)
         {
-            for (int y = roomGridBounds.yMin; y < roomGridBounds.yMax; y++)
+            Debug.LogWarning($"Room prefab {roomPrefab.name} has no 'filled' footprint data.", roomPrefab);
+            return occupiedCells;
+        }
+
+        // MODIFIED: Get the min corner of the room's bounds
+        Vector3 min = roomPrefab.RoomBounds.min;
+        int width = roomPrefab.filled.Length;
+
+        for (int x = 0; x < width; x++)
+        {
+            if (roomPrefab.filled[x] == null || roomPrefab.filled[x].row == null) continue;
+
+            int depth = roomPrefab.filled[x].row.Length;
+            for (int z = 0; z < depth; z++)
             {
-                if (x < 0 || x >= gridSize.x || y < 0 || y >= gridSize.y) return true;
-                if (_grid[x, y] != 0) return true;
+                if (roomPrefab.filled[x].row[z])
+                {
+                    // MODIFIED: Create the local point using the *same offset* as the baking function
+                    Vector3 localPoint = new Vector3(min.x + x + 0.5f, 0, min.z + z + 0.5f);
+
+                    // (The rest is the same)
+                    Vector3 worldPoint = gridPosition + (rotation * localPoint);
+                    Vector2Int gridCell = new Vector2Int(Mathf.FloorToInt(worldPoint.x), Mathf.FloorToInt(worldPoint.z));
+                    occupiedCells.Add(gridCell);
+                }
             }
         }
+
+        return occupiedCells;
+    }
+
+
+
+
+    private bool CheckForCollision(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation)
+    {
+        // Get the precise list of cells this room would occupy
+        HashSet<Vector2Int> footprintCells = GetRotatedFootprintCells(roomPrefab, gridPosition, rotation);
+
+        foreach (Vector2Int cell in footprintCells)
+        {
+            // Check 1: Is this cell outside the level's boundaries?
+            if (cell.x < 0 || cell.x >= gridSize.x || cell.y < 0 || cell.y >= gridSize.y)
+            {
+                return true; // Collision (out of bounds)
+            }
+
+            // Check 2: Is this grid cell already occupied by another room or corridor?
+            if (_grid[cell.x, cell.y] != 0)
+            {
+                return true; // Collision (occupied)
+            }
+        }
+
+        // If we checked all cells and found no problems, it's clear!
         return false;
     }
+
+
+
+
+    //private bool CheckForCollision(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation)
+    //{
+    //    BoundsInt roomGridBounds = CalculateRotatedBounds(gridPosition, roomPrefab, rotation);
+    //    for (int x = roomGridBounds.xMin; x < roomGridBounds.xMax; x++)
+    //    {
+    //        for (int y = roomGridBounds.yMin; y < roomGridBounds.yMax; y++)
+    //        {
+    //            if (x < 0 || x >= gridSize.x || y < 0 || y >= gridSize.y) return true;
+    //            if (_grid[x, y] != 0) return true;
+    //        }
+    //    }
+    //    return false;
+    //}
+
+
+    private RoomTemplate PlaceOneRoom(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation, int depth, int prefabConnToAttach = -1)
+    {
+        GameObject roomInstanceGO = Instantiate(roomPrefab.gameObject, gridPosition, rotation, this.transform);
+        RoomTemplate roomInstance = roomInstanceGO.GetComponent<RoomTemplate>();
+        roomInstance.InitializeRuntimeConnections();
+
+        // MODIFIED: Get the footprint cells just like we did in the collision check
+        HashSet<Vector2Int> footprintCells = GetRotatedFootprintCells(roomPrefab, gridPosition, rotation);
+
+        // MODIFIED: Stamp the footprint onto the grid
+        foreach (Vector2Int cell in footprintCells)
+        {
+            // Check bounds before stamping
+            if (cell.x >= 0 && cell.x < gridSize.x && cell.y >= 0 && cell.y < gridSize.y)
+            {
+                _grid[cell.x, cell.y] = 1; // 1 = Room
+            }
+        }
+
+        // MODIFIED: We still need bounds for the PlacedRoomInstance, 
+        // so we calculate it from the footprint cells we just found.
+        BoundsInt roomGridBounds;
+        if (footprintCells.Count == 0)
+        {
+            // Handle empty footprint case
+            roomGridBounds = new BoundsInt(gridPosition.x, gridPosition.z, 0, 0, 0, 0);
+        }
+        else
+        {
+            // Find the min/max X and Y from the footprint to create a bounding box
+            int minX = footprintCells.Min(c => c.x);
+            int minY = footprintCells.Min(c => c.y);
+            int maxX = footprintCells.Max(c => c.x);
+            int maxY = footprintCells.Max(c => c.y);
+
+            // Create the BoundsInt from the min/max values
+            roomGridBounds = new BoundsInt(minX, minY, 0, (maxX - minX) + 1, (maxY - minY) + 1, 1);
+        }
+
+        // Add to our list of placed rooms, now with the correct bounds
+        _placedRooms.Add(new PlacedRoomInstance
+        {
+            template = roomPrefab,
+            gridPosition = new Vector2Int(Mathf.RoundToInt(gridPosition.x), Mathf.RoundToInt(gridPosition.z)),
+            gridBounds = roomGridBounds, // Using our new, accurately calculated bounds
+            roomObject = roomInstanceGO,
+            depth = depth
+        });
+
+
+        // (This part for handling connections remains unchanged)
+        for (int i = 0; i < roomInstance.runtimeConnections.Count; i++)
+        {
+            var conn = roomInstance.runtimeConnections[i];
+            if (i == prefabConnToAttach)
+            {
+                roomInstance.CloseConnectionFromSearch(conn.templateData, true);
+                continue;
+            }
+
+            if (conn.IsOpenForSearch)
+            {
+                _frontier.Add(new FrontierConnection
+                {
+                    WorldPosition = roomInstance.transform.TransformPoint(conn.templateData.GetLocalPosition()),
+                    WorldNormal = roomInstance.transform.TransformDirection(conn.templateData.GetNormal()),
+                    Type = conn.templateData.Type,
+                    OwningRoom = roomInstance,
+                    ConnectionData = conn.templateData,
+                    depth = depth
+                });
+            }
+        }
+        return roomInstance;
+    }
+
+
 
     private BoundsInt CalculateRotatedBounds(Vector3Int gridPosition, RoomTemplate roomPrefab, Quaternion rotation)
     {
@@ -577,58 +733,58 @@ public class LevelGenerator : MonoBehaviour
         return null;
     }
 
-    private RoomTemplate PlaceOneRoom(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation, int depth, int prefabConnToAttach = -1)
-    {
-        GameObject roomInstanceGO = Instantiate(roomPrefab.gameObject, gridPosition, rotation, this.transform);
-        RoomTemplate roomInstance = roomInstanceGO.GetComponent<RoomTemplate>();
-        roomInstance.InitializeRuntimeConnections();
+    //private RoomTemplate PlaceOneRoom(RoomTemplate roomPrefab, Vector3Int gridPosition, Quaternion rotation, int depth, int prefabConnToAttach = -1)
+    //{
+    //    GameObject roomInstanceGO = Instantiate(roomPrefab.gameObject, gridPosition, rotation, this.transform);
+    //    RoomTemplate roomInstance = roomInstanceGO.GetComponent<RoomTemplate>();
+    //    roomInstance.InitializeRuntimeConnections();
 
-        BoundsInt roomGridBounds = CalculateRotatedBounds(gridPosition, roomPrefab, rotation);
+    //    BoundsInt roomGridBounds = CalculateRotatedBounds(gridPosition, roomPrefab, rotation);
 
-        for (int x = roomGridBounds.xMin; x < roomGridBounds.xMax; x++)
-        {
-            for (int y = roomGridBounds.yMin; y < roomGridBounds.yMax; y++)
-            {
-                if (x >= 0 && x < gridSize.x && y >= 0 && y < gridSize.y)
-                {
-                    _grid[x, y] = 1;
-                }
-            }
-        }
-        _placedRooms.Add(new PlacedRoomInstance
-        {
-            template = roomPrefab,
-            gridPosition = new Vector2Int(Mathf.RoundToInt(gridPosition.x), Mathf.RoundToInt(gridPosition.z)),
-            gridBounds = roomGridBounds,
-            roomObject = roomInstanceGO,
-            depth = depth
-        });
+    //    for (int x = roomGridBounds.xMin; x < roomGridBounds.xMax; x++)
+    //    {
+    //        for (int y = roomGridBounds.yMin; y < roomGridBounds.yMax; y++)
+    //        {
+    //            if (x >= 0 && x < gridSize.x && y >= 0 && y < gridSize.y)
+    //            {
+    //                _grid[x, y] = 1;
+    //            }
+    //        }
+    //    }
+    //    _placedRooms.Add(new PlacedRoomInstance
+    //    {
+    //        template = roomPrefab,
+    //        gridPosition = new Vector2Int(Mathf.RoundToInt(gridPosition.x), Mathf.RoundToInt(gridPosition.z)),
+    //        gridBounds = roomGridBounds,
+    //        roomObject = roomInstanceGO,
+    //        depth = depth
+    //    });
 
 
-        for (int i = 0; i < roomInstance.runtimeConnections.Count; i++)
-        {
-            var conn = roomInstance.runtimeConnections[i];
-            if (i == prefabConnToAttach)
-            {
-                roomInstance.CloseConnectionFromSearch(conn.templateData, true);
-                continue;
-            }
+    //    for (int i = 0; i < roomInstance.runtimeConnections.Count; i++)
+    //    {
+    //        var conn = roomInstance.runtimeConnections[i];
+    //        if (i == prefabConnToAttach)
+    //        {
+    //            roomInstance.CloseConnectionFromSearch(conn.templateData, true);
+    //            continue;
+    //        }
             
-            if (conn.IsOpenForSearch)
-            {
-                _frontier.Add(new FrontierConnection
-                {
-                    WorldPosition = roomInstance.transform.TransformPoint(conn.templateData.GetLocalPosition()),
-                    WorldNormal = roomInstance.transform.TransformDirection(conn.templateData.GetNormal()),
-                    Type = conn.templateData.Type,
-                    OwningRoom = roomInstance,
-                    ConnectionData = conn.templateData,
-                    depth = depth
-                });
-            }
-        }
-        return roomInstance;
-    }
+    //        if (conn.IsOpenForSearch)
+    //        {
+    //            _frontier.Add(new FrontierConnection
+    //            {
+    //                WorldPosition = roomInstance.transform.TransformPoint(conn.templateData.GetLocalPosition()),
+    //                WorldNormal = roomInstance.transform.TransformDirection(conn.templateData.GetNormal()),
+    //                Type = conn.templateData.Type,
+    //                OwningRoom = roomInstance,
+    //                ConnectionData = conn.templateData,
+    //                depth = depth
+    //            });
+    //        }
+    //    }
+    //    return roomInstance;
+    //}
 
     private bool TryPlaceCorridor(FrontierConnection startConnection, float maxLength, List<FrontierConnection> targetConnectionList, int gridFillWith)
     {

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using UnityEngine.InputSystem;
+using Unity.VisualScripting;
 public class RuneUI : MonoBehaviour
 {
     public NodeInstanceData InstanceData { get; private set; }
@@ -76,10 +77,13 @@ public class RuneUI : MonoBehaviour
     private void LayoutForStartingConnection(SocketUI startSocket)
     {
         var lockedSockets = FindExistingLockedSockets();
+        var controller = SpellGraphController.Instance;
 
         Vector3 mouseWorldPos = GetMouseWorldPosition();
         Vector3 dirToMouse = (mouseWorldPos - transform.position).normalized;
-        lockedSockets[startSocket] = Mathf.Atan2(dirToMouse.z, dirToMouse.x) * Mathf.Rad2Deg;
+
+        Vector3 dir_in_place = Quaternion.Inverse(controller.transform.rotation) * dirToMouse;
+        lockedSockets[startSocket] = Mathf.Atan2(dir_in_place.z, dir_in_place.x) * Mathf.Rad2Deg;
 
         DistributeSockets(lockedSockets);
         UpdateAttractionLogic(_sockets);
@@ -193,7 +197,7 @@ public class RuneUI : MonoBehaviour
             {
                 Vector3 dir = (target.transform.position - transform.position).normalized;
                 Vector3 dir_in_place = Quaternion.Inverse(SpellGraphController.Instance.transform.rotation) * dir;
-                locked[local] = Mathf.Atan2(dir.z, dir.x) * Mathf.Rad2Deg;
+                locked[local] = Mathf.Atan2(dir_in_place.z, dir_in_place.x) * Mathf.Rad2Deg;
             }
         }
         foreach (var otherRune in controller.GetAllRunes())
@@ -208,7 +212,7 @@ public class RuneUI : MonoBehaviour
                     {
                         Vector3 dir = (otherRune.transform.position - transform.position).normalized;
                         Vector3 dir_in_place = Quaternion.Inverse(SpellGraphController.Instance.transform.rotation) * dir;
-                        locked[local] = Mathf.Atan2(dir.z, dir.x) * Mathf.Rad2Deg;
+                        locked[local] = Mathf.Atan2(dir_in_place.z, dir_in_place.x) * Mathf.Rad2Deg;
                     }
                 }
             }
@@ -231,10 +235,12 @@ public class RuneUI : MonoBehaviour
 
         var controller = SpellGraphController.Instance;
         float angleRad = angle * Mathf.Deg2Rad;
+        Transform planeT = controller.transform;
 
+        Vector3 planeLocalOffset = controller.socketOrbitRadius * new Vector3(Mathf.Cos(angleRad), 0, Mathf.Sin(angleRad));
 
         //Transform editorPlane = controller.editorCamera.transform;
-
+        
 
         //float angleRad = angle * Mathf.Deg2Rad;
 

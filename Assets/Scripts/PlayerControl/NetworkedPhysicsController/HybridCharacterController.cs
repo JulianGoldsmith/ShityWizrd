@@ -577,52 +577,55 @@ public class HybridCharacterController : NetworkBehaviour
     static bool IsFinite(Quaternion q) => float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
     static bool IsFinite(Vector3 v) => float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.z);
 
-    [System.Serializable]
-    public class PDSpring
+    
+}
+
+[System.Serializable]
+public class PDSpring
+{
+    public ConfigurableJoint joint;
+    public Transform target;
+
+    public float angluarSpringForce = 100f;
+    public float angularSpringDamp = 50f;
+
+    public AnimationCurve angularErrorMultiplier = AnimationCurve.Linear(0f, 1f, 1f, 10f);
+
+    public Quaternion startJointRotation;
+    private Quaternion startTargetRotation;
+
+    public bool wasKinematicOnDisable;
+    public Transform ragdollEquivelent;
+
+    [HideInInspector] public NetworkRigidbody3D nrb;
+    [HideInInspector] public Vector3 localOffsetFromHips;
+    [HideInInspector] public Quaternion localRotationFromHips;
+
+    public void Init(Transform hipsTransform, bool hasStateAuth)
     {
-        public ConfigurableJoint joint;
-        public Transform target;
+        startJointRotation = joint.transform.localRotation;
+        startTargetRotation = target.localRotation;
 
-        public float angluarSpringForce = 100f;
-        public float angularSpringDamp = 50f;
+        localOffsetFromHips = hipsTransform.InverseTransformPoint(joint.transform.position);
+        localRotationFromHips = Quaternion.Inverse(hipsTransform.rotation) * joint.transform.rotation;
+        //joint.gameObject.GetComponent<NetworkObject>().RemoveInputAuthority();
 
-        public AnimationCurve angularErrorMultiplier = AnimationCurve.Linear(0f, 1f, 1f, 10f);
+        nrb = joint.GetComponent<NetworkRigidbody3D>();
+    }
 
-        public Quaternion startJointRotation;
-        private Quaternion startTargetRotation;
+    public void UpdateBoneDrive(Quaternion? startRot = null)
+    {
+        
+        //Quaternion currentTargetLocalRot = target.localRotation;
+        //Quaternion deltaRotation = currentTargetLocalRot * Quaternion.Inverse(startTargetRotation);
 
-        public bool wasKinematicOnDisable;
-        public Transform ragdollEquivelent;
+        joint.SetTargetRotationLocal(target.localRotation, startRot?? startJointRotation);
+        float angleErr = Mathf.Abs(Quaternion.Angle(joint.transform.rotation, target.rotation)) / 180;
+        float forceMult = angularErrorMultiplier.Evaluate(angleErr);
 
-        [HideInInspector] public NetworkRigidbody3D nrb;
-        [HideInInspector] public Vector3 localOffsetFromHips;
-        [HideInInspector] public Quaternion localRotationFromHips;
-
-        public void Init(Transform hipsTransform,bool hasStateAuth)
-        {
-            startJointRotation = joint.transform.localRotation;
-            startTargetRotation = target.localRotation;
-
-            localOffsetFromHips = hipsTransform.InverseTransformPoint(joint.transform.position);
-            localRotationFromHips = Quaternion.Inverse(hipsTransform.rotation) * joint.transform.rotation;
-            //joint.gameObject.GetComponent<NetworkObject>().RemoveInputAuthority();
-
-            nrb = joint.GetComponent<NetworkRigidbody3D>();
-        }
-
-        public void UpdateBoneDrive(Quaternion startRot)
-        {
-            //Quaternion currentTargetLocalRot = target.localRotation;
-            //Quaternion deltaRotation = currentTargetLocalRot * Quaternion.Inverse(startTargetRotation);
-
-            joint.SetTargetRotationLocal(target.localRotation, startRot);
-            float angleErr = Mathf.Abs(Quaternion.Angle(joint.transform.rotation, target.rotation)) /180;
-            float forceMult = angularErrorMultiplier.Evaluate(angleErr);
-
-            var drive = joint.slerpDrive;
-            drive.positionSpring = angluarSpringForce * forceMult;
-            drive.positionDamper = angularSpringDamp;
-            joint.slerpDrive = drive;
-        }
+        var drive = joint.slerpDrive;
+        drive.positionSpring = angluarSpringForce * forceMult;
+        drive.positionDamper = angularSpringDamp;
+        joint.slerpDrive = drive;
     }
 }

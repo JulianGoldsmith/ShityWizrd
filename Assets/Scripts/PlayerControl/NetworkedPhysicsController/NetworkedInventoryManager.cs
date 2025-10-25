@@ -58,6 +58,8 @@ public class NetworkedInventoryManager : NetworkBehaviour
         {
             (sgcs[0] as SpellGraphController).inventory = GetComponentInParent<NetworkedInventoryManager>();
         }
+
+        GameController.Instance.spellGraphController.inventory = this;
     }
 
     public override void FixedUpdateNetwork()

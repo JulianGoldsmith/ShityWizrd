@@ -65,7 +65,7 @@ public class CharacterBonkController : NetworkBehaviour
         Debug.Log("Ran got bonked");
         ragDollController.ActivateRagDoll();
 
-        foreach (HybridCharacterController.PDSpring headAndTorso in characterController.pDSprings)
+        foreach (PDSpring headAndTorso in characterController.pDSprings)
         {
             var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
             headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
@@ -97,7 +97,7 @@ public class CharacterBonkController : NetworkBehaviour
         _swapAtTick = Runner.Tick + 1;
 
 
-        foreach (HybridCharacterController.PDSpring headAndTorso in characterController.pDSprings)
+        foreach (PDSpring headAndTorso in characterController.pDSprings)
         {
             var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
             rb3d.RBIsKinematic = HasStateAuthority ? false : (HasInputAuthority ? false : true);
