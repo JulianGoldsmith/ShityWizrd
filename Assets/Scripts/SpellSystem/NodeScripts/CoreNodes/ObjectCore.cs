@@ -71,37 +71,53 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         // across all instances.
 
         SpellCreatedPhysicsObject physicsObject = spellCore.GetComponent<SpellCreatedPhysicsObject>();
-        if (physicsObject != null)
+
+        // Now going with the assumption that any object you create must be a SpellCreatedPhysicsObject
+        if(physicsObject == null)
         {
-            // We allow modification of values also within the created physicsobject
-            // as well as its properties.
-            // We capture the base values here, since this is the first time
-            // we're seeing it. Then we can apply promotable values.
-            if (!base_values_from_dependencies_stored)
-            {
-                // Only need to do this once.
-                AppendBaseValuesFromDependency(physicsObject);
-                AppendBaseValuesFromDependency(physicsObject.physicsObjectProperties);
-                base_values_from_dependencies_stored = true;
-            }
-            physicsObject = ApplyPromotableValuesGeneric<SpellCreatedPhysicsObject>(physicsObject);
-            physicsObject.physicsObjectProperties = ApplyPromotableValuesGeneric<PhysicsObjectProperties>(physicsObject.physicsObjectProperties);
-            physicsObject.AssignProperties(this);
-            physicsObject.InitialisePhysicsObject();
+            throw new System.Exception("Summoned object hsa no SpellCreatedPhysicsObject script.");
         }
 
-
-        /*Debug.Log($"is cast = {triggerInfo.IsCast} [Spawn] posType={CastSpawnPosition} rotType={CastSpawnRotation} " +
-          $"CastPos={triggerInfo.State.CastPosition} Override?={triggerInfo.HasOverridePosition} " +
-          $"TrigPos={triggerInfo.TriggerPoint} and spell core is {spellCore.transform.position}");*/
-
-        AttatchBehavioursAndTriggers(spellCore.gameObject, triggerInfo);
-
-        if(physicsObject != null)
+        if (!base_values_from_dependencies_stored)
         {
-            // To catch initial momenta, etc.
-            physicsObject.InitialiseAfterBehavioursAndTriggers(this, triggerInfo.State);
+            // Only need to do this once.
+            AppendBaseValuesFromDependency(physicsObject);
+            AppendBaseValuesFromDependency(physicsObject.physicsObjectProperties);
+            base_values_from_dependencies_stored = true;
         }
+
+        // We now initialise from within the objectcore spawn method, rather than here.
+        // This allows clients to catchup and do all this themselves too, so long
+        // as they are provided this core-node (and equivalent spellgraph)
+
+        physicsObject.InitialiseOnSpawned(this, triggerInfo, triggerInfo.State);
+
+
+        //if (physicsObject != null)
+        //{
+        //    // We allow modification of values also within the created physicsobject
+        //    // as well as its properties.
+        //    // We capture the base values here, since this is the first time
+        //    // we're seeing it. Then we can apply promotable values.
+
+        //    physicsObject = ApplyPromotableValuesGeneric<SpellCreatedPhysicsObject>(physicsObject);
+        //    physicsObject.physicsObjectProperties = ApplyPromotableValuesGeneric<PhysicsObjectProperties>(physicsObject.physicsObjectProperties);
+        //    physicsObject.AssignProperties(this);
+        //    physicsObject.InitialisePhysicsObject();
+        //}
+
+
+        ///*Debug.Log($"is cast = {triggerInfo.IsCast} [Spawn] posType={CastSpawnPosition} rotType={CastSpawnRotation} " +
+        //  $"CastPos={triggerInfo.State.CastPosition} Override?={triggerInfo.HasOverridePosition} " +
+        //  $"TrigPos={triggerInfo.TriggerPoint} and spell core is {spellCore.transform.position}");*/
+
+        //AttatchBehavioursAndTriggers(spellCore.gameObject, triggerInfo);
+
+        //if(physicsObject != null)
+        //{
+        //    // To catch initial momenta, etc.
+        //    physicsObject.InitialiseAfterBehavioursAndTriggers(this, triggerInfo.State);
+        //}
     }
 
     public override List<SocketDefinition> GetSockets()

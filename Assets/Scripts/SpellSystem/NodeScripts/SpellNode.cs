@@ -67,7 +67,7 @@ public abstract class SpellNode : ScriptableObject
             }
         }
     }
-    protected T ApplyPromotableValuesGeneric<T>(T obj_to_mod)
+    public T ApplyPromotableValuesGeneric<T>(T obj_to_mod)
     {
         // Extend this to work with anything, not just a spellnode
         // (so that it can work with PhysicsObjectProperties too.

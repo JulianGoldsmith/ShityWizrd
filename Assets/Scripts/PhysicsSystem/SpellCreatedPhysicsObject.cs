@@ -20,6 +20,29 @@ public class SpellCreatedPhysicsObject : PhysicsObject
 
     private SpellTrigger[] spelltriggers;
 
+    public void InitialiseOnSpawned(ObjectCore node, SpellTriggerInfo triggerInfo, SpellState state)
+    {
+        // This is called by anyone that spawns the object.
+        // Anyone or doesn't (e.g. proxies) will catch up by using ids.
+        node.ApplyPromotableValuesGeneric<SpellCreatedPhysicsObject>(this);
+        physicsObjectProperties = node.ApplyPromotableValuesGeneric<PhysicsObjectProperties>(physicsObjectProperties);
+        AssignProperties(node);
+        InitialisePhysicsObject();
+
+        Debug.Log("initialising object on spawn");
+
+        if (triggerInfo != null)
+        {
+            node.AttatchBehavioursAndTriggers(gameObject, triggerInfo);
+            InitialiseAfterBehavioursAndTriggers(node, triggerInfo.State);
+        }
+        else
+        {
+            node.AttatchBehavioursAndTriggers(gameObject, state);
+            InitialiseAfterBehavioursAndTriggers(node, state);
+        }
+    }
+
     public void AssignProperties(ObjectCore createdby)
     {
         // Carryover any spell-modifiers into the properties?
@@ -68,7 +91,6 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         if (original_spell_state == null)
             return;
 
-        Debug.Log($"is original spell state null {original_spell_state == null}");
         if (corresponding_spell_node != null)
             return;
 
@@ -76,9 +98,10 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         Debug.Log($"corresponding spell node {corresponding_spell_node == null} {corresponding_spell_node.nodeName}");
         if (corresponding_spell_node is ObjectCore corresponding_core)
         {
+            InitialiseOnSpawned(corresponding_core, null, original_spell_state);
             // we don't have the trigger info...
             // for now, try null and see what happens...
-            corresponding_core.AttatchBehavioursAndTriggers(gameObject, original_spell_state);
+            //corresponding_core.AttatchBehavioursAndTriggers(gameObject, original_spell_state);
         }
     }
 
@@ -120,10 +143,10 @@ public class SpellCreatedPhysicsObject : PhysicsObject
             return;
 
         int tick_diff = Mathf.Max(0, Runner.Tick - tick);
-        for (int i = 0; i < tick_diff; i++)
-        {
-            OnTickTriggerComponents();
-        }
+        OnTickTriggerComponents();
+        //for (int i = 0; i < tick_diff; i++)
+        //{
+        //}
     }
     protected void OnTickTriggerComponents()
     {

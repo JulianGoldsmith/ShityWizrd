@@ -53,11 +53,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         if (!HasInputAuthority)
             return;
 
-        object[] sgcs = GameObject.FindObjectsOfTypeAll(typeof(SpellGraphController));
-        if (sgcs.Length > 0)
-        {
-            (sgcs[0] as SpellGraphController).inventory = GetComponentInParent<NetworkedInventoryManager>();
-        }
+        GameController.Instance.spellGraphController.inventory = this;
     }
 
     public override void FixedUpdateNetwork()
