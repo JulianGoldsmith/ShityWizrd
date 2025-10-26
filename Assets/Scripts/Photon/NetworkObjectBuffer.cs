@@ -112,6 +112,9 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     void ReawakenAndPlace(NetworkObject instance, NetworkPrefabRef prefabref, Vector3 position, Quaternion rotation)
     {
+        if (instance == null)
+            return;
+
         Runner.SetIsSimulated(instance, true);
         //instance.AssignInputAuthority(inputAuthority);
 
@@ -142,31 +145,30 @@ public class NetworkObjectBuffer : NetworkBehaviour
             var localInstance = _localBuffer[i];
 
             if (localInstance == networkInstance)
+            {
+                // When they spawn in, they might not be set to inactive yet,
+                // which causes weirdness where the buffered objects
+                // all interact for the client in the shadow zone.
                 continue;
+            }
 
-            if (localInstance != null && localInstance.IsValid == true)
+            if (localInstance != null && localInstance.IsValid)
             {
                 // Network instance was released so we need to activate
                 // object on all clients (including proxies) not only
                 // on those where Get method was called
+                //Debug.Log($"setting active localinstance {i} {localInstance.name}");
                 localInstance.gameObject.SetActive(true);
-
-//#if UNITY_EDITOR
-//                localInstance.name = prefab.name;
-//#endif
             }
 
             _localBuffer[i] = networkInstance;
 
-            if (networkInstance != null && networkInstance.IsValid == false)
+            if (networkInstance != null && networkInstance.IsValid)
             {
                 // New instance was added to the buffer, we need to make sure
                 // that the object is inactive on all clients (including proxies)
+                //Debug.Log($"setting active networkinstance {i} {networkInstance.name}");
                 networkInstance.gameObject.SetActive(false);
-
-//#if UNITY_EDITOR
-//                networkInstance.name = $"(Buffered) {networkInstance.name}";
-//#endif
             }
 
             //var localName = localInstance != null ? localInstance.Id.ToString(): "null";
