@@ -130,7 +130,7 @@ public class AuraContainer : NetworkBehaviour
         // check if already exists.
         int index;
         index = GetExistingSlot(aura.unique_label);
-        Debug.Log($"Attaching aura {aura.unique_label} to {name}");
+        //Debug.Log($"Attaching aura {aura.unique_label} to {name}");
         if (index > -1)
         {
             // Already exists, so just update.
@@ -184,7 +184,7 @@ public class AuraContainer : NetworkBehaviour
         else
             auraid = local_active_aura_ids[index];
 
-        Debug.Log($"Removing aura at {index} {auraid}");
+        //Debug.Log($"Removing aura at {index} {auraid}");
 
         if (auraid == AURA_ID.NULL)
             //throw new System.Exception($"Null aura at index {index}");
