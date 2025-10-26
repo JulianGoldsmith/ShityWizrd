@@ -51,8 +51,6 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         AssignProperties(node);
         InitialisePhysicsObject();
 
-        Debug.Log("initialising object on spawn");
-
         if (triggerInfo != null)
         {
             node.AttatchBehavioursAndTriggers(gameObject, triggerInfo);
@@ -70,7 +68,6 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         // We use the values networked to use to dummy spawn, e.g.
         // attach behaviours and triggers.
         // We may not have all info.
-        Debug.Log("clientside spawning");
         InitialiseOnSpawned((ObjectCore)corresponding_spell_node, null, null);
     }
 
@@ -96,23 +93,18 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         // is changed.
         // so both times try to load the corresponding spell and node.
         // the second call will complete, the first won't.
-        Debug.Log($"corresponding spell updated");
         if (corresponding_spellgraph_id.NotNull())
         {
             corresponding_spell_graph = SpellStateManager.instance.GetSpellGraph(corresponding_spellgraph_id);
-            Debug.Log($"found corresponding spell graph {corresponding_spell_graph.name} {corresponding_spell_graph != null} {corresponding_spellgraph_id.sender_ref} {corresponding_spellgraph_id.id}");
         }
 
         if (corresponding_node_instance_guid.Value != "" && corresponding_spell_graph != null)
         {
             corresponding_spell_node = corresponding_spell_graph.entryPointControllerNode.GetNodeInChain(corresponding_node_instance_guid.Value);
-            Debug.Log($"found corresponding spell node 1 {corresponding_node_instance_guid.Value} {corresponding_spell_node != null}");
-            Debug.Log($"found corresponding spell node 2 {corresponding_spell_node.InstanceGuid}");
         }
 
         if (corresponding_spell_graph != null && corresponding_spell_node != null)
         {
-            Debug.Log($"spell updated, clientside init");
             InitialiseOnSpawnedClientside();
         }
     }

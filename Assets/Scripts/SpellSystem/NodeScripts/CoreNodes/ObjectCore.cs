@@ -32,6 +32,9 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
+        if (!CanSpawn(triggerInfo.State))
+            return;
+
         Vector3 pos = SpellSystemHelpers.GetSpellPosition(
             triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
         Quaternion rot = SpellSystemHelpers.GetSpellRotation(

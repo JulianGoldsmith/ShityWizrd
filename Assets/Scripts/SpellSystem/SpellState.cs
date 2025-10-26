@@ -5,6 +5,10 @@ using UnityEngine;
 //The data on this specific spell cast stored passed down in each triggerInfo (which holds information on specific triggers)
 public class SpellState
 {
+    // track the number of cores created in the current casting.
+    // A simple way to avoid infinites.
+    const int max_spawnable_cores = 50; // hard-cutoff for number cores to spawn within a single spell cast.
+
     public SpellGraphId SpellGraphIdFrom { get; private set; }
     public CastActionController Controller { get; } //this means we can always get the player / enemies pos and rot + GetForward etc
 
@@ -19,6 +23,8 @@ public class SpellState
     public bool isHeld = false; //Represents if the player/ spell/ AI is holding down cast 
     public float ChargeStartTime { get; set; }
     public GameObject chargeCastVFX;
+
+    public int SpawnedCoresCounter { get; set; } 
 
     public CasterNode OriginalCasterNode { get; set; }  //Node responsible for casting the spell. 
 
@@ -40,5 +46,15 @@ public class SpellState
         }
 
         OriginalCasterNode = originalCasterNode;
+
+        SpawnedCoresCounter = 0;
+    }
+
+    public bool CanSpawnAnotherCore()
+    {
+        // check if SpawnedCoresCounter has reached the limit.
+        // if not, increment.
+        SpawnedCoresCounter++;
+        return SpawnedCoresCounter <= max_spawnable_cores;
     }
 }

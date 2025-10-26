@@ -137,8 +137,18 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         if (!HasStateAuthority)
             return;
+
+        // if this hasn't properly spawned yet, don't use collisions.
+        if (Object != null && Object.IsValid == false)
+            return;
+
         PhysicsObject other = collision.gameObject.GetComponent<PhysicsObject>();
+        
+        if (other == null || other.Object == null || other.Object.IsValid == false)
+            other = null;
+
         float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.physicsObjectProperties);
+
         //Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
         if (IfGetBonked(bonk_amount))
         {
@@ -381,10 +391,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         // instead now checking within fixedupdatenetwork 
         // if zero bonkedness.
-        //if (zero_bonkedness)
-        //{
-        //    OnZeroBonk(bonk_amount);
-        //}
     }
     protected virtual void OnZeroBonk()
     {
