@@ -34,11 +34,9 @@ public class AntiGravityAura : Aura
 
     void ApplyGravityAndDragForceOnTick(GameObject obj)
     {
-        Debug.Log($"Applying gravity and drag to {obj.name}");
         Rigidbody rb = obj.GetComponent<Rigidbody>();
         if (rb == null) return;
         // apply a force that contests the object's gravity (if it is affected by gravity)
-        Debug.Log($"2 -> actually applying gravity and drag to {obj.name}");
         if (rb.useGravity)
             rb.AddForce(-Physics.gravity, ForceMode.Acceleration);
 

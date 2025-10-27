@@ -2,6 +2,7 @@ using UnityEngine;
 using Fusion;
 using System.Collections.Generic;
 using System;
+using UnityEngine.Assertions.Must;
 
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
@@ -87,13 +88,13 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         physicsMaterial = mat;
 
         // Friction
-        physicsMaterial.staticFriction = physicsObjectProperties.stickiness;
-        physicsMaterial.dynamicFriction = physicsObjectProperties.stickiness;
-        physicsMaterial.frictionCombine = PhysicsMaterialCombine.Average;
+        //physicsMaterial.staticFriction = physicsObjectProperties.stickiness;
+        //physicsMaterial.dynamicFriction = physicsObjectProperties.stickiness;
+        //physicsMaterial.frictionCombine = PhysicsMaterialCombine.Average;
 
         // Bounciness
-        physicsMaterial.bounciness = physicsObjectProperties.elasticity;
-        physicsMaterial.bounceCombine = PhysicsMaterialCombine.Minimum;
+        //physicsMaterial.bounciness = physicsObjectProperties.elasticity;
+        //physicsMaterial.bounceCombine = PhysicsMaterialCombine.Minimum;
 
         return physicsMaterial;
     }
@@ -138,6 +139,8 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (!HasStateAuthority)
             return;
 
+        OnBounce(collision);
+
         // if this hasn't properly spawned yet, don't use collisions.
         if (Object != null && Object.IsValid == false)
             return;
@@ -157,8 +160,15 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     }
     #endregion
 
+
+    public Vector3 velocity_before_physics_update;
     public override void FixedUpdateNetwork()
     {
+        if (rb != null)
+        {
+            velocity_before_physics_update = rb.linearVelocity;
+        }
+
         RunHaloCollisions();
     }
 
@@ -201,10 +211,22 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             OnStick(non_alloc_colliders[i]);
         }
     }
-    private void OnDrawGizmosSelected()
+    bool PastInitialSpawnTick()
+    {
+        return (Runner.Tick - tick_spawned) > 1;
+    }
+    private void OnDrawGizmos()
     {
         Gizmos.color = Color.blueViolet;
-        Gizmos.DrawWireSphere(transform.position, halo_radius());
+        //Gizmos.DrawWireSphere(transform.position, halo_radius());
+
+        Gizmos.DrawLine(bounce_point, bounce_point + bounce_vector);
+
+        if (rb != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(transform.position, transform.position + rb.linearVelocity);
+        }
     }
     void OnStick(Collider other)
     {
@@ -212,7 +234,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (physicsObjectProperties.stickiness == 0)
             return;
 
-        if ((Runner.Tick - tick_spawned) <= 1)
+        if (!PastInitialSpawnTick())
         {
             // skip the first tick of stickiness.
             // avoids sticking to player and cast-item.
@@ -305,7 +327,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
                 total_momentum * shared_stickiness_factor * other_mass / total_mass;
             //other_rb.linearVelocity = other_new_momentum / other_mass;
             Vector3 velocity_diff_other = (other_new_momentum / other_mass) - other_rb.linearVelocity;
-            other_rb.AddForce(velocity_diff_other, ForceMode.VelocityChange);
+            other_po.ApplyForceToSelfAndSubObjects(velocity_diff_other, ForceMode.VelocityChange);
         }
 
         // Sense checking:
@@ -340,6 +362,67 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
 
     }
+
+    void OnBounce(Collision col)
+    {
+        if (!PastInitialSpawnTick())
+        {
+            // skip the first tick of bounce.
+            // avoids bouncing on player and cast-item.
+            // there is defintely a better way to do this ofc.
+            return;
+        }
+
+        Debug.Log("bounce!");
+        if (physicsObjectProperties.elasticity == 0)
+            return;
+
+        // unfortunately, can't just use the impulse
+
+        // note that unity rigidody is already doing impulses to separate
+        // the objects. Here we just apply an additional kick, to 
+        // apply extra bounciness in the collision.
+
+        // bounce on collision. Apply an impulse in the opposite direction
+        // given by bounciness. Also apply to the other object.
+        // If they are also elastic, they'll do their own calcs to, and 
+        // therefore apply double-bounce.
+
+        // collision.impulse isn't working so now just doing the calculations myself :(
+        Vector3 normal = col.GetContact(0).normal.normalized; // the normal isn't always normalised ???
+        normal = col.impulse.normalized;
+        float velAlongNormal = Vector3.Dot(col.relativeVelocity, normal);
+        bounce_vector = normal * velAlongNormal;
+        bounce_point = col.GetContact(0).point;
+
+        // skip if moving together.
+        if (velAlongNormal < 0)
+            return;
+
+        float invMass = 1f / physicsObjectProperties.mass;
+        float other_invMass;
+        
+        PhysicsObject other_po = col.gameObject.GetComponent<PhysicsObject>();
+        if (other_po != null)
+            other_invMass = 1f / other_po.physicsObjectProperties.mass;
+        else
+            other_invMass = 0;
+
+        float j = physicsObjectProperties.elasticity * velAlongNormal / (invMass + other_invMass);
+
+        //Vector3 bounce_impulse = col.impulse * physicsObjectProperties.elasticity * 5;
+        Vector3 bounce_impulse = j * normal;
+
+
+        // a bounce can't change the magnitude of velocity, it can only rotate it,
+        //  since energy can be at-most conserved.
+        ApplyForce(bounce_impulse, ForceMode.Impulse);
+
+        if (other_po != null)
+            other_po.ApplyForce(-bounce_impulse, ForceMode.Impulse);
+    }
+    Vector3 bounce_vector;
+    Vector3 bounce_point;
     #endregion
 
     #region Bonking
@@ -375,10 +458,10 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         // quadratic.
         // this is a bad idea since falling on an object would come with a different bonk calc.
-        float wall_or_floor_penalty = (other_properties == null)? 0.02f: 1.0f;
+        float wall_or_floor_penalty = (other_properties == null)? 0.1f: 1.0f;
 
         return 150f * collision_impulse * hardness_factor * wall_or_floor_penalty *
-            physicsObjectProperties.physicsobjectmaterial.brittleness /
+            physicsObjectProperties.brittleness /
             mass;
     }
 
@@ -453,13 +536,17 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     }
     public void ApplyForceToSelfAndSubObjects(Vector3 force, ForceMode forceMode)
     {
-        if (rb != null)
-            rb.AddForce(force, forceMode);
+        ApplyForce(force, forceMode);
 
-        Action<PhysicsSubObject> action = obj => ApplyForce(obj, force, forceMode);
+        Action<PhysicsSubObject> action = obj => ApplyForceToSubObject(obj, force, forceMode);
         ApplyAcrossAllSubObjects(action);
     }
-    void ApplyForce(PhysicsSubObject pso, Vector3 force, ForceMode forceMode)
+    public void ApplyForce(Vector3 force, ForceMode forceMode)
+    {
+        if (rb != null)
+            rb.AddForce(force, forceMode);
+    }
+    void ApplyForceToSubObject(PhysicsSubObject pso, Vector3 force, ForceMode forceMode)
     {
         if (pso.rb != null)
             pso.rb.AddForce(force, forceMode);
