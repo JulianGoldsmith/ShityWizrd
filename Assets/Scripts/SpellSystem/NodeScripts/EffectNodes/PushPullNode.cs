@@ -10,7 +10,7 @@ public class PushPullNode : EffectNode
         TO_SOURCE = 0
     }
     public PUSH_PULL_DIRECTION pushPullDirection = PUSH_PULL_DIRECTION.TO_SOURCE;
-    [Promotable("PushPull Amount", DataTypeTag.Force)]
+    [Promotable("PushPullForce", DataTypeTag.Force)]
     public float pushPullForce = 10f;
     public ForceMode forceMode = ForceMode.Acceleration;
 

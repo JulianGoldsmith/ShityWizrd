@@ -441,7 +441,6 @@ public class HybridCharacterController : NetworkBehaviour
 
         if (IsGrounded)
         {
-
             float currentDistance = hitInfo.distance;
 
             float heightError = rideHeight - currentDistance;

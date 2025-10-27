@@ -640,6 +640,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1406694795055204466, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
   m_PrefabInstance: {fileID: 391796759}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &391796761 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+  m_PrefabInstance: {fileID: 391796759}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 391796760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df22554d28498544a8332e3339f4ce3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &485920189
 GameObject:
   m_ObjectHideFlags: 0
@@ -2604,6 +2615,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerInput: {fileID: 0}
   spellEditorWorld: {fileID: 391796760}
+  spellGraphController: {fileID: 391796761}
   isEditorActive: 0
   vfxDatabase: {fileID: 11400000, guid: e5084e6ec1b43244a97c5659b7ca2744, type: 2}
   networkingController: {fileID: 1637512530}
@@ -2642,6 +2654,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 1974162382}
+  - {fileID: 1974162383}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &1974162382
 MonoBehaviour:
@@ -3760,10 +3773,6 @@ PrefabInstance:
     - target: {fileID: 1888927423885705802, guid: e5b64127b779fc8449824725501a8a0a, type: 3}
       propertyPath: SortKey
       value: 1258841681
-      objectReference: {fileID: 0}
-    - target: {fileID: 1888927423885705802, guid: e5b64127b779fc8449824725501a8a0a, type: 3}
-      propertyPath: NetworkedBehaviours.Array.size
-      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 2133879048525985984, guid: e5b64127b779fc8449824725501a8a0a, type: 3}
       propertyPath: SortKey

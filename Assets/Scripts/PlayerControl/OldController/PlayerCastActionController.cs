@@ -17,7 +17,9 @@ public class PlayerCastActionController : CastActionController
     //public Transform cameraTrans;
     [Networked] NetworkButtons prior_buttons { get; set; }
     [Networked] int primary_attack_pressed {  get; set; }
+    int local_prior_primary_attack_pressed;
     [Networked] int primary_attack_released { get; set; }
+    int local_prior_primary_attack_released;
     [Networked] Quaternion lookDirection { get; set; }
 
     public override void Spawned()
@@ -36,8 +38,6 @@ public class PlayerCastActionController : CastActionController
     }
     public override void FixedUpdateNetwork()
     {
-        ApplyResets();
-
         if (GetInput(out NetworkInputData data))
         {
             if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
@@ -66,43 +66,25 @@ public class PlayerCastActionController : CastActionController
 
         // all clients also try cast the spell.
         OnInputTryCast();
-        ApplyResets();
-    }
-    bool reset_attack_pressed = false;
-    bool reset_attack_released = false;
-    void ApplyResets()
-    {
-        // this is so that the host (input)
-        // doesn't read the click then immediately
-        // change it to zero.
-        // Instead, they read the change, used it,
-        // queue for it to reset, then at the next tick
-        // (before they check the next input), they
-        // reset it.
-        if (reset_attack_pressed)
-            primary_attack_pressed = 0;
-        if(reset_attack_released) 
-            primary_attack_released = 0;
     }
     void OnInputTryCast()
     {
-        if(!HasInputAuthority)
-            Debug.Log($"trycast {name} {primary_attack_pressed} {primary_attack_released}");
-        if (primary_attack_pressed > 0)
+        //if(!HasInputAuthority)
+        //    Debug.Log($"trycast {name} {primary_attack_pressed} {primary_attack_released}");
+        if (primary_attack_pressed > local_prior_primary_attack_pressed)
         {
             if (currentAttackCooldown <= 0)
             {
-                reset_attack_pressed=true;
+                local_prior_primary_attack_pressed = primary_attack_pressed;
                 //primary_attack_pressed = 0;
-                StartCast(primary_attack_released > 0);
-                if (primary_attack_released > 0)
-                    //primary_attack_released = 0;
-                    reset_attack_released = true;
+                StartCast(primary_attack_released > local_prior_primary_attack_released);
+                if (primary_attack_released > local_prior_primary_attack_released)
+                    local_prior_primary_attack_released = primary_attack_released;
             }
         }
-        else if (primary_attack_released > 0)
+        else if (primary_attack_released > local_prior_primary_attack_released)
         {
-            reset_attack_released=true;
+            local_prior_primary_attack_released = primary_attack_released;
             //primary_attack_released = 0;
             EndCast();
         }

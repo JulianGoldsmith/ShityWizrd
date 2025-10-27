@@ -181,7 +181,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.dragFacingDir = Vector3.zero;
             }
 
-            Debug.Log($"drag pos {_accumulatedInput.dragTargetPos} drag rot {_accumulatedInput.dragFacingDir}");
+            //Debug.Log($"drag pos {_accumulatedInput.dragTargetPos} drag rot {_accumulatedInput.dragFacingDir}");
         }
 
         // Fusion polls accumulated input. This callback can be executed multiple times in a row if there is a performance spike.

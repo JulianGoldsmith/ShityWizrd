@@ -6,6 +6,9 @@ public class MeleeHitBoxCore : CoreNode
 {
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
+        if (!CanSpawn(triggerInfo.State))
+            return;
+
         EquipableItem weapon = triggerInfo.State.CastItem;
         if (weapon == null)
         {
