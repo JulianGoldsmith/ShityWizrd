@@ -1385,7 +1385,7 @@ public class SpellGraphController : MonoBehaviour
         {
             guid = System.Guid.NewGuid().ToString(),
             nodeTemplateName = entryPointTemplate.name,
-            position = editorWorldParent.position + editorWorldParent.up * 0.5f 
+            position = Vector3.zero
         };
         newGraph.nodes.Add(entryPointData);
 

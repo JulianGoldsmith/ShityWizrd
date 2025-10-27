@@ -7,7 +7,7 @@ public abstract class SpellTrigger : MonoBehaviour
     public List<FilterNode> filterNodes;
 
     public List<SpellNode> outcomeNodes;
-    public virtual void OnAttach(TriggerNode node, float _size) 
+    public virtual void OnAttach(TriggerNode node, float _size = 1) 
     {
         // override the vfx modifier type based on spell, at some point.
         GameObject vfx = SpellSystemHelpers.CreateVFX(

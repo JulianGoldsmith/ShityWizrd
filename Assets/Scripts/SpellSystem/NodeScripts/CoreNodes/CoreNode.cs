@@ -37,6 +37,7 @@ public abstract class CoreNode : SpellNode
         }
         foreach (TriggerNode triggerNode in triggerNodes)
         {
+            Debug.Log(triggerNode.nodeName);
             triggerNode.SetUp(spellCore, triggerInfo.State);
         }
     }
@@ -59,6 +60,7 @@ public abstract class CoreNode : SpellNode
         }
         foreach (TriggerNode triggerNode in triggerNodes)
         {
+            Debug.Log(triggerNode.nodeName);
             triggerNode.SetUp(spellCore, state);
         }
     }

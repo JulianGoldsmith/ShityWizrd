@@ -1,6 +1,7 @@
 
 using Fusion;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.VFX;
 
 
@@ -19,10 +20,11 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     SpellNode corresponding_spell_node;
 
     [SerializeField] GameObject shatterVFX;
-    [Networked] private TickTimer lifetime_timer { get; set; }
+    [Networked] public TickTimer lifetime_timer { get; set; }
     bool should_despawn_next_tick = false;
 
     private SpellTrigger[] spelltriggers;
+    private SpellBehaviour[] spellbehaviours;
 
     bool initialised_on_spawn = false;
 
@@ -31,13 +33,16 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         if (initialised_on_spawn)
             return;
 
+        Debug.Log($"{node == null} {node.nodeName} {node.InstanceGuid} {node.GetAllDependentNodes().Count}");
+
         initialised_on_spawn = true;
 
         if (HasStateAuthority)
         {
             // Communicate the details if we're the host.
             corresponding_spell_node = node as SpellNode;
-            corresponding_node_instance_guid = corresponding_spell_node.InstanceGuid;
+            Debug.Log($"had {corresponding_node_instance_guid} but sending {corresponding_spell_node.InstanceGuid}");
+            corresponding_node_instance_guid = node.InstanceGuid;
             if (state != null)
                 corresponding_spellgraph_id = state.SpellGraphIdFrom;
         }
@@ -85,6 +90,7 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     {
         tick_spawned = Runner.Tick; // reset the spawned tick, since might be buffering objects.
         spelltriggers = GetComponents<SpellTrigger>();
+        spellbehaviours = GetComponents<SpellBehaviour>();
     }
 
     public void OnCorrespondingSpellUpdated()
@@ -93,20 +99,35 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         // is changed.
         // so both times try to load the corresponding spell and node.
         // the second call will complete, the first won't.
+        if (initialised_on_spawn)
+            return;
+
+        Debug.Log("corresponding updated");
         if (corresponding_spellgraph_id.NotNull())
         {
             corresponding_spell_graph = SpellStateManager.instance.GetSpellGraph(corresponding_spellgraph_id);
+            Debug.Log($"{corresponding_spell_graph!= null} {corresponding_spell_graph?.name} {corresponding_spellgraph_id.sender_ref} {corresponding_spellgraph_id.id}");
         }
 
         if (corresponding_node_instance_guid.Value != "" && corresponding_spell_graph != null)
         {
             corresponding_spell_node = corresponding_spell_graph.entryPointControllerNode.GetNodeInChain(corresponding_node_instance_guid.Value);
+            Debug.Log($"{corresponding_spell_node != null} {corresponding_spell_node?.nodeName} {corresponding_node_instance_guid} {corresponding_spell_node.InstanceGuid}");
         }
 
-        if (corresponding_spell_graph != null && corresponding_spell_node != null)
+        if (corresponding_spell_graph != null && corresponding_spell_node != null && !initialised_on_spawn)
         {
+            Debug.Log("clientside spawning");
             InitialiseOnSpawnedClientside();
         }
+    }
+    void CheckIfMissedSpellUpdate()
+    {
+        // if we already have it, skip.
+        if (corresponding_spell_graph != null && corresponding_spell_node != null)
+            return;
+
+        OnCorrespondingSpellUpdated();
     }
 
     public override void FixedUpdateNetwork()
@@ -116,9 +137,25 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         OnTickTriggerComponents();
 
         if (should_despawn_next_tick || lifetime_timer.Expired(Runner))
+        {
+            if (lifetime_timer.Expired(Runner))
+                OnLifetimeExpired_event.Invoke();
             DespawnObject();
+        }
         else if (zero_bonkedness)
             should_despawn_next_tick = true;
+    }
+
+    public UnityEvent OnLifetimeExpired_event;
+    public float GetRemainingLifetime()
+    {
+        if (lifetime_timer.Expired(Runner))
+            return 0;
+
+        if (!lifetime_timer.IsRunning)
+            return -1;
+
+        return lifetime_timer.RemainingTime(Runner)??0;
     }
 
     [Networked, OnChangedRender(nameof(OnTickClientCatchup))] public int tick { get; set; } //int that increments everytime a ticktrigger is called.
@@ -134,13 +171,24 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         // Could just run one.
         if (HasStateAuthority)
             return;
+        
+        CheckIfMissedSpellUpdate();
+
         if (tick == Runner.Tick)
             return;
+
 
         int tick_diff = Mathf.Max(0, Runner.Tick - tick);
         OnTickTriggerComponents();
     }
     protected void OnTickTriggerComponents()
+    {
+        TickTriggers();
+        TickBehaviours();
+        tick = Runner.Tick;
+    }
+
+    void TickTriggers()
     {
         if (spelltriggers == null || spelltriggers.Length == 0)
             return;
@@ -149,7 +197,16 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         {
             spelltriggers[i].OnTick();
         }
-        tick = Runner.Tick;
+    }
+    void TickBehaviours()
+    {
+        if (spellbehaviours == null || spellbehaviours.Length == 0)
+            return;
+
+        for (int i = 0; i < spellbehaviours.Length; i++)
+        {
+            spellbehaviours[i].OnTick();
+        }
     }
 
     protected override void OnZeroBonk()
