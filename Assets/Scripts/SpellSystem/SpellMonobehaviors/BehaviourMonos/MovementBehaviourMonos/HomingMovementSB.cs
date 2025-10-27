@@ -25,7 +25,7 @@ public class HomingMovementSB : SpellBehaviour
         // might be better to instead find all possible targets and
         // choose the closest.
         // that's not how this currently works, technically.
-        Debug.Log($"homing tick");
+        
         if (CurrentTargetOutOfRange())
         {
             // do this so I don't home to myself:

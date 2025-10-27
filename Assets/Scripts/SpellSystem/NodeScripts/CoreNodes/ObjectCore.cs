@@ -98,7 +98,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         // For the first stage, we're usually fine to do it ourselves
         // since we have an actual triggerinfo/spellstate.
         
-        Debug.Log($"my instance id is {InstanceGuid}");
+        //Debug.Log($"my instance id is {InstanceGuid}");
 
         physicsObject.InitialiseOnSpawned(this, triggerInfo, triggerInfo.State);
 

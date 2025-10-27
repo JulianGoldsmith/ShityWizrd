@@ -15,8 +15,8 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     public NetworkString<_64> corresponding_node_instance_guid { get; set; }
     // note that the guids are 36 characters long but have four dashes ('-')
     // at regular index, so could be converted to a 32-length string and _32 used.
-    // the dashes would need to then be added back in.
-    SpellGraph corresponding_spell_graph;
+    // the dashes would need to then be added back in. currently just using 64-length
+    SpellGraph corresponding_spell_graph; // technically only used to fetch corresponding node.
     SpellNode corresponding_spell_node;
 
     [SerializeField] GameObject shatterVFX;
@@ -25,27 +25,30 @@ public class SpellCreatedPhysicsObject : PhysicsObject
 
     private SpellTrigger[] spelltriggers;
     private SpellBehaviour[] spellbehaviours;
-
-    bool initialised_on_spawn = false;
+    public override void Spawned()
+    {
+        base.Spawned();
+        corresponding_node_instance_guid = "";
+    }
 
     public void InitialiseOnSpawned(ObjectCore node, SpellTriggerInfo triggerInfo, SpellState state)
     {
-        if (initialised_on_spawn)
-            return;
+        if (node == null)
+            throw new System.Exception("Input node to SCPO was null");
 
-        Debug.Log($"{node == null} {node.nodeName} {node.InstanceGuid} {node.GetAllDependentNodes().Count}");
-
-        initialised_on_spawn = true;
-
-        if (HasStateAuthority)
+        if (corresponding_node_instance_guid != "" && corresponding_node_instance_guid != node.InstanceGuid)
         {
-            // Communicate the details if we're the host.
-            corresponding_spell_node = node as SpellNode;
-            Debug.Log($"had {corresponding_node_instance_guid} but sending {corresponding_spell_node.InstanceGuid}");
-            corresponding_node_instance_guid = node.InstanceGuid;
-            if (state != null)
-                corresponding_spellgraph_id = state.SpellGraphIdFrom;
+            Debug.LogError($"{this.Id} Tried to initialise SCPO with incorrect instance. found {node.InstanceGuid} but has {corresponding_node_instance_guid}");
+            return;
         }
+
+        //Debug.Log($"{this.Id} initialising spawn as {node.InstanceGuid} {corresponding_node_instance_guid}");
+
+        // Communicate the details if we're the host.
+        corresponding_spell_node = node as SpellNode;
+        corresponding_node_instance_guid = node.InstanceGuid;
+        if (state != null)
+            corresponding_spellgraph_id = state.SpellGraphIdFrom;
 
         SubscribeToSpellStateManager();
 
@@ -99,32 +102,33 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         // is changed.
         // so both times try to load the corresponding spell and node.
         // the second call will complete, the first won't.
-        if (initialised_on_spawn)
+
+        //Debug.Log($"{this.Id} corresponding {corresponding_spell_node == null} {corresponding_node_instance_guid}");
+        //if(corresponding_spell_node != null)
+        //    Debug.Log($"{this.Id} corresponding is not null and {corresponding_spell_node.InstanceGuid} ==? {corresponding_node_instance_guid}");
+
+        if (corresponding_spell_node != null && corresponding_node_instance_guid == corresponding_spell_node.InstanceGuid)
             return;
 
-        Debug.Log("corresponding updated");
         if (corresponding_spellgraph_id.NotNull())
         {
             corresponding_spell_graph = SpellStateManager.instance.GetSpellGraph(corresponding_spellgraph_id);
-            Debug.Log($"{corresponding_spell_graph!= null} {corresponding_spell_graph?.name} {corresponding_spellgraph_id.sender_ref} {corresponding_spellgraph_id.id}");
         }
 
         if (corresponding_node_instance_guid.Value != "" && corresponding_spell_graph != null)
         {
             corresponding_spell_node = corresponding_spell_graph.entryPointControllerNode.GetNodeInChain(corresponding_node_instance_guid.Value);
-            Debug.Log($"{corresponding_spell_node != null} {corresponding_spell_node?.nodeName} {corresponding_node_instance_guid} {corresponding_spell_node.InstanceGuid}");
         }
 
-        if (corresponding_spell_graph != null && corresponding_spell_node != null && !initialised_on_spawn)
+        if (corresponding_spell_node != null)
         {
-            Debug.Log("clientside spawning");
             InitialiseOnSpawnedClientside();
         }
     }
     void CheckIfMissedSpellUpdate()
     {
         // if we already have it, skip.
-        if (corresponding_spell_graph != null && corresponding_spell_node != null)
+        if (corresponding_spell_node != null)
             return;
 
         OnCorrespondingSpellUpdated();

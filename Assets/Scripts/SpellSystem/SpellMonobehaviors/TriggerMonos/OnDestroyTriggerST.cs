@@ -45,6 +45,7 @@ public class OnDestroyTriggerST : SpellTrigger
         }
         foreach (CoreNode core in outcomeNodes.OfType<CoreNode>())
         {
+            Debug.Log($"spawning a core because of destroy trigger {core.InstanceGuid}");
             core.CreateSpellCore(triggerInfo);
         }
 

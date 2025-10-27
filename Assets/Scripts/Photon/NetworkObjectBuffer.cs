@@ -66,7 +66,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
             //throw new System.Exception("[NetworkObjectBuffer] buffer_info not found for prefab.");
             return FallbackGet(prefabref, position, rotation);
 
-        Debug.Log($"buffer_info found {buffer_info.buffer_head_index} {buffer_info.partial_buffer_start_index} {buffer_info.partial_buffer_length}");
+        //Debug.Log($"buffer_info found {buffer_info.buffer_head_index} {buffer_info.partial_buffer_start_index} {buffer_info.partial_buffer_length}");
 
         int _bufferhead = _bufferHeads[buffer_info.buffer_head_index];
         var instance = _buffer[_bufferhead];
@@ -79,10 +79,11 @@ public class NetworkObjectBuffer : NetworkBehaviour
             return FallbackGet(prefabref, position, rotation);
         }
 
-        Debug.Log("Buffer spawning...");
+        //Debug.Log("Buffer spawning...");
 
+        // REMOVED THIS LINE, it's pointless.
         // amend localbuffer to avoid flicker
-        _localBuffer[_bufferhead] = null;
+        //_localBuffer[_bufferhead] = null;
 
         // replace its spot in the buffer with a new copy of it.
         _buffer.Set(_bufferhead, null);
@@ -93,7 +94,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
         // progress the corresponding bufferhead (and loop within partial buffer).
         int new_buffer_head_index = buffer_info.increment_partial_buffer_index(_bufferhead);
-        Debug.Log($"new buffer head index: {new_buffer_head_index}");
+        //Debug.Log($"new buffer head index: {new_buffer_head_index}");
         _bufferHeads.Set(buffer_info.buffer_head_index, new_buffer_head_index);
 
         return instance;
@@ -263,7 +264,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
             if (HasStateAuthority && (_buffer[i] == null))
             {
-                Debug.Log("Adding to buffer");
+                //Debug.Log("Adding to buffer");
                 _buffer.Set(i, PrepareInstance(prefab_ids[prefab_index]));
             }
         }

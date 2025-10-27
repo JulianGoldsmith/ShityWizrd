@@ -22,7 +22,6 @@ public abstract class CoreNode : SpellNode
 
     public void AttatchBehavioursAndTriggers(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        Debug.Log("attaching behaviours and triggers");
         foreach (BehaviourNode behaviourNode in defaultBehaviourNodes)
         {
             behaviourNode.SetUp(spellCore, triggerInfo);
@@ -37,13 +36,11 @@ public abstract class CoreNode : SpellNode
         }
         foreach (TriggerNode triggerNode in triggerNodes)
         {
-            Debug.Log(triggerNode.nodeName);
             triggerNode.SetUp(spellCore, triggerInfo.State);
         }
     }
     public void AttatchBehavioursAndTriggers(GameObject spellCore, SpellState state)
     {
-        Debug.Log("attaching behaviours and triggers");
         // triggerless setup.
         // need to find a way to pass triggerinfo across network.
         foreach (BehaviourNode behaviourNode in defaultBehaviourNodes)
@@ -60,7 +57,6 @@ public abstract class CoreNode : SpellNode
         }
         foreach (TriggerNode triggerNode in triggerNodes)
         {
-            Debug.Log(triggerNode.nodeName);
             triggerNode.SetUp(spellCore, state);
         }
     }
