@@ -65,10 +65,10 @@ public class CharacterBonkController : NetworkBehaviour
         Debug.Log("Ran got bonked");
         ragDollController.ActivateRagDoll();
 
-        foreach (PDSpring headAndTorso in characterController.pDSprings)
+        foreach (PdBone headAndTorso in characterController.pdBones)
         {
-            var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
-            headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
+            var rb3d = headAndTorso.childRigidbody.transform.GetComponent<NetworkRigidbody3D>();
+            //headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
             rb3d.RBIsKinematic = true;
             rb3d.GetComponent<Collider>().enabled = false;
         }
@@ -97,15 +97,15 @@ public class CharacterBonkController : NetworkBehaviour
         _swapAtTick = Runner.Tick + 1;
 
 
-        foreach (PDSpring headAndTorso in characterController.pDSprings)
+        foreach (PdBone headAndTorso in characterController.pdBones)
         {
-            var rb3d = headAndTorso.joint.transform.GetComponent<NetworkRigidbody3D>();
-            rb3d.RBIsKinematic = HasStateAuthority ? false : (HasInputAuthority ? false : true);
+            var rb3d = headAndTorso.childRigidbody.transform.GetComponent<NetworkRigidbody3D>();
+            rb3d.RBIsKinematic = false;
             rb3d.GetComponent<Collider>().enabled = true;
 
         }
         var hipsNRB = characterController.hipsRb.GetComponent<NetworkRigidbody3D>();
-        hipsNRB.RBIsKinematic = HasStateAuthority ? false : (HasInputAuthority ? false : true);
+        hipsNRB.RBIsKinematic = false;
         hipsNRB.GetComponent<Collider>().enabled = true;
 
 

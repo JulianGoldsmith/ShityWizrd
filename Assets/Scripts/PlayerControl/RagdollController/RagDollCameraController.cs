@@ -3,7 +3,7 @@ using System.Xml.Serialization;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-
+[DefaultExecutionOrder(20)]
 public class RagDollCameraController : MonoBehaviour
 {
     [SerializeField] private Transform cameraAnchor;

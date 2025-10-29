@@ -129,6 +129,8 @@ public class NetworkedHandsController : NetworkBehaviour
     public Vector3 pickUpOffset; // small offset used so the palm of the hand goes to target pickup spot
     public RigBuilder rigBuilder;
 
+    public Vector3 cashedPLayerPos;
+
     public void Spawn(Transform _playerRoot, bool _hasInputAuthroity)
     {
         isInitilized = true;
@@ -144,12 +146,13 @@ public class NetworkedHandsController : NetworkBehaviour
         //SetHandModelMaterial(charMeshRenderer.material);
         //Runner.SetIsSimulated(leftHand.transformNet.transform.GetComponent<NetworkObject>(), true);
         //Runner.SetIsSimulated(rightHand.transformNet.transform.GetComponent<NetworkObject>(), true);
+        cashedPLayerPos = HasInputAuthority? characterController.camController.cameraTransform.position:  characterController.networkedRenderRoot.transform.position;
     }
 
     public void LateUpdate() //think of this as local player with input authority. 
     {
         if (!isInitilized) return;
-      
+        
 
         if (rightHand.shouldUpdateInLateUpdate)
         {
@@ -275,8 +278,12 @@ public class NetworkedHandsController : NetworkBehaviour
 
                 if (!HasInputAuthority)
                 {
-                    targetPos = playerRoot.position + characterController.camController.localEyeOffset +
-                        eyeOffset + (characterController.lookRot * offset);
+                    //targetPos = playerRoot.position + characterController.camController.localEyeOffset +
+                    //    eyeOffset + (characterController.lookRot * offset);
+                    //targetRot = characterController.lookRot * Quaternion.Euler(rotOffset);
+
+                    targetPos = characterController.smoothedNetworkedRenderRoot.position + characterController.camController.localEyeOffset +
+                       eyeOffset + (characterController.lookRot * offset);
                     targetRot = characterController.lookRot * Quaternion.Euler(rotOffset);
                 }
                 else
@@ -318,28 +325,47 @@ public class NetworkedHandsController : NetworkBehaviour
 
             case TargetingMode.DRAGG:
                 //targetPos = hand.draggingTransform.TransformPoint(hand.localDragPoint);
-                if ((hand.draggingTransform == null && inventoryManager.potentialItemToPickup == null)
-                    || (inventoryManager.localHandPosOnItem == null && hand.localDragPoint == null))
-                {
-                    targetPos = hand.armatureTarget.position;
-                    targetRot = hand.armatureTarget.rotation;
-                    if (HasStateAuthority)
-                    {
 
-                        if (hand.isLeft)
-                            LeftHandMode = TargetingMode.ARMATURE;
-                        else
-                            RightHandMode = TargetingMode.ARMATURE;
-                    }
-                    break;
-                }
 
                 Transform item = hand.draggingTransform;
                 Vector3 localPointOnItem = hand.localDragPoint;
-                if (inventoryManager.potentialItemToPickup != null) //if they exsist use the overwrite with the network variables
+
+                if (IsProxy)
                 {
-                    item = inventoryManager.potentialItemToPickup.gameObject.transform;
-                    localPointOnItem = inventoryManager.localHandPosOnItem;
+                    if (inventoryManager.currentItemInHand != null && inventoryManager.localHandPosOnItem != Vector3.zero)
+                    {
+                        item = inventoryManager.currentItemInHand.transform;
+                        localPointOnItem = inventoryManager.localHandPosOnItem;
+                    }
+                    else
+                    {
+                        targetPos = hand.armatureTarget.position;
+                        targetRot = hand.armatureTarget.rotation;
+                        break;
+                    }
+                }
+                else //IA or SA
+                {
+                    if ((hand.draggingTransform == null && inventoryManager.potentialItemToPickup == null)
+                        || (inventoryManager.localHandPosOnItem == null && hand.localDragPoint == null))
+                    {
+                        targetPos = hand.armatureTarget.position;
+                        targetRot = hand.armatureTarget.rotation;
+                        if (HasStateAuthority)
+                        {
+                            if (hand.isLeft)
+                                LeftHandMode = TargetingMode.ARMATURE;
+                            else
+                                RightHandMode = TargetingMode.ARMATURE;
+                        }
+                        break;
+                    }
+
+                    if (inventoryManager.potentialItemToPickup != null) //if they exsist use the overwrite with the network variables
+                    {
+                        item = inventoryManager.potentialItemToPickup.gameObject.transform;
+                        localPointOnItem = inventoryManager.localHandPosOnItem;
+                    }
                 }
 
                 targetPos = item.TransformPoint(localPointOnItem);
@@ -392,13 +418,34 @@ public class NetworkedHandsController : NetworkBehaviour
         Vector3 targetPos = hand.currentFrametargetPos;
         Quaternion targetRot = hand.currentFrametargetRot;
 
-        Vector3 playerVelocity = characterController.hipsRb.linearVelocity;
-        playerVelocity.y = 0;
+        Vector3 playerVelocity;
+        if (!inFixedTime)
+        {
+            if (!HasInputAuthority)
+            {
+                var p = characterController.networkedRenderRoot.position;
+                playerVelocity = (p - cashedPLayerPos) / (Time.deltaTime);
+                cashedPLayerPos = p;
+            }
+            else
+            {
+                var p = characterController.camController.cameraTransform.position;
+                playerVelocity = (p - cashedPLayerPos) / (Time.deltaTime);
+                cashedPLayerPos = p;
+            }
+               
+        }
+        else
+        {
+             playerVelocity = characterController.hipsRb.linearVelocity;
+        }
+
+         playerVelocity.y = 0;
         if(playerVelocity.magnitude < 0.1f)
         {
             playerVelocity = Vector3.zero;
         }
-        Vector3 inertialForce = -characterController.Acceleration * state.inertiaStrength;
+        Vector3 inertialForce = characterController.Acceleration * state.inertiaStrength;
 
         
         Vector3 positionError = targetPos - (handObject.transform.position);
@@ -556,8 +603,14 @@ public class NetworkedHandsController : NetworkBehaviour
     private void DetermineHandVisability()
     {
         float buffer = 1.3f;
-        bool isLeftDetached = Vector3.Distance(leftHand.transformNet.transform.position, leftHand.shoulderTransform.position) > (leftHand.armLength * buffer);
-        bool isRightDetached = Vector3.Distance(rightHand.transformNet.transform.position, rightHand.shoulderTransform.position) > rightHand.armLength * buffer;
+
+        bool isLeftDetached = Vector3.Distance(
+            (leftHand.shouldUpdateInLateUpdate? leftHand.transformLocal.transform.position :  leftHand.transformNet.transform.position), 
+            leftHand.shoulderTransform.position) > (leftHand.armLength * buffer);
+
+        bool isRightDetached = Vector3.Distance(
+            (rightHand.shouldUpdateInLateUpdate? rightHand.transformLocal.transform.position : rightHand.transformNet.transform.position), 
+            rightHand.shoulderTransform.position) > rightHand.armLength * buffer;
 
         SetArmState(isRightDetached, isLeftDetached);
     }
@@ -582,7 +635,7 @@ public class NetworkedHandsController : NetworkBehaviour
         }
     }
 
-    private void ApplyShowHidArms()
+    private void ApplyShowHidArms() //this dosnt work with new HDRP cell shading - need to fix?
     {
         var propBlock = new MaterialPropertyBlock();
         charMeshRenderer.GetPropertyBlock(propBlock);
@@ -637,21 +690,16 @@ public class NetworkedHandsController : NetworkBehaviour
 
     private void SwitchToLocalOrNetHands(NetHand hand, TargetingMode tgMode, bool localPlayer, bool isServer)
     {
-        //if (!localPlayer)
-        //{
-        //    hand.visableHandObject.transform.parent = hand.transformNet.transform;
-        //}
-        //else
-        //{
+      
         switch (tgMode)
         {
             case (TargetingMode.PICKUP): //proxys and IA should follow transformNet in RemoteTime, SA should simulate --done
                 hand.visableHandObject.transform.parent = hand.transformNet.transform;
                 hand.visableHandObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, -90, -90));
                 hand.targetFORFinalArmature.transform.parent = hand.transformNet.transform;
-                hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
+                //hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0)); //this gets set by set Reach!!
                 hand.shouldUpdateInLateUpdate = false;
-                SwitchNetHandToRemoteTimeFrame(hand, true);
+                //SwitchNetHandToRemoteTimeFrame(hand, true);
                 break;
             case TargetingMode.HOLD:
             case TargetingMode.ARMATURE: //both Proxys, IA and SA should use local -- done
@@ -660,7 +708,7 @@ public class NetworkedHandsController : NetworkBehaviour
                 hand.targetFORFinalArmature.transform.parent = hand.transformLocal.transform;
                 hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
                 hand.shouldUpdateInLateUpdate = true;
-                SwitchNetHandToRemoteTimeFrame(hand, false);
+                //SwitchNetHandToRemoteTimeFrame(hand, false);
                 break;
             case (TargetingMode.DRAGG): //Proxys should evetually simulate but for now should follow transformNet in RemoteTime, SA should simulate, IA should simulate local
                 if (Object.HasStateAuthority) //covers for IA and SA together - use local 
@@ -668,27 +716,35 @@ public class NetworkedHandsController : NetworkBehaviour
                     hand.visableHandObject.transform.parent = hand.transformLocal.transform;
                     hand.targetFORFinalArmature.transform.parent = hand.transformLocal.transform;
                     hand.shouldUpdateInLateUpdate = true;
+                    //hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
                 }
                 else if (Object.HasInputAuthority) //Non SA but IA
                 {
                     hand.visableHandObject.transform.parent = hand.transformLocal.transform;
                     hand.targetFORFinalArmature.transform.parent = hand.transformLocal.transform;
                     hand.shouldUpdateInLateUpdate = true;
+                    //hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
                 }
-                else //proxy
+                else if(inventoryManager.currentItemInHand != null) //dragging rather than hovering
+                {
+                    hand.visableHandObject.transform.parent = hand.transformLocal.transform;
+                    hand.targetFORFinalArmature.transform.parent = hand.transformLocal.transform;
+                    hand.shouldUpdateInLateUpdate = true;
+                    hand.targetFORFinalArmature.transform.localPosition = Vector3.zero;
+                }
+                else
                 {
                     hand.visableHandObject.transform.parent = hand.transformNet.transform;
                     hand.targetFORFinalArmature.transform.parent = hand.transformNet.transform;
                     hand.shouldUpdateInLateUpdate = false;
                 }
                 hand.visableHandObject.transform.SetLocalPositionAndRotation(dragHandModelPosOffset, Quaternion.Euler(0, -90, -90));
-                hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
+                
 
                 //SwitchNetHandToRemoteTimeFrame(hand, false);
                 break;
         }
-        //}
-        //this is an offset for the model
+
 
     }
 
@@ -727,11 +783,21 @@ public class NetworkedHandsController : NetworkBehaviour
                 }
                 break;
             case TargetingMode.HOLD:
-                SetHandPose(isLeft, defaultHandState.idleClip); /////////////////
+                AnimationClip clip = new AnimationClip();
+                if (inventoryManager.currentItemInHand.gameObject.TryGetComponent<EquipableItem>(out EquipableItem ei))
+                {
+                    clip = ei.heldHandState.targetPickUpClip;
+                }
+                else
+                {
+                    clip = defaultHandState.idleClip;
+                }
+                SetHandPose(isLeft, clip);
+                
                 break;
             case TargetingMode.ARMATURE:
             case TargetingMode.DRAGG:
-                SetHandPose(isLeft, defaultHandState.idleClip);
+                SetHandPose(isLeft, defaultHandState.idleClip); /////////////////
                 break;
 
         }
@@ -749,6 +815,7 @@ public class NetworkedHandsController : NetworkBehaviour
                 hand.overrideController["DummyPose"] = pose;
                 // Debug.Log($"SetPose to pickup {pose.name}");
                 //Debug.Log($"SetHand to {pose.name}");
+                hand.animator.SetTrigger("SetPose");
             }
         }
     }

@@ -764,6 +764,13 @@ public class HybridCharacterController : NetworkBehaviour
             hipsRb.transform.SetPositionAndRotation(targetPos, rotation);
         }
 
+        foreach(NetworkRigidbody3D nrb in networkRigidbody3Ds)
+        {
+            hipsNRB.Teleport(targetPos, rotation);
+            hipsNRB.Rigidbody.linearVelocity = Vector3.zero;
+            hipsNRB.Rigidbody.angularVelocity = Vector3.zero;
+        }
+
         //foreach (var spring in pDSprings)
         //{
         //    if (spring.nrb == null) return;
@@ -955,45 +962,42 @@ public class PDSpring
 public class PdBone
 {
     [Header("Rigidbodies (child follows parent)")]
-    public Rigidbody childRigidbody;        // e.g., head
-    public Rigidbody parentRigidbody;       // e.g., torso (or hips for torso)
+    public Rigidbody childRigidbody;      
+    public Rigidbody parentRigidbody;      
 
     [Header("Target (LOCAL to parent frame)")]
-    public Transform targetTransform;       // desired local rotation (and optional local anchor)
+    public Transform targetTransform;       
 
-    [Header("Rotation PD (always on)")]
-    public float proportionalGainRotation = 400f;  // spring-like term
-    public float derivativeGainRotation = 40f;   // damper-like term
+    [Header("Rotation PD")]
+    public float proportionalGainRotation = 400f; 
+    public float derivativeGainRotation = 40f;
 
-    public AnimationCurve rotationErrorCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f); // 0..1 -> 0..1
+    public bool applyEqualAndOppositeTorque = false; 
 
-    [Header("Safety clamps (acceleration space)")]
-    public float maximumAngleRadians = 45f * Mathf.Deg2Rad; // clamp orientation error
-    public float maximumTorqueAcceleration = 2000f;               // |torque| cap (accel mode)
+    public AnimationCurve rotationErrorCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Header("Safety clamp")]
+    public float maximumAngleRadians = 45f * Mathf.Deg2Rad; 
+    public float maximumTorqueAcceleration = 2000f;       
 
     [Header("------------Position-----------------")]
 
     [Header("Optional Position PD (anchors)")]
     public bool usePositionDrive = false;
-    public Vector3 parentAnchorLocal = Vector3.zero; // anchor on parent in local space
-    public Vector3 childAnchorLocal = Vector3.zero; // anchor on child  in local space
+    public Vector3 parentAnchorLocal = Vector3.zero; 
+    public Vector3 childAnchorLocal = Vector3.zero; 
     public float proportionalGainPosition = 2000f;
     public float derivativeGainPosition = 80f;
 
-   // public bool usePositionShaping = false;
-    //public AnimationCurve positionErrorMultiplier = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    public bool applyEqualAndOppositeForce = false;
 
-    [Header("Safety clamps (acceleration space)")]
-    public float maximumForceAcceleration = 2000f;               // |force|  cap (accel mode)
+    [Header("Safety clamp")]
+    public float maximumForceAcceleration = 2000f;              
 
-    [Header("Time step reference (dt invariance)")]
-    public float designDeltaTime = 1f / 64f; // tune your gains at this dt
-
+    [Header("Time step reference")]
+    public float designDeltaTime = 1f / 64f; 
 
 
-    /// <summary>
-    /// Call from FixedUpdateNetwork (or your fixed physics loop).
-    /// </summary>
     public void Step(float deltaTime)
     {
         if (childRigidbody == null || parentRigidbody == null || targetTransform == null)
@@ -1002,7 +1006,6 @@ public class PdBone
         float safeDeltaTime = Mathf.Max(deltaTime, 1e-4f);
         float scale = Mathf.Max(designDeltaTime / safeDeltaTime, 0.01f);
 
-        // --- ROTATION PD (child tracks parent's local target rotation) ---
         Quaternion parentRotationWorld = parentRigidbody.rotation;
         Quaternion targetRotationWorld = parentRotationWorld * targetTransform.localRotation;
 
@@ -1017,13 +1020,10 @@ public class PdBone
         else
             errorAxisWorld.Normalize();
 
-        // Clamp very large errors to avoid explosive recovery after big corrections
         angleRadians = Mathf.Clamp(angleRadians, -maximumAngleRadians, maximumAngleRadians);
 
-        // Track relative pose: subtract parent angular velocity so child follows in local space
         Vector3 angularVelocityErrorWorld = childRigidbody.angularVelocity - parentRigidbody.angularVelocity;
 
-        // dt-invariant scaling of gains
         float proportionalRotationScaled = proportionalGainRotation * scale * scale;
         float derivativeRotationScaled = derivativeGainRotation * scale;
 
@@ -1036,15 +1036,16 @@ public class PdBone
 
         torqueAccelerationWorld *= rotationMult;
 
-        // Clamp torque magnitude in acceleration space
         if (torqueAccelerationWorld.sqrMagnitude > maximumTorqueAcceleration * maximumTorqueAcceleration)
             torqueAccelerationWorld = torqueAccelerationWorld.normalized * maximumTorqueAcceleration;
 
-        // Apply equal-and-opposite torques to conserve momentum locally
         childRigidbody.AddTorque(torqueAccelerationWorld, ForceMode.Acceleration);
+        if (applyEqualAndOppositeTorque)
+        {
+            parentRigidbody.AddTorque(-torqueAccelerationWorld, ForceMode.Acceleration);
+        }
         //parentRigidbody.AddTorque(-torqueAccelerationWorld, ForceMode.Acceleration);
 
-        // --- OPTIONAL POSITION PD (anchor-to-anchor) ---
         if (usePositionDrive)
         {
             Vector3 parentAnchorWorld = parentRigidbody.transform.TransformPoint(parentAnchorLocal);
@@ -1066,9 +1067,11 @@ public class PdBone
             if (forceAccelerationWorld.sqrMagnitude > maximumForceAcceleration * maximumForceAcceleration)
                 forceAccelerationWorld = forceAccelerationWorld.normalized * maximumForceAcceleration;
 
-            // Equal-and-opposite linear forces at the anchors
             childRigidbody.AddForceAtPosition(forceAccelerationWorld, childAnchorWorld, ForceMode.Acceleration);
-            //parentRigidbody.AddForceAtPosition(-forceAccelerationWorld, parentAnchorWorld, ForceMode.Acceleration);
+            if (applyEqualAndOppositeForce)
+            {
+                parentRigidbody.AddForceAtPosition(-forceAccelerationWorld, parentAnchorWorld, ForceMode.Acceleration);
+            }
         }
     }
 

@@ -21,6 +21,10 @@ public class LocalSmoothingForNetworkedRenderTarget : MonoBehaviour
 
     private NetworkRunner _runner;
 
+    public bool unParentOnSpawn = false;
+
+    public bool syncScale = true;
+
     void Start()
     {
         // Try to get the runner from the singleton you mentioned
@@ -36,9 +40,13 @@ public class LocalSmoothingForNetworkedRenderTarget : MonoBehaviour
             return;
         }
 
+        if(unParentOnSpawn)
+            this.transform.parent = null;
 
         transform.position = target.position;
         transform.rotation = target.rotation;
+
+        this.name = target.name + " -- Smoothing target";
     }
 
     void LateUpdate()
@@ -64,5 +72,21 @@ public class LocalSmoothingForNetworkedRenderTarget : MonoBehaviour
 
         transform.position = Vector3.Lerp(transform.position, target.position, dt * currentSmoothing);
         transform.rotation = Quaternion.Slerp(transform.rotation, target.rotation, dt * currentSmoothing);
+
+        if (syncScale)
+        {
+            transform.localScale = target.localScale;
+        }
+    }
+
+    void Teleport()
+    {
+        transform.position = target.position;
+        transform.rotation = transform.rotation;
+
+        if (syncScale)
+        {
+            transform.localScale = target.localScale;
+        }
     }
 }

@@ -3119,7 +3119,7 @@ MonoBehaviour:
   maxWalkSpeed: 2.25
   maxSprintSpeed: 5
   acceleration: 100
-  braking: 30
+  braking: 10
   jumpForce: 8
   turnStrength: 300
   turnDamping: 15
@@ -3246,6 +3246,7 @@ MonoBehaviour:
     targetTransform: {fileID: 1825580123422520746}
     proportionalGainRotation: 250
     derivativeGainRotation: 20
+    applyEqualAndOppositeTorque: 0
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -3286,6 +3287,7 @@ MonoBehaviour:
     childAnchorLocal: {x: -1.5571557e-15, y: 4.0450182e-10, z: -0.0000000055732756}
     proportionalGainPosition: 300
     derivativeGainPosition: 20
+    applyEqualAndOppositeForce: 0
     maximumForceAcceleration: 200
     designDeltaTime: 0.015625
   - childRigidbody: {fileID: 1693913296455200963}
@@ -3293,6 +3295,7 @@ MonoBehaviour:
     targetTransform: {fileID: 2649153736978097401}
     proportionalGainRotation: 250
     derivativeGainRotation: 20
+    applyEqualAndOppositeTorque: 1
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -3333,6 +3336,7 @@ MonoBehaviour:
     childAnchorLocal: {x: -1.3340769e-20, y: -1.7486013e-14, z: 0.00000023469329}
     proportionalGainPosition: 300
     derivativeGainPosition: 20
+    applyEqualAndOppositeForce: 1
     maximumForceAcceleration: 200
     designDeltaTime: 0.015625
   _moveInput: {x: 0, y: 0}
@@ -3686,6 +3690,7 @@ MonoBehaviour:
     armLength: 0
     isLeft: 0
     enabled: 1
+    shouldUpdateInLateUpdate: 1
   rightHand:
     transformNet:
       transform: {fileID: 8173756462266251441}
@@ -3717,6 +3722,7 @@ MonoBehaviour:
     armLength: 0
     isLeft: 0
     enabled: 1
+    shouldUpdateInLateUpdate: 1
   defaultHandState: {fileID: 11400000, guid: 072fe238f7282244092660cc1837c744, type: 2}
   grabHandState: {fileID: 11400000, guid: 56332dce5df223a49a1acd08b21a1d22, type: 2}
   inventoryManager: {fileID: 835482249114472622}
@@ -3889,6 +3895,7 @@ MonoBehaviour:
   activeMeshState: 0
   pickUpOffset: {x: -0.05, y: -0.08, z: -0.08}
   rigBuilder: {fileID: 5779424638477167351}
+  cashedPLayerPos: {x: 0, y: 0, z: 0}
   pickUpWristRotOffset: {x: 210, y: 270, z: -90}
 --- !u!114 &4546582751402003313
 MonoBehaviour:
@@ -3935,6 +3942,8 @@ MonoBehaviour:
   _localHandPosOnItem: {x: 0, y: 0, z: 0}
   _PickUpPressCount: 0
   _DropPressCount: 0
+  __dragTargetPos: {x: 0, y: 0, z: 0}
+  __dragFacingDir: {x: 0, y: 0, z: 0}
 --- !u!114 &2907532902590926908
 MonoBehaviour:
   m_ObjectHideFlags: 0

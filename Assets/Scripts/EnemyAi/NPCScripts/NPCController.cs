@@ -2,6 +2,7 @@ using Fusion;
 using Fusion.Addons.Physics;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem; 
 using static HybridCharacterController;
 
 public class NPCController : NetworkBehaviour
@@ -31,14 +32,17 @@ public class NPCController : NetworkBehaviour
 
     [Header("Network Pos")]
     [SerializeField] public Transform networkedRenderRoot;
+    public Transform smoothedNetworkRoot;
 
-    [Header("PD armature")]
-    public List<PDSpring> pDSprings = new List<PDSpring>();
+    [Header("PD Bones")]
+    public List<PdBone> pdBones = new List<PdBone>();
+    private float pdDesignDt = 1f / 64f;
 
     public List<NetworkRigidbody3D> rbComponents = new List<NetworkRigidbody3D>();
 
     [Header("Animation")]
     public Animator targetAnimator;// finalAnimator;
+    public AnimationStateController animStateController;
     public Vector3 hipsOffset;
 
 
@@ -49,17 +53,18 @@ public class NPCController : NetworkBehaviour
 
     public override void Spawned()
     {
-        for (int i = 0; i < pDSprings.Count; i++)
-        {
-            var spring = pDSprings[i];
-            spring.Init(coreRB.transform, HasInputAuthority);
-        }
+        //for (int i = 0; i < pDSprings.Count; i++)
+        //{
+        //    var spring = pDSprings[i];
+        //    spring.Init(coreRB.transform, HasInputAuthority);
+        //}
 
         Runner.SetIsSimulated(this.Object, true);
         foreach (NetworkRigidbody3D nrb in rbComponents)
         {
             Runner.SetIsSimulated(nrb.Object, true);
         }
+        animStateController = GetComponent<AnimationStateController>();
     }
 
     public override void FixedUpdateNetwork()
@@ -70,6 +75,28 @@ public class NPCController : NetworkBehaviour
         //}
 
         if (coreRB == null) return;
+
+        if (HasStateAuthority)
+        {
+            Vector2 input = Vector2.zero;
+            if (Keyboard.current.iKey.isPressed)
+            {
+                input= Vector2.up;
+            }
+            if (Keyboard.current.kKey.isPressed)
+            {
+                input = Vector2.down;
+            }
+            if (Keyboard.current.jKey.isPressed)
+            {
+                input = Vector2.right;
+            }
+            if (Keyboard.current.lKey.isPressed)
+            {
+                input = Vector2.left;
+            }
+            animStateController.SetTargetMovement(input);
+        }
 
         ApplyCoreSuspention();
 
@@ -93,8 +120,6 @@ public class NPCController : NetworkBehaviour
         if (Physics.SphereCast(coreRB.position + Vector3.up*0.2f, suspensionCastRadius, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
-
-
 
             float compression = rideHeight - (coreRB.transform.position - hit.point).magnitude;
 
@@ -172,12 +197,11 @@ public class NPCController : NetworkBehaviour
 
     private void UpdatePDDrives()
     {
-        float dt = Mathf.Max((float)Runner.DeltaTime, 1e-4f);
-        for (int i = 0; i < pDSprings.Count; i++)
+        for (int i = 0; i < pdBones.Count; i++)
         {
-            var springs = pDSprings[i];
-            springs.UpdateBoneDrive(dt,1f / 64f, null);
-            //Debug.Log($"UpdatingBoneDrive {i}");
+            var bone = pdBones[i];
+            bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
+            bone.Step(Runner.DeltaTime);
         }
     }
 
@@ -185,12 +209,34 @@ public class NPCController : NetworkBehaviour
     {
         if (!targetAnimator) return;
 
-        var targetPos = networkedRenderRoot.position + hipsOffset;
-        var targetRot = networkedRenderRoot.rotation;
+        var targetPos = smoothedNetworkRoot.position + hipsOffset;
+        var targetRot = smoothedNetworkRoot.rotation;
 
         targetAnimator.gameObject.transform.position = targetPos;
         targetAnimator.gameObject.transform.rotation = targetRot;
         //finalAnimator.gameObject.transform.position = targetPos;
         //finalAnimator.gameObject.transform.rotation = targetRot;
+    }
+
+    [ContextMenu("PD Ragdoll/Bake Anchors • Use Each Target Transform")]
+    private void ContextBakeAnchorsFromTargets()
+    {
+
+        if (pdBones == null || pdBones.Count == 0) { Debug.LogWarning("No PdBones to bake."); return; }
+
+        for (int i = 0; i < pdBones.Count; i++)
+        {
+            var bone = pdBones[i];
+            if (bone == null) continue;
+            if (bone.targetTransform == null)
+            {
+                Debug.LogWarning($"PdBone {i}: targetTransform is missing, skipped.");
+                continue;
+            }
+            bone.BakeAnchorsFromWorldPivot(bone.targetTransform.position);
+        }
+
+        Debug.Log("Baked PD anchors from each bone's targetTransform remember to save");
+
     }
 }

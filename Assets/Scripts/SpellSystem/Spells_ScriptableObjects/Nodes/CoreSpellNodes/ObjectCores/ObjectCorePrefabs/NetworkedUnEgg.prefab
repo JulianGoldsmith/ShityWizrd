@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.49298
+      value: 7.7000003
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -863.95935
+      value: 1.29
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -16.40215
+      value: 10.694524
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -47,6 +47,10 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -160,6 +164,10 @@ MonoBehaviour:
   physicsSubObjects: []
   _current_bonkedness: 0
   halo_radius_scale_modifier: 1
+  _corresponding_node_instance_guid:
+    _length: 0
+    _data:
+      Data: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   shatterVFX: {fileID: 434026453339319469, guid: 4f2066829e3a5174189d90c00b025a4e, type: 3}
   _tick: 0
 --- !u!114 &3234252410072745738
@@ -225,13 +233,15 @@ MonoBehaviour:
   rotationalDampening: 0.1
   _HolderChangedCount: 0
   _CurrentHoldingPlayers: []
-  localGrabPos:
+  _LocalGrabPos:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
+  _localPendingDrop: 0
+  isCharacterObject: 0
 --- !u!114 &-5027240436109435661
 MonoBehaviour:
   m_ObjectHideFlags: 0
