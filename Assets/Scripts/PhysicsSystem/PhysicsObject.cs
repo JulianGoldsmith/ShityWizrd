@@ -3,6 +3,7 @@ using Fusion;
 using System.Collections.Generic;
 using System;
 using UnityEngine.Assertions.Must;
+using UnityEngine.Events;
 
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
@@ -373,7 +374,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             return;
         }
 
-        Debug.Log("bounce!");
         if (physicsObjectProperties.elasticity == 0)
             return;
 
@@ -475,13 +475,19 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // instead now checking within fixedupdatenetwork 
         // if zero bonkedness.
     }
+
+    // allow other scripts to subcribe to these zero events.
+    public UnityEvent OnZeroBonk_event;
     protected virtual void OnZeroBonk()
     {
         Debug.Log("OnZeroBonk");
+        OnZeroBonk_event.Invoke();
     }
+    public UnityEvent OnRecoverFromBonk_event;
     protected virtual void OnRecoverFromBonk()
     {
         Debug.Log("OnRecoverFromBank");
+        OnRecoverFromBonk_event.Invoke();
     }
     public virtual void OnBonkednessChanged(NetworkBehaviourBuffer previous)
     {

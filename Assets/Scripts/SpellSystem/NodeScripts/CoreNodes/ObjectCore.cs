@@ -92,6 +92,13 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         // We now initialise from within the objectcore spawn method, rather than here.
         // This allows clients to catchup and do all this themselves too, so long
         // as they are provided this core-node (and equivalent spellgraph)
+        
+        // for multi-stage casts, wait until host tells us. Otherwise there
+        // can be divergences.
+        // For the first stage, we're usually fine to do it ourselves
+        // since we have an actual triggerinfo/spellstate.
+        
+        //Debug.Log($"my instance id is {InstanceGuid}");
 
         physicsObject.InitialiseOnSpawned(this, triggerInfo, triggerInfo.State);
 

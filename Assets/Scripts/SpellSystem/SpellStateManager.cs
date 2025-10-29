@@ -53,10 +53,6 @@ public class SpellStateManager : NetworkBehaviour
     public static int _my_next_spellgraph_id = 0;
     public SpellGraph GetSpellGraph(SpellGraphId sgid)
     {
-        foreach(var kv in active_spellgraphs)
-        {
-            Debug.Log($"activesgs : {kv.Key.sender_ref} {kv.Key.id} {kv.Value.name} {kv.Value != null}");
-        }
         if (active_spellgraphs.TryGetValue(sgid, out SpellGraph value))
             return value;
         return null;
