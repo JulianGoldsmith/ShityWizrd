@@ -5,7 +5,11 @@ using UnityEngine;
 //The data on this specific spell cast stored passed down in each triggerInfo (which holds information on specific triggers)
 public class SpellState
 {
-    public SpellStateID SpellStateID;
+    // track the number of cores created in the current casting.
+    // A simple way to avoid infinites.
+    const int max_spawnable_cores = 50; // hard-cutoff for number cores to spawn within a single spell cast.
+
+    public SpellGraphId SpellGraphIdFrom { get; private set; }
     public CastActionController Controller { get; } //this means we can always get the player / enemies pos and rot + GetForward etc
 
     //Snapshot on cast varibales geenrally set by the CasterNode
@@ -20,16 +24,15 @@ public class SpellState
     public float ChargeStartTime { get; set; }
     public GameObject chargeCastVFX;
 
-    public Dictionary<string, float> floatValues = new();
-    public Dictionary<string, object> objectValues = new();
+    public int SpawnedCoresCounter { get; set; } 
 
     public CasterNode OriginalCasterNode { get; set; }  //Node responsible for casting the spell. 
 
-    public SpellState(CastActionController controller, EquipableItem item, CasterNode originalCasterNode)
+    public SpellState(CastActionController controller, EquipableItem item, SpellGraph spell, CasterNode originalCasterNode)
     {
-        this.SpellStateID = new SpellStateID(controller);
         this.Controller = controller;
         this.CastItem = item;
+        this.SpellGraphIdFrom = spell.spellGraphId;
 
         if (item != null && item.projectileSpawnPoint != null)
         {
@@ -43,50 +46,15 @@ public class SpellState
         }
 
         OriginalCasterNode = originalCasterNode;
+
+        SpawnedCoresCounter = 0;
     }
 
-    public void SetFloat(string key, float value)
+    public bool CanSpawnAnotherCore()
     {
-        floatValues[key] = value;
-    }
-
-    public float GetFloat(string key, float fallback = 0f)
-    {
-        return floatValues.TryGetValue(key, out var val) ? val : fallback;
-    }
-
-    public bool TryGetFloat(string key, out float value)
-    {
-        float? result = this.GetFloat(key);
-        if (result.HasValue)
-        {
-            value = result.Value; // Assign the value if found
-            return true;          // Return true for success
-        }
-        else
-        {
-            value = default;      // Assign a default value
-            return false;         // Return false for failure
-        }
-    }
-}
-
-public struct SpellStateID : INetworkStruct
-{
-    public NetworkBehaviourId nb_id;
-    public int cast_id;
-    public SpellStateID(NetworkBehaviour nb, int? guid_override = null)
-    {
-        // create a unique id.
-        nb_id = nb.Id;
-        if (guid_override != null)
-            cast_id = guid_override.Value;
-        else
-            cast_id= CreateNewGuid(nb);
-    }
-    static int CreateNewGuid(NetworkBehaviour nb)
-    {
-        // increment guid, return prior.
-        return SpellStateManager.instance.GetNextSpellStateId(nb);
+        // check if SpawnedCoresCounter has reached the limit.
+        // if not, increment.
+        SpawnedCoresCounter++;
+        return SpawnedCoresCounter <= max_spawnable_cores;
     }
 }

@@ -14,6 +14,6 @@ public class OverlapSphereNode : TriggerNode
         sphereChecker.outcomeNodes = this.outcomeNodes;
         sphereChecker.size = size;
 
-        PassThroughVFX(sphereChecker, size);
+        OnAttach(sphereChecker, size);
     }
 }

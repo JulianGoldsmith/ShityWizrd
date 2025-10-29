@@ -15,9 +15,13 @@ public abstract class CoreNode : SpellNode
 
     public abstract void CreateSpellCore(SpellTriggerInfo triggerInfo);
 
+    protected bool CanSpawn(SpellState state)
+    {
+        return state?.CanSpawnAnotherCore()??false;
+    }
+
     public void AttatchBehavioursAndTriggers(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-
         foreach (BehaviourNode behaviourNode in defaultBehaviourNodes)
         {
             behaviourNode.SetUp(spellCore, triggerInfo);

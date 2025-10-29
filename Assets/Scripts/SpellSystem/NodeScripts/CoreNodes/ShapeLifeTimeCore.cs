@@ -23,6 +23,9 @@ public class ShapeLifeTimeCore : CoreNode
 
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
+        if (!CanSpawn(triggerInfo.State))
+            return;
+
         GameObject spellCore = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         spellCore.GetComponent<Collider>().isTrigger = true;
 

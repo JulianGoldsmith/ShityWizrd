@@ -67,7 +67,7 @@ public abstract class SpellNode : ScriptableObject
             }
         }
     }
-    protected T ApplyPromotableValuesGeneric<T>(T obj_to_mod)
+    public T ApplyPromotableValuesGeneric<T>(T obj_to_mod)
     {
         // Extend this to work with anything, not just a spellnode
         // (so that it can work with PhysicsObjectProperties too.
@@ -248,26 +248,36 @@ public abstract class SpellNode : ScriptableObject
         // Look through all dependent nodes, and their dependencies recursively 
         // until the given instance guid is found.
         List<SpellNode> search = GetAllDependentNodes();
-        if (search.Count == 0)
+        int remaining_search_count = search.Count;
+        if (remaining_search_count == 0)
             return null;
 
         int infinite_loop_counter = 0;
         SpellNode next_node = search[0];
-        while(next_node != null)
+        while(next_node != null || remaining_search_count > 0)
         {
             if (infinite_loop_counter >= infinite_search_catch)
                 return null;
             infinite_loop_counter++;
 
-            if (next_node.InstanceGuid == instance_guid)
-                return next_node;
+            if (next_node != null)
+            {
+                // can't just put next_node != null in the while loop
+                // since entrypoints can have multiple dependents which
+                // can remain null.
+                if (next_node.InstanceGuid == instance_guid)
+                    return next_node;
 
-            search.AddRange(next_node.GetAllDependentNodes());
+                search.AddRange(next_node.GetAllDependentNodes());
+            }
 
-            if(search.Count > 0)
+            remaining_search_count = search.Count;
+
+            if(remaining_search_count > 0)
             {
                 next_node = search[0];
                 search.RemoveAt(0);
+                remaining_search_count--;
                 continue;
             }
         }

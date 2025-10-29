@@ -31,6 +31,9 @@ public class ApplyAuraNode : EffectNode
 
     void AttachAurasTo(AuraContainer ac)
     {
+        if (ac.Object == null || !ac.Object.IsValid)
+            return;
+
         for (int i = 0; i < auras.Length; i++)
         {
             //Debug.Log($"Found AC {ac.name} -> attach aura {auras[i].unique_label}");

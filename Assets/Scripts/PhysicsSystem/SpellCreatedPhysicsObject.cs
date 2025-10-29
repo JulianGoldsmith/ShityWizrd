@@ -1,24 +1,84 @@
-
 using Fusion;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.VFX;
 
 
 public class SpellCreatedPhysicsObject : PhysicsObject
 {
-    [Networked] SpellStateID spell_state_id { get; set; }
-    SpellState original_spell_state;
-    [Networked] public NetworkString<_64> corresponding_node_instance_guid { get; set; }
+    //[Networked] SpellStateID spell_state_id { get; set; }
+    //SpellState original_spell_state;
+    [Networked, OnChangedRender(nameof(OnCorrespondingSpellUpdated))]
+    public SpellGraphId corresponding_spellgraph_id { get; set; }
+    [Networked, OnChangedRender(nameof(OnCorrespondingSpellUpdated))] 
+    public NetworkString<_64> corresponding_node_instance_guid { get; set; }
     // note that the guids are 36 characters long but have four dashes ('-')
     // at regular index, so could be converted to a 32-length string and _32 used.
-    // the dashes would need to then be added back in.
+    // the dashes would need to then be added back in. currently just using 64-length
+    SpellGraph corresponding_spell_graph; // technically only used to fetch corresponding node.
     SpellNode corresponding_spell_node;
 
     [SerializeField] GameObject shatterVFX;
-    [Networked] private TickTimer lifetime_timer { get; set; }
+    [Networked] public TickTimer lifetime_timer { get; set; }
     bool should_despawn_next_tick = false;
 
     private SpellTrigger[] spelltriggers;
+    private SpellBehaviour[] spellbehaviours;
+    public override void Spawned()
+    {
+        base.Spawned();
+        corresponding_node_instance_guid = "";
+    }
+
+    public void InitialiseOnSpawned(ObjectCore node, SpellTriggerInfo triggerInfo, SpellState state)
+    {
+        if (node == null)
+            throw new System.Exception("Input node to SCPO was null");
+
+        if (corresponding_node_instance_guid != "" && corresponding_node_instance_guid != node.InstanceGuid)
+        {
+            Debug.LogError($"{this.Id} Tried to initialise SCPO with incorrect instance. found {node.InstanceGuid} but has {corresponding_node_instance_guid}");
+            return;
+        }
+
+        Runner.SetIsSimulated(Object, true);
+
+        //Debug.Log($"{this.Id} initialising spawn as {node.InstanceGuid} {corresponding_node_instance_guid}");
+
+        // Communicate the details if we're the host.
+        corresponding_spell_node = node as SpellNode;
+        corresponding_node_instance_guid = node.InstanceGuid;
+        if (state != null)
+            corresponding_spellgraph_id = state.SpellGraphIdFrom;
+
+        SubscribeToSpellStateManager();
+
+        // This is called by anyone that spawns the object.
+        // Anyone or doesn't (e.g. proxies) will catch up by using ids.
+        node.ApplyPromotableValuesGeneric<SpellCreatedPhysicsObject>(this);
+        physicsObjectProperties = node.ApplyPromotableValuesGeneric<PhysicsObjectProperties>(physicsObjectProperties);
+        AssignProperties(node);
+        InitialisePhysicsObject();
+
+        if (triggerInfo != null)
+        {
+            node.AttatchBehavioursAndTriggers(gameObject, triggerInfo);
+            InitialiseAfterBehavioursAndTriggers(node, triggerInfo.State);
+        }
+        else
+        {
+            node.AttatchBehavioursAndTriggers(gameObject, state);
+            InitialiseAfterBehavioursAndTriggers(node, state);
+        }
+    }
+
+    public void InitialiseOnSpawnedClientside()
+    {
+        // We use the values networked to use to dummy spawn, e.g.
+        // attach behaviours and triggers.
+        // We may not have all info.
+        InitialiseOnSpawned((ObjectCore)corresponding_spell_node, null, null);
+    }
 
     public void AssignProperties(ObjectCore createdby)
     {
@@ -34,98 +94,108 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     {
         tick_spawned = Runner.Tick; // reset the spawned tick, since might be buffering objects.
         spelltriggers = GetComponents<SpellTrigger>();
-        //for(int i = 0; i < spelltriggers.Length; i++)
-        //{
-        //    spelltriggers[i].OnAttach();
-        //}
-        spell_state_id = state.SpellStateID;
-        original_spell_state = state;
-        corresponding_spell_node = node;
-        corresponding_node_instance_guid = node.InstanceGuid;
+        spellbehaviours = GetComponents<SpellBehaviour>();
     }
 
-    public void CheckSpellStateGUIDChanged()
+    public void OnCorrespondingSpellUpdated()
     {
-        if (HasStateAuthority)
+        // called whenever either of the node-instance-guid or the spellgraph-id
+        // is changed.
+        // so both times try to load the corresponding spell and node.
+        // the second call will complete, the first won't.
+
+        //Debug.Log($"{this.Id} corresponding {corresponding_spell_node == null} {corresponding_node_instance_guid}");
+        //if(corresponding_spell_node != null)
+        //    Debug.Log($"{this.Id} corresponding is not null and {corresponding_spell_node.InstanceGuid} ==? {corresponding_node_instance_guid}");
+
+        if (corresponding_spell_node != null && corresponding_node_instance_guid == corresponding_spell_node.InstanceGuid)
             return;
 
-        if (original_spell_state != null)
-            return;
-
-        if (spell_state_id.nb_id == NetworkBehaviourId.None)
-            return;
-
-        SpellState spellstate = SpellStateManager.instance.GetSpellState(spell_state_id);
-        Debug.Log($"Get Spell state GUID {spellstate == null}");
-        if (original_spell_state != spellstate)
+        if (corresponding_spellgraph_id.NotNull())
         {
-            original_spell_state = spellstate;
-            corresponding_spell_node = null;
+            corresponding_spell_graph = SpellStateManager.instance.GetSpellGraph(corresponding_spellgraph_id);
+        }
+
+        if (corresponding_node_instance_guid.Value != "" && corresponding_spell_graph != null)
+        {
+            corresponding_spell_node = corresponding_spell_graph.entryPointControllerNode.GetNodeInChain(corresponding_node_instance_guid.Value);
+        }
+
+        if (corresponding_spell_node != null)
+        {
+            InitialiseOnSpawnedClientside();
         }
     }
-    void CheckNodeInstanceGUID()
+    void CheckIfMissedSpellUpdate()
     {
-        if (original_spell_state == null)
-            return;
-
-        Debug.Log($"is original spell state null {original_spell_state == null}");
+        // if we already have it, skip.
         if (corresponding_spell_node != null)
             return;
 
-        corresponding_spell_node = original_spell_state.OriginalCasterNode.GetNodeInChain(corresponding_node_instance_guid.Value);
-        Debug.Log($"corresponding spell node {corresponding_spell_node == null} {corresponding_spell_node.nodeName}");
-        if (corresponding_spell_node is ObjectCore corresponding_core)
-        {
-            // we don't have the trigger info...
-            // for now, try null and see what happens...
-            corresponding_core.AttatchBehavioursAndTriggers(gameObject, original_spell_state);
-        }
+        OnCorrespondingSpellUpdated();
     }
 
     public override void FixedUpdateNetwork()
     {
         base.FixedUpdateNetwork();
-        
+
+        CheckIfMissedSpellUpdate();
+
         OnTickTriggerComponents();
 
         if (should_despawn_next_tick || lifetime_timer.Expired(Runner))
+        {
+            if (lifetime_timer.Expired(Runner))
+                OnLifetimeExpired_event.Invoke();
             DespawnObject();
+        }
         else if (zero_bonkedness)
             should_despawn_next_tick = true;
     }
 
-    [Networked, OnChangedRender(nameof(OnTickClientCatchup))] public int tick { get; set; } //int that increments everytime a ticktrigger is called.
-    // (client will probably be one tick behind...)
-    public override void Render()
+    public UnityEvent OnLifetimeExpired_event;
+    public float GetRemainingLifetime()
     {
-        base.Render();
+        if (lifetime_timer.Expired(Runner))
+            return 0;
+
+        if (!lifetime_timer.IsRunning)
+            return -1;
+
+        return lifetime_timer.RemainingTime(Runner)??0;
+    }
+
+    //[Networked, OnChangedRender(nameof(OnTickClientCatchup))] public int tick { get; set; } //int that increments everytime a ticktrigger is called.
+    //// (client will probably be one tick behind...)
+
+    //public void OnTickClientCatchup()
+    //{
+    //    // Only run for clients.
+    //    // Pseudo tick tracker.
+    //    // This is surely incorrect, 
+    //    // since we'll run a load of missed 
+    //    // ticks altogether.
+    //    // Could just run one.
+    //    if (HasStateAuthority)
+    //        return;
         
-        if (HasStateAuthority)
-            return;
+    //    CheckIfMissedSpellUpdate();
 
-        CheckSpellStateGUIDChanged();
-        CheckNodeInstanceGUID();
-    }
-    public void OnTickClientCatchup()
-    {
-        // Only run for clients.
-        // Pseudo tick tracker.
-        // This is surely incorrect, 
-        // since we'll run a load of missed 
-        // ticks altogether.
-        // Could just run one.
-        if (HasStateAuthority)
-            return;
-        if (tick == Runner.Tick)
-            return;
+    //    if (tick == Runner.Tick)
+    //        return;
 
-        int tick_diff = Mathf.Max(0, Runner.Tick - tick);
-        for (int i = 0; i < tick_diff; i++)
-        {
-            OnTickTriggerComponents();
-        }
-    }
+
+    //    int tick_diff = Mathf.Max(0, Runner.Tick - tick);
+    //    OnTickTriggerComponents();
+    //}
     protected void OnTickTriggerComponents()
+    {
+        TickTriggers();
+        TickBehaviours();
+        //tick = Runner.Tick;
+    }
+
+    void TickTriggers()
     {
         if (spelltriggers == null || spelltriggers.Length == 0)
             return;
@@ -134,7 +204,16 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         {
             spelltriggers[i].OnTick();
         }
-        tick = Runner.Tick;
+    }
+    void TickBehaviours()
+    {
+        if (spellbehaviours == null || spellbehaviours.Length == 0)
+            return;
+
+        for (int i = 0; i < spellbehaviours.Length; i++)
+        {
+            spellbehaviours[i].OnTick();
+        }
     }
 
     protected override void OnZeroBonk()
@@ -162,7 +241,6 @@ public class SpellCreatedPhysicsObject : PhysicsObject
             shatter_vfx.AssignProperties(physicsObjectProperties, bonk_amount);
 
     }
-
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         base.Despawned(runner, hasState);
@@ -176,7 +254,32 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         // and destroyed if zero.
         if (zero_bonkedness)
             CreateShatterParticles(Mathf.Max(0, -current_bonkedness));
+
+        UnsubscribeFromSpellStateManager();
     }
 
+    bool has_subscribed_to_spellstatemanager = false;
+    bool has_unsubscribed_from_spellstatemanager = false;
+    void SubscribeToSpellStateManager()
+    {
+        if (has_subscribed_to_spellstatemanager)
+            return;
+
+        if (corresponding_spellgraph_id.IsNull())
+            return;
+
+        SpellStateManager.instance.SubscribeNode(corresponding_spellgraph_id);
+    }
+    void UnsubscribeFromSpellStateManager()
+    {
+        if (!has_subscribed_to_spellstatemanager 
+            || has_unsubscribed_from_spellstatemanager)
+            return;
+
+        if (corresponding_spellgraph_id.IsNull())
+            return;
+
+        SpellStateManager.instance.UnsubscribeNode(corresponding_spellgraph_id);
+    }
 
 }

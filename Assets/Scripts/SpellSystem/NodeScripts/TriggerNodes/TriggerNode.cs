@@ -18,7 +18,7 @@ public abstract class TriggerNode : SpellNode
 
     }
 
-    public virtual void PassThroughVFX(SpellTrigger spelltrigger_mono, float _size)
+    public virtual void OnAttach(SpellTrigger spelltrigger_mono, float _size)
     {
         spelltrigger_mono.OnAttach(this, _size);
     }

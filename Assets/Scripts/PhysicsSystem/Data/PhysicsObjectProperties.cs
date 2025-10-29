@@ -49,23 +49,23 @@ public struct PhysicsObjectProperties : INetworkStruct
     // (expose parameters from material for ease of use.
     public float density
     {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.density : 1.0f; }
+        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.density : PhysicsObjectMaterial.default_density; }
     }
     public float hardness
     {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.hardness : 1.0f; }
+        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.hardness : PhysicsObjectMaterial.default_hardness; }
     }
     public float elasticity
     {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.elasticity : 0.0f; }
+        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.elasticity : PhysicsObjectMaterial.default_elasticity; }
     }
     public float brittleness
     {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.brittleness : 0.0f; }
+        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.brittleness : PhysicsObjectMaterial.default_brittleness; }
     }
     public float stickiness
     {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.stickiness : 0.0f; }
+        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.stickiness : PhysicsObjectMaterial.default_stickiness; }
     }
 
     #endregion

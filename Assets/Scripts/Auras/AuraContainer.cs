@@ -1,8 +1,5 @@
 using UnityEngine;
 using Fusion;
-using System.Collections.Generic;
-using ExitGames.Client.Photon.StructWrapping;
-using System.Linq;
 
 public class AuraContainer : NetworkBehaviour
 {
@@ -32,6 +29,9 @@ public class AuraContainer : NetworkBehaviour
     public override void Spawned()
     {
         base.Spawned();
+        
+        _tick = Runner.Tick;
+
         for (int i = 0; i < CAPACITY; i++)
         {
             if (HasStateAuthority)
@@ -46,8 +46,24 @@ public class AuraContainer : NetworkBehaviour
 
         // Run the auras each tick.
         // Have to go back to front in case they dissappear.
+        RunAuraTick(true);
+    }
 
-        for (int i = networked_active_aura_ids.Length - 1; i >= 0; i--)
+    Tick _tick;
+    public override void Render()
+    {
+        // Should only be for non-physics stuff (visual).
+        //if (!HasStateAuthority && !HasInputAuthority && _tick != Runner.Tick)
+        //{
+        //    RunAuraTick(false);
+        //}
+
+        //_tick = Runner.Tick;
+    }
+
+    void RunAuraTick(bool expire_auras)
+    {
+        for (int i = 0; i < networked_active_aura_ids.Length; i++)
         {
             if (networked_active_aura_ids[i] == AURA_ID.NULL)
             {
@@ -55,10 +71,11 @@ public class AuraContainer : NetworkBehaviour
             }
             //Debug.Log($"Ticking aura {networked_active_aura_ids[i]} at time {networked_active_aura_timers[i].RemainingTime(Runner)}");
             AuraLookUp.Get(networked_active_aura_ids[i])?.OnTick(this);
-            if (networked_active_aura_timers[i].Expired(Runner))
+            if (expire_auras && networked_active_aura_timers[i].Expired(Runner))
                 RemoveAuraAtIndex(i);
         }
     }
+
     public void OnActiveAuraIdsChanged(NetworkBehaviourBuffer previous)
     {
         // Cleanup active auras, do any ticks if necessary.
@@ -113,7 +130,7 @@ public class AuraContainer : NetworkBehaviour
         // check if already exists.
         int index;
         index = GetExistingSlot(aura.unique_label);
-        //Debug.Log($"Attaching aura to {name}");
+        //Debug.Log($"Attaching aura {aura.unique_label} to {name}");
         if (index > -1)
         {
             // Already exists, so just update.
@@ -167,10 +184,11 @@ public class AuraContainer : NetworkBehaviour
         else
             auraid = local_active_aura_ids[index];
 
-        Debug.Log($"Removing aura at {index} {auraid}");
+        //Debug.Log($"Removing aura at {index} {auraid}");
 
         if (auraid == AURA_ID.NULL)
-            throw new System.Exception($"Null aura at index {index}");
+            //throw new System.Exception($"Null aura at index {index}");
+            return;
 
         AuraLookUp.Get(auraid)?.OnExpire(this);
 

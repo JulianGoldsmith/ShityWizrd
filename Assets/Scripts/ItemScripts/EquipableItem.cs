@@ -47,7 +47,7 @@ public class EquipableItem : InteractableItem
     public bool updateNextFrame = false;
     public Vector3 throwDir = Vector3.zero;
 
-    int my_player_id { get { return GetComponent<NetworkObject>().InputAuthority.PlayerId; } }
+    int my_player_id { get { return Runner.LocalPlayer.PlayerId; } }
 
     #region Equipping & Communicating
     int sendingmessageid = 0;
@@ -58,7 +58,13 @@ public class EquipableItem : InteractableItem
         Debug.Log("Equipping spell");
         // Set the spell as primary spell and communicate
         // the changes to all other instances via RPC call.
+
+        // I assign the spell a new SpellGraphId.
+        graph.spellGraphId = new SpellGraphId(my_player_id);
+
+        // I equip my spell.
         SetAndInitialise(graph);
+
         string json = graph.ToJson();
 
         int playerid = my_player_id;
@@ -87,22 +93,28 @@ public class EquipableItem : InteractableItem
             Buffer.BlockCopy(data, i * chunkSize, chunk, 0, size);
 
             // Send via RPC
-            RPC_SendJsonChunk(sendingmessageid, playerid,  i, totalChunks, chunk);
+            RPC_SendJsonChunk(sendingmessageid, playerid, graph.spellGraphId.id,  i, totalChunks, chunk);
         }
     }
-    public void EquipSpellToPrimaryFromJSON(string json)
+    public void EquipSpellToPrimaryFromJSON(string json, SpellGraphId sgid)
     {
+        Debug.Log("received spell, equipping to primary from json");
         SpellGraph graph = SpellGraph.FromJson(json);
-        if(graph != null )
+        if(graph != null)
         {
+            Debug.Log("received spell, equipping to primary from json");
+            graph.spellGraphId = sgid;
             SetAndInitialise(graph);
         }
     }
     [Rpc(sources: RpcSources.All, targets: RpcTargets.All)]
-    public void RPC_SendJsonChunk(int messageId, int player_ref, int chunkIndex, int totalChunks, byte[] chunkData)
+    public void RPC_SendJsonChunk(int messageId, int player_ref, int spellgraphid_id, int chunkIndex, int totalChunks, byte[] chunkData)
     {
-        if (my_player_id != player_ref)
+        // don't care about it if it's my spell that I'm sending.
+        if (my_player_id == player_ref)
             return;
+
+        Debug.Log($"Receiving JSON Spell Chunk {chunkIndex} / {totalChunks}");
 
         if (messageId > receivingmessageid)
         {
@@ -120,8 +132,11 @@ public class EquipableItem : InteractableItem
             // Recombine, turn into json, then equip locally.
             byte[] fullData = received_chunks.SelectMany(c => c).ToArray();
             string json = System.Text.Encoding.UTF8.GetString(fullData);
+            
+            // reconstruct spellgraphid
+            SpellGraphId sgid = new SpellGraphId(player_ref, spellgraphid_id);
 
-            EquipSpellToPrimaryFromJSON(json);
+            EquipSpellToPrimaryFromJSON(json, sgid);
         }
     }
     #endregion
@@ -311,9 +326,24 @@ public class EquipableItem : InteractableItem
         networkedRB.GetComponent<Collider>().enabled = true;
     }
 
-
     void SetAndInitialise(SpellGraph graph)
     {
+
+        // subcribe the new spell to the spellstatemanager
+        // (and unsubcribe the prior one).
+        if(primaryActionSpell != graph)
+        {
+            if(primaryActionSpell != null)
+            {
+                SpellStateManager.instance.OnUnequipSpellGraph(primaryActionSpell.spellGraphId);
+            }
+
+            if(graph != null)
+            {
+                SpellStateManager.instance.OnEquipSpellGraph(graph.spellGraphId, graph);
+            }
+        }
+
         primaryActionSpell = graph;
 
         if (networkObjectBuffer != null)

@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 7.7000003
+      value: -6.49298
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.29
+      value: -863.95935
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 10.694524
+      value: -16.40215
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -49,13 +49,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -7511558181221131132, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 52a8d08a70fce1d419b8dfe7754c7f93, type: 2}
+    - target: {fileID: -5754084199372789682, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4711208715938537054, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
     - target: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_Name
       value: NetworkedUnEgg
@@ -63,6 +63,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       propertyPath: m_Layer
       value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
+      propertyPath: m_TagString
+      value: Item
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -163,12 +167,22 @@ MonoBehaviour:
   physicsMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
   _corresponding_node_instance_guid:
     _length: 0
     _data:
       Data: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   shatterVFX: {fileID: 434026453339319469, guid: 4f2066829e3a5174189d90c00b025a4e, type: 3}
+  OnLifetimeExpired_event:
+    m_PersistentCalls:
+      m_Calls: []
   _tick: 0
 --- !u!114 &3234252410072745738
 MonoBehaviour:
@@ -241,7 +255,6 @@ MonoBehaviour:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   _localPendingDrop: 0
-  isCharacterObject: 0
 --- !u!114 &-5027240436109435661
 MonoBehaviour:
   m_ObjectHideFlags: 0

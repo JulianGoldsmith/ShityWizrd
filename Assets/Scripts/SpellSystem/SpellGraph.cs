@@ -42,6 +42,8 @@ public class SpellGraph : ScriptableObject
 
     //for runtime
     [System.NonSerialized]
+    public SpellGraphId spellGraphId;
+    [System.NonSerialized]
     public EntryPointControlNode entryPointControllerNode;
     [System.NonSerialized]
     public Dictionary<string, RuneUI> runeUIsByGuid = new Dictionary<string, RuneUI>();

@@ -13,6 +13,7 @@ public class GameController : MonoBehaviour
     //public CharacterCameraController mainCameraController;
 
     public GameObject spellEditorWorld; 
+    public SpellGraphController spellGraphController;
 
     public bool isEditorActive = false;
 
