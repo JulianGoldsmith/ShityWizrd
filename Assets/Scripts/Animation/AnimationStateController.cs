@@ -54,20 +54,18 @@ public class AnimationStateController : NetworkBehaviour
         _targetMoveVector = moveVector;
     }
 
-    public override void FixedUpdateNetwork()
+    public void SimulateAnimation()
     {
         float[] targetWeights = new float[CLIP_CAPACITY];
 
         if (Object.HasStateAuthority || Object.HasInputAuthority)
         {
-
             float moveSpeed = Mathf.Clamp01(_targetMoveVector.magnitude);
             targetWeights[WALK_INDEX] = moveSpeed;
             targetWeights[IDLE_INDEX] = 1.0f - moveSpeed;
         }
         else
         {
-
             for (int i = 0; i < CLIP_CAPACITY; i++)
             {
                 targetWeights[i] = ClipWeights[i];
@@ -75,6 +73,8 @@ public class AnimationStateController : NetworkBehaviour
         }
 
         ApplyBlendingAndAdvanceTime(targetWeights, _blendSpeed);
+
+        _detAnimator?.ApplyStateToGraph(ClipWeights, ClipTimes);
     }
 
     private void ApplyBlendingAndAdvanceTime(float[] targetWeights, float blendSpeed)

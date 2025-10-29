@@ -396,7 +396,7 @@ MonoBehaviour:
   retargetedBones:
   - sourceBone: {fileID: 7265867803234363795}
     targetBone: {fileID: 3505666986225127640}
-    physicsProxy: {fileID: 3269784909851539992}
+    physicsProxy: {fileID: 6095370504088226660}
   - sourceBone: {fileID: 4083591847271118633}
     targetBone: {fileID: 7843292459571252834}
     physicsProxy: {fileID: 2341068911128189223}
@@ -508,6 +508,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &1119281139105790255
 GameObject:
   m_ObjectHideFlags: 0
@@ -885,6 +887,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &2700920391655652558
 GameObject:
   m_ObjectHideFlags: 0
@@ -1519,6 +1523,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &3936038465445363722
 GameObject:
   m_ObjectHideFlags: 0
@@ -1779,8 +1785,8 @@ MonoBehaviour:
   _IsGrounded:
     _value: 0
   rideHeight: 0.12
-  rideSpringStrength: 1000
-  rideSpringDamper: 100
+  rideSpringStrength: 200
+  rideSpringDamper: 25
   uprightSpringStrength: 1000
   uprightSpringDamper: 10
   maxWalkSpeed: 3
@@ -1896,6 +1902,7 @@ MonoBehaviour:
   targetAnimator: {fileID: 455054832584376484}
   animStateController: {fileID: 0}
   hipsOffset: {x: 0, y: -0.08, z: 0}
+  rootMotionForceStrength: 100
   _NetworkedMoveDirection: {x: 0, y: 0, z: 0}
   _NetworkedWantsToSprint:
     _value: 0
@@ -2516,7 +2523,7 @@ Animator:
   m_Controller: {fileID: 0}
   m_CullingMode: 0
   m_UpdateMode: 1
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 1

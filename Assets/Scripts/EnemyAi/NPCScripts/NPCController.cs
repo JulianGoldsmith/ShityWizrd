@@ -45,6 +45,9 @@ public class NPCController : NetworkBehaviour
     public AnimationStateController animStateController;
     public Vector3 hipsOffset;
 
+    private Vector3 _prevRootMotionPos;
+    public float rootMotionForceStrength = 5.0f;
+
 
     // --- BT INTERFACE ---
     [Networked] public Vector3 NetworkedMoveDirection { get; set; }
@@ -65,6 +68,12 @@ public class NPCController : NetworkBehaviour
             Runner.SetIsSimulated(nrb.Object, true);
         }
         animStateController = GetComponent<AnimationStateController>();
+
+        if (animStateController != null && targetAnimator != null)
+        {
+            animStateController.SimulateAnimation();
+            _prevRootMotionPos = targetAnimator.rootPosition;
+        }
     }
 
     public override void FixedUpdateNetwork()
@@ -98,11 +107,17 @@ public class NPCController : NetworkBehaviour
             animStateController.SetTargetMovement(input);
         }
 
+        animStateController.SimulateAnimation();
+
+        Vector3 rootMotionVelocity = GetRootMotionVelocity();
+
         ApplyCoreSuspention();
 
         ApplyUprightStabilization();
 
         UpdateCoreMovement();
+
+        ApplyRootMotionForce(rootMotionVelocity);
 
         UpdatePDDrives();
     }
@@ -112,7 +127,33 @@ public class NPCController : NetworkBehaviour
         UpdateAnimators();
     }
 
+    private Vector3 GetRootMotionVelocity()
+    {
+        Vector3 currentPos = targetAnimator.rootPosition;
 
+        Vector3 deltaPos = currentPos - _prevRootMotionPos;
+
+        _prevRootMotionPos = currentPos;
+
+        if (deltaPos.magnitude > 10.0f)
+        {
+            return Vector3.zero;
+        }
+
+        return deltaPos / Runner.DeltaTime;
+    }
+
+    private void ApplyRootMotionForce(Vector3 rootMotionVelocity)
+    {
+        if (!IsGrounded || rootMotionVelocity.magnitude < 0.01f)
+        {
+            return;
+        }
+
+        Vector3 force = rootMotionVelocity * rootMotionForceStrength;
+
+        coreRB.AddForce(force, ForceMode.Acceleration);
+    }
 
     private void ApplyCoreSuspention()
     {
@@ -212,8 +253,8 @@ public class NPCController : NetworkBehaviour
         var targetPos = smoothedNetworkRoot.position + hipsOffset;
         var targetRot = smoothedNetworkRoot.rotation;
 
-        targetAnimator.gameObject.transform.position = targetPos;
-        targetAnimator.gameObject.transform.rotation = targetRot;
+        //targetAnimator.gameObject.transform.position = targetPos;
+        //targetAnimator.gameObject.transform.rotation = targetRot;
         //finalAnimator.gameObject.transform.position = targetPos;
         //finalAnimator.gameObject.transform.rotation = targetRot;
     }
