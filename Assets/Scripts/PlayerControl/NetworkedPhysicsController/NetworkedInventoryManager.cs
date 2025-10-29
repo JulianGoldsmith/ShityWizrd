@@ -38,6 +38,9 @@ public class NetworkedInventoryManager : NetworkBehaviour
     int lastDropCount;
     [Networked] NetworkButtons Prior_buttons { get; set; }
 
+    [Networked] public Vector3 _dragTargetPos { get; set; }
+    [Networked] public Vector3 _dragFacingDir { get; set; }
+
     public void Start()
     {
         characterController = GetComponent<HybridCharacterController>();
@@ -58,9 +61,14 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (Object.IsProxy) return;
         if (GetInput(out NetworkInputData data))
         {
+            _dragTargetPos = data.dragTargetPos;
+            _dragFacingDir = data.dragFacingDir;
+
             lookRotation = data.lookRotation;
+
 
             if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP)  )
             {
@@ -97,7 +105,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
        
 
-        if ((true))
+        if (!Object.IsProxy)
         {
             if (PickUpPressCount > lastPickUpCount)
             {
@@ -134,10 +142,6 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
     }
 
-    //public void FixedUpdate()
-    //{
-        
-    //}
 
     private void OnDrawGizmos()
     {
@@ -251,16 +255,4 @@ public class NetworkedInventoryManager : NetworkBehaviour
     }
 
     
-
-    //public void SetNewHoldingPlayer()
-    //{
-    //    currentItemInHand.HoldingPlayer = this.GetComponent<NetworkObject>();
-    //    currentItemInHand.HolderChangedCount++;
-    //}
-
-    //public void ClearItemHeldByPlayer()
-    //{
-    //    currentItemInHand.HoldingPlayer = null;
-    //    currentItemInHand.HolderChangedCount++;
-    //}
 }

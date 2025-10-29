@@ -1,7 +1,11 @@
 
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class RoomTemplate : MonoBehaviour
 {
@@ -13,77 +17,70 @@ public class RoomTemplate : MonoBehaviour
 
     [Header("Footprint Data")]
     public float footprintCellSize = 1.0f;
-    public LayerMask footprintLayerMask;
-    [HideInInspector] public FootprintRow[] FootprintGrid;
+    public LayerMask roomCollidersMask;
+    //public bool[,] filled;
 
-    public int FootprintWidth
-    {
-        get
-        {
-            if (FootprintGrid == null || FootprintGrid.Length == 0 || FootprintGrid[0].cells == null)
-                return 0;
-            return FootprintGrid[0].cells.Length;
-        }
-    }
-    public int FootprintHeight
-    {
-        get
-        {
-            if (FootprintGrid == null)
-                return 0;
-            return FootprintGrid.Length;
-        }
-    }
+    public SerializableBoolRow[] filled;
+
+    public bool debugDoors = true;
+    public bool debugfootStep = false;
 
 
     private void OnDrawGizmos()
     {
 
-        Gizmos.color = new Color(0, 1, 0, 0.3f); 
-        Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one); 
-        Gizmos.matrix = rotationMatrix;
+        //Gizmos.matrix = transform.localToWorldMatrix; 
 
-        Gizmos.DrawCube(RoomBounds.center, RoomBounds.size);
-        Gizmos.matrix = Matrix4x4.identity;
-
-        if (FootprintGrid != null && FootprintGrid.Length > 0) 
+        if (debugfootStep)
         {
-            Gizmos.matrix = transform.localToWorldMatrix; 
-            Vector3 cellExtents = new Vector3(footprintCellSize * 0.9f, 0.1f, footprintCellSize * 0.9f);
+            Gizmos.color = new Color(0, 1, 0, 0.3f);
+            Gizmos.DrawCube(transform.TransformPoint(RoomBounds.center), transform.TransformDirection(RoomBounds.size));
 
-            // Use new properties for loop bounds
-            for (int z = 0; z < FootprintHeight; z++)
+            Vector3Int min = new Vector3Int(Mathf.RoundToInt(RoomBounds.min.x), 0, Mathf.RoundToInt(RoomBounds.min.z));
+
+            //int width = Mathf.FloorToInt(RoomBounds.size.x);
+            //int depth = Mathf.FloorToInt(RoomBounds.size.z);
+
+            if (filled != null && filled.Length > 0)
             {
-                for (int x = 0; x < FootprintWidth; x++)
+                for (int x = 0; x < filled.Length; x++)
                 {
-                    if (GetFootprintAt(x, z)) 
+                    if (filled[x] == null || filled[x].row == null) continue;
+                    for (int z = 0; z < filled[x].row.Length; z++)
                     {
-                        Gizmos.color = new Color(1, 0, 1, 0.4f); 
-                        Vector3 cellCenter = new Vector3(
-                            (x + 0.5f) * footprintCellSize,
-                            0,
-                            (z + 0.5f) * footprintCellSize
-                        );
-                        Gizmos.DrawCube(cellCenter, cellExtents);
+                        Vector3 boxCenter = min +  new Vector3(x + 0.5f, 0, z + 0.5f);
+
+                        if (filled[x].row[z])
+                        {
+                            Gizmos.color = Color.green;
+                            Gizmos.DrawCube(boxCenter, Vector3.one * 0.45f);
+                        }
+                        else
+                        {
+                            Gizmos.color = Color.red;
+                            Gizmos.DrawCube(boxCenter, Vector3.one * 0.45f);
+                        }
                     }
                 }
             }
-            Gizmos.matrix = Matrix4x4.identity; 
-        }
 
-        if (runtimeConnections == null || runtimeConnections.Count == 0)
-        {
-            foreach (var connection in Connections)
-            {
-                DrawConnectionGizmo(connection, Color.white);
-            }
         }
-        else
+        if (debugDoors)
         {
-            foreach (var connectionState in runtimeConnections)
+            if (runtimeConnections == null || runtimeConnections.Count == 0)
             {
-                Color gizmoColor = connectionState.IsOpenForSearch ? GetColorForType(connectionState.templateData.Type) : (connectionState.IsConnected ? Color.green : Color.red);
-                DrawConnectionGizmo(connectionState.templateData, gizmoColor);
+                foreach (var connection in Connections)
+                {
+                    DrawConnectionGizmo(connection, Color.white);
+                }
+            }
+            else
+            {
+                foreach (var connectionState in runtimeConnections)
+                {
+                    Color gizmoColor = connectionState.IsOpenForSearch ? GetColorForType(connectionState.templateData.Type) : (connectionState.IsConnected ? Color.green : Color.red);
+                    DrawConnectionGizmo(connectionState.templateData, gizmoColor);
+                }
             }
         }
     }
@@ -117,124 +114,101 @@ public class RoomTemplate : MonoBehaviour
         }
     }
 
+ 
 
-
-
-
-
-
-
-    public bool GetFootprintAt(int x, int z)
+    [ContextMenu("BakeRoom")]
+    public void BakeRoom()
     {
-        if (FootprintGrid == null || FootprintGrid.Length == 0) return false;
-
-        if (z < 0 || z >= FootprintGrid.Length) return false;
-
-        FootprintRow row = FootprintGrid[z];
-        if (row == null || row.cells == null || row.cells.Length == 0) return false;
-
-        if (x < 0 || x >= row.cells.Length) return false;
-
-        return row.cells[x];
+        SetDefaultMaskIfEmpty();
+        Bounds bounds = CalculateBounds();
+        FillFootPrint(bounds);
+#if UNITY_EDITOR
+        EditorUtility.SetDirty(this);
+#endif
     }
 
-
-    [ContextMenu("Bake Room Data (Bounds + Footprint)")]
-    public void BakeRoomData()
+    public Bounds CalculateBounds()
     {
         Vector3 originalPosition = transform.position;
         Quaternion originalRotation = transform.rotation;
         transform.position = Vector3.zero;
         transform.rotation = Quaternion.identity;
 
-        Collider[] childColliders = GetComponentsInChildren<Collider>();
-        if (childColliders.Length == 0)
+        MeshRenderer[] childRenderers = GetComponentsInChildren<MeshRenderer>();
+        if (childRenderers.Length == 0)
         {
-            Debug.LogError($"Could not bake data for {name}: No colliders found. Add colliders to your room geometry.", this);
+            Debug.LogError($"Could not calculate bounds for {name} no child meshes found", this);
             transform.position = originalPosition;
             transform.rotation = originalRotation;
-            return;
+            return new Bounds();
         }
 
-        Bounds combinedBounds = childColliders[0].bounds;
-        for (int i = 1; i < childColliders.Length; i++)
+        Bounds combinedBounds = childRenderers[0].bounds;
+        for (int i = 1; i < childRenderers.Length; i++)
         {
-            combinedBounds.Encapsulate(childColliders[i].bounds);
+            combinedBounds.Encapsulate(childRenderers[i].bounds);
         }
-
-        if (footprintLayerMask.value == 0)
-        {
-            Debug.LogError($"Footprint Layer Mask is not set for {name}. Please set this in the prefab inspector. Baking cancelled.", this);
-            transform.position = originalPosition;
-            transform.rotation = originalRotation;
-            return;
-        }
-
-        Vector3 rawSize = combinedBounds.size;
-
-        Vector2Int footprintGridSize = new Vector2Int(
-            Mathf.RoundToInt(rawSize.x / footprintCellSize), 
-            Mathf.RoundToInt(rawSize.z / footprintCellSize)  
-        );
-
-
-
-        if (footprintGridSize.x == 0 || footprintGridSize.y == 0)
-        {
-            Debug.LogError($"Could not bake data for {name}: Calculated footprint size is zero. Check colliders and scale.", this);
-            transform.position = originalPosition;
-            transform.rotation = originalRotation;
-            return;
-        }
-
-        FootprintGrid = new FootprintRow[footprintGridSize.y]; 
-        for (int z = 0; z < footprintGridSize.y; z++)
-        {
-            FootprintGrid[z] = new FootprintRow(footprintGridSize.x); 
-        }
-
-        float checkHeight = rawSize.y > 0 ? rawSize.y : 50f; 
-        float checkYCenter = combinedBounds.min.y + (checkHeight / 2f);
-        Vector3 boxHalfExtents = new Vector3(footprintCellSize * 0.45f, checkHeight * 0.5f, footprintCellSize * 0.45f);
-
-        for (int z = 0; z < footprintGridSize.y; z++)
-        {
-            for (int x = 0; x < footprintGridSize.x; x++)
-            {
-
-                Vector3 cellCenter = new Vector3(
-                    (x + 0.5f) * footprintCellSize,
-                    checkYCenter, 
-                    (z + 0.5f) * footprintCellSize
-                );
-
-                // Check for colliders at this cell
-                if (Physics.OverlapBox(cellCenter, boxHalfExtents, Quaternion.identity, footprintLayerMask, QueryTriggerInteraction.Ignore).Length > 0)
-                {
-                    FootprintGrid[z].cells[x] = true; 
-                }
-                else
-                {
-                    FootprintGrid[z].cells[x] = false; 
-                }
-            }
-        }
-
 
         transform.position = originalPosition;
         transform.rotation = originalRotation;
 
+        Vector3 rawSize = combinedBounds.size;
+        
+        Vector3Int intSize = new Vector3Int(Mathf.RoundToInt(rawSize.x), Mathf.RoundToInt(rawSize.y), Mathf.RoundToInt(rawSize.z));
 
-        Vector3 finalSize = new Vector3(footprintGridSize.x * footprintCellSize, 0, footprintGridSize.y * footprintCellSize);
-        Vector3 finalCenter = new Vector3(finalSize.x / 2f, 0, finalSize.z / 2f);
-        RoomBounds = new Bounds(finalCenter, finalSize);
+        Vector3 center = combinedBounds.min + new Vector3(intSize.x / 2f, intSize.y / 2f, intSize.z / 2f);
 
-        Debug.Log($"<color=green>Data for {name} successfully baked. Bounds: {RoomBounds.size}, Footprint: {footprintGridSize.x}x{footprintGridSize.y}</color>", this);
-#if UNITY_EDITOR
-        UnityEditor.EditorUtility.SetDirty(this);
-#endif
+        RoomBounds = new Bounds(center, intSize);
+
+        return RoomBounds;
     }
 
+
+    public void FillFootPrint(Bounds bounds)
+    {
+        Vector3Int min = new Vector3Int(Mathf.RoundToInt(bounds.min.x), 0, Mathf.RoundToInt(bounds.min.z));
+
+        int width = Mathf.FloorToInt(bounds.size.x);
+        int depth = Mathf.FloorToInt(bounds.size.z);
+        filled = new SerializableBoolRow[width];
+
+        for (int x = 0; x < width; x++)
+        {
+            filled[x] = new SerializableBoolRow(depth);
+        }
+
+        var physicsScene = gameObject.scene.GetPhysicsScene();
+        var tmp = new Collider[1];
+        for (int x = 0; x < width; x++) {
+            for (int z = 0; z < depth; z++) {
+
+                Vector3 localCellPos = new Vector3(min.x + x + 0.5f, bounds.center.y, min.z + z + 0.5f);
+
+                Vector3 boxCenter = transform.TransformPoint(localCellPos);
+                Vector3 bocHalfExtents = new Vector3(0.25f, bounds.size.y / 2, 0.25f);
+                
+                int hits = physicsScene.OverlapBox(boxCenter, bocHalfExtents, tmp, Quaternion.identity, roomCollidersMask, QueryTriggerInteraction.UseGlobal);
+
+                if (hits > 0)
+                {
+                    filled[x].row[z] = true;
+                }
+                else
+                {
+                    filled[x].row[z] = false;
+                }
+            }
+        }
+    }
+
+    void SetDefaultMaskIfEmpty()
+    {
+        if (roomCollidersMask.value != 0) return;
+
+        int m = 0;
+        m |= LayerMask.GetMask("Default");   
+        roomCollidersMask = m;
+    }
 
 
     [ContextMenu("Calculate Bounds From Floor")]
@@ -401,12 +375,12 @@ public class RuntimeConnectionState
 }
 
 [System.Serializable]
-public class FootprintRow //this has to be a jagged for unity to save a 2d array (need to use jagged array)
+public class SerializableBoolRow
 {
-    public bool[] cells;
-
-    public FootprintRow(int width)
+    public bool[] row;
+    public SerializableBoolRow(int size)
     {
-        cells = new bool[width];
+        row = new bool[size];
     }
+    public SerializableBoolRow() { }
 }

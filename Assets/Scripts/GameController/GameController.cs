@@ -21,6 +21,8 @@ public class GameController : MonoBehaviour
 
     public BasicSpawner networkingController;
 
+   
+
     public LevelGenerator levelGenerator;
     public LevelNetworkController levelNetworkController;
 

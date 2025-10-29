@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using UnityEngine.InputSystem;
+using Unity.VisualScripting;
 public class RuneUI : MonoBehaviour
 {
     public NodeInstanceData InstanceData { get; private set; }
@@ -234,10 +235,12 @@ public class RuneUI : MonoBehaviour
 
         var controller = SpellGraphController.Instance;
         float angleRad = angle * Mathf.Deg2Rad;
+        Transform planeT = controller.transform;
 
+        Vector3 planeLocalOffset = controller.socketOrbitRadius * new Vector3(Mathf.Cos(angleRad), 0, Mathf.Sin(angleRad));
 
         //Transform editorPlane = controller.editorCamera.transform;
-
+        
 
         //float angleRad = angle * Mathf.Deg2Rad;
 
