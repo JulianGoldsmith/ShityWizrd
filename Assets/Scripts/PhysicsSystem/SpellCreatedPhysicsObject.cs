@@ -1,4 +1,3 @@
-
 using Fusion;
 using UnityEngine;
 using UnityEngine.Events;
@@ -41,6 +40,8 @@ public class SpellCreatedPhysicsObject : PhysicsObject
             Debug.LogError($"{this.Id} Tried to initialise SCPO with incorrect instance. found {node.InstanceGuid} but has {corresponding_node_instance_guid}");
             return;
         }
+
+        Runner.SetIsSimulated(Object, true);
 
         //Debug.Log($"{this.Id} initialising spawn as {node.InstanceGuid} {corresponding_node_instance_guid}");
 
@@ -137,7 +138,9 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     public override void FixedUpdateNetwork()
     {
         base.FixedUpdateNetwork();
-        
+
+        CheckIfMissedSpellUpdate();
+
         OnTickTriggerComponents();
 
         if (should_despawn_next_tick || lifetime_timer.Expired(Runner))
@@ -162,34 +165,34 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         return lifetime_timer.RemainingTime(Runner)??0;
     }
 
-    [Networked, OnChangedRender(nameof(OnTickClientCatchup))] public int tick { get; set; } //int that increments everytime a ticktrigger is called.
-    // (client will probably be one tick behind...)
+    //[Networked, OnChangedRender(nameof(OnTickClientCatchup))] public int tick { get; set; } //int that increments everytime a ticktrigger is called.
+    //// (client will probably be one tick behind...)
 
-    public void OnTickClientCatchup()
-    {
-        // Only run for clients.
-        // Pseudo tick tracker.
-        // This is surely incorrect, 
-        // since we'll run a load of missed 
-        // ticks altogether.
-        // Could just run one.
-        if (HasStateAuthority)
-            return;
+    //public void OnTickClientCatchup()
+    //{
+    //    // Only run for clients.
+    //    // Pseudo tick tracker.
+    //    // This is surely incorrect, 
+    //    // since we'll run a load of missed 
+    //    // ticks altogether.
+    //    // Could just run one.
+    //    if (HasStateAuthority)
+    //        return;
         
-        CheckIfMissedSpellUpdate();
+    //    CheckIfMissedSpellUpdate();
 
-        if (tick == Runner.Tick)
-            return;
+    //    if (tick == Runner.Tick)
+    //        return;
 
 
-        int tick_diff = Mathf.Max(0, Runner.Tick - tick);
-        OnTickTriggerComponents();
-    }
+    //    int tick_diff = Mathf.Max(0, Runner.Tick - tick);
+    //    OnTickTriggerComponents();
+    //}
     protected void OnTickTriggerComponents()
     {
         TickTriggers();
         TickBehaviours();
-        tick = Runner.Tick;
+        //tick = Runner.Tick;
     }
 
     void TickTriggers()

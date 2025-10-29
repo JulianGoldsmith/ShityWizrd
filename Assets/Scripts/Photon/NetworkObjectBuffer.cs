@@ -160,6 +160,8 @@ public class NetworkObjectBuffer : NetworkBehaviour
                 // on those where Get method was called
                 //Debug.Log($"setting active localinstance {i} {localInstance.name}");
                 localInstance.gameObject.SetActive(true);
+                // set is simulated to allow clientside predictions.
+                Runner.SetIsSimulated(localInstance, true);
             }
 
             _localBuffer[i] = networkInstance;
@@ -170,6 +172,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
                 // that the object is inactive on all clients (including proxies)
                 //Debug.Log($"setting active networkinstance {i} {networkInstance.name}");
                 networkInstance.gameObject.SetActive(false);
+                Runner.SetIsSimulated(networkInstance, false);
             }
 
             //var localName = localInstance != null ? localInstance.Id.ToString(): "null";
