@@ -25,13 +25,14 @@ public class NetworkedHandsController : NetworkBehaviour
 
         public Transform armatureTarget; //the posisiton of the hand in the animated armature
 
+        public Transform targetFORFinalArmature; //the target the finalArmature aims for
+
         public Transform shoulderTransform; //the shoulder
 
         public Transform palmTransform;
 
         public GameObject visableHandObject;
         [HideInInspector] public SkinnedMeshRenderer handRenderer;
-
 
         public Vector3 localVelocity;
         public Quaternion localAngularVelocity;
@@ -80,6 +81,8 @@ public class NetworkedHandsController : NetworkBehaviour
         [HideInInspector] public bool isLeft;
 
         public bool enabled = true;
+
+        [HideInInspector] public bool shouldUpdateInLateUpdate = true;
     }
 
     [SerializeField] public NetHand leftHand, rightHand;
@@ -139,30 +142,37 @@ public class NetworkedHandsController : NetworkBehaviour
         charMeshRenderer = characterController.modelRenderer;
         activeMeshState = ActiveMeshState.FULLBODY;
         //SetHandModelMaterial(charMeshRenderer.material);
+        //Runner.SetIsSimulated(leftHand.transformNet.transform.GetComponent<NetworkObject>(), true);
+        //Runner.SetIsSimulated(rightHand.transformNet.transform.GetComponent<NetworkObject>(), true);
     }
 
-    public void LateUpdate() //think of this as local 
+    public void LateUpdate() //think of this as local player with input authority. 
     {
         if (!isInitilized) return;
-        if (!hasInputAuthority) return;
+      
 
-        CalculateHandTarget(leftHand, true);
-        CalculateHandTarget(rightHand, true);
-
-        ApplyHandPhysics(leftHand, leftHand.transformLocal, out Quaternion newRotLLocal, out Vector3 newPosLLocal, false);
-        ApplyHandPhysics(rightHand, rightHand.transformLocal, out Quaternion newRotRLocal, out Vector3 newPosRLocal, false);
-
-        newPosLLocal = (LeftHandMode != TargetingMode.PICKUP && LeftHandMode != TargetingMode.DRAGG) ? CalculatPosInArmConstraint(leftHand, newPosLLocal) : newPosLLocal;
-        newPosRLocal = (RightHandMode != TargetingMode.PICKUP && RightHandMode != TargetingMode.DRAGG) ? CalculatPosInArmConstraint(rightHand, newPosRLocal) : newPosRLocal;
-
-        leftHand.transformLocal.transform.position = newPosLLocal;
-        rightHand.transformLocal.transform.position = newPosRLocal;
-        leftHand.transformLocal.transform.rotation = newRotLLocal;
-        rightHand.transformLocal.transform.rotation = newRotRLocal;
+        if (rightHand.shouldUpdateInLateUpdate)
+        {
+            CalculateHandTarget(rightHand, true);
+            ApplyHandPhysics(rightHand, rightHand.transformLocal, out Quaternion newRotRLocal, out Vector3 newPosRLocal, false);
+            newPosRLocal = (RightHandMode != TargetingMode.PICKUP && RightHandMode != TargetingMode.DRAGG) ? CalculatPosInArmConstraint(rightHand, newPosRLocal) : newPosRLocal;
+            rightHand.transformLocal.transform.position = newPosRLocal;
+            rightHand.transformLocal.transform.rotation = newRotRLocal;
+        }
+        if (leftHand.shouldUpdateInLateUpdate)
+        {
+            CalculateHandTarget(leftHand, true);
+            ApplyHandPhysics(leftHand, leftHand.transformLocal, out Quaternion newRotLLocal, out Vector3 newPosLLocal, false);
+            newPosLLocal = (LeftHandMode != TargetingMode.PICKUP && LeftHandMode != TargetingMode.DRAGG) ? CalculatPosInArmConstraint(leftHand, newPosLLocal) : newPosLLocal;
+            leftHand.transformLocal.transform.position = newPosLLocal;
+            leftHand.transformLocal.transform.rotation = newRotLLocal;
+        }
+       
     }
 
     public override void FixedUpdateNetwork() //think of this as networked 
     {
+        if (IsProxy) return;
         if (!isInitilized) return;
         if (GetInput(out NetworkInputData data) && HasStateAuthority)
         {
@@ -171,26 +181,23 @@ public class NetworkedHandsController : NetworkBehaviour
             if (DragDistance < -0.85f) DragDistance = -0.85f;
         }
 
-        //ValidateHandTarget(leftHand);
-        //ValidateHandTarget(rightHand);
-
+        
         CalculateHandTarget(leftHand, false);
-        CalculateHandTarget(rightHand, false);  //networkd and local are the same
-
-        //Networked hand update
-        ApplyHandPhysics(leftHand, leftHand.transformNet,  out Quaternion newRotLNet, out Vector3 newPosLNet, true);
-        ApplyHandPhysics(rightHand, rightHand.transformNet, out Quaternion newRotRNet, out Vector3 newPosRNet, true);
-
-        newPosLNet = (LeftHandMode != TargetingMode.PICKUP && LeftHandMode != TargetingMode.DRAGG) ? CalculatPosInArmConstraint(leftHand, newPosLNet): newPosLNet;
-        newPosRNet= (RightHandMode != TargetingMode.PICKUP && RightHandMode != TargetingMode.DRAGG) ? CalculatPosInArmConstraint(rightHand, newPosRNet): newPosRNet;
-
+        ApplyHandPhysics(leftHand, leftHand.transformNet, out Quaternion newRotLNet, out Vector3 newPosLNet, true);
+        newPosLNet = (LeftHandMode != TargetingMode.PICKUP && LeftHandMode != TargetingMode.DRAGG) ? CalculatPosInArmConstraint(leftHand, newPosLNet) : newPosLNet;
         leftHand.transformNet.transform.position = newPosLNet;
-        rightHand.transformNet.transform.position = newPosRNet; 
         leftHand.transformNet.transform.rotation = newRotLNet;
-        rightHand.transformNet.transform.rotation = newRotRNet;
+        
 
-        //Local hand physics
-    } //only on the client with input auth or host 
+       
+        CalculateHandTarget(rightHand, false);  //networkd and local are the same
+        ApplyHandPhysics(rightHand, rightHand.transformNet, out Quaternion newRotRNet, out Vector3 newPosRNet, true);
+        newPosRNet = (RightHandMode != TargetingMode.PICKUP && RightHandMode != TargetingMode.DRAGG) ? CalculatPosInArmConstraint(rightHand, newPosRNet) : newPosRNet;
+        rightHand.transformNet.transform.position = newPosRNet;
+        rightHand.transformNet.transform.rotation = newRotRNet;
+        
+
+    }
 
     public override void Render()
     {
@@ -300,7 +307,6 @@ public class NetworkedHandsController : NetworkBehaviour
                 {
                     target = equipable.primaryHandle;
                 }
-
                 Vector3 pivotToPalmOffset = hand.transformNet.transform.position - hand.palmTransform.position;
                 targetPos = target.position + pivotToPalmOffset;
                 targetRot = target.rotation;
@@ -403,7 +409,7 @@ public class NetworkedHandsController : NetworkBehaviour
             Vector3 proportionalForce = positionError * pickUpSpringStrength * distanceMultiplier;
 
             Vector3 derivativeForce = -(handObject.velocity) * pickUpDamp;
-            handObject.velocity += (proportionalForce + derivativeForce + inertialForce) * dt;
+            handObject.velocity += (proportionalForce + derivativeForce /*+ inertialForce*/) * dt;
         }
         else 
         {
@@ -411,7 +417,7 @@ public class NetworkedHandsController : NetworkBehaviour
             Vector3 proportionalForce = positionError * state.positionSpringStrength * distanceMultiplier;
 
             Vector3 derivativeForce = -(handObject.velocity - playerVelocity) * state.positionSpringDamper;
-            handObject.velocity += (proportionalForce + derivativeForce + inertialForce) * dt;
+            handObject.velocity += (proportionalForce + derivativeForce /*+ inertialForce*/) * dt;
         }
 
 
@@ -631,32 +637,57 @@ public class NetworkedHandsController : NetworkBehaviour
 
     private void SwitchToLocalOrNetHands(NetHand hand, TargetingMode tgMode, bool localPlayer, bool isServer)
     {
-        if (!localPlayer)
+        //if (!localPlayer)
+        //{
+        //    hand.visableHandObject.transform.parent = hand.transformNet.transform;
+        //}
+        //else
+        //{
+        switch (tgMode)
         {
-            hand.visableHandObject.transform.parent = hand.transformNet.transform;
-        }
-        else
-        {
-            switch (tgMode)
-            {
-                case (TargetingMode.PICKUP):
+            case (TargetingMode.PICKUP): //proxys and IA should follow transformNet in RemoteTime, SA should simulate --done
+                hand.visableHandObject.transform.parent = hand.transformNet.transform;
+                hand.visableHandObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, -90, -90));
+                hand.targetFORFinalArmature.transform.parent = hand.transformNet.transform;
+                hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
+                hand.shouldUpdateInLateUpdate = false;
+                SwitchNetHandToRemoteTimeFrame(hand, true);
+                break;
+            case TargetingMode.HOLD:
+            case TargetingMode.ARMATURE: //both Proxys, IA and SA should use local -- done
+                hand.visableHandObject.transform.parent = hand.transformLocal.transform;
+                hand.visableHandObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, -90, -90));
+                hand.targetFORFinalArmature.transform.parent = hand.transformLocal.transform;
+                hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
+                hand.shouldUpdateInLateUpdate = true;
+                SwitchNetHandToRemoteTimeFrame(hand, false);
+                break;
+            case (TargetingMode.DRAGG): //Proxys should evetually simulate but for now should follow transformNet in RemoteTime, SA should simulate, IA should simulate local
+                if (Object.HasStateAuthority) //covers for IA and SA together - use local 
+                {
+                    hand.visableHandObject.transform.parent = hand.transformLocal.transform;
+                    hand.targetFORFinalArmature.transform.parent = hand.transformLocal.transform;
+                    hand.shouldUpdateInLateUpdate = true;
+                }
+                else if (Object.HasInputAuthority) //Non SA but IA
+                {
+                    hand.visableHandObject.transform.parent = hand.transformLocal.transform;
+                    hand.targetFORFinalArmature.transform.parent = hand.transformLocal.transform;
+                    hand.shouldUpdateInLateUpdate = true;
+                }
+                else //proxy
+                {
                     hand.visableHandObject.transform.parent = hand.transformNet.transform;
-                    hand.visableHandObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, -90, -90));
-                    SwitchNetHandToRemoteTimeFrame(hand, true);
-                    break;
-                case TargetingMode.HOLD:
-                case TargetingMode.ARMATURE:
-                    hand.visableHandObject.transform.parent = hand.transformLocal.transform;
-                    hand.visableHandObject.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, -90, -90));
-                    SwitchNetHandToRemoteTimeFrame(hand, false);
-                    break;
-                case (TargetingMode.DRAGG):
-                    hand.visableHandObject.transform.parent = hand.transformLocal.transform;
-                    hand.visableHandObject.transform.SetLocalPositionAndRotation(dragHandModelPosOffset, Quaternion.Euler(0, -90, -90));
-                    SwitchNetHandToRemoteTimeFrame(hand, false);
-                    break;
-            }
+                    hand.targetFORFinalArmature.transform.parent = hand.transformNet.transform;
+                    hand.shouldUpdateInLateUpdate = false;
+                }
+                hand.visableHandObject.transform.SetLocalPositionAndRotation(dragHandModelPosOffset, Quaternion.Euler(0, -90, -90));
+                hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
+
+                //SwitchNetHandToRemoteTimeFrame(hand, false);
+                break;
         }
+        //}
         //this is an offset for the model
 
     }

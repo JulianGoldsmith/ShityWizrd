@@ -35,8 +35,10 @@ public class NPCController : NetworkBehaviour
     [Header("PD armature")]
     public List<PDSpring> pDSprings = new List<PDSpring>();
 
+    public List<NetworkRigidbody3D> rbComponents = new List<NetworkRigidbody3D>();
+
     [Header("Animation")]
-    public Animator targetAnimator, finalAnimator;
+    public Animator targetAnimator;// finalAnimator;
     public Vector3 hipsOffset;
 
 
@@ -45,8 +47,28 @@ public class NPCController : NetworkBehaviour
     [Networked] public NetworkBool NetworkedWantsToSprint { get; set; }
     [Networked] public NetworkBool NetworkedWantsToJump { get; set; }
 
+    public override void Spawned()
+    {
+        for (int i = 0; i < pDSprings.Count; i++)
+        {
+            var spring = pDSprings[i];
+            spring.Init(coreRB.transform, HasInputAuthority);
+        }
+
+        Runner.SetIsSimulated(this.Object, true);
+        foreach (NetworkRigidbody3D nrb in rbComponents)
+        {
+            Runner.SetIsSimulated(nrb.Object, true);
+        }
+    }
+
     public override void FixedUpdateNetwork()
     {
+        //if(!HasInputAuthority && !HasStateAuthority)
+        //{
+        //    Debug.Log("This is running on a proxy");
+        //}
+
         if (coreRB == null) return;
 
         ApplyCoreSuspention();
@@ -68,11 +90,13 @@ public class NPCController : NetworkBehaviour
     private void ApplyCoreSuspention()
     {
 
-        if (Physics.SphereCast(coreRB.position, suspensionCastRadius, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer, QueryTriggerInteraction.Ignore))
+        if (Physics.SphereCast(coreRB.position + Vector3.up*0.2f, suspensionCastRadius, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
 
-            float compression = rideHeight - hit.distance;
+
+
+            float compression = rideHeight - (coreRB.transform.position - hit.point).magnitude;
 
             float springForce = rideSpringStrength * compression;
 
@@ -92,18 +116,19 @@ public class NPCController : NetworkBehaviour
 
     private void ApplyUprightStabilization()
     {
+        
+            Quaternion targetUpRotation = Quaternion.FromToRotation(coreRB.transform.up, Vector3.up);
 
-        Quaternion targetUpRotation = Quaternion.FromToRotation(coreRB.transform.up, Vector3.up);
+            targetUpRotation.ToAngleAxis(out float angle, out Vector3 axis);
 
-        targetUpRotation.ToAngleAxis(out float angle, out Vector3 axis);
+            if (angle > 180f) angle -= 360f;
 
-        if (angle > 180f) angle -= 360f;
+            Vector3 springTorque = axis.normalized * (angle * Mathf.Deg2Rad * (IsGrounded ?uprightSpringStrength: uprightSpringStrength/4f));
 
-        Vector3 springTorque = axis.normalized * (angle * Mathf.Deg2Rad * uprightSpringStrength);
+            Vector3 damperTorque = -coreRB.angularVelocity * uprightSpringDamper;
 
-        Vector3 damperTorque = -coreRB.angularVelocity * uprightSpringDamper;
-
-        coreRB.AddTorque(springTorque + damperTorque, ForceMode.Acceleration);
+            coreRB.AddTorque(springTorque + damperTorque, ForceMode.Acceleration);
+        
     }
 
 
@@ -147,10 +172,12 @@ public class NPCController : NetworkBehaviour
 
     private void UpdatePDDrives()
     {
+        float dt = Mathf.Max((float)Runner.DeltaTime, 1e-4f);
         for (int i = 0; i < pDSprings.Count; i++)
         {
             var springs = pDSprings[i];
-            springs.UpdateBoneDrive();
+            springs.UpdateBoneDrive(dt,1f / 64f, null);
+            //Debug.Log($"UpdatingBoneDrive {i}");
         }
     }
 
@@ -163,7 +190,7 @@ public class NPCController : NetworkBehaviour
 
         targetAnimator.gameObject.transform.position = targetPos;
         targetAnimator.gameObject.transform.rotation = targetRot;
-        finalAnimator.gameObject.transform.position = targetPos;
-        finalAnimator.gameObject.transform.rotation = targetRot;
+        //finalAnimator.gameObject.transform.position = targetPos;
+        //finalAnimator.gameObject.transform.rotation = targetRot;
     }
 }

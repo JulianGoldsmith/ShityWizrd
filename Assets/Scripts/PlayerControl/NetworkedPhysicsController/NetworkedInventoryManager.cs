@@ -26,7 +26,6 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
     [Networked] public NetworkObject currentItemInHand { get; set; }
     [Networked] public NetworkObject potentialItemToPickup { get; set; }
-
     [Networked] public Vector3 localHandPosOnItem { get; set; }
 
     Quaternion lookRotation;
@@ -37,6 +36,9 @@ public class NetworkedInventoryManager : NetworkBehaviour
     [Networked] public int DropPressCount { get; set; }
     int lastDropCount;
     [Networked] NetworkButtons Prior_buttons { get; set; }
+
+    [Networked] public Vector3 _dragTargetPos { get; set; }
+    [Networked] public Vector3 _dragFacingDir { get; set; }
 
     public void Start()
     {
@@ -64,8 +66,12 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (Object.IsProxy) return; //this will run on all due to Simulate in HCC so exclude proxys
         if (GetInput(out NetworkInputData data))
         {
+            _dragTargetPos = data.dragTargetPos;
+            _dragFacingDir = data.dragFacingDir;
+
             lookRotation = data.lookRotation;
 
             if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP)  )
@@ -103,7 +109,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
        
 
-        if ((true))
+        if (!Object.IsProxy)
         {
             if (PickUpPressCount > lastPickUpCount)
             {
@@ -139,11 +145,6 @@ public class NetworkedInventoryManager : NetworkBehaviour
             }
         }
     }
-
-    //public void FixedUpdate()
-    //{
-        
-    //}
 
     private void OnDrawGizmos()
     {
@@ -240,7 +241,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>()); //meat and potatoes 
     }
 
-    private void DropItem() //only runs on state authority
+    private void DropItem() 
     {
         if (currentItemInHand == null) return;
 
@@ -256,17 +257,5 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
     }
 
-    
 
-    //public void SetNewHoldingPlayer()
-    //{
-    //    currentItemInHand.HoldingPlayer = this.GetComponent<NetworkObject>();
-    //    currentItemInHand.HolderChangedCount++;
-    //}
-
-    //public void ClearItemHeldByPlayer()
-    //{
-    //    currentItemInHand.HoldingPlayer = null;
-    //    currentItemInHand.HolderChangedCount++;
-    //}
 }
