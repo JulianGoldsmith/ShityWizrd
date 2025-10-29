@@ -21,7 +21,7 @@ public class GameController : MonoBehaviour
 
     public BasicSpawner networkingController;
 
-    public SpellGraphController spellGraphController;
+   
 
     public LevelGenerator levelGenerator;
     public LevelNetworkController levelNetworkController;
