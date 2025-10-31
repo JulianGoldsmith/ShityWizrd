@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem; 
 using static HybridCharacterController;
 
-public class NPCController : NetworkBehaviour
+public class NPCActiveRagdollController : NetworkBehaviour
 {
     [Header("Components")]
     public Rigidbody coreRB;
@@ -53,10 +53,13 @@ public class NPCController : NetworkBehaviour
     // --- BT INTERFACE ---
     [Networked] public bool NetworkedWantsToSprint { get; set; }
     [Networked] public bool NetworkedWantsToJump { get; set; }
-    [Networked] public Vector3 lookDir { get; set; }
-    [Networked] public Quaternion lookRot { get; set; }
-    [HideInInspector][Networked] public Vector2 moveInput { get; set; }
+    //[Networked] public Vector3 lookDir { get; set; }
+    //[Networked] public Quaternion lookRot { get; set; }
+    //[Networked] public Vector2 moveInput { get; set; }
     [HideInInspector][Networked] public NetworkButtons _lastButtonsInput { get; set; }
+
+    [HideInInspector][Networked] public Vector3 NetworkedLookVector { get; set; }
+    [HideInInspector][Networked] public Vector3 NetworkedMoveVector { get; set; }
 
     public override void Spawned()
     {
@@ -87,37 +90,37 @@ public class NPCController : NetworkBehaviour
         //    Debug.Log("This is running on a proxy");
         //}
 
-        if (HasStateAuthority)
-        {
-            Vector2 input = Vector2.zero;
-            if (Keyboard.current.upArrowKey.isPressed)
-            {
-                input += Vector2.up;
-            }
-            if (Keyboard.current.downArrowKey.isPressed)
-            {
-                input += Vector2.down;
-            }
-            if (Keyboard.current.rightArrowKey.isPressed)
-            {
-                input += Vector2.right;
-            }
-            if (Keyboard.current.leftArrowKey.isPressed)
-            {
-                input += Vector2.left;
-            }
-            moveInput = input ;
+        //if (HasStateAuthority)
+        //{
+        //    Vector2 input = Vector2.zero;
+        //    if (Keyboard.current.upArrowKey.isPressed)
+        //    {
+        //        input += Vector2.up;
+        //    }
+        //    if (Keyboard.current.downArrowKey.isPressed)
+        //    {
+        //        input += Vector2.down;
+        //    }
+        //    if (Keyboard.current.rightArrowKey.isPressed)
+        //    {
+        //        input += Vector2.right;
+        //    }
+        //    if (Keyboard.current.leftArrowKey.isPressed)
+        //    {
+        //        input += Vector2.left;
+        //    }
+        //    moveInput = input ;
 
-            if (Keyboard.current.pKey.isPressed)
-            {
-                lookRot *= Quaternion.Euler(0f,10f,0f);
-            }
-            if (Keyboard.current.iKey.isPressed)
-            {
-                lookRot *= Quaternion.Euler(0f, -10f, 0f);
-            }
-            lookDir = lookRot * Vector3.forward;
-        }
+        //    if (Keyboard.current.pKey.isPressed)
+        //    {
+        //        lookRot *= Quaternion.Euler(0f,10f,0f);
+        //    }
+        //    if (Keyboard.current.iKey.isPressed)
+        //    {
+        //        lookRot *= Quaternion.Euler(0f, -10f, 0f);
+        //    }
+        //    lookDir = lookRot * Vector3.forward;
+        //}
 
         animStateController.SimulateAnimation();
 
@@ -196,7 +199,7 @@ public class NPCController : NetworkBehaviour
         }
 
 
-        Vector3 flatLook = Vector3.ProjectOnPlane(lookDir, Vector3.up);
+        Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
         if (flatLook.sqrMagnitude < 1e-6f)
         {
             flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
@@ -249,35 +252,35 @@ public class NPCController : NetworkBehaviour
 
         float targetSpeed = NetworkedWantsToSprint ? maxSprintSpeed : maxWalkSpeed;
 
-        Vector3 fwd;
-        if (lookRot != Quaternion.identity)
-        {
-            fwd = Vector3.ProjectOnPlane(lookRot * Vector3.forward, Vector3.up);
-        }
-        else
-        {
-            fwd = Vector3.ProjectOnPlane(lookDir, Vector3.up);
-        }
+        //Vector3 fwd;
+        //if (lookRot != Quaternion.identity)
+        //{
+        //    fwd = Vector3.ProjectOnPlane(lookRot * Vector3.forward, Vector3.up);
+        //}
+        //else
+        //{
+        //    fwd = Vector3.ProjectOnPlane(lookDir, Vector3.up);
+        //}
 
-        if (fwd.sqrMagnitude < 1e-6f)
-        {
-            fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
-        }
-        fwd.Normalize();
+        //if (fwd.sqrMagnitude < 1e-6f)
+        //{
+        //    fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        //}
+        //fwd.Normalize();
 
-        Vector3 right = Vector3.Cross(Vector3.up, fwd);
+        //Vector3 right = Vector3.Cross(Vector3.up, fwd);
 
-        Vector2 input = moveInput;
-        if (input.sqrMagnitude > 1f)
-            input.Normalize(); 
+        //Vector2 input = moveInput;
+        //if (input.sqrMagnitude > 1f)
+        //    input.Normalize(); 
 
-        Vector3 targetVelocity = (right * input.x + fwd * input.y) * targetSpeed;
+        Vector3 targetVelocity = NetworkedMoveVector * targetSpeed;
 
         Vector3 currentHorizontalVelocity = new Vector3(coreRB.linearVelocity.x, 0, coreRB.linearVelocity.z);
         Vector3 velocityError = targetVelocity - currentHorizontalVelocity;
 
         Vector3 force;
-        if (input.magnitude > 0.01f)
+        if (NetworkedMoveVector.magnitude > 0.01f)
             force = velocityError * acceleration;
         else
             force = velocityError * braking;
@@ -305,7 +308,7 @@ public class NPCController : NetworkBehaviour
         Vector3 vel = coreRB.linearVelocity;
         vel.y = 0f;
 
-        Vector3 fwd = Vector3.ProjectOnPlane(lookDir, Vector3.up);
+        Vector3 fwd = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
         if (fwd.sqrMagnitude < 1e-6f)
         {
             fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
@@ -347,5 +350,24 @@ public class NPCController : NetworkBehaviour
 
         Debug.Log("Baked PD anchors from each bone's targetTransform remember to save");
 
+    }
+
+    public void SetLookDir(Vector3 worldDirection)
+    {
+        if (!HasStateAuthority) return;
+        if (Object.isActiveAndEnabled)
+        {
+            worldDirection.y = 0;
+            NetworkedLookVector = worldDirection.normalized;
+        }
+    }
+    public void SetMoveInput(Vector3 input) //place for the AI to set input
+    {
+        if (!HasStateAuthority) return;
+        if (Object.isActiveAndEnabled)
+        {
+            NetworkedMoveVector = input;
+            
+        }
     }
 }

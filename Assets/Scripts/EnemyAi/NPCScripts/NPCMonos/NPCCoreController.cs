@@ -1,8 +1,12 @@
+using Unity.Behavior;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class NPCCoreController : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public Blackboard blackboard;
+
+
     void Start()
     {
         

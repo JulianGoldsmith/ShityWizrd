@@ -397,69 +397,115 @@ MonoBehaviour:
   - sourceBone: {fileID: 7265867803234363795}
     targetBone: {fileID: 3505666986225127640}
     physicsProxy: {fileID: 6095370504088226660}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4083591847271118633}
     targetBone: {fileID: 7843292459571252834}
     physicsProxy: {fileID: 2341068911128189223}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 1187340231799751356}
     targetBone: {fileID: 4902566698194598903}
     physicsProxy: {fileID: 8868192015161409186}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 3696391024804034926}
     targetBone: {fileID: 7439689041032429605}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 8415271885267175877}
     targetBone: {fileID: 2358233604738691214}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 5944042342353998728}
     targetBone: {fileID: 436381656591116995}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 7914802486039308546}
     targetBone: {fileID: 4153492193010012233}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4038993424363501526}
     targetBone: {fileID: 7817772689412263581}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 7706681176612930193}
     targetBone: {fileID: 4503754088542649306}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 2679284799887068442}
     targetBone: {fileID: 8168850904454755409}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 2792396951941333477}
     targetBone: {fileID: 8265156389918275758}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 7562348159186062318}
     targetBone: {fileID: 4360036793335509669}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 5041715143219515648}
     targetBone: {fileID: 1262389966348396619}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 8592673932727455709}
     targetBone: {fileID: 2543516345878886038}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 776013598562669101}
     targetBone: {fileID: 6825162939000646502}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 3754355022439460327}
     targetBone: {fileID: 6947096861925512364}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 9133604069958753453}
     targetBone: {fileID: 3076584494003398118}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 5868853158717966609}
     targetBone: {fileID: 360700372784279642}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4207784833239654250}
     targetBone: {fileID: 7932567146683344417}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 860276639177380766}
     targetBone: {fileID: 6882481828700367573}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4255965344415215836}
     targetBone: {fileID: 8026281118645209495}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4855376250944513833}
     targetBone: {fileID: 1662654202730667618}
     physicsProxy: {fileID: 0}
+    enabled: 1
+    injectAnimatedHipsRootMotion: 0
+  animatedHipRootMotion: {x: 0, y: 0, z: 0}
+  animatedHipRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &635060877302287510
 GameObject:
   m_ObjectHideFlags: 0
@@ -1698,6 +1744,11 @@ GameObject:
   - component: {fileID: 2949232162196738072}
   - component: {fileID: 8126967731741084364}
   - component: {fileID: 764547303363181115}
+  - component: {fileID: 6718825358511771310}
+  - component: {fileID: 232658919603037716}
+  - component: {fileID: 3265330234082672118}
+  - component: {fileID: 1585689525517121370}
+  - component: {fileID: 1761915926518654609}
   m_Layer: 0
   m_Name: TestingNPC 1
   m_TagString: Untagged
@@ -1777,20 +1828,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coreRB: {fileID: 3872425383671569580}
-  groundCheckDistance: 0.5
+  extraGroundCheckDistance: 0.05
   groundLayer:
     serializedVersion: 2
     m_Bits: 262015
   suspensionCastRadius: 0.04
   _IsGrounded:
     _value: 0
-  rideHeight: 0.25
-  rideSpringStrength: 200
+  rideHeight: 0.15
+  rideSpringStrength: 500
   rideSpringDamper: 25
   uprightSpringStrength: 1000
   uprightSpringDamper: 10
-  maxWalkSpeed: 3
-  maxSprintSpeed: 5
+  maxWalkSpeed: 1.5
+  maxSprintSpeed: 3
   acceleration: 20
   braking: 15
   jumpForce: 50
@@ -1800,9 +1851,9 @@ MonoBehaviour:
   - childRigidbody: {fileID: 3802016166967499973}
     parentRigidbody: {fileID: 3872425383671569580}
     targetTransform: {fileID: 4083591847271118633}
-    proportionalGainRotation: 250
-    derivativeGainRotation: 20
-    applyEqualAndOppositeTorque: 1
+    proportionalGainRotation: 400
+    derivativeGainRotation: 40
+    applyEqualAndOppositeTorque: 0
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -1849,8 +1900,8 @@ MonoBehaviour:
   - childRigidbody: {fileID: 5311972928531932872}
     parentRigidbody: {fileID: 3802016166967499973}
     targetTransform: {fileID: 1187340231799751356}
-    proportionalGainRotation: 250
-    derivativeGainRotation: 20
+    proportionalGainRotation: 300
+    derivativeGainRotation: 40
     applyEqualAndOppositeTorque: 1
     rotationErrorCurve:
       serializedVersion: 2
@@ -1905,12 +1956,13 @@ MonoBehaviour:
   rootMotionForceStrength: 100
   useRootMotionXZ: 1
   useRootMotionY: 1
-  _NetworkedMoveDirection: {x: 0, y: 0, z: 0}
-  _NetworkedWantsToSprint:
-    _value: 0
-  _NetworkedWantsToJump:
-    _value: 0
-  lookDir: {x: 0, y: 0, z: -1}
+  _NetworkedWantsToSprint: 0
+  _NetworkedWantsToJump: 0
+  _lookDir: {x: 0, y: 0, z: -1}
+  _lookRot: {x: 0, y: 0, z: 0, w: 1}
+  _moveInput: {x: 0, y: 0}
+  _NetworkedLookVector: {x: 0, y: 0, z: 0}
+  _NetworkedMoveVector: {x: 0, y: 0, z: 0}
 --- !u!114 &764547303363181115
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1924,15 +1976,134 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _animator: {fileID: 455054832584376484}
-  _clips:
-  - {fileID: 2309300341071783715, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
-  - {fileID: -8119403950739411288, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+  _clipsConfig:
+  - Clip: {fileID: 2309300341071783715, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+    Speed: 1
+  - Clip: {fileID: -8119403950739411288, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+    Speed: 1
+  - Clip: {fileID: -8119403950739411288, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+    Speed: -1
+  - Clip: {fileID: -6344824580521597273, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+    Speed: 1
+  - Clip: {fileID: 2729161144076196762, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+    Speed: 1
   _tPoseClip: {fileID: -6257937421963181302, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+  _CurrentState: 0
   _blendSpeed: 5
+  _locomotionBlendSpeed: 10
   _ClipWeights: []
   _ClipTimes: []
   armatureRoot: {fileID: 7265867803234363795}
   zIsUp: 1
+--- !u!114 &6718825358511771310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4800428965064687594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0038c16c34866b4f9e25c9c0dc0f7e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Graph: {fileID: -2221796376738893910, guid: 3ae8be7466d444247a031810599277e3, type: 2}
+  m_BlackboardVariableOverridesList:
+  - rid: 711863005192388747
+  m_IsInitialised: 0
+  m_IsStarted: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 711863005192388747
+      type: {class: 'BlackboardVariable`1[[UnityEngine.GameObject, UnityEngine.CoreModule]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 1
+          m_Value1: 0
+        Name: Self
+        m_Value: {fileID: 4800428965064687594}
+--- !u!114 &232658919603037716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4800428965064687594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7606a1bce324bb04eba04ee820969f60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blackboard:
+    m_Variables: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &3265330234082672118
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4800428965064687594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aee99d1aa6fbc9458b393caef778e0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 6718825358511771310}
+  targetVariableName: Target
+  lastSeenPositionVariableName: TargetLastSeenPosition
+  perceptionRadius: 10
+  perceptionAngle: 180
+  targetTag: Player
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  eyeOffset: {x: 0, y: 0.5, z: 0}
+  root: {fileID: 2117861437352292569}
+--- !u!114 &1585689525517121370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4800428965064687594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47682a324db392444bd0c57a551427ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 1761915926518654609}
+  controller: {fileID: 8126967731741084364}
+  agentTransform: {fileID: 2117861437352292569}
+  previousFramePos: {x: 0, y: 0, z: 0}
+--- !u!195 &1761915926518654609
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4800428965064687594}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 1.5
+  m_Acceleration: 5
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &4836704107927610604
 GameObject:
   m_ObjectHideFlags: 0
