@@ -3112,10 +3112,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 130943
   _IsGrounded: 0
-  rideHeight: 0.45
+  rideHeight: 0.575
   rideSpringStrength: 100
   rideSpringDamper: 10
-  suspensionCastRadius: 0.25
+  suspensionCastRadius: 0.125
   maxWalkSpeed: 2.25
   maxSprintSpeed: 5
   acceleration: 100
@@ -4079,7 +4079,14 @@ MonoBehaviour:
   physicsMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
   hybridCharacterController: {fileID: 128414941927326041}
 --- !u!114 &5657703224164309585
 MonoBehaviour:
@@ -7204,7 +7211,6 @@ GameObject:
   - component: {fileID: 4507198948140969871}
   - component: {fileID: 144750110131715329}
   - component: {fileID: 1693913296455200963}
-  - component: {fileID: 1664583963499180931}
   - component: {fileID: 4002517532002111324}
   - component: {fileID: 1842752650210984842}
   - component: {fileID: 5601804229651006720}
@@ -7279,18 +7285,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 3
---- !u!114 &1664583963499180931
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5403321681299376718}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2cae3bbf1e028cf4d95692228fdfd2cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &4002517532002111324
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9995,6 +9989,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &6798704243941166079
 GameObject:
   m_ObjectHideFlags: 0
@@ -11001,7 +10997,6 @@ GameObject:
   - component: {fileID: 4531679220938821969}
   - component: {fileID: 824516292893634586}
   - component: {fileID: 981975635624684575}
-  - component: {fileID: 8984643853009045989}
   - component: {fileID: 7391067917954381399}
   - component: {fileID: 122229024194474645}
   - component: {fileID: 1473905486372132780}
@@ -11078,18 +11073,6 @@ CapsuleCollider:
   m_Height: 0.341
   m_Direction: 1
   m_Center: {x: 0, y: 0.172, z: 0}
---- !u!114 &8984643853009045989
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7586118816932540870}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2cae3bbf1e028cf4d95692228fdfd2cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &7391067917954381399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11462,7 +11445,6 @@ GameObject:
   - component: {fileID: 8942136300960838391}
   - component: {fileID: 1047614579165276818}
   - component: {fileID: 9134443505295996957}
-  - component: {fileID: 197112935209995732}
   m_Layer: 19
   m_Name: Hips
   m_TagString: Untagged
@@ -11593,18 +11575,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   parent_physics_object: {fileID: 4335043335488323067}
   rb: {fileID: 4907360237725692496}
---- !u!114 &197112935209995732
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7843227188086243385}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2cae3bbf1e028cf4d95692228fdfd2cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &7847136012613103885
 GameObject:
   m_ObjectHideFlags: 0
@@ -11717,6 +11687,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &7953665787674280051
 GameObject:
   m_ObjectHideFlags: 0
@@ -12260,7 +12232,7 @@ GameObject:
   - component: {fileID: 8084849087926834910}
   - component: {fileID: 5779424638477167351}
   - component: {fileID: 8030785833811627516}
-  - component: {fileID: 5653665203601392743}
+  - component: {fileID: 7799645253381473064}
   m_Layer: 0
   m_Name: VisualArmature
   m_TagString: Untagged
@@ -12415,7 +12387,7 @@ MonoBehaviour:
   - {fileID: 3755064222263953660}
   - {fileID: 3501596545315967174}
   - {fileID: 2748151564127476843}
---- !u!114 &5653665203601392743
+--- !u!114 &7799645253381473064
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -13195,6 +13167,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &8936888206712598793
 GameObject:
   m_ObjectHideFlags: 0

@@ -2,6 +2,7 @@ using Fusion;
 using Fusion.Addons.Physics;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem; 
 using static HybridCharacterController;
 
@@ -11,7 +12,7 @@ public class NPCController : NetworkBehaviour
     public Rigidbody coreRB;
  
     [Header("Grounded Settings")]
-    public float groundCheckDistance = 1.0f;
+    public float extraGroundCheckDistance = 1.0f;
     public LayerMask groundLayer;
     public float suspensionCastRadius = 0.25f;
     [Networked] public NetworkBool IsGrounded { get; set; }
@@ -45,14 +46,17 @@ public class NPCController : NetworkBehaviour
     public AnimationStateController animStateController;
     public Vector3 hipsOffset;
 
-    private Vector3 _prevRootMotionPos;
+  
     public float rootMotionForceStrength = 5.0f;
-
+    public bool useRootMotionXZ = true, useRootMotionY = true;
 
     // --- BT INTERFACE ---
-    [Networked] public Vector3 NetworkedMoveDirection { get; set; }
-    [Networked] public NetworkBool NetworkedWantsToSprint { get; set; }
-    [Networked] public NetworkBool NetworkedWantsToJump { get; set; }
+    [Networked] public bool NetworkedWantsToSprint { get; set; }
+    [Networked] public bool NetworkedWantsToJump { get; set; }
+    [Networked] public Vector3 lookDir { get; set; }
+    [Networked] public Quaternion lookRot { get; set; }
+    [HideInInspector][Networked] public Vector2 moveInput { get; set; }
+    [HideInInspector][Networked] public NetworkButtons _lastButtonsInput { get; set; }
 
     public override void Spawned()
     {
@@ -69,10 +73,10 @@ public class NPCController : NetworkBehaviour
         }
         animStateController = GetComponent<AnimationStateController>();
 
+
         if (animStateController != null && targetAnimator != null)
         {
             animStateController.SimulateAnimation();
-            _prevRootMotionPos = targetAnimator.rootPosition;
         }
     }
 
@@ -83,33 +87,39 @@ public class NPCController : NetworkBehaviour
         //    Debug.Log("This is running on a proxy");
         //}
 
-        if (coreRB == null) return;
-
         if (HasStateAuthority)
         {
             Vector2 input = Vector2.zero;
+            if (Keyboard.current.upArrowKey.isPressed)
+            {
+                input += Vector2.up;
+            }
+            if (Keyboard.current.downArrowKey.isPressed)
+            {
+                input += Vector2.down;
+            }
+            if (Keyboard.current.rightArrowKey.isPressed)
+            {
+                input += Vector2.right;
+            }
+            if (Keyboard.current.leftArrowKey.isPressed)
+            {
+                input += Vector2.left;
+            }
+            moveInput = input ;
+
+            if (Keyboard.current.pKey.isPressed)
+            {
+                lookRot *= Quaternion.Euler(0f,10f,0f);
+            }
             if (Keyboard.current.iKey.isPressed)
             {
-                input= Vector2.up;
+                lookRot *= Quaternion.Euler(0f, -10f, 0f);
             }
-            if (Keyboard.current.kKey.isPressed)
-            {
-                input = Vector2.down;
-            }
-            if (Keyboard.current.jKey.isPressed)
-            {
-                input = Vector2.right;
-            }
-            if (Keyboard.current.lKey.isPressed)
-            {
-                input = Vector2.left;
-            }
-            animStateController.SetTargetMovement(input);
+            lookDir = lookRot * Vector3.forward;
         }
 
         animStateController.SimulateAnimation();
-
-        Vector3 rootMotionVelocity = GetRootMotionVelocity();
 
         ApplyCoreSuspention();
 
@@ -117,7 +127,7 @@ public class NPCController : NetworkBehaviour
 
         UpdateCoreMovement();
 
-        ApplyRootMotionForce(rootMotionVelocity);
+        //ApplyRootMotionForce();
 
         UpdatePDDrives();
     }
@@ -125,22 +135,6 @@ public class NPCController : NetworkBehaviour
     public override void Render()
     {
         UpdateAnimators();
-    }
-
-    private Vector3 GetRootMotionVelocity()
-    {
-        Vector3 currentPos = targetAnimator.rootPosition;
-
-        Vector3 deltaPos = currentPos - _prevRootMotionPos;
-
-        _prevRootMotionPos = currentPos;
-
-        if (deltaPos.magnitude > 10.0f)
-        {
-            return Vector3.zero;
-        }
-
-        return deltaPos / Runner.DeltaTime;
     }
 
     private void ApplyRootMotionForce(Vector3 rootMotionVelocity)
@@ -157,16 +151,26 @@ public class NPCController : NetworkBehaviour
 
     private void ApplyCoreSuspention()
     {
+        float rootMotionVerticalDelta = animStateController.RootMotionOffsetFromOrigin * transform.localScale.y;
 
-        if (Physics.SphereCast(coreRB.position + Vector3.up*0.2f, suspensionCastRadius, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer, QueryTriggerInteraction.Ignore))
+        float distanceToCast = rootMotionVerticalDelta + rideHeight + 0.2f + suspensionCastRadius + extraGroundCheckDistance;
+
+        if (Physics.SphereCast(coreRB.position + Vector3.up*0.2f, suspensionCastRadius, Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
 
-            float compression = rideHeight - (coreRB.transform.position - hit.point).magnitude;
+            float targetHeight = useRootMotionY? rideHeight+rootMotionVerticalDelta : rideHeight;
+
+            float compression = targetHeight - (coreRB.transform.position - hit.point).magnitude;
+
+            if (compression <= 0)
+            {
+                return;
+            }
 
             float springForce = rideSpringStrength * compression;
 
-            float verticalVelocity = Vector3.Dot(coreRB.linearVelocity, Vector3.up);
+            float verticalVelocity = coreRB.linearVelocity.y;
 
             float damperForce = rideSpringDamper * verticalVelocity;
 
@@ -182,29 +186,60 @@ public class NPCController : NetworkBehaviour
 
     private void ApplyUprightStabilization()
     {
+        if (!IsGrounded)
+        {
+
+        }
+        else
+        {
+
+        }
+
+
+        Vector3 flatLook = Vector3.ProjectOnPlane(lookDir, Vector3.up);
+        if (flatLook.sqrMagnitude < 1e-6f)
+        {
+            flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
+            if (flatLook.sqrMagnitude < 1e-6f) flatLook = coreRB.transform.forward;
+        }
+        flatLook.Normalize();
+
+        Quaternion facingFromLookDir = Quaternion.LookRotation(flatLook, Vector3.up);
+
+        Quaternion rootMotionRot = animStateController ? animStateController.RootMotionRotation : Quaternion.identity;
+        Vector3 rootMotionEuler = rootMotionRot.eulerAngles;
+
+        float rootMotionYawDeg = (animStateController && animStateController.zIsUp) ? Mathf.DeltaAngle(0f, rootMotionEuler.z)
+            : Mathf.DeltaAngle(0f, rootMotionEuler.y);
+
+        Quaternion rootYawOnWorldUp = Quaternion.AngleAxis(rootMotionYawDeg, Vector3.up);
+
+        Quaternion targetRot = facingFromLookDir * rootYawOnWorldUp;
+
+        Quaternion current = coreRB.rotation;
+
+        Quaternion quaternionErrror = targetRot * Quaternion.Inverse(current);
+        if (quaternionErrror.w < 0f) { quaternionErrror.x = -quaternionErrror.x; quaternionErrror.y = -quaternionErrror.y; quaternionErrror.z = -quaternionErrror.z; quaternionErrror.w = -quaternionErrror.w; }
+
+        quaternionErrror.ToAngleAxis(out float errorINDegrees, out Vector3 errorAxsis);
+        if (float.IsNaN(errorAxsis.x) || errorAxsis.sqrMagnitude < 1e-12f) return;
+
+        float errorInRads = errorINDegrees * Mathf.Deg2Rad;
+        Vector3 proportional = errorAxsis * errorInRads;              
+        Vector3 derivative = -coreRB.angularVelocity;         
+
         
-            Quaternion targetUpRotation = Quaternion.FromToRotation(coreRB.transform.up, Vector3.up);
+        float groundedScale = IsGrounded ? 1f : 0.5f;
 
-            targetUpRotation.ToAngleAxis(out float angle, out Vector3 axis);
+        Vector3 torque = proportional * uprightSpringStrength + derivative * uprightSpringDamper;
 
-            if (angle > 180f) angle -= 360f;
-
-            Vector3 springTorque = axis.normalized * (angle * Mathf.Deg2Rad * (IsGrounded ?uprightSpringStrength: uprightSpringStrength/4f));
-
-            Vector3 damperTorque = -coreRB.angularVelocity * uprightSpringDamper;
-
-            coreRB.AddTorque(springTorque + damperTorque, ForceMode.Acceleration);
-        
+        coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
     }
-
 
     private void UpdateCoreMovement()
     {
         if (!IsGrounded)
-        {
-
             return;
-        }
 
         if (NetworkedWantsToJump)
         {
@@ -213,28 +248,42 @@ public class NPCController : NetworkBehaviour
         }
 
         float targetSpeed = NetworkedWantsToSprint ? maxSprintSpeed : maxWalkSpeed;
-        Vector3 targetVelocity = NetworkedMoveDirection * targetSpeed;
 
-        Vector3 currentHorizontalVelocity = new Vector3(coreRB.linearVelocity.x, 0, coreRB.linearVelocity.z);
-
-        Vector3 velocityError = targetVelocity - currentHorizontalVelocity;
-
-        Vector3 force;
-        if (targetVelocity.magnitude > 0.01f)
+        Vector3 fwd;
+        if (lookRot != Quaternion.identity)
         {
-
-            force = velocityError * acceleration;
+            fwd = Vector3.ProjectOnPlane(lookRot * Vector3.forward, Vector3.up);
         }
         else
         {
+            fwd = Vector3.ProjectOnPlane(lookDir, Vector3.up);
+        }
 
+        if (fwd.sqrMagnitude < 1e-6f)
+        {
+            fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        }
+        fwd.Normalize();
+
+        Vector3 right = Vector3.Cross(Vector3.up, fwd);
+
+        Vector2 input = moveInput;
+        if (input.sqrMagnitude > 1f)
+            input.Normalize(); 
+
+        Vector3 targetVelocity = (right * input.x + fwd * input.y) * targetSpeed;
+
+        Vector3 currentHorizontalVelocity = new Vector3(coreRB.linearVelocity.x, 0, coreRB.linearVelocity.z);
+        Vector3 velocityError = targetVelocity - currentHorizontalVelocity;
+
+        Vector3 force;
+        if (input.magnitude > 0.01f)
+            force = velocityError * acceleration;
+        else
             force = velocityError * braking;
 
-        }
-        
         coreRB.AddForce(force, ForceMode.Acceleration);
     }
-
 
     private void UpdatePDDrives()
     {
@@ -248,15 +297,34 @@ public class NPCController : NetworkBehaviour
 
     public void UpdateAnimators()
     {
-        if (!targetAnimator) return;
+        if (!targetAnimator || coreRB == null) return;
 
         var targetPos = smoothedNetworkRoot.position + hipsOffset;
         var targetRot = smoothedNetworkRoot.rotation;
 
-        //targetAnimator.gameObject.transform.position = targetPos;
-        //targetAnimator.gameObject.transform.rotation = targetRot;
-        //finalAnimator.gameObject.transform.position = targetPos;
-        //finalAnimator.gameObject.transform.rotation = targetRot;
+        Vector3 vel = coreRB.linearVelocity;
+        vel.y = 0f;
+
+        Vector3 fwd = Vector3.ProjectOnPlane(lookDir, Vector3.up);
+        if (fwd.sqrMagnitude < 1e-6f)
+        {
+            fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        }
+        fwd.Normalize();
+
+        Vector3 right = Vector3.Cross(Vector3.up, fwd);
+
+        float localX = Vector3.Dot(vel, right); 
+        float localY = Vector3.Dot(vel, fwd);   
+
+        float normFactor = maxWalkSpeed > 0f ? maxWalkSpeed : 1f;
+        localX /= normFactor;
+        localY /= normFactor;
+
+        localX = Mathf.Clamp(localX, -1f, 1f);
+        localY = Mathf.Clamp(localY, -1f, 1f);
+
+        animStateController.SetTargetMovement(new Vector2(localX, localY));
     }
 
     [ContextMenu("PD Ragdoll/Bake Anchors • Use Each Target Transform")]

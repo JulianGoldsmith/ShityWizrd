@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
+[DefaultExecutionOrder(+10)]
 public class ArmatureRetargeter : MonoBehaviour
 {
     [Tooltip("Root transform of the armature that has the source animations (animationToTargetArmature).")]
@@ -10,18 +11,24 @@ public class ArmatureRetargeter : MonoBehaviour
     [Tooltip("list of bones to be retargeted. Populated by the 'Map Bones by Name' context menu")]
     public List<RetargetedBone> retargetedBones = new List<RetargetedBone>();
 
+    public Vector3 animatedHipRootMotion = Vector3.zero;
+    public Quaternion animatedHipRotation = Quaternion.identity;
+
     /// <summary>
     /// Holds the references for a single bone in the retargeting chain.
     /// </summary>
     [System.Serializable]
     public class RetargetedBone
     {
-
         public Transform sourceBone;
 
         public Transform targetBone;
 
         public Transform physicsProxy;
+
+        public bool enabled = true;
+
+        public bool injectAnimatedHipsRootMotion = false;
     }
 
     [ContextMenu("Map Bones by Name")]
@@ -88,18 +95,31 @@ public class ArmatureRetargeter : MonoBehaviour
 
         for (int i = 1; i < retargetedBones.Count; i++)
         {
+
             var bone = retargetedBones[i];
 
+            if (!bone.enabled) continue;
+
+            Vector3 targetPos = Vector3.zero;
+            Quaternion targetRot = Quaternion.identity;
             if (bone.physicsProxy != null)
             {
-
-                bone.targetBone.SetPositionAndRotation(bone.physicsProxy.position, bone.physicsProxy.rotation);
+                targetPos = bone.physicsProxy.position;
+                targetRot= bone.physicsProxy.rotation;
+                bone.targetBone.SetPositionAndRotation(targetPos, targetRot);
             }
             else if (bone.sourceBone != null)
             {
-  
-                bone.targetBone.SetLocalPositionAndRotation(bone.sourceBone.localPosition, bone.sourceBone.localRotation);
+                targetPos = bone.sourceBone.localPosition;
+                targetRot = bone.sourceBone.localRotation;
+                bone.targetBone.SetLocalPositionAndRotation(targetPos, targetRot);
             }
+
+            if (bone.injectAnimatedHipsRootMotion)
+            {
+                bone.targetBone.position += animatedHipRootMotion;
+            }
+            
         }
     }
 }

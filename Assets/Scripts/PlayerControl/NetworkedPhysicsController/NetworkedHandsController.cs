@@ -56,7 +56,7 @@ public class NetworkedHandsController : NetworkBehaviour
         [HideInInspector] public AnimatorOverrideController overrideController;
 
         public TwoBoneIKConstraint armatureHandIK;
-        [HideInInspector] public Transform casheDefaultHandIKTarget, temporaryArmtureHandTarget;
+        public Transform casheDefaultHandIKTarget, temporaryArmtureHandTarget;
         public void InitHand( bool isL, HybridCharacterController controller, bool hasInputAuth)
         {
 
@@ -68,7 +68,7 @@ public class NetworkedHandsController : NetworkBehaviour
             animator = transformNet.transform.GetComponentInChildren<Animator>();
             overrideController = new AnimatorOverrideController(animator.runtimeAnimatorController);
             animator.runtimeAnimatorController = overrideController;
-            casheDefaultHandIKTarget = armatureHandIK.data.target;
+            //casheDefaultHandIKTarget = armatureHandIK.data.target;
             temporaryArmtureHandTarget = new GameObject($"tmpHandTransform {isLeft}").transform;
             temporaryArmtureHandTarget.parent = transformNet.transform;
 
@@ -849,15 +849,22 @@ public class NetworkedHandsController : NetworkBehaviour
 
         if (isReach)
         {
-            Vector3 reachDir = (hand.transformNet.transform.position-hand.shoulderTransform.position).normalized;
+            Vector3 handPos = (hand.shouldUpdateInLateUpdate ? hand.transformLocal.transform.position : hand.transformNet.transform.position);
+            Vector3 reachDir = (handPos - hand.shoulderTransform.position).normalized;
           
             TargetingMode tM = isLeft? LeftHandMode: RightHandMode;
             reachDir *= hand.armLength * ((tM == TargetingMode.DRAGG) ? 0.85f : 1.2f);
+            hand.casheDefaultHandIKTarget.transform.parent = hand.shoulderTransform;
             hand.casheDefaultHandIKTarget.position = hand.shoulderTransform.position + reachDir;
             hand.casheDefaultHandIKTarget.rotation = Quaternion.LookRotation(reachDir, Vector3.up) * Quaternion.Euler(pickUpWristRotOffset);
+            if (!isLeft)
+            {
+                Debug.Log($"player is reaching = {isReach}");
+            }
         }
         else 
         {
+            hand.casheDefaultHandIKTarget.transform.parent = hand.shouldUpdateInLateUpdate ? hand.transformLocal.transform : hand.transformNet.transform;
             hand.casheDefaultHandIKTarget.localPosition = Vector3.zero;
             hand.casheDefaultHandIKTarget.localRotation = Quaternion.identity;
         }

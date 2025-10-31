@@ -21,7 +21,7 @@ public class HybridCharacterController : NetworkBehaviour
     public List<NetworkRigidbody3D> networkRigidbody3Ds = new List<NetworkRigidbody3D>();
 
     [Header("Grounded Settings")]
-    public float groundCheckDistance = 1f;
+    public float groundCheckExtraDistance = 1f;
     public LayerMask groundLayer;
     [Networked] public bool IsGrounded { get; set; }
 
@@ -30,6 +30,7 @@ public class HybridCharacterController : NetworkBehaviour
     public float rideSpringStrength = 100f; // How stiff the suspension spring is
     public float rideSpringDamper = 10f; // How much the spring is damped to prevent bouncing
     public float suspensionCastRadius = 0.25f; // The radius of the spherecast
+
 
     [Header("Movement Settings")]
     public float maxWalkSpeed = 3f, maxSprintSpeed = 5f;
@@ -47,6 +48,9 @@ public class HybridCharacterController : NetworkBehaviour
     public BoneMapper boneMapper;
     public Transform spineIKTarget;
     public Vector3 headOffset;
+    public Transform armatureHipsRoot;
+    private Vector3 armatureHipsStartOffset;
+    public ArmatureRetargeter retargeter;
 
     [Header("PD armature")]
     public List<PDSpring> pDSprings = new List<PDSpring>();
@@ -136,7 +140,7 @@ public class HybridCharacterController : NetworkBehaviour
             }
         }
 
-        boneMapper.Spawn(false, targetAnimator.transform, finalAnimator.transform);
+        //boneMapper.Spawn(false, targetAnimator.transform, finalAnimator.transform);
 
         //for (int i = 0; i < pDSprings.Count; i++)
         //{
@@ -175,6 +179,9 @@ public class HybridCharacterController : NetworkBehaviour
            // NetworkTRSP nt = nrb.Object.GetComponent<NetworkTRSP>();
 
         }
+
+        armatureHipsStartOffset = new Vector3(armatureHipsRoot.transform.localPosition.x,
+                armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z);
     }
 
 
@@ -306,6 +313,8 @@ public class HybridCharacterController : NetworkBehaviour
 
     }
 
+  
+
     private void UpdateCameraAnchor()
     {
         //if (!cameraAnchorTransform || !networkedRenderRoot) return;
@@ -373,18 +382,25 @@ public class HybridCharacterController : NetworkBehaviour
         targetAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
 
         //animationController.UpdateSpineIkTarget(lookRot);
-        finalAnimator.SetFloat("forwardSpeed", localVel.z / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
-        finalAnimator.SetFloat("rightSpeed", localVel.x / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
-        finalAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
+        //finalAnimator.SetFloat("forwardSpeed", localVel.z / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
+        //finalAnimator.SetFloat("rightSpeed", localVel.x / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
+        //finalAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
 
         //Jumping 
         targetAnimator.SetBool("IsGrounded", IsGrounded);
-        finalAnimator.SetBool("IsGrounded", IsGrounded);
+        //finalAnimator.SetBool("IsGrounded", IsGrounded);
         if (_jumpCount > _lastVisibleJump)
         {
             targetAnimator.SetTrigger("Jump");
-            finalAnimator.SetTrigger("Jump");
+            //finalAnimator.SetTrigger("Jump");
             _lastVisibleJump = _jumpCount;
+        }
+
+        if (retargeter != null)
+        {
+            retargeter.animatedHipRootMotion = (new Vector3(armatureHipsRoot.transform.localPosition.x,
+                armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z) - armatureHipsStartOffset) * 0.01f;
+            retargeter.animatedHipRotation = armatureHipsRoot.transform.localRotation;
         }
     }
 
@@ -402,6 +418,7 @@ public class HybridCharacterController : NetworkBehaviour
 
             targetPos = hipsRb.transform.position + hipsOffset;
             targetRot = hipsRb.transform.rotation;
+            //hipsRootMotionYDetla = armatureHipsRoot.localPosition.z / 100f; // i think this will use z as up from blender
         }
 
 
@@ -414,9 +431,10 @@ public class HybridCharacterController : NetworkBehaviour
             Debug.Log($"<color=red> CRITIAL target RENDERER ROT is INFINATE IN UPDATE ANIMATOR? ");
         }
 
-        targetAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + hipsOffset; ;
+        targetAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + hipsOffset; 
         targetAnimator.gameObject.transform.rotation = smoothedNetworkedRenderRoot.transform.rotation;
-        finalAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + hipsOffset; 
+        finalAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + ((new Vector3(armatureHipsRoot.transform.localPosition.x,
+                armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z)) /100); 
         finalAnimator.gameObject.transform.rotation = smoothedNetworkedRenderRoot.transform.rotation;
     }
 
@@ -609,15 +627,20 @@ public class HybridCharacterController : NetworkBehaviour
     {
         // IsGrounded = Physics.Raycast(hipsRb.transform.position, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
 
-        Vector3 castOrigin = hipsRb.transform.position;
-        IsGrounded = Physics.SphereCast(castOrigin, suspensionCastRadius, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
-        Debug.DrawRay(hipsRb.transform.position, Vector3.down * groundCheckDistance, Color.aliceBlue);
+        Vector3 castOrigin = hipsRb.worldCenterOfMass;
+
+        float distanceToCast = rideHeight + suspensionCastRadius + groundCheckExtraDistance;
+
+        //Debug.DrawRay(castOrigin, Vector3.down* distanceToCast, Color.red);
+
+        IsGrounded = Physics.SphereCast(castOrigin, suspensionCastRadius, Vector3.down, out RaycastHit hitInfo, distanceToCast, groundLayer);
+        Debug.DrawRay(castOrigin, Vector3.down * distanceToCast, Color.aliceBlue);
 
         if (IsGrounded)
         {
             float currentDistance = hitInfo.distance;
 
-            float heightError = rideHeight - currentDistance;
+            float heightError = (rideHeight) - currentDistance;
 
             float springForce = heightError * rideSpringStrength;
 
