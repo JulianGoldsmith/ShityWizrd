@@ -47,6 +47,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
+        NetworkSignaling.instance.OnPlayerJoined(runner, player);
+
         if (runner.IsServer)
         {
             // Create a unique position for the player
