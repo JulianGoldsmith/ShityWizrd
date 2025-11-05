@@ -2190,6 +2190,150 @@ Transform:
   - {fileID: 258721805203676126}
   m_Father: {fileID: 5460789716524275677}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1848665518754096402
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7060183138269786563}
+  - component: {fileID: 4791361827070138906}
+  - component: {fileID: 1969712552096330337}
+  m_Layer: 0
+  m_Name: VoiceSource
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7060183138269786563
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1848665518754096402}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2997175995291303374}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4791361827070138906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1848665518754096402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13f3eb2bee5e1ce498f27f8f37a2c4ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  follow_target: {fileID: 580314868914090163}
+  audioSource: {fileID: 1969712552096330337}
+--- !u!82 &1969712552096330337
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1848665518754096402}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 0
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &1909094569516370924
 GameObject:
   m_ObjectHideFlags: 0
@@ -3087,6 +3231,7 @@ Transform:
   - {fileID: 6595658086885730822}
   - {fileID: 6138649816744152082}
   - {fileID: 8906696093494029395}
+  - {fileID: 7060183138269786563}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &128414941927326041
@@ -3421,6 +3566,7 @@ MonoBehaviour:
   - {fileID: 5657703224164309585}
   - {fileID: 4426641531641904694}
   - {fileID: 7418071757709877675}
+  - {fileID: 4791361827070138906}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4683602691936953765
 MonoBehaviour:
@@ -4079,7 +4225,14 @@ MonoBehaviour:
   physicsMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
   hybridCharacterController: {fileID: 128414941927326041}
 --- !u!114 &5657703224164309585
 MonoBehaviour:
@@ -9995,6 +10148,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &6798704243941166079
 GameObject:
   m_ObjectHideFlags: 0
@@ -11717,6 +11872,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &7953665787674280051
 GameObject:
   m_ObjectHideFlags: 0
@@ -13195,6 +13352,8 @@ MonoBehaviour:
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
+  unParentOnSpawn: 0
+  syncScale: 1
 --- !u!1 &8936888206712598793
 GameObject:
   m_ObjectHideFlags: 0

@@ -3,6 +3,8 @@ using Unity.WebRTC;
 using Fusion;
 using System.Collections;
 using System.Linq;
+using System.Collections.Generic;
+using static UnityEngine.GraphicsBuffer;
 
 public class WebRTCConnector : MonoBehaviour
 {
@@ -12,14 +14,16 @@ public class WebRTCConnector : MonoBehaviour
     */
     public const string default_ice_server = "stun:stun.l.google.com:19302";
 
+    Dictionary<PlayerRef, ConnectedVoice> connected_voices = new Dictionary<PlayerRef, ConnectedVoice>();
+
     [SerializeField] private AudioSource inputAudioSource;
-    [SerializeField] private AudioSource outputAudioSource;
+    //[SerializeField] private AudioSource outputAudioSource;
 
     [SerializeField] NetworkSignaling network_signaling;
 
-    private RTCPeerConnection peerConnection;
+    //private RTCPeerConnection peerConnection;
     private MediaStream _sendStream;
-    private MediaStream _receiveStream;
+    //private MediaStream _receiveStream;
 
     private AudioClip clipInput;
     private AudioStreamTrack micTrack;
@@ -32,32 +36,26 @@ public class WebRTCConnector : MonoBehaviour
     bool is_muted = false;
     bool prior_is_muted_state = false;
 
-    bool is_connected = false;
-
-    public PlayerRef other_player_ref = PlayerRef.None;
-
     private void OnGUI()
     {
-        if (other_player_ref == PlayerRef.None)
-            return;
-
-        if (!is_connected && GUI.Button(new Rect(0, 80, 200, 40), $"Conn VC {other_player_ref}"))
-        {
-            StartCallWith(other_player_ref);
-            is_connected = true;
-        }
-        if (is_connected && GUI.Button(new Rect(0, 80, 200, 40), $"Discon VC {other_player_ref}"))
-        {
-            OnDisconnect(other_player_ref);
-            is_connected = false;
-        }
-        is_muted = GUI.Toggle(new Rect(150, 120, 50, 40), is_muted, "Mute");
-        GUI.TextArea(new Rect(0, 120, 150, 40), m_deviceName);
+        //if (!is_connected && GUI.Button(new Rect(0, 80, 200, 40), $"Conn VC {other_player_ref}"))
+        //{
+        //    StartCallWith(other_player_ref);
+        //    is_connected = true;
+        //}
+        //if (is_connected && GUI.Button(new Rect(0, 80, 200, 40), $"Discon VC {other_player_ref}"))
+        //{
+        //    OnDisconnect(other_player_ref);
+        //    is_connected = false;
+        //}
+        is_muted = GUI.Toggle(new Rect(150, 80, 50, 40), is_muted, "Mute");
+        GUI.TextArea(new Rect(0, 80, 150, 40), m_deviceName);
     }
 
     private void Start()
     {
-        StartCoroutine(WebRTC.Update());
+        connected_voices = new Dictionary<PlayerRef, ConnectedVoice>();
+
         if(Microphone.devices.Length <= 0)
         {
             Debug.LogError("No microphones connected.");
@@ -71,6 +69,7 @@ public class WebRTCConnector : MonoBehaviour
     
     private void Update()
     {
+        WebRTC.Update();
         if (prior_is_muted_state != is_muted)
         {
             if (is_muted)
@@ -96,31 +95,9 @@ public class WebRTCConnector : MonoBehaviour
         
         inputAudioSource.loop = true;
         inputAudioSource.clip = clipInput;
-        // if you want to here your own input, you can uncomment this:
         inputAudioSource.Play();
 
         micTrack = new AudioStreamTrack(inputAudioSource);
-    }
-
-    public void StartCallWith(PlayerRef target)
-    {
-        _sendStream = new MediaStream();
-
-        var configuration = GetSelectedSdpSemantics();
-        peerConnection = new RTCPeerConnection(ref configuration)
-        {
-            OnIceCandidate = candidate => SendIceCandidate(target, candidate),
-            OnNegotiationNeeded = () => StartCoroutine(CreateOffer(target)),
-            OnIceConnectionChange = state => { Debug.Log(state); }
-        };
-        //var transceiver = peerConnection.AddTransceiver(TrackKind.Audio);
-        //transceiver.Direction = RTCRtpTransceiverDirection.SendRecv;
-
-        // set up the sending stream to send audio to peer.
-        peerConnection.AddTrack(micTrack, _sendStream);
-
-
-        StartCoroutine(CreateOffer(target));
     }
 
     void handleSendChannelStatusChange()
@@ -141,16 +118,18 @@ public class WebRTCConnector : MonoBehaviour
             sdpMid = sdpMid,
             sdpMLineIndex = sdpMLineIndex
         });
-        peerConnection.AddIceCandidate(ice_candidate);
+        ConnectedVoice cv = GetCV(source);
+        if (cv != null)
+            cv.peerConnection.AddIceCandidate(ice_candidate);
     }
 
-    void OnAddTrack(MediaStreamTrackEvent e)
-    {
-        var track = e.Track as AudioStreamTrack;
-        outputAudioSource.SetTrack(track);
-        outputAudioSource.loop = true;
-        outputAudioSource.Play();
-    }
+    //void OnAddTrack(MediaStreamTrackEvent e)
+    //{
+    //    var track = e.Track as AudioStreamTrack;
+    //    outputAudioSource.SetTrack(track);
+    //    outputAudioSource.loop = true;
+    //    outputAudioSource.Play();
+    //}
 
     // 1. local creates offer
     // 2. on success, assigns local description.
@@ -163,10 +142,99 @@ public class WebRTCConnector : MonoBehaviour
     // 9. local receives answer
     // 10. local assigns answer to remote description.
 
+    ConnectedVoice BaseConnectedVoice(PlayerRef target)
+    {
+        ConnectedVoice cv = new ConnectedVoice();
+        cv.playerVoiceSource = PlayerVoiceSource.Get(target);
+
+        RTCConfiguration configuration = GetSelectedSdpSemantics();
+        cv.receiveStream = new MediaStream();
+        cv.receiveStream.OnAddTrack = e =>
+        {
+            if (e.Track is AudioStreamTrack track)
+            {
+                // `AudioSource.SetTrack` is a extension method which is available 
+                // when using `Unity.WebRTC` namespace.
+                cv.playerVoiceSource.audioSource.SetTrack(track);
+
+                // Please do not forget to turn on the `loop` flag.
+                cv.playerVoiceSource.audioSource.loop = true;
+                cv.playerVoiceSource.audioSource.Play();
+            }
+        };
+
+        return cv;
+    }
+    ConnectedVoice HostConnectedVoice(PlayerRef target)
+    {
+        ConnectedVoice cv = BaseConnectedVoice(target);
+        RTCConfiguration configuration = GetSelectedSdpSemantics();
+        cv.peerConnection = HostPeerConnection(cv, configuration, target);
+        return cv;
+    }
+    ConnectedVoice ClientConnectedVoice(PlayerRef target)
+    {
+        ConnectedVoice cv = BaseConnectedVoice(target);
+        RTCConfiguration configuration = GetSelectedSdpSemantics();
+        cv.peerConnection = ClientPeerConnection(cv, configuration, target);
+        return cv;
+    }
+
+    RTCPeerConnection BasePeerConnection(ConnectedVoice cv, RTCConfiguration configuration, PlayerRef target)
+    {
+        RTCPeerConnection conn = new RTCPeerConnection(ref configuration)
+        {
+            OnIceCandidate = candidate => SendIceCandidate(target, candidate),
+            OnTrack = (RTCTrackEvent e) =>
+            {
+                if (e.Track.Kind == TrackKind.Audio)
+                {
+                    // Add track to MediaStream for receiver.
+                    // This process triggers `OnAddTrack` event of `MediaStream`.
+                    cv.receiveStream.AddTrack(e.Track);
+                }
+            }
+        };
+        //var transceiver = conn.AddTransceiver(TrackKind.Audio);
+        //transceiver.Direction = RTCRtpTransceiverDirection.SendRecv;
+
+        if (_sendStream == null)
+            _sendStream = new MediaStream();
+        conn.AddTrack(micTrack, _sendStream);
+
+        return conn;
+    }
+    RTCPeerConnection HostPeerConnection(ConnectedVoice cv, RTCConfiguration configuration, PlayerRef target)
+    {
+        RTCPeerConnection conn = BasePeerConnection(cv, configuration, target);
+        // uncomment if we need renegotiation, such as adding of new tracks. 
+        //conn.OnNegotiationNeeded = () => StartCoroutine(CreateOffer(target));
+        conn.OnIceConnectionChange = state => OnIceConnectionChange(state, target);
+        return conn;
+    }
+    RTCPeerConnection ClientPeerConnection(ConnectedVoice cv, RTCConfiguration configuration, PlayerRef target)
+    {
+        RTCPeerConnection conn = BasePeerConnection(cv, configuration, target);
+        conn.OnIceConnectionChange = state => { Debug.Log(state); };
+        return conn;
+    }
+
+
+    public void StartCallWith(PlayerRef target)
+    {
+        ConnectedVoice cv = HostConnectedVoice(target);
+        connected_voices.Add(target, cv);
+
+        StartCoroutine(CreateOffer(target));
+    }
+
     public IEnumerator CreateOffer(PlayerRef target)
     {
         // need to extend this to have a peerconnection per playerref in lobby.
-        RTCPeerConnection pc = peerConnection;
+        ConnectedVoice cv = GetCV(target);
+        if (cv == null)
+            yield break;
+        RTCPeerConnection pc = cv.peerConnection;
 
         // 1. create an offer
         var op = pc.CreateOffer();
@@ -205,40 +273,12 @@ public class WebRTCConnector : MonoBehaviour
     public IEnumerator OnReceivedOffer(PlayerRef source, string remote_desc)
     {
         // need to extend this to have a peerconnection per playerref in lobby.
-        var configuration = GetSelectedSdpSemantics();
-        _receiveStream = new MediaStream();
-        _receiveStream.OnAddTrack = e =>
-        {
-            if (e.Track is AudioStreamTrack track)
-            {
-                // `AudioSource.SetTrack` is a extension method which is available 
-                // when using `Unity.WebRTC` namespace.
-                outputAudioSource.SetTrack(track);
+        ConnectedVoice cv = ClientConnectedVoice(source);
+        Debug.Log($"adding {source} to voices");
+        Debug.Log($"{cv.peerConnection.GetTransceivers().First().Sender.Track} {cv.peerConnection.GetTransceivers().First().Sender.Track.Enabled}");
+        connected_voices.Add(source, cv);
 
-                // Please do not forget to turn on the `loop` flag.
-                outputAudioSource.loop = true;
-                outputAudioSource.Play();
-            }
-        };
-
-        peerConnection = new RTCPeerConnection(ref configuration)
-        {
-            OnIceCandidate = candidate => SendIceCandidate(source, candidate),
-            OnIceConnectionChange = state => { Debug.Log(state); }
-        };
-        peerConnection.OnTrack = (RTCTrackEvent e) => {
-            if (e.Track.Kind == TrackKind.Audio)
-            {
-                // Add track to MediaStream for receiver.
-                // This process triggers `OnAddTrack` event of `MediaStream`.
-                _receiveStream.AddTrack(e.Track);
-            }
-        };
-        var transceiver2 = peerConnection.AddTransceiver(TrackKind.Audio);
-        transceiver2.Direction = RTCRtpTransceiverDirection.RecvOnly;
-
-        RTCPeerConnection pc = peerConnection;
-
+        RTCPeerConnection pc = cv.peerConnection;
 
         // rebuild the session description.
         RTCSessionDescription remote_session_desc = new RTCSessionDescription() { 
@@ -277,13 +317,22 @@ public class WebRTCConnector : MonoBehaviour
 
         // 8. sends answer to local.
         network_signaling.SendAnswer(source, local_desc);
+
+        if (is_muted)
+            OnPause();
+        else
+            OnResume();
     }
 
     public IEnumerator OnReceivedAnswer(PlayerRef source, string remote_desc)
     {
         // 9. local receives answer
         // need to extend this to have a peerconnection per playerref in lobby.
-        RTCPeerConnection pc = peerConnection;
+        ConnectedVoice cv = GetCV(source);
+        if (cv == null)
+            yield break;
+
+        RTCPeerConnection pc = cv.peerConnection;
 
         // rebuild the session description.
         RTCSessionDescription remote_session_desc = new RTCSessionDescription()
@@ -302,52 +351,80 @@ public class WebRTCConnector : MonoBehaviour
         }
 
         Debug.Log("P2P Handshake successful.");
+
+        if (is_muted)
+            OnPause();
+        else
+            OnResume();
     }
 
 
+
+    ConnectedVoice GetCV(PlayerRef playerRef)
+    {
+        return connected_voices.TryGetValue(playerRef, out var result) ? result : null;
+    }
 
 
 
 
     void OnPause()
     {
-        if (peerConnection == null)
+        if (connected_voices == null)
             return;
-
-        var transceiver1 = peerConnection.GetTransceivers().First();
-        var track = transceiver1.Sender.Track;
-        track.Enabled = false;
+        foreach (var voice in connected_voices.Values)
+        {
+            var transceiver1 = voice.peerConnection.GetTransceivers().First();
+            var track = transceiver1.Sender.Track;
+            track.Enabled = false;
+        }
     }
 
     void OnResume()
     {
-        if (peerConnection == null)
+        if (connected_voices == null)
             return;
-
-        var transceiver1 = peerConnection.GetTransceivers().First();
-        var track = transceiver1.Sender.Track;
-        track.Enabled = true;
+        foreach (var voice in connected_voices.Values)
+        {
+            var transceiver1 = voice.peerConnection.GetTransceivers().First();
+            var track = transceiver1.Sender.Track;
+            track.Enabled = true;
+        }
     }
 
     private void OnApplicationQuit()
     {
-        OnDisconnect(other_player_ref);
+        OnDisconnectAll();
     }
+    private void OnDisconnect(PlayerRef playerRef)
+    {
+        ConnectedVoice voice = GetCV(playerRef);
+        if (voice == null)
+            return;
 
-    void OnDisconnect(PlayerRef target)
+        voice.peerConnection?.Dispose();
+        voice.peerConnection = null;
+        voice.playerVoiceSource?.audioSource?.Stop();
+
+        connected_voices.Remove(playerRef);
+    }
+    void OnDisconnectAll()
     {
         Microphone.End(m_deviceName);
         clipInput = null;
 
         micTrack?.Dispose();
-        _receiveStream?.Dispose();
-        _sendStream?.Dispose();
-        peerConnection?.Dispose();
-        
-        peerConnection = null;
-
+        _sendStream?.Dispose();        
         inputAudioSource.Stop();
-        outputAudioSource.Stop();
+
+        foreach (ConnectedVoice voice in connected_voices.Values)
+        {
+            voice.peerConnection?.Dispose();
+            voice.peerConnection = null;
+            voice.playerVoiceSource?.audioSource?.Stop();
+        }
+
+        connected_voices.Clear();
     }
 
     public static RTCConfiguration GetSelectedSdpSemantics()
@@ -356,5 +433,24 @@ public class WebRTCConnector : MonoBehaviour
         config.iceServers = new[] { new RTCIceServer { urls = new[] { default_ice_server } } };
 
         return config;
+    }
+
+    void OnIceConnectionChange(RTCIceConnectionState state, PlayerRef playerRef)
+    {
+        Debug.Log($"Ice Connection State changed with {playerRef} to {state}");
+        //if (state == RTCIceConnectionState.Disconnected)
+        //{
+        //    // if disconnected try again.
+        //    OnDisconnect(playerRef);
+        //    StartCallWith(playerRef);
+        //}
+    }
+
+    void OnAudioFilterRead(float[] data, int channels)
+    {
+        // Push raw audio into WebRTC immediately.
+        // Should reduce latency (otherwise mic records in 
+        // 1 second chunks).
+        micTrack?.SetData(data, channels, samplingFrequency);
     }
 }

@@ -369,7 +369,7 @@ GameObject:
   - component: {fileID: 124437024}
   - component: {fileID: 124437023}
   m_Layer: 0
-  m_Name: VoiceChatSource
+  m_Name: VoiceChatManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -388,7 +388,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inputAudioSource: {fileID: 1409398317}
-  outputAudioSource: {fileID: 718825522}
   network_signaling: {fileID: 124437024}
   samplingFrequency: 48000
   lengthSeconds: 1

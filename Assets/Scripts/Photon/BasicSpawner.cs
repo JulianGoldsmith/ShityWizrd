@@ -47,8 +47,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
-        NetworkSignaling.instance.OnPlayerJoined(runner, player);
-
         if (runner.IsServer)
         {
             // Create a unique position for the player
@@ -72,7 +70,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             // or do it here, we need everyone to find those references themselves for each player OnSpawn.
             // That's done, at the moment, in PhysicsHandController.
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-
+            
             Vector3 itemoffset = new Vector3(0, 2, -2);
             NetworkObject networkItem = runner.Spawn(_itemPrefab, spawnPosition + itemoffset, Quaternion.identity, player);
 

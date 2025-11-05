@@ -31,29 +31,11 @@ public class NetworkSignaling : NetworkBehaviour
 
     public static NetworkSignaling instance;
 
-    [SerializeField] WebRTCConnector connector;
+    public WebRTCConnector connector;
 
     private void Awake()
     {
         instance = this;
-    }
-
-    public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
-    {
-        // for now, just have the host send a connection
-        // request to clients.
-        // would need clients to also set up connections
-        // between themselves.
-        Debug.Log($"Player joined {player} {Runner.LocalPlayer}");
-        if (!Runner.IsServer)
-            return;
-
-        if (player == Runner.LocalPlayer)
-            return;
-
-        Debug.Log($"Other player joined {player}");
-
-        connector.other_player_ref = player;
     }
 
 
@@ -94,7 +76,6 @@ public class NetworkSignaling : NetworkBehaviour
     [Rpc(RpcSources.All, RpcTargets.All)]
     public void RPC_SendOffer_Chunk(int offerid, PlayerRef source, PlayerRef target, int chunkIndex, int totalChunks, byte[] chunkData)
     {
-        Debug.LogError($"1: received offer chunk {chunkIndex} out of {totalChunks}");
         if (Runner.LocalPlayer != target)
             return;
 
@@ -105,7 +86,7 @@ public class NetworkSignaling : NetworkBehaviour
         }
         if (offerid != receivingofferid)
             return;
-        Debug.LogError($"2: received offer chunk {chunkIndex} out of {totalChunks}");
+        
         received_offer_chunks[chunkIndex] = chunkData;
 
         // Check if we have all chunks
@@ -116,7 +97,6 @@ public class NetworkSignaling : NetworkBehaviour
             string sdp = Encoding.UTF8.GetString(fullData);
 
             // Received the offer
-            Debug.LogError($"received all offer chunks");
             StartCoroutine(connector.OnReceivedOffer(source, sdp));
         }
     }
@@ -128,7 +108,6 @@ public class NetworkSignaling : NetworkBehaviour
     List<byte[]> received_answer_chunks = null;
     public void SendAnswer(PlayerRef target, RTCSessionDescription answer)
     {
-        Debug.LogError("Send answer.");
         // chunk it
         string sdp = answer.sdp;
         byte[] data = Encoding.UTF8.GetBytes(sdp);
@@ -156,7 +135,6 @@ public class NetworkSignaling : NetworkBehaviour
     [Rpc(RpcSources.All, RpcTargets.All)]
     public void RPC_SendAnswer_Chunk(int answerid, PlayerRef source, PlayerRef target, int chunkIndex, int totalChunks, byte[] chunkData)
     {
-        Debug.LogError($"1: received answer chunk {chunkIndex} out of {totalChunks} ({target} not {Runner.LocalPlayer})");
         if (Runner.LocalPlayer != target)
             return;
 
@@ -168,7 +146,6 @@ public class NetworkSignaling : NetworkBehaviour
         if (answerid != receivinganswerid)
             return;
 
-        Debug.LogError($"2: received answer chunk {chunkIndex} out of {totalChunks}");
         received_answer_chunks[chunkIndex] = chunkData;
 
         // Check if we have all chunks
@@ -178,7 +155,6 @@ public class NetworkSignaling : NetworkBehaviour
             string sdp = Encoding.UTF8.GetString(fullData);
 
             // Received the answer
-            Debug.LogError($"received all answer chunks");
             StartCoroutine(connector.OnReceivedAnswer(source, sdp));
         }
     }
