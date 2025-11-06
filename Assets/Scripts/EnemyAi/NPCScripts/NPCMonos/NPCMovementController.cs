@@ -23,7 +23,7 @@ public class NPCMovementController : MonoBehaviour
     private void Update()
     {
         agent.nextPosition = agentTransform.position;
-        Debug.Log("Agent pos = " + agent.nextPosition);
+       // Debug.Log("Agent pos = " + agent.nextPosition);
         previousFramePos = agentTransform.position;
     }
 
@@ -73,7 +73,7 @@ public class NPCMovementController : MonoBehaviour
     {
         direction.Normalize();
 
-        controller.SetMoveInput(direction);
+        controller.SetMoveInput(direction, speed);
     }
 
     public Vector3 GetNavInput()
@@ -83,16 +83,16 @@ public class NPCMovementController : MonoBehaviour
 
         if (navInput.sqrMagnitude < 0.01f)
         {
-            Debug.LogWarning($"[GetNavInput] agent.desiredVelocity is ZERO. " +
-                $"hasPath: {agent.hasPath}, " +
-                $"pathPending: {agent.pathPending}, " +
-                $"isStopped: {agent.isStopped}, " +
-                $"pathStatus: {agent.pathStatus}, " +
-                $"remainingDistance: {agent.remainingDistance}", this);
+            //Debug.LogWarning($"[GetNavInput] agent.desiredVelocity is ZERO. " +
+            //    $"hasPath: {agent.hasPath}, " +
+            //    $"pathPending: {agent.pathPending}, " +
+            //    $"isStopped: {agent.isStopped}, " +
+            //    $"pathStatus: {agent.pathStatus}, " +
+            //    $"remainingDistance: {agent.remainingDistance}", this);
         }
         else
         {
-            Debug.Log($"[GetNavInput] agent.desiredVelocity is {navInput.normalized}", this);
+           // Debug.Log($"[GetNavInput] agent.desiredVelocity is {navInput.normalized}", this);
         }
         //navInput.y = 0;
         navInput.Normalize();

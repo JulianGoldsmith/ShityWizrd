@@ -11,15 +11,12 @@ using Fusion;
 /// Main script controlling player casting, ie sword swing, cast spell etc, works with player movement controller and player animation controller
 /// </summary>
 
-
-[RequireComponent(typeof(NetworkedInventoryManager))]
 public abstract class CastActionController : NetworkBehaviour
 {
     //public Animator animator;
     public NetworkedInventoryManager inventory;
     
     public bool isCasting;
-    public bool canCombo;
     public bool isUpperBodyAction;
     public float currentAttackCooldown = 0f;
 
@@ -63,7 +60,7 @@ public abstract class CastActionController : NetworkBehaviour
 
     }
 
-    public void StartCast(bool isAlreadyReleased)
+    public virtual void StartCast(bool isAlreadyReleased)
     {
         if (isCasting) return;
 
@@ -119,7 +116,7 @@ public abstract class CastActionController : NetworkBehaviour
         if (isAlreadyReleased) EndCast();
     }
 
-    public void UpdateActiveCasts()
+    public virtual void UpdateActiveCasts()
     {
         for (int i = activeCasts.Count - 1; i >= 0; i--)
         {
@@ -131,7 +128,7 @@ public abstract class CastActionController : NetworkBehaviour
         }
     }
 
-    public void EndCast()
+    public virtual void EndCast()
     {
         if (primaryAttackBuffered)
         {

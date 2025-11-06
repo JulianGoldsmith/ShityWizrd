@@ -166,6 +166,7 @@ public class HybridCharacterController : NetworkBehaviour
         this.cameraAnchorTransform.parent = null;
 
         bonkController = this.GetComponent<CharacterBonkController>();
+      //  Debug.Log($"Bonk controller loaded {bonkController != null}");
 
         hipsRb.maxDepenetrationVelocity = 10f;
         hipsRb.maxAngularVelocity = 20f;
@@ -223,7 +224,7 @@ public class HybridCharacterController : NetworkBehaviour
 
         if (disableCC > 0)
         {
-            disableCC--; // Count down the timer
+            disableCC--; 
             return;      // Skip ALL simulation logic for this tick
         }
 
@@ -325,15 +326,11 @@ public class HybridCharacterController : NetworkBehaviour
 
         if (HasInputAuthority)
         {
-            // For the local player, the networkedRenderRoot is jittery due to prediction/reconciliation.
-            // We MUST smoothly Lerp the camera anchor towards it to hide the jitter.
             cameraAnchorTransform.position = Vector3.Lerp(cameraAnchorTransform.position, targetPos, dt * cameraAnchorSmoothSpeed);
             cameraAnchorTransform.rotation = Quaternion.Slerp(cameraAnchorTransform.rotation, targetRot, dt * cameraAnchorSmoothSpeed);
         }
         else
         {
-            // For remote players, the networkedRenderRoot is already interpolated by Fusion.
-            // We can just snap the anchor directly to it.
             cameraAnchorTransform.position = targetPos;
             cameraAnchorTransform.rotation = targetRot;
         }
@@ -789,8 +786,8 @@ public class HybridCharacterController : NetworkBehaviour
         foreach(NetworkRigidbody3D nrb in networkRigidbody3Ds)
         {
             hipsNRB.Teleport(targetPos, rotation);
-            hipsNRB.Rigidbody.linearVelocity = Vector3.zero;
-            hipsNRB.Rigidbody.angularVelocity = Vector3.zero;
+            nrb.ResetRigidbody();
+            Debug.Log($"Teleported {nrb.name}");
         }
 
         //foreach (var spring in pDSprings)
@@ -822,6 +819,10 @@ public class HybridCharacterController : NetworkBehaviour
     public void DisableCCFor(int ticks)
     {
         disableCC = ticks;
+        foreach(NetworkRigidbody3D n in networkRigidbody3Ds)
+        {
+            n.ResetRigidbody();
+        }
     }
 
     public static bool IsFinite(Quaternion q) => float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
@@ -1012,12 +1013,15 @@ public class PdBone
     public float derivativeGainPosition = 80f;
 
     public bool applyEqualAndOppositeForce = false;
+    public float forceTransfereRatio = 1f;
 
     [Header("Safety clamp")]
     public float maximumForceAcceleration = 2000f;              
 
     [Header("Time step reference")]
-    public float designDeltaTime = 1f / 64f; 
+    public float designDeltaTime = 1f / 64f;
+
+    const float snapDistance = 4f;
 
 
     public void Step(float deltaTime)
@@ -1077,6 +1081,24 @@ public class PdBone
             Vector3 childAnchorVelocityWorld = childRigidbody.GetPointVelocity(childAnchorWorld);
 
             Vector3 positionErrorWorld = parentAnchorWorld - childAnchorWorld;
+
+
+            if (positionErrorWorld.sqrMagnitude > snapDistance * snapDistance) //teleport if far away
+            {
+                Vector3 newPos = childRigidbody.position + positionErrorWorld;
+
+                childRigidbody.position = newPos;
+
+                Vector3 dv = parentAnchorVelocityWorld - childAnchorVelocityWorld;
+                childRigidbody.linearVelocity += dv;
+
+                childRigidbody.WakeUp();
+
+                return;
+            }
+
+
+
             Vector3 velocityErrorWorld = parentAnchorVelocityWorld - childAnchorVelocityWorld;
 
             float proportionalPositionScaled = proportionalGainPosition * scale * scale;
@@ -1092,9 +1114,16 @@ public class PdBone
             childRigidbody.AddForceAtPosition(forceAccelerationWorld, childAnchorWorld, ForceMode.Acceleration);
             if (applyEqualAndOppositeForce)
             {
-                parentRigidbody.AddForceAtPosition(-forceAccelerationWorld, parentAnchorWorld, ForceMode.Acceleration);
+                parentRigidbody.AddForceAtPosition(-forceAccelerationWorld * forceTransfereRatio, parentAnchorWorld, ForceMode.Acceleration) ;
             }
+
+            if(Vector3.Distance(childAnchorWorld, parentAnchorWorld) > 4)
+            {
+                childRigidbody.MovePosition(parentAnchorWorld);
+            }
+
         }
+
     }
 
     public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)

@@ -293,7 +293,8 @@ public enum RuneCategoryTag
     Trigger,
     Filter,
     Effect,
-    Value
+    Value, 
+    NPCCast
 }
 
 public enum CasterTriggerMethod

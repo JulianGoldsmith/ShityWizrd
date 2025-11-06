@@ -42,7 +42,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
     public List<NetworkRigidbody3D> rbComponents = new List<NetworkRigidbody3D>();
 
     [Header("Animation")]
-    public Animator targetAnimator;// finalAnimator;
+    public Animator targetAnimator;
     public AnimationStateController animStateController;
     public Vector3 hipsOffset;
 
@@ -53,9 +53,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
     // --- BT INTERFACE ---
     [Networked] public bool NetworkedWantsToSprint { get; set; }
     [Networked] public bool NetworkedWantsToJump { get; set; }
-    //[Networked] public Vector3 lookDir { get; set; }
-    //[Networked] public Quaternion lookRot { get; set; }
-    //[Networked] public Vector2 moveInput { get; set; }
+
     [HideInInspector][Networked] public NetworkButtons _lastButtonsInput { get; set; }
 
     [HideInInspector][Networked] public Vector3 NetworkedLookVector { get; set; }
@@ -63,11 +61,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     public override void Spawned()
     {
-        //for (int i = 0; i < pDSprings.Count; i++)
-        //{
-        //    var spring = pDSprings[i];
-        //    spring.Init(coreRB.transform, HasInputAuthority);
-        //}
+
 
         Runner.SetIsSimulated(this.Object, true);
         foreach (NetworkRigidbody3D nrb in rbComponents)
@@ -85,42 +79,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        //if(!HasInputAuthority && !HasStateAuthority)
-        //{
-        //    Debug.Log("This is running on a proxy");
-        //}
-
-        //if (HasStateAuthority)
-        //{
-        //    Vector2 input = Vector2.zero;
-        //    if (Keyboard.current.upArrowKey.isPressed)
-        //    {
-        //        input += Vector2.up;
-        //    }
-        //    if (Keyboard.current.downArrowKey.isPressed)
-        //    {
-        //        input += Vector2.down;
-        //    }
-        //    if (Keyboard.current.rightArrowKey.isPressed)
-        //    {
-        //        input += Vector2.right;
-        //    }
-        //    if (Keyboard.current.leftArrowKey.isPressed)
-        //    {
-        //        input += Vector2.left;
-        //    }
-        //    moveInput = input ;
-
-        //    if (Keyboard.current.pKey.isPressed)
-        //    {
-        //        lookRot *= Quaternion.Euler(0f,10f,0f);
-        //    }
-        //    if (Keyboard.current.iKey.isPressed)
-        //    {
-        //        lookRot *= Quaternion.Euler(0f, -10f, 0f);
-        //    }
-        //    lookDir = lookRot * Vector3.forward;
-        //}
+       
 
         animStateController.SimulateAnimation();
 
@@ -324,13 +283,10 @@ public class NPCActiveRagdollController : NetworkBehaviour
         localX /= normFactor;
         localY /= normFactor;
 
-        localX = Mathf.Clamp(localX, -1f, 1f);
-        localY = Mathf.Clamp(localY, -1f, 1f);
-
         animStateController.SetTargetMovement(new Vector2(localX, localY));
     }
 
-    [ContextMenu("PD Ragdoll/Bake Anchors • Use Each Target Transform")]
+    [ContextMenu("PD Ragdoll/ Bake Anchors")]
     private void ContextBakeAnchorsFromTargets()
     {
 
@@ -361,13 +317,13 @@ public class NPCActiveRagdollController : NetworkBehaviour
             NetworkedLookVector = worldDirection.normalized;
         }
     }
-    public void SetMoveInput(Vector3 input) //place for the AI to set input
+    public void SetMoveInput(Vector3 input, float speed) //place for the AI to set input
     {
         if (!HasStateAuthority) return;
         if (Object.isActiveAndEnabled)
         {
             NetworkedMoveVector = input;
-            
+            NetworkedWantsToSprint = speed > 1 ? true: false;
         }
     }
 }

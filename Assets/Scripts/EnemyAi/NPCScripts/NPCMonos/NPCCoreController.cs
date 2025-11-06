@@ -17,4 +17,17 @@ public class NPCCoreController : MonoBehaviour
     {
         
     }
+
+    #region
+
+    public void GetBonked()
+    {
+
+    }
+    public void GetUnBonked()
+    {
+
+    }
+
+    #endregion
 }

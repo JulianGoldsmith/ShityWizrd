@@ -292,5 +292,117 @@ public class SpellGraph : ScriptableObject
         }
     }
 
+    public void InitilizeFromNodeData(SpellGraphController controller)
+    {
+
+        this.runeUIsByGuid = new Dictionary<string, RuneUI>();
+        this.liveNodeClonesByGuid = new Dictionary<string, SpellNode>();
+
+        foreach (var nodeData in this.nodes)
+        {
+            SpellNode nodeTemplate = controller.FindTemplateByName(nodeData.nodeTemplateName);
+            if (nodeTemplate != null)
+            {
+                SpellNode clone = nodeTemplate.CloneThisNode();
+                clone.InstanceGuid = nodeData.guid;
+                this.liveNodeClonesByGuid[nodeData.guid] = clone;
+
+                if (clone is CoreNode core)
+                {
+                    core.defaultBehaviourNodes = new List<BehaviourNode>();
+                    core.defaultTriggerNodes = new List<TriggerNode>();
+                    core.behaviourNodes = new List<BehaviourNode>();
+                    core.triggerNodes = new List<TriggerNode>();
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[Hydrate] Could not find template: {nodeData.nodeTemplateName}");
+            }
+        }
+
+        foreach (var nodeData in this.nodes)
+        {
+            if (!this.liveNodeClonesByGuid.TryGetValue(nodeData.guid, out var parentClone)) continue;
+
+            if (parentClone is CoreNode coreClone)
+            {
+                foreach (var childGuid in nodeData.childNodeGUIDs)
+                {
+                    if (!this.liveNodeClonesByGuid.TryGetValue(childGuid, out var childClone)) continue;
+
+                    if (childClone is BehaviourNode behaviour)
+                    {
+                        coreClone.defaultBehaviourNodes.Add(behaviour);
+                    }
+                    else if (childClone is TriggerNode trigger)
+                    {
+                        coreClone.defaultTriggerNodes.Add(trigger);
+                    }
+                }
+            }
+        }
+
+        foreach (var nodeData in this.nodes)
+        {
+            if (!this.liveNodeClonesByGuid.TryGetValue(nodeData.guid, out var clone)) continue;
+            if (clone is not SubgraphNode subClone) continue;
+
+            var guidMap = new Dictionary<string, string>();
+            var liveInternalNodes = new List<NodeInstanceData>();
+
+            foreach (var childGuid in nodeData.childNodeGUIDs)
+            {
+                var liveChild = this.GetNodeInstance(childGuid); 
+                if (liveChild == null) continue;
+
+                if (!string.IsNullOrEmpty(liveChild.sourceTemplateNodeGuid))
+                {
+                    guidMap[liveChild.sourceTemplateNodeGuid] = liveChild.guid;
+                }
+                liveInternalNodes.Add(liveChild);
+            }
+
+            subClone.internalNodes = liveInternalNodes;
+
+            if (!string.IsNullOrEmpty(subClone.rootNodeGuid) && guidMap.TryGetValue(subClone.rootNodeGuid, out var liveRoot))
+            {
+                subClone.rootNodeGuid = liveRoot;
+            }
+
+            for (int i = 0; i < subClone.exposedSockets.Count; i++)
+            {
+                var info = subClone.exposedSockets[i];
+                if (guidMap.TryGetValue(info.internalNodeGuid, out var liveOwner))
+                {
+                    info.internalNodeGuid = liveOwner;
+                    subClone.exposedSockets[i] = info;
+                }
+                else
+                {
+                    Debug.LogWarning($"[Load] Subgraph '{subClone.name}': no live owner for template guid '{info.internalNodeGuid}'.");
+                }
+            }
+        }
+
+        foreach (var nodeData in this.nodes)
+        {
+            foreach (var connectionData in nodeData.connections)
+            {
+                this.CreateNodeLink(nodeData, this.GetNodeInstance(connectionData.targetNodeGUID), connectionData);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(this.entryPointControllerNodeGuid) &&
+            this.liveNodeClonesByGuid.TryGetValue(this.entryPointControllerNodeGuid, out SpellNode entryNode))
+        {
+            this.entryPointControllerNode = entryNode as EntryPointControlNode;
+        }
+        else
+        {
+            Debug.LogWarning($"[Hydrate] Could not find Entry Point Node ({this.entryPointControllerNodeGuid}) for graph '{this.name}'.");
+        }
+    }
+
     #endregion
 }
