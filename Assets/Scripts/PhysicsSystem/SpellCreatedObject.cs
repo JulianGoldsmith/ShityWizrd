@@ -19,6 +19,8 @@ public class SpellCreatedObject : NetworkBehaviour
 
     protected Tick? tick_spawned = null;
 
+    bool should_Parent_To_Caster = false;
+
     public override void Spawned()
     {
         base.Spawned();

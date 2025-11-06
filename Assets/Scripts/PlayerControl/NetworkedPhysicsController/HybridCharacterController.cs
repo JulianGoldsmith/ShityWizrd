@@ -1012,6 +1012,8 @@ public class PdBone
     public float proportionalGainPosition = 2000f;
     public float derivativeGainPosition = 80f;
 
+    public AnimationCurve positionErrorCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
     public bool applyEqualAndOppositeForce = false;
     public float forceTransfereRatio = 1f;
 
@@ -1101,6 +1103,8 @@ public class PdBone
 
             Vector3 velocityErrorWorld = parentAnchorVelocityWorld - childAnchorVelocityWorld;
 
+            float forceMult = positionErrorCurve.Evaluate(velocityErrorWorld.magnitude);
+
             float proportionalPositionScaled = proportionalGainPosition * scale * scale;
             float derivativePositionScaled = derivativeGainPosition * scale;
 
@@ -1111,10 +1115,10 @@ public class PdBone
             if (forceAccelerationWorld.sqrMagnitude > maximumForceAcceleration * maximumForceAcceleration)
                 forceAccelerationWorld = forceAccelerationWorld.normalized * maximumForceAcceleration;
 
-            childRigidbody.AddForceAtPosition(forceAccelerationWorld, childAnchorWorld, ForceMode.Acceleration);
+            childRigidbody.AddForceAtPosition(/*(*/forceAccelerationWorld /** parentRigidbody.mass )/ childRigidbody.mass*/, childAnchorWorld, ForceMode.Acceleration);
             if (applyEqualAndOppositeForce)
             {
-                parentRigidbody.AddForceAtPosition(-forceAccelerationWorld * forceTransfereRatio, parentAnchorWorld, ForceMode.Acceleration) ;
+                parentRigidbody.AddForceAtPosition(/*((*/-forceAccelerationWorld * forceTransfereRatio /*) * childRigidbody.mass )/ parentRigidbody.mass*/, parentAnchorWorld, ForceMode.Acceleration) ;
             }
 
             if(Vector3.Distance(childAnchorWorld, parentAnchorWorld) > 4)
