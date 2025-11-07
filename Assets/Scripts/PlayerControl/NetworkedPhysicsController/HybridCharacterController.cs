@@ -19,6 +19,7 @@ public class HybridCharacterController : NetworkBehaviour
     public Rigidbody hipsRb;
     public Vector3 hipsOffset;
     public List<NetworkRigidbody3D> networkRigidbody3Ds = new List<NetworkRigidbody3D>();
+    public float totalMass;
 
     [Header("Grounded Settings")]
     public float groundCheckExtraDistance = 1f;
@@ -176,6 +177,7 @@ public class HybridCharacterController : NetworkBehaviour
         foreach (NetworkRigidbody3D nrb in networkRigidbody3Ds)
         {
             Runner.SetIsSimulated(nrb.Object, true);
+            totalMass += nrb.Rigidbody.mass;
 
            // NetworkTRSP nt = nrb.Object.GetComponent<NetworkTRSP>();
 

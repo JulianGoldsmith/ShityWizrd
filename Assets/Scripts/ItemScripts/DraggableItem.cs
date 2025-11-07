@@ -100,6 +100,9 @@ public class DraggableItem : InteractableItem
             //    controller.pdBones[0].childRigidbody.AddForceAtPosition((forceOnPlayer / controller.pdBones[0].childRigidbody.mass) / 2f, transform.position, ForceMode.Acceleration);
             //}
 
+            Vector3 forceOnPlayer = -actualForceOnObject / (controller.totalMass);
+            controller.hipsRb.AddForce(forceOnPlayer, ForceMode.Acceleration);
+
             //rotation
 
             Vector3 facing = inv._dragFacingDir;
