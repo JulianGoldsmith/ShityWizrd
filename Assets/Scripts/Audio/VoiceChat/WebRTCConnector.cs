@@ -430,7 +430,29 @@ public class WebRTCConnector : MonoBehaviour
     public static RTCConfiguration GetSelectedSdpSemantics()
     {
         RTCConfiguration config = default;
-        config.iceServers = new[] { new RTCIceServer { urls = new[] { default_ice_server } } };
+        config.iceServers = new[] { 
+            new RTCIceServer 
+            { 
+                urls = new[] 
+                { 
+                    default_ice_server,
+                    "stun:stun.relay.metered.ca:80"
+                }
+            },
+            new RTCIceServer
+            {
+                urls = new[]
+                {
+                    "turn:global.relay.metered.ca:80",
+                    "turn:global.relay.metered.ca:80?transport=tcp",
+                    "turn:global.relay.metered.ca:443",
+                    "turns:global.relay.metered.ca:443?transport=tcp"
+                },
+                username = "bd61df2c282bf4c6403f3a19",
+                credential = "huRhOJN6vrCwYeyO",
+                credentialType = RTCIceCredentialType.Password
+            }
+        };
 
         return config;
     }
