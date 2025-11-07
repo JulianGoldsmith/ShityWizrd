@@ -106,6 +106,7 @@ public class WebRTCConnector : MonoBehaviour
 
     void SendIceCandidate(PlayerRef target, RTCIceCandidate candidate)
     {
+        Debug.Log($"ICE: {candidate.Candidate}");
         network_signaling.SendIceCandidate(target, candidate);
     }
 
@@ -196,7 +197,7 @@ public class WebRTCConnector : MonoBehaviour
         };
         //var transceiver = conn.AddTransceiver(TrackKind.Audio);
         //transceiver.Direction = RTCRtpTransceiverDirection.SendRecv;
-        conn.OnIceCandidate = c => Debug.Log($"ICE: {c.Candidate}");
+
         if (_sendStream == null)
             _sendStream = new MediaStream();
         conn.AddTrack(micTrack, _sendStream);
@@ -432,12 +433,12 @@ public class WebRTCConnector : MonoBehaviour
     public static RTCConfiguration GetSelectedSdpSemantics()
     {
         RTCConfiguration config = default;
-        config.iceServers = new[] { 
-            new RTCIceServer 
-            { 
-                urls = new[] 
-                { 
-                    default_ice_server,
+        config.iceServers = new[] {
+            new RTCIceServer
+            {
+                urls = new[]
+                {
+                    //default_ice_server,
                     "stun:stun.relay.metered.ca:80"
                 }
             },
@@ -446,16 +447,15 @@ public class WebRTCConnector : MonoBehaviour
                 urls = new[]
                 {
                     "turn:global.relay.metered.ca:80",
-                    "turn:global.relay.metered.ca:80?transport=tcp",
+                    "turn:global.relay.metered.ca:80?transport=udp",
                     "turn:global.relay.metered.ca:443",
-                    "turns:global.relay.metered.ca:443?transport=tcp"
+                    "turns:global.relay.metered.ca:443?transport=udp"
                 },
                 username = "bd61df2c282bf4c6403f3a19",
                 credential = "huRhOJN6vrCwYeyO",
                 credentialType = RTCIceCredentialType.Password
             }
         };
-
         return config;
     }
 
