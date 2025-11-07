@@ -439,20 +439,32 @@ public class WebRTCConnector : MonoBehaviour
                 urls = new[]
                 {
                     //default_ice_server,
-                    "stun:stun.relay.metered.ca:80"
+                    //"stun:stun.relay.metered.ca:80",
+                    "stun:stun.turnix.io:3478"
                 }
             },
+            //new RTCIceServer
+            //{
+            //    urls = new[]
+            //    {
+            //        "turn:global.relay.metered.ca:80",
+            //        "turn:global.relay.metered.ca:80?transport=udp",
+            //        "turn:global.relay.metered.ca:443",
+            //        "turns:global.relay.metered.ca:443?transport=udp"
+            //    },
+            //    username = "bd61df2c282bf4c6403f3a19",
+            //    credential = "huRhOJN6vrCwYeyO",
+            //    credentialType = RTCIceCredentialType.Password
+            //},
             new RTCIceServer
             {
                 urls = new[]
                 {
-                    "turn:global.relay.metered.ca:80",
-                    "turn:global.relay.metered.ca:80?transport=udp",
-                    "turn:global.relay.metered.ca:443",
-                    "turns:global.relay.metered.ca:443?transport=udp"
+                    "turn:eu-central.turnix.io:3478?transport=udp",
+                    "turns:eu-central.turnix.io:443?transport=udp"
                 },
-                username = "bd61df2c282bf4c6403f3a19",
-                credential = "huRhOJN6vrCwYeyO",
+                username = "8b89e96f-3b3f-4240-a5e9-0c8f0633f8c5",
+                credential = "0a3501ad2581d1ec12d3077ef0545401",
                 credentialType = RTCIceCredentialType.Password
             }
         };
