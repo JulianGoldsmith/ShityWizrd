@@ -4,7 +4,6 @@ using Fusion;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
-using static UnityEngine.GraphicsBuffer;
 
 public class WebRTCConnector : MonoBehaviour
 {
@@ -253,7 +252,9 @@ public class WebRTCConnector : MonoBehaviour
         //}
 
         RTCSessionDescription local_desc = op.Desc;
-        
+
+        Debug.Log(local_desc);
+
         // 2. successfully created offer,
         //      so assign to local description.
         var op2 = pc.SetLocalDescription(ref local_desc);
@@ -284,7 +285,7 @@ public class WebRTCConnector : MonoBehaviour
         RTCSessionDescription remote_session_desc = new RTCSessionDescription() { 
             type = RTCSdpType.Offer, sdp = remote_desc
         };
-
+        Debug.Log($"remote: {remote_desc}");
         // 4. peer receives offer.
         // 5. peer assigns offer to remote description
         Debug.LogError("Setting remote description from offer");
@@ -307,6 +308,7 @@ public class WebRTCConnector : MonoBehaviour
 
         // 7. on success, assigns local description.
         RTCSessionDescription local_desc = op2.Desc;
+        Debug.Log($"local: {local_desc}");
         var op3 = pc.SetLocalDescription(ref local_desc);
         yield return op3;
         if (op3.IsError)
@@ -340,7 +342,7 @@ public class WebRTCConnector : MonoBehaviour
             type = RTCSdpType.Answer,
             sdp = remote_desc
         };
-
+        Debug.Log($"remote: {remote_session_desc}");
         // 10. local assigns answer to remote description.
         var op = pc.SetRemoteDescription(ref remote_session_desc);
         yield return op;
