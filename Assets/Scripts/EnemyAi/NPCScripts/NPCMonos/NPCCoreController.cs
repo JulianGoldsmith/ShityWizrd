@@ -4,7 +4,7 @@ using UnityEngine.AI;
 
 public class NPCCoreController : MonoBehaviour
 {
-    public Blackboard blackboard;
+    [SerializeField] public BehaviorGraphAgent agent;
 
 
     void Start()

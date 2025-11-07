@@ -27,7 +27,7 @@ public class NetworkedHandsController : NetworkBehaviour
 
         public Transform targetFORFinalArmature; //the target the finalArmature aims for
 
-        public Transform shoulderTransform; //the shoulder
+        public Transform shoulderTransform; //the shoulder can be used as the point for reciprical force
 
         public Transform palmTransform;
 
@@ -98,6 +98,8 @@ public class NetworkedHandsController : NetworkBehaviour
     public Vector3 dragTargetOffset = new Vector3(0, 0, 0.35f);
     [Networked] public float DragDistance { get; set; }
     public Vector3 dragHandModelPosOffset = new Vector3(0, -0.2f, 0);
+    public float maxStableStrengthRatio = 0.5f;
+    public float maxDragStrength = 150f;
 
     public float dragStength = 50, dragDamp = 10, dragRange = 10;
     public AnimationCurve dragStrengthCurve;

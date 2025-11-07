@@ -705,7 +705,7 @@ public class HybridCharacterController : NetworkBehaviour
 
         Vector3 velocityError = targetVelocity - currentVelocity;
 
-        float forceMagnitude = _moveInput.sqrMagnitude > 0.01f ? acceleration : braking;
+        float forceMagnitude = _moveInput.sqrMagnitude > 0.01f ? acceleration : IsGrounded?braking: braking/20f;
         Vector3 correctiveForce = velocityError * forceMagnitude;
 
         if (!IsFinite(correctiveForce))
@@ -1032,7 +1032,7 @@ public class PdBone
             return;
 
         float safeDeltaTime = Mathf.Max(deltaTime, 1e-4f);
-        float scale = Mathf.Max(designDeltaTime / safeDeltaTime, 0.01f);
+        //float scale = Mathf.Max(designDeltaTime / safeDeltaTime, 0.01f);
 
         Quaternion parentRotationWorld = parentRigidbody.rotation;
         Quaternion targetRotationWorld = parentRotationWorld * targetTransform.localRotation;
@@ -1052,8 +1052,8 @@ public class PdBone
 
         Vector3 angularVelocityErrorWorld = childRigidbody.angularVelocity - parentRigidbody.angularVelocity;
 
-        float proportionalRotationScaled = proportionalGainRotation * scale * scale;
-        float derivativeRotationScaled = derivativeGainRotation * scale;
+        float proportionalRotationScaled = proportionalGainRotation ;
+        float derivativeRotationScaled = derivativeGainRotation ;
 
         float normalizedAngle = Mathf.Clamp01(Mathf.Abs(angleRadians) / Mathf.Max(maximumAngleRadians, 1e-4f));
         
@@ -1105,8 +1105,8 @@ public class PdBone
 
             float forceMult = positionErrorCurve.Evaluate(velocityErrorWorld.magnitude);
 
-            float proportionalPositionScaled = proportionalGainPosition * scale * scale;
-            float derivativePositionScaled = derivativeGainPosition * scale;
+            float proportionalPositionScaled = proportionalGainPosition;
+            float derivativePositionScaled = derivativeGainPosition;
 
             Vector3 forceAccelerationWorld =
               proportionalPositionScaled * positionErrorWorld
@@ -1115,10 +1115,10 @@ public class PdBone
             if (forceAccelerationWorld.sqrMagnitude > maximumForceAcceleration * maximumForceAcceleration)
                 forceAccelerationWorld = forceAccelerationWorld.normalized * maximumForceAcceleration;
 
-            childRigidbody.AddForceAtPosition(/*(*/forceAccelerationWorld /** parentRigidbody.mass )/ childRigidbody.mass*/, childAnchorWorld, ForceMode.Acceleration);
+            childRigidbody.AddForceAtPosition((forceAccelerationWorld * parentRigidbody.mass )/ childRigidbody.mass, childAnchorWorld, ForceMode.Acceleration);
             if (applyEqualAndOppositeForce)
             {
-                parentRigidbody.AddForceAtPosition(/*((*/-forceAccelerationWorld * forceTransfereRatio /*) * childRigidbody.mass )/ parentRigidbody.mass*/, parentAnchorWorld, ForceMode.Acceleration) ;
+                parentRigidbody.AddForceAtPosition(((-forceAccelerationWorld * forceTransfereRatio ) * childRigidbody.mass )/ parentRigidbody.mass, parentAnchorWorld, ForceMode.Acceleration) ;
             }
 
             if(Vector3.Distance(childAnchorWorld, parentAnchorWorld) > 4)

@@ -1,6 +1,7 @@
 using Fusion;
 using Fusion.Addons.Physics;
 using System.Collections.Generic;
+using Unity.Behavior;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem; 
@@ -59,6 +60,10 @@ public class NPCActiveRagdollController : NetworkBehaviour
     [HideInInspector][Networked] public Vector3 NetworkedLookVector { get; set; }
     [HideInInspector][Networked] public Vector3 NetworkedMoveVector { get; set; }
 
+    [Header("Behaviour Graph")]
+    [SerializeField] public BehaviorGraphAgent agent;
+    public string homeLocationVaraibleName; 
+
     public override void Spawned()
     {
 
@@ -75,6 +80,9 @@ public class NPCActiveRagdollController : NetworkBehaviour
         {
             animStateController.SimulateAnimation();
         }
+
+        agent = this.GetComponent<BehaviorGraphAgent>();
+
     }
 
     public override void FixedUpdateNetwork()
@@ -92,6 +100,8 @@ public class NPCActiveRagdollController : NetworkBehaviour
         //ApplyRootMotionForce();
 
         UpdatePDDrives();
+
+      
     }
 
     public override void Render()

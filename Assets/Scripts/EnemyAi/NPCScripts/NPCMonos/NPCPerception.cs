@@ -3,11 +3,14 @@ using UnityEngine;
 
 public class NPCPerception : MonoBehaviour
 {
-    [SerializeField] private BehaviorGraphAgent agent;
+    [SerializeField] public BehaviorGraphAgent agent;
 
     [SerializeField] private string targetVariableName = "Target";
 
     [SerializeField] private string lastSeenPositionVariableName = "TargetLastSeenPosition";
+
+    [SerializeField] private string homeLocationVariableName = "HomeLocation";
+
 
     public float perceptionRadius = 10f;
     [Range(0, 360)]
@@ -20,7 +23,9 @@ public class NPCPerception : MonoBehaviour
 
     private GameObject previousFrameTarget = null;
 
-    public Transform root; 
+    public Transform root;
+
+    public NPCActiveRagdollController controller;
 
     public void OnStart()
     {
@@ -28,6 +33,7 @@ public class NPCPerception : MonoBehaviour
         {
             root = this.GetComponent<NPCActiveRagdollController>().coreRB.transform;
         }
+        
     }
 
     private void FixedUpdate()
@@ -53,7 +59,7 @@ public class NPCPerception : MonoBehaviour
 
     private void UpdateBlackboard(GameObject newTarget)
     {
-
+        //agent.SetVariableValue(homeLocationVariableName, Vector3.one);
         if (newTarget != previousFrameTarget)
         {
             agent.SetVariableValue(targetVariableName, newTarget);

@@ -17,7 +17,7 @@ public partial class NpcIdelAction : Action
 
     protected override Status OnUpdate()
     {
-        return Status.Success;
+        return Status.Running;
     }
 
     protected override void OnEnd()
