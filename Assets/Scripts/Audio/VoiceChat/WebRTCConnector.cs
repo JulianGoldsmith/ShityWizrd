@@ -196,7 +196,7 @@ public class WebRTCConnector : MonoBehaviour
         };
         //var transceiver = conn.AddTransceiver(TrackKind.Audio);
         //transceiver.Direction = RTCRtpTransceiverDirection.SendRecv;
-
+        conn.OnIceCandidate = c => Debug.Log($"ICE: {c.Candidate}");
         if (_sendStream == null)
             _sendStream = new MediaStream();
         conn.AddTrack(micTrack, _sendStream);
@@ -253,7 +253,7 @@ public class WebRTCConnector : MonoBehaviour
 
         RTCSessionDescription local_desc = op.Desc;
 
-        Debug.Log(local_desc);
+        Debug.Log($"local: {local_desc.sdp}");
 
         // 2. successfully created offer,
         //      so assign to local description.
@@ -308,7 +308,7 @@ public class WebRTCConnector : MonoBehaviour
 
         // 7. on success, assigns local description.
         RTCSessionDescription local_desc = op2.Desc;
-        Debug.Log($"local: {local_desc}");
+        Debug.Log($"local: {local_desc.sdp}");
         var op3 = pc.SetLocalDescription(ref local_desc);
         yield return op3;
         if (op3.IsError)
@@ -342,7 +342,7 @@ public class WebRTCConnector : MonoBehaviour
             type = RTCSdpType.Answer,
             sdp = remote_desc
         };
-        Debug.Log($"remote: {remote_session_desc}");
+        Debug.Log($"remote: {remote_session_desc.sdp}");
         // 10. local assigns answer to remote description.
         var op = pc.SetRemoteDescription(ref remote_session_desc);
         yield return op;
