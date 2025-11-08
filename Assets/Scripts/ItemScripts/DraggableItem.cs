@@ -38,7 +38,6 @@ public class DraggableItem : InteractableItem
         Vector3 torqueToAdd = Vector3.zero;
 
         int numberOfHolders = 0;
-        int lastActivePlayer = -1;
         for(int i = 0; i < CurrentHoldingPlayers.Length; i++)
         {
             PlayerRef playerRef = CurrentHoldingPlayers[i];
@@ -52,8 +51,6 @@ public class DraggableItem : InteractableItem
             {
                 continue;
             }
-
-            lastActivePlayer = i;
 
             bool isLocalHolder = (CurrentHoldingPlayers[i] == Runner.LocalPlayer);
 
@@ -88,9 +85,15 @@ public class DraggableItem : InteractableItem
 
             forceToAdd += actualForceOnObject;
 
-            //float targetDistanceToPlayer = -(targetHoldPos - handController.rightHand.shoulderTransform.position).magnitude;
-            //float actualDistanceToPlayer = -(rb.worldCenterOfMass - handController.rightHand.shoulderTransform.position).magnitude;
-            //Vector3 tensionForce = (handController.rightHand.shoulderTransform.position - rb.worldCenterOfMass) * (actualDistanceToPlayer - targetDistanceToPlayer);
+            float targetDistanceToPlayer = (targetHoldPos - handController.rightHand.shoulderTransform.position).magnitude;
+            float actualDistanceToPlayer = (rb.worldCenterOfMass - handController.rightHand.shoulderTransform.position).magnitude;
+            float dist = actualDistanceToPlayer - targetDistanceToPlayer;
+            Debug.Log("Dist " + dist);
+            if (dist > 0)
+            {
+                Vector3 tensionForce = (rb.worldCenterOfMass - handController.rightHand.shoulderTransform.position).normalized * (dist) * handController.handElasticForceOnPlayer.Evaluate(dist/handController.maxDistanceBeforeMaxElasticForce) * 10f;
+                controller.hipsRb.AddForce(tensionForce / controller.totalMass, ForceMode.Acceleration);
+            }
 
             //controller.pdBones[0].childRigidbody.AddForceAtPosition(tensionForce * actualForceOnObject.magnitude / 5f, handController.rightHand.shoulderTransform.position, ForceMode.Acceleration);
 
@@ -100,8 +103,8 @@ public class DraggableItem : InteractableItem
             //    controller.pdBones[0].childRigidbody.AddForceAtPosition((forceOnPlayer / controller.pdBones[0].childRigidbody.mass) / 2f, transform.position, ForceMode.Acceleration);
             //}
 
-            Vector3 forceOnPlayer = -actualForceOnObject / (controller.totalMass);
-            controller.hipsRb.AddForce(forceOnPlayer, ForceMode.Acceleration);
+            //Vector3 forceOnPlayer = -actualForceOnObject / (controller.totalMass);
+            //controller.hipsRb.AddForce(forceOnPlayer, ForceMode.Acceleration);
 
             //rotation
 
@@ -137,6 +140,8 @@ public class DraggableItem : InteractableItem
             Vector3 angularDamp = rb.angularVelocity * rotationalDampening;
             rb.AddTorque(torqueToAdd - angularDamp);
         }
+
+
 
     }
 

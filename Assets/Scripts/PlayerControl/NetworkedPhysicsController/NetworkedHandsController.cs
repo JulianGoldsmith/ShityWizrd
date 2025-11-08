@@ -105,7 +105,9 @@ public class NetworkedHandsController : NetworkBehaviour
     public AnimationCurve dragStrengthCurve;
     public float dragRotationalStrength = 50;
     public AnimationCurve dragRotationStrengthCurve = AnimationCurve.Linear(0, 0, 1, 1);
-    public AnimationCurve dragPitchToHeightModifierCurve; 
+    public AnimationCurve dragPitchToHeightModifierCurve;
+    public AnimationCurve handElasticForceOnPlayer;
+    public float maxDistanceBeforeMaxElasticForce = 20f;
 
     [Header("Cashe Values")]
     public HybridCharacterController characterController;
