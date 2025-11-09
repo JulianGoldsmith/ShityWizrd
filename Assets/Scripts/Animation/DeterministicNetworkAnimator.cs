@@ -23,20 +23,25 @@ public class DeterministicNetworkAnimator
     public float RootMotionVerticalDelta { get; private set; }
     public Quaternion RootMotionRotation { get; private set; }
 
+
+
     private Animator _animator;
     private Transform _armatureRoot;
+    private Transform _armatureTrans;
     private Vector3 localRootPosInTPose;
     private Quaternion _tPoseLocalRot;
 
-    private Vector3 _rootMotionOrigin;   
+    private Vector3 _tPoseLocalPos;   
     private Vector3 _prevRootMotionPos;
 
     private bool _zIsUp;
+    private Quaternion _qTPoseWorld;
 
 
 
-    public DeterministicNetworkAnimator(Animator animator, List<AnimationClip> clips, AnimationClip tPoseClip, Transform armatureRoot, bool zIsUp)
+    public DeterministicNetworkAnimator(Animator animator, List<AnimationClip> clips, AnimationClip tPoseClip, Transform armatureRoot, Transform armatureTrans, bool zIsUp)
     {
+        _armatureTrans = armatureTrans;
         _zIsUp = zIsUp;
          _animator = animator;
         _armatureRoot = armatureRoot;
@@ -76,20 +81,27 @@ public class DeterministicNetworkAnimator
             tPoseClipPlayable.SetTime(0);
             tPoseGraph.Evaluate();
 
-            _rootMotionOrigin = Vector3.zero;
-
-            localRootPosInTPose = Vector3.zero;
+            _tPoseLocalPos = _armatureRoot.localPosition;
+            localRootPosInTPose = _armatureRoot.localPosition;
             _tPoseLocalRot = _armatureRoot.localRotation;
+
+            Quaternion parentWorld = _armatureTrans.rotation;
+
+            Vector3 tposeFwdWorld = parentWorld * (_tPoseLocalRot * Axis(_tPoseForwardAxis));
+            Vector3 tposeUpWorld = parentWorld * (_tPoseLocalRot * Axis(_tPoseUpAxis));
+            Quaternion qTPoseWorld = Quaternion.LookRotation( Vector3.ProjectOnPlane(tposeFwdWorld, Vector3.zero),tposeUpWorld);
+
+            _qTPoseWorld = qTPoseWorld;
 
             tPoseGraph.Destroy();
 
             if (zIsUp)
             {
-                _prevRootMotionPos = new Vector3(_rootMotionOrigin.x, 0, _rootMotionOrigin.y);
+                _prevRootMotionPos = new Vector3(_tPoseLocalPos.x, 0, _tPoseLocalPos.y);
             }
             else
             {
-                _prevRootMotionPos = new Vector3(_rootMotionOrigin.x, 0, _rootMotionOrigin.z);
+                _prevRootMotionPos = new Vector3(_tPoseLocalPos.x, 0, _tPoseLocalPos.z);
             }
                
         }
@@ -97,7 +109,7 @@ public class DeterministicNetworkAnimator
         {
             Debug.LogError("T-Pose Clip is not set! Root motion will be unpredictable.");
             // Set defaults to avoid nulls
-            _rootMotionOrigin = Vector3.zero;
+            _tPoseLocalPos = Vector3.zero;
             _prevRootMotionPos = Vector3.zero;
             localRootPosInTPose = Vector3.zero;
             _tPoseLocalRot = Quaternion.identity;
@@ -129,12 +141,12 @@ public class DeterministicNetworkAnimator
         Vector3 currentHorizontalPos;
         if (_zIsUp)
         {
-            RootMotionVerticalDelta = currentRootPos.z - localRootPosInTPose.z;
+            RootMotionVerticalDelta = (currentRootPos.z - localRootPosInTPose.z) * _armatureTrans.transform.localScale.z;
             currentHorizontalPos = new Vector3(currentRootPos.x, 0, currentRootPos.y);
         }
         else
         {
-            RootMotionVerticalDelta = currentRootPos.y - localRootPosInTPose.y;
+            RootMotionVerticalDelta = (currentRootPos.y - localRootPosInTPose.y) * _armatureTrans.transform.localScale.y;
             currentHorizontalPos = new Vector3(currentRootPos.x, 0, currentRootPos.z);
         }
 
@@ -150,13 +162,19 @@ public class DeterministicNetworkAnimator
             deltaPos = Vector3.zero;
         }
 
-        RootMotionHorizontalDelta = deltaPos;
+        RootMotionHorizontalDelta = deltaPos * _armatureTrans.transform.localScale.y;
 
         //rotation
 
+        //Quaternion currentLocalRot = _armatureRoot.localRotation;
+        //Quaternion deltaRotation = currentLocalRot * Quaternion.Inverse(_tPoseLocalRot);
+        //RootMotionRotation = deltaRotation;
+
         Quaternion currentLocalRot = _armatureRoot.localRotation;
-        Quaternion deltaRotation = currentLocalRot * Quaternion.Inverse(_tPoseLocalRot);
-        RootMotionRotation = deltaRotation;
+        Quaternion deltaLocalFromTPose = currentLocalRot * Quaternion.Inverse(_tPoseLocalRot);
+        RootMotionRotation = deltaLocalFromTPose; 
+
+        WorldDeltaFromTPose = _qTPoseWorld * deltaLocalFromTPose * Quaternion.Inverse(_qTPoseWorld);
     }
 
     public void DestroyGraph()
@@ -166,4 +184,21 @@ public class DeterministicNetworkAnimator
             _graph.Destroy();
         }
     }
+
+    public enum LocalAxis { X, Y, Z, NegX, NegY, NegZ }
+    private static Vector3 Axis(LocalAxis a) => a switch
+    {
+        LocalAxis.X => Vector3.right,
+        LocalAxis.Y => Vector3.up,
+        LocalAxis.Z => Vector3.forward,
+        LocalAxis.NegX => -Vector3.right,
+        LocalAxis.NegY => -Vector3.up,
+        LocalAxis.NegZ => -Vector3.forward
+    };
+
+    [SerializeField] private LocalAxis _tPoseForwardAxis = LocalAxis.Z;
+    [SerializeField] private LocalAxis _tPoseUpAxis = LocalAxis.Y;
+
+    public Quaternion WorldDeltaFromTPose { get; private set; }
 }
+

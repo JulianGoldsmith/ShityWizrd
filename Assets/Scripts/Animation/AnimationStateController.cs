@@ -69,6 +69,8 @@ public class AnimationStateController : NetworkBehaviour
     public Vector2 RootMotionDeltaThisUpdate => _detAnimator.RootMotionHorizontalDelta;
     public Quaternion RootMotionRotation => _detAnimator?.RootMotionRotation ?? Quaternion.identity;
 
+    public Quaternion WorldDeltaFromTPose => _detAnimator?.WorldDeltaFromTPose ?? Quaternion.identity;
+
     private void Awake()
     {
         if (_animator == null)
@@ -83,7 +85,7 @@ public class AnimationStateController : NetworkBehaviour
         BuildRuntimeClips();
 
         List<AnimationClip> clips = _runtimeClipsConfig.Select(config => config.Clip).ToList();
-        _detAnimator = new DeterministicNetworkAnimator(_animator, clips, _tPoseClip, armatureRoot, zIsUp);
+        _detAnimator = new DeterministicNetworkAnimator(_animator, clips, _tPoseClip, armatureRoot, armatureRoot.parent, zIsUp);
 
         if (Object.HasStateAuthority)
         {

@@ -125,13 +125,13 @@ public class NPCActiveRagdollController : NetworkBehaviour
     {
         float rootMotionVerticalDelta = animStateController.RootMotionOffsetFromOrigin * transform.localScale.y;
 
-        float distanceToCast = rootMotionVerticalDelta + rideHeight + 0.2f + suspensionCastRadius + extraGroundCheckDistance;
+        float distanceToCast = rootMotionVerticalDelta + (rideHeight * transform.localScale.y) + 0.2f + suspensionCastRadius + extraGroundCheckDistance;
 
         if (Physics.SphereCast(coreRB.position + Vector3.up*0.2f, suspensionCastRadius, Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
 
-            float targetHeight = useRootMotionY? rideHeight+rootMotionVerticalDelta : rideHeight;
+            float targetHeight = useRootMotionY? (rideHeight * transform.localScale.y) + rootMotionVerticalDelta : (rideHeight * transform.localScale.y);
 
             float compression = targetHeight - (coreRB.transform.position - hit.point).magnitude;
 
@@ -158,53 +158,72 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     private void ApplyUprightStabilization()
     {
-        if (!IsGrounded)
-        {
 
-        }
-        else
-        {
 
-        }
+        //Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
+        //if (flatLook.sqrMagnitude < 1e-6f)
+        //{
+        //    flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
+        //    if (flatLook.sqrMagnitude < 1e-6f) flatLook = coreRB.transform.forward;
+        //}
+        //flatLook.Normalize();
 
+        //Quaternion facingFromLookDir = Quaternion.LookRotation(flatLook, Vector3.up);
+
+        //Quaternion rootMotionRot = animStateController ? animStateController.RootMotionRotation : Quaternion.identity;
+        //Vector3 rootMotionEuler = rootMotionRot.eulerAngles;
+
+        //float rootMotionYawDeg = (animStateController && animStateController.zIsUp) ? Mathf.DeltaAngle(0f, rootMotionEuler.z)
+        //    : Mathf.DeltaAngle(0f, rootMotionEuler.y);
+
+        //Quaternion rootYawOnWorldUp = Quaternion.AngleAxis(rootMotionYawDeg, Vector3.up);
+
+        //Quaternion targetRot = facingFromLookDir * rootYawOnWorldUp;
+
+        //Quaternion current = coreRB.rotation;
+
+        //Quaternion quaternionErrror = targetRot * Quaternion.Inverse(current);
+        //if (quaternionErrror.w < 0f) { quaternionErrror.x = -quaternionErrror.x; quaternionErrror.y = -quaternionErrror.y; quaternionErrror.z = -quaternionErrror.z; quaternionErrror.w = -quaternionErrror.w; }
+
+        //quaternionErrror.ToAngleAxis(out float errorINDegrees, out Vector3 errorAxsis);
+        //if (float.IsNaN(errorAxsis.x) || errorAxsis.sqrMagnitude < 1e-12f) return;
+
+        //float errorInRads = errorINDegrees * Mathf.Deg2Rad;
+        //Vector3 proportional = errorAxsis * errorInRads;              
+        //Vector3 derivative = -coreRB.angularVelocity;         
+
+
+        //float groundedScale = IsGrounded ? 1f : 0.5f;
+
+        //Vector3 torque = proportional * uprightSpringStrength + derivative * uprightSpringDamper;
+
+        //coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
 
         Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
-        if (flatLook.sqrMagnitude < 1e-6f)
-        {
-            flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
-            if (flatLook.sqrMagnitude < 1e-6f) flatLook = coreRB.transform.forward;
-        }
+        if (flatLook.sqrMagnitude < 1e-6f) flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
         flatLook.Normalize();
+        Quaternion qBase = Quaternion.LookRotation(flatLook, Vector3.up);
 
-        Quaternion facingFromLookDir = Quaternion.LookRotation(flatLook, Vector3.up);
+        // Full animation delta from T-pose (already in world space)
+        Quaternion qAnimDelta = animStateController ? animStateController.WorldDeltaFromTPose : Quaternion.identity;
 
-        Quaternion rootMotionRot = animStateController ? animStateController.RootMotionRotation : Quaternion.identity;
-        Vector3 rootMotionEuler = rootMotionRot.eulerAngles;
+        // Target = base * full delta (x,y,z). Order matters: “add the root rotation onto the base”.
+        Quaternion targetRot = qBase * qAnimDelta;
 
-        float rootMotionYawDeg = (animStateController && animStateController.zIsUp) ? Mathf.DeltaAngle(0f, rootMotionEuler.z)
-            : Mathf.DeltaAngle(0f, rootMotionEuler.y);
-
-        Quaternion rootYawOnWorldUp = Quaternion.AngleAxis(rootMotionYawDeg, Vector3.up);
-
-        Quaternion targetRot = facingFromLookDir * rootYawOnWorldUp;
-
+        // PD towards target (your existing code)
         Quaternion current = coreRB.rotation;
+        Quaternion qErr = targetRot * Quaternion.Inverse(current);
+        if (qErr.w < 0f) { qErr.x = -qErr.x; qErr.y = -qErr.y; qErr.z = -qErr.z; qErr.w = -qErr.w; }
 
-        Quaternion quaternionErrror = targetRot * Quaternion.Inverse(current);
-        if (quaternionErrror.w < 0f) { quaternionErrror.x = -quaternionErrror.x; quaternionErrror.y = -quaternionErrror.y; quaternionErrror.z = -quaternionErrror.z; quaternionErrror.w = -quaternionErrror.w; }
+        qErr.ToAngleAxis(out float errDeg, out Vector3 errAxis);
+        if (errAxis.sqrMagnitude < 1e-12f || float.IsNaN(errAxis.x)) return;
 
-        quaternionErrror.ToAngleAxis(out float errorINDegrees, out Vector3 errorAxsis);
-        if (float.IsNaN(errorAxsis.x) || errorAxsis.sqrMagnitude < 1e-12f) return;
+        float errRad = errDeg * Mathf.Deg2Rad;
+        Vector3 proportional = errAxis * errRad;
+        Vector3 derivative = -coreRB.angularVelocity;
 
-        float errorInRads = errorINDegrees * Mathf.Deg2Rad;
-        Vector3 proportional = errorAxsis * errorInRads;              
-        Vector3 derivative = -coreRB.angularVelocity;         
-
-        
         float groundedScale = IsGrounded ? 1f : 0.5f;
-
         Vector3 torque = proportional * uprightSpringStrength + derivative * uprightSpringDamper;
-
         coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
     }
 
@@ -280,7 +299,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
         Vector3 fwd = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
         if (fwd.sqrMagnitude < 1e-6f)
         {
-            fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            fwd = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
         }
         fwd.Normalize();
 
