@@ -1,4 +1,4 @@
-using Fusion;
+﻿using Fusion;
 using Fusion.Addons.Physics;
 using System.Collections.Generic;
 using Unity.Behavior;
@@ -18,7 +18,6 @@ public class NPCActiveRagdollController : NetworkBehaviour
     public float suspensionCastRadius = 0.25f;
     [Networked] public NetworkBool IsGrounded { get; set; }
 
-    public float rideHeight = 0.8f;
     public float rideSpringStrength = 100f;
     public float rideSpringDamper = 10f;
 
@@ -91,12 +90,12 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         animStateController.SimulateAnimation();
 
-        ApplyCoreSuspention();
 
         ApplyUprightStabilization();
 
         UpdateCoreMovement();
 
+        ApplyCoreSuspention();
         //ApplyRootMotionForce();
 
         UpdatePDDrives();
@@ -123,15 +122,18 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     private void ApplyCoreSuspention()
     {
-        float rootMotionVerticalDelta = animStateController.RootMotionOffsetFromOrigin * transform.localScale.y;
+        //get the y (differecne between armeture and root from the animator (this is already scaled in the animator)
+        float rootMotionVerticalDelta = animStateController.RootMotionRaw.y * transform.localScale.y; //this is our ride height now
 
-        float distanceToCast = rootMotionVerticalDelta + (rideHeight * transform.localScale.y) + 0.2f + suspensionCastRadius + extraGroundCheckDistance;
+        float extraHeightToCastFrom = 0.2f;
 
-        if (Physics.SphereCast(coreRB.position + Vector3.up*0.2f, suspensionCastRadius, Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
+        float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + suspensionCastRadius + extraGroundCheckDistance;
+
+        if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), suspensionCastRadius, Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
 
-            float targetHeight = useRootMotionY? (rideHeight * transform.localScale.y) + rootMotionVerticalDelta : (rideHeight * transform.localScale.y);
+            float targetHeight = useRootMotionY? rootMotionVerticalDelta : 0;
 
             float compression = targetHeight - (coreRB.transform.position - hit.point).magnitude;
 
@@ -199,32 +201,65 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         //coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
 
+        //Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
+        //if (flatLook.sqrMagnitude < 1e-6f) flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
+        //flatLook.Normalize();
+        //Quaternion qBase = Quaternion.LookRotation(flatLook, Vector3.up);
+
+        //// Full animation delta from T-pose (already in world space)
+        //Quaternion qAnimDelta = animStateController ? animStateController.WorldDeltaFromTPose : Quaternion.identity;
+        ////qAnimDelta = Quaternion.identity; // test this
+        //// Target = base * full delta (x,y,z). Order matters: “add the root rotation onto the base”.
+        //Quaternion targetRot = qBase * qAnimDelta;
+
+        //// PD towards target (your existing code)
+        //Quaternion current = coreRB.rotation;
+        //Quaternion qErr = targetRot * Quaternion.Inverse(current);
+        //if (qErr.w < 0f) { qErr.x = -qErr.x; qErr.y = -qErr.y; qErr.z = -qErr.z; qErr.w = -qErr.w; }
+
+        //qErr.ToAngleAxis(out float errDeg, out Vector3 errAxis);
+        //if (errAxis.sqrMagnitude < 1e-12f || float.IsNaN(errAxis.x)) return;
+
+        //float errRad = errDeg * Mathf.Deg2Rad;
+        //Vector3 proportional = errAxis * errRad;
+        //Vector3 derivative = -coreRB.angularVelocity;
+
+        //float groundedScale = IsGrounded ? 1f : 0.5f;
+        //Vector3 torque = proportional * uprightSpringStrength + derivative * uprightSpringDamper;
+        //coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
+
         Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
-        if (flatLook.sqrMagnitude < 1e-6f) flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
+        if (flatLook.sqrMagnitude < 1e-6f)
+            flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
         flatLook.Normalize();
+
         Quaternion qBase = Quaternion.LookRotation(flatLook, Vector3.up);
 
-        // Full animation delta from T-pose (already in world space)
+        // 2) Full animation delta (pitch + roll + yaw) in WORLD space
         Quaternion qAnimDelta = animStateController ? animStateController.WorldDeltaFromTPose : Quaternion.identity;
 
-        // Target = base * full delta (x,y,z). Order matters: �add the root rotation onto the base�.
+        // 3) Compose: "add the hips delta onto the base"
         Quaternion targetRot = qBase * qAnimDelta;
 
-        // PD towards target (your existing code)
-        Quaternion current = coreRB.rotation;
-        Quaternion qErr = targetRot * Quaternion.Inverse(current);
-        if (qErr.w < 0f) { qErr.x = -qErr.x; qErr.y = -qErr.y; qErr.z = -qErr.z; qErr.w = -qErr.w; }
+        // 4) Apply PdBone-style rotation PD to the core
+        //    (No real parent for the core → parent angular velocity = Vector3.zero)
+        float kp = uprightSpringStrength;     // e.g. start 40–80
+        float kd = uprightSpringDamper;       // e.g. start 4–10
+        float maxAngleRad = 60f * Mathf.Deg2Rad;   // generous to avoid clipping non-upright moves
+        float maxAccel = 4000f;               // enough headroom to be responsive
 
-        qErr.ToAngleAxis(out float errDeg, out Vector3 errAxis);
-        if (errAxis.sqrMagnitude < 1e-12f || float.IsNaN(errAxis.x)) return;
-
-        float errRad = errDeg * Mathf.Deg2Rad;
-        Vector3 proportional = errAxis * errRad;
-        Vector3 derivative = -coreRB.angularVelocity;
-
-        float groundedScale = IsGrounded ? 1f : 0.5f;
-        Vector3 torque = proportional * uprightSpringStrength + derivative * uprightSpringDamper;
-        coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
+        // If you want shaping like your PdBone curve, you can expose it;
+        // otherwise pass null and it behaves linearly.
+        ApplyPdRotationLikeBone(
+            childRB: coreRB,
+            targetRotationWorld: targetRot,
+            parentAngularVelocityWorld: Vector3.zero,
+            kp: kp,
+            kd: kd,
+            maximumAngleRadians: maxAngleRad,
+            maximumTorqueAcceleration: maxAccel,
+            rotationErrorCurve: null
+        );
     }
 
     private void UpdateCoreMovement()
@@ -269,10 +304,16 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         Vector3 force;
         if (NetworkedMoveVector.magnitude > 0.01f)
+        {
             force = velocityError * acceleration;
+            Debug.Log($"Adding force to core {force} as we are ACCELERATING");
+        }
         else
+        {
             force = velocityError * braking;
-
+            Debug.Log($"Adding force to core {force} as we are BRAKING");
+        }
+        
         coreRB.AddForce(force, ForceMode.Acceleration);
     }
 
@@ -354,5 +395,58 @@ public class NPCActiveRagdollController : NetworkBehaviour
             NetworkedMoveVector = input;
             NetworkedWantsToSprint = speed > 1 ? true: false;
         }
+    }
+
+    private void ApplyPdRotationLikeBone(
+    Rigidbody childRB,
+    Quaternion targetRotationWorld,
+    Vector3 parentAngularVelocityWorld,   // if no parent, pass Vector3.zero
+    float kp,                             // proportionalGainRotation
+    float kd,                             // derivativeGainRotation
+    float maximumAngleRadians,            // clamp like PdBone.maximumAngleRadians
+    float maximumTorqueAcceleration,      // clamp like PdBone.maximumTorqueAcceleration
+    AnimationCurve rotationErrorCurve = null // optional shaping curve (nullable)
+)
+    {
+        // Error = target * inv(current)
+        Quaternion rotationError = targetRotationWorld * Quaternion.Inverse(childRB.rotation);
+
+        rotationError.ToAngleAxis(out float angleDegrees, out Vector3 errorAxisWorld);
+        if (angleDegrees > 180f) angleDegrees -= 360f;
+        float angleRadians = angleDegrees * Mathf.Deg2Rad;
+
+        if (errorAxisWorld.sqrMagnitude < 1e-8f)
+            errorAxisWorld = Vector3.zero;
+        else
+            errorAxisWorld.Normalize();
+
+        // Safety clamp identical to PdBone
+        angleRadians = Mathf.Clamp(angleRadians, -maximumAngleRadians, maximumAngleRadians);
+
+        // Relative angular velocity (child - parent)
+        Vector3 angularVelocityErrorWorld = childRB.angularVelocity - parentAngularVelocityWorld;
+
+        // Optional shaping curve exactly like PdBone
+        float rotationMult = 1f;
+        if (rotationErrorCurve != null && maximumAngleRadians > 1e-4f)
+        {
+            float normalizedAngle = Mathf.Clamp01(Mathf.Abs(angleRadians) / maximumAngleRadians);
+            rotationMult = rotationErrorCurve.Evaluate(normalizedAngle);
+        }
+
+        // Torque in world space
+        Vector3 torqueAccelerationWorld =
+            (kp * angleRadians) * errorAxisWorld - (kd * angularVelocityErrorWorld);
+
+        torqueAccelerationWorld *= rotationMult;
+
+        // Clamp magnitude like PdBone
+        if (torqueAccelerationWorld.sqrMagnitude > maximumTorqueAcceleration * maximumTorqueAcceleration)
+            torqueAccelerationWorld = torqueAccelerationWorld.normalized * maximumTorqueAcceleration;
+
+        // Let the solver spin fast enough
+        childRB.maxAngularVelocity = Mathf.Max(childRB.maxAngularVelocity, 50f);
+
+        childRB.AddTorque(torqueAccelerationWorld, ForceMode.Acceleration);
     }
 }

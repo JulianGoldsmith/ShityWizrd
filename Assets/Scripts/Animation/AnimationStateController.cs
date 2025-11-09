@@ -64,9 +64,10 @@ public class AnimationStateController : NetworkBehaviour
     public Transform armatureRoot;
 
     [Header("Needed for blender imports Z = UP")]
-    public bool zIsUp = true;
-    public float RootMotionOffsetFromOrigin => _detAnimator.RootMotionVerticalDelta;
-    public Vector2 RootMotionDeltaThisUpdate => _detAnimator.RootMotionHorizontalDelta;
+    public AnimLocalAxis armatureLocalUpAxis = AnimLocalAxis.Y;
+    public AnimLocalAxis armatureLocalForwardAxis = AnimLocalAxis.Z;
+    public Vector3 RootMotionRaw => _detAnimator.RootMotionRaw;
+    public Vector3 RootMotionDelta => _detAnimator.RootMotionDelta;
     public Quaternion RootMotionRotation => _detAnimator?.RootMotionRotation ?? Quaternion.identity;
 
     public Quaternion WorldDeltaFromTPose => _detAnimator?.WorldDeltaFromTPose ?? Quaternion.identity;
@@ -85,7 +86,7 @@ public class AnimationStateController : NetworkBehaviour
         BuildRuntimeClips();
 
         List<AnimationClip> clips = _runtimeClipsConfig.Select(config => config.Clip).ToList();
-        _detAnimator = new DeterministicNetworkAnimator(_animator, clips, _tPoseClip, armatureRoot, armatureRoot.parent, zIsUp);
+        _detAnimator = new DeterministicNetworkAnimator(_animator, clips, _tPoseClip, armatureRoot, armatureRoot.parent, armatureLocalForwardAxis, armatureLocalUpAxis);
 
         if (Object.HasStateAuthority)
         {

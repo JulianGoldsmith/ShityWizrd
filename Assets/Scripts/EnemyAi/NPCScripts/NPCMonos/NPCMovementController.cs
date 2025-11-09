@@ -46,7 +46,7 @@ public class NPCMovementController : MonoBehaviour
 
     public void RotateTowardsPoint(Vector3 point)
     {
-        var dir = point - (controller.coreRB.position - Vector3.up * controller.rideHeight);
+        var dir = point - (controller.coreRB.position - Vector3.up * controller.animStateController.RootMotionRaw.y);
         dir.y = 0;
         if (dir != Vector3.zero)
         {

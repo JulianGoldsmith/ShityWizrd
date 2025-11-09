@@ -19,8 +19,8 @@ public class DeterministicNetworkAnimator
     private List<AnimationClipPlayable> _clipPlayables = new List<AnimationClipPlayable>();
     private bool _isInitialized = false;
 
-    public Vector3 RootMotionHorizontalDelta { get; private set; }
-    public float RootMotionVerticalDelta { get; private set; }
+    public Vector3 RootMotionDelta { get; private set; } ///root motion difference from last fixedUpdate.
+    public Vector3 RootMotionRaw { get; private set; } ///root motion raw local position in relation to armature base
     public Quaternion RootMotionRotation { get; private set; }
 
 
@@ -39,10 +39,12 @@ public class DeterministicNetworkAnimator
 
 
 
-    public DeterministicNetworkAnimator(Animator animator, List<AnimationClip> clips, AnimationClip tPoseClip, Transform armatureRoot, Transform armatureTrans, bool zIsUp)
+    public DeterministicNetworkAnimator(Animator animator, List<AnimationClip> clips, AnimationClip tPoseClip, Transform armatureRoot, Transform armatureTrans, AnimLocalAxis animLocalForwardAxis, AnimLocalAxis animLocalUpAxis)
     {
+        _tPoseForwardAxis = animLocalForwardAxis;
+        _tPoseUpAxis = animLocalUpAxis;
         _armatureTrans = armatureTrans;
-        _zIsUp = zIsUp;
+        //_zIsUp = zIsUp;
          _animator = animator;
         _armatureRoot = armatureRoot;
         if (animator == null || clips == null || clips.Count == 0)
@@ -87,21 +89,18 @@ public class DeterministicNetworkAnimator
 
             Quaternion parentWorld = _armatureTrans.rotation;
 
-            Vector3 tposeFwdWorld = parentWorld * (_tPoseLocalRot * Axis(_tPoseForwardAxis));
-            Vector3 tposeUpWorld = parentWorld * (_tPoseLocalRot * Axis(_tPoseUpAxis));
-            Quaternion qTPoseWorld = Quaternion.LookRotation( Vector3.ProjectOnPlane(tposeFwdWorld, Vector3.zero),tposeUpWorld);
-
-            _qTPoseWorld = qTPoseWorld;
+            // This is the pelvis/root *world* rotation when in T-pose:
+            _qTPoseWorld = parentWorld * _tPoseLocalRot;
 
             tPoseGraph.Destroy();
 
-            if (zIsUp)
+            if (_tPoseUpAxis == AnimLocalAxis.Z)
             {
-                _prevRootMotionPos = new Vector3(_tPoseLocalPos.x, 0, _tPoseLocalPos.y);
+                _prevRootMotionPos = new Vector3(_tPoseLocalPos.x, 0, _tPoseLocalPos.z);
             }
             else
             {
-                _prevRootMotionPos = new Vector3(_tPoseLocalPos.x, 0, _tPoseLocalPos.z);
+                _prevRootMotionPos = new Vector3(_tPoseLocalPos.x, 0, _tPoseLocalPos.y);
             }
                
         }
@@ -138,37 +137,21 @@ public class DeterministicNetworkAnimator
 
         Vector3 currentRootPos = _armatureRoot.localPosition;
         
-        Vector3 currentHorizontalPos;
-        if (_zIsUp)
+        if (_tPoseUpAxis == AnimLocalAxis.Z)
         {
-            RootMotionVerticalDelta = (currentRootPos.z - localRootPosInTPose.z) * _armatureTrans.transform.localScale.z;
-            currentHorizontalPos = new Vector3(currentRootPos.x, 0, currentRootPos.y);
+            RootMotionRaw = new Vector3(_armatureRoot.localPosition.x, _armatureRoot.localPosition.z, _armatureRoot.localPosition.y) * _armatureTrans.localScale.x;
+            Vector3 rootDelta = _armatureRoot.localPosition - _prevRootMotionPos;
+            RootMotionDelta = new Vector3(rootDelta.x , rootDelta.z, rootDelta.y) * _armatureTrans.localScale.x;
+        
         }
         else
         {
-            RootMotionVerticalDelta = (currentRootPos.y - localRootPosInTPose.y) * _armatureTrans.transform.localScale.y;
-            currentHorizontalPos = new Vector3(currentRootPos.x, 0, currentRootPos.z);
+            RootMotionRaw = new Vector3(_armatureRoot.localPosition.x, _armatureRoot.localPosition.y, _armatureRoot.localPosition.z) * _armatureTrans.localScale.x;
+            Vector3 rootDelta = _armatureRoot.localPosition - _prevRootMotionPos;
+            RootMotionDelta = new Vector3(rootDelta.x, rootDelta.y, rootDelta.z) * _armatureTrans.localScale.x;
         }
 
-       
-        Vector3 deltaPos = currentHorizontalPos - _prevRootMotionPos;
-
-        // C. Cache horizontal position for next tick
-        _prevRootMotionPos = currentHorizontalPos;
-
-        // D. Guard against teleports
-        if (deltaPos.magnitude > 1.0f)
-        {
-            deltaPos = Vector3.zero;
-        }
-
-        RootMotionHorizontalDelta = deltaPos * _armatureTrans.transform.localScale.y;
-
-        //rotation
-
-        //Quaternion currentLocalRot = _armatureRoot.localRotation;
-        //Quaternion deltaRotation = currentLocalRot * Quaternion.Inverse(_tPoseLocalRot);
-        //RootMotionRotation = deltaRotation;
+        _prevRootMotionPos = _armatureRoot.localPosition;
 
         Quaternion currentLocalRot = _armatureRoot.localRotation;
         Quaternion deltaLocalFromTPose = currentLocalRot * Quaternion.Inverse(_tPoseLocalRot);
@@ -185,20 +168,20 @@ public class DeterministicNetworkAnimator
         }
     }
 
-    public enum LocalAxis { X, Y, Z, NegX, NegY, NegZ }
-    private static Vector3 Axis(LocalAxis a) => a switch
+    
+    private static Vector3 Axis(AnimLocalAxis a) => a switch
     {
-        LocalAxis.X => Vector3.right,
-        LocalAxis.Y => Vector3.up,
-        LocalAxis.Z => Vector3.forward,
-        LocalAxis.NegX => -Vector3.right,
-        LocalAxis.NegY => -Vector3.up,
-        LocalAxis.NegZ => -Vector3.forward
+        AnimLocalAxis.X => Vector3.right,
+        AnimLocalAxis.Y => Vector3.up,
+        AnimLocalAxis.Z => Vector3.forward,
+        AnimLocalAxis.NegX => -Vector3.right,
+        AnimLocalAxis.NegY => -Vector3.up,
+        AnimLocalAxis.NegZ => -Vector3.forward
     };
 
-    [SerializeField] private LocalAxis _tPoseForwardAxis = LocalAxis.Z;
-    [SerializeField] private LocalAxis _tPoseUpAxis = LocalAxis.Y;
+    [SerializeField] private AnimLocalAxis _tPoseForwardAxis = AnimLocalAxis.Z;
+    [SerializeField] private AnimLocalAxis _tPoseUpAxis = AnimLocalAxis.Y;
 
     public Quaternion WorldDeltaFromTPose { get; private set; }
 }
-
+public enum AnimLocalAxis { X, Y, Z, NegX, NegY, NegZ }
