@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1675de2f165830e4fb8190ee3222370a, type: 3}
+  m_Name: BigArmGoober_RightSweep
+  m_EditorClassIdentifier: 
+  windUpClip: {fileID: -1903853533451568363, guid: 67496b5798bce9044893c0509c630117, type: 3}
+  holdClip: {fileID: 8171402764322112196, guid: 67496b5798bce9044893c0509c630117, type: 3}
+  releaseClip: {fileID: -2408017366080655815, guid: 67496b5798bce9044893c0509c630117, type: 3}
+  comboPoint: 0
+  holdDuration: 1
+  spell: {fileID: 0}
+  bakedJson: "{\n    \"entryPointControllerNodeGuid\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n   
+    \"nodes\": [\n        {\n            \"guid\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n           
+    \"position\": {\n                \"x\": -0.9146854877471924,\n               
+    \"y\": -0.014445751905441285,\n                \"z\": 0.015622764825820923\n           
+    },\n            \"nodeTemplateName\": \"EntryPointControler\",\n            \"connections\":
+    [\n                {\n                    \"fromOutputSocketName\": \"Combo 1\",\n                   
+    \"fromOutputOwnerGUID\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n                   
+    \"targetNodeGUID\": \"91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4\",\n                   
+    \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
+    \"91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4\"\n                }\n            ],\n           
+    \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
+    },\n        {\n            \"guid\": \"91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4\",\n           
+    \"position\": {\n                \"x\": -0.6601918339729309,\n               
+    \"y\": 0.000023111701011657715,\n                \"z\": 0.35800644755363467\n           
+    },\n            \"nodeTemplateName\": \"ChargeCastNode\",\n            \"connections\":
+    [\n                {\n                    \"fromOutputSocketName\": \"Exec Out\",\n                   
+    \"fromOutputOwnerGUID\": \"91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4\",\n                   
+    \"targetNodeGUID\": \"49568da3-cd6d-4ae9-8277-55924031ebd4\",\n                   
+    \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
+    \"49568da3-cd6d-4ae9-8277-55924031ebd4\"\n                }\n            ],\n           
+    \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
+    },\n        {\n            \"guid\": \"49568da3-cd6d-4ae9-8277-55924031ebd4\",\n           
+    \"position\": {\n                \"x\": -0.2014719396829605,\n               
+    \"y\": 0.032555967569351199,\n                \"z\": 0.3386823534965515\n           
+    },\n            \"nodeTemplateName\": \"EggCore\",\n            \"connections\":
+    [],\n            \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\":
+    \"\"\n        }\n    ]\n}"
+  spellName: GlassSimpleEgg
+  networkObjectBuffer: {fileID: 0}

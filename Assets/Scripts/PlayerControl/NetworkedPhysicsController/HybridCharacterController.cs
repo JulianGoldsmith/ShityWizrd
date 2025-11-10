@@ -1010,7 +1010,9 @@ public class PdBone
     [Header("Optional Position PD (anchors)")]
     public bool usePositionDrive = false;
     public Vector3 parentAnchorLocal = Vector3.zero; 
-    public Vector3 childAnchorLocal = Vector3.zero; 
+    public Vector3 childAnchorLocal = Vector3.zero;
+    [HideInInspector] public Quaternion worldTargetToChild;
+
     public float proportionalGainPosition = 2000f;
     public float derivativeGainPosition = 80f;
 
@@ -1028,16 +1030,23 @@ public class PdBone
     const float snapDistance = 4f;
 
 
-    public void Step(float deltaTime)
+    public void Step(float deltaTime, float ragDollRotationStrength = 1)
     {
         if (childRigidbody == null || parentRigidbody == null || targetTransform == null)
             return;
 
         float safeDeltaTime = Mathf.Max(deltaTime, 1e-4f);
         //float scale = Mathf.Max(designDeltaTime / safeDeltaTime, 0.01f);
+        float s = Mathf.Clamp(ragDollRotationStrength, 0.05f, 10f);
 
         Quaternion parentRotationWorld = parentRigidbody.rotation;
-        Quaternion targetRotationWorld = parentRotationWorld * targetTransform.localRotation;
+        //Quaternion targetRotationWorld = parentRotationWorld * targetTransform.localRotation;
+
+        Quaternion targetParentRotationWorld = targetTransform.parent.rotation;
+        Quaternion targetLocalRotation = Quaternion.Inverse(targetParentRotationWorld) * targetTransform.rotation;
+
+        Quaternion targetRotationWorld = parentRotationWorld * targetLocalRotation;
+
 
         Quaternion rotationError = targetRotationWorld * Quaternion.Inverse(childRigidbody.rotation);
         rotationError.ToAngleAxis(out float angleDegrees, out Vector3 errorAxisWorld);
@@ -1054,17 +1063,20 @@ public class PdBone
 
         Vector3 angularVelocityErrorWorld = childRigidbody.angularVelocity - parentRigidbody.angularVelocity;
 
-        float proportionalRotationScaled = proportionalGainRotation ;
-        float derivativeRotationScaled = derivativeGainRotation ;
+        float proportionalRotationScaled = proportionalGainRotation * (s*s);
+        float derivativeRotationScaled = derivativeGainRotation * s;
 
         float normalizedAngle = Mathf.Clamp01(Mathf.Abs(angleRadians) / Mathf.Max(maximumAngleRadians, 1e-4f));
         
         float rotationMult =  rotationErrorCurve.Evaluate(normalizedAngle);
-        
 
-        Vector3 torqueAccelerationWorld = (proportionalRotationScaled * angleRadians) * errorAxisWorld - (derivativeRotationScaled * angularVelocityErrorWorld);
+        //insert logic here to increase PD torque based on ragDollRotationStrength
+        //Also logic to increase dampening to avoid jitter without making it too sluggish 
+        //rotation strength can be default value of 1 or from 0 to 10x, try to make this wihtout jitter
 
-        torqueAccelerationWorld *= rotationMult;
+        Vector3 torqueAccelerationWorld = (proportionalRotationScaled * rotationMult * angleRadians ) * errorAxisWorld - (derivativeRotationScaled * (Mathf.Sqrt(rotationMult)) * angularVelocityErrorWorld);
+
+        //torqueAccelerationWorld *= rotationMult;
 
         if (torqueAccelerationWorld.sqrMagnitude > maximumTorqueAcceleration * maximumTorqueAcceleration)
             torqueAccelerationWorld = torqueAccelerationWorld.normalized * maximumTorqueAcceleration;
@@ -1078,8 +1090,8 @@ public class PdBone
 
         if (usePositionDrive)
         {
-            Vector3 parentAnchorWorld = parentRigidbody.transform.TransformPoint(parentAnchorLocal);
-            Vector3 childAnchorWorld = childRigidbody.transform.TransformPoint(childAnchorLocal);
+            Vector3 parentAnchorWorld = parentRigidbody.position + parentRigidbody.rotation * parentAnchorLocal;
+            Vector3 childAnchorWorld = childRigidbody.position + childRigidbody.rotation * childAnchorLocal;
 
             Vector3 parentAnchorVelocityWorld = parentRigidbody.GetPointVelocity(parentAnchorWorld);
             Vector3 childAnchorVelocityWorld = childRigidbody.GetPointVelocity(childAnchorWorld);
@@ -1132,6 +1144,19 @@ public class PdBone
 
     }
 
+    //public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)
+    //{
+    //    if (parentRigidbody == null || childRigidbody == null)
+    //    {
+    //        Debug.LogWarning("[PdBone] Cannot bake anchors: missing rigidbodies.");
+    //        return;
+    //    }
+
+    //    parentAnchorLocal = parentRigidbody.transform.InverseTransformPoint(jointPivotWorld);
+    //    childAnchorLocal = childRigidbody.transform.InverseTransformPoint(jointPivotWorld);
+    //    worldTargetToChild = childRigidbody.rotation * Quaternion.Inverse(targetTransform.rotation);
+    //}
+
     public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)
     {
         if (parentRigidbody == null || childRigidbody == null)
@@ -1140,8 +1165,8 @@ public class PdBone
             return;
         }
 
-        parentAnchorLocal = parentRigidbody.transform.InverseTransformPoint(jointPivotWorld);
-        childAnchorLocal = childRigidbody.transform.InverseTransformPoint(jointPivotWorld);
+        parentAnchorLocal = Quaternion.Inverse(parentRigidbody.rotation) * (jointPivotWorld - parentRigidbody.position);
+        childAnchorLocal = Quaternion.Inverse(childRigidbody.rotation) * (jointPivotWorld - childRigidbody.position);
     }
 }
 

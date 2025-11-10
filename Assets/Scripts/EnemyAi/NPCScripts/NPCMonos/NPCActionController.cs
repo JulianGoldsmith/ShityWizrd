@@ -45,12 +45,12 @@ public class NPCActionController : CastActionController
                 continue;
             }
 
-            // 1. Clone the ScriptableObject asset
+            //Clone the ScriptableObject asset
             NPCAction runtimeInstance = Instantiate(actionTemplate);
             runtimeInstance.name = actionTemplate.name + " (Runtime Instance)";
             _runtimeActions.Add(runtimeInstance);
 
-            // 2. If it's a spell, load its runtime SpellGraph from the baked JSON
+            // load its runtime spellGraph from the baked JSON
             if (runtimeInstance is NPCActionSpell npcAS)
             {
                 npcAS.LoadSpells(this.GetComponent<NetworkObjectBuffer>());
@@ -90,9 +90,15 @@ public class NPCActionController : CastActionController
 
         agent.SetVariableValue(canAttackVariableName, false);
 
+        _currentCastingAction = actionToCast;
+        _currentCastingBaseIndex = baseIndex;
+        _currentCastingPhase = 0;
+        _animStateController.PlayClip(_currentCastingBaseIndex + 0);
+
         if (actionToCast is NPCActionSpell spellToCast)
         {
             Debug.Log($"NPC cast spell StartCast called and action is spell");
+            if (spellToCast.spell == null) return;
             spellToCast.spell.CompileSpell();
             var entries = spellToCast.spell.GetComboEntries();
             Debug.Log($"NPC cast spell got comboentries {entries.Count}");
@@ -121,10 +127,7 @@ public class NPCActionController : CastActionController
             isCasting = true;
             newCast.isHeld = true;
 
-            _currentCastingAction = actionToCast;
-            _currentCastingBaseIndex = baseIndex;
-            _currentCastingPhase = 0;
-            _animStateController.PlayClip(_currentCastingBaseIndex + 0);
+            
 
             entryCast.OnCastStarted(newCast, this);
 
@@ -170,7 +173,7 @@ public class NPCActionController : CastActionController
 
     public override void EndCast()
     {
-
+        
 
         SpellState castToEnd = null;
         foreach (var cast in activeCasts)

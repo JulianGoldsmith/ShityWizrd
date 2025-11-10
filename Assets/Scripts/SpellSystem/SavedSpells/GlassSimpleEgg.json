@@ -1,0 +1,57 @@
+{
+    "entryPointControllerNodeGuid": "e9490911-4ac8-4bae-ba21-6c8030bdab97",
+    "nodes": [
+        {
+            "guid": "e9490911-4ac8-4bae-ba21-6c8030bdab97",
+            "position": {
+                "x": -0.9146854877471924,
+                "y": -0.014445751905441285,
+                "z": 0.015622764825820923
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "e9490911-4ac8-4bae-ba21-6c8030bdab97",
+                    "targetNodeGUID": "91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4",
+            "position": {
+                "x": -0.6601918339729309,
+                "y": 0.000023111701011657715,
+                "z": 0.35800644755363467
+            },
+            "nodeTemplateName": "ChargeCastNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "fromOutputOwnerGUID": "91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4",
+                    "targetNodeGUID": "49568da3-cd6d-4ae9-8277-55924031ebd4",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "49568da3-cd6d-4ae9-8277-55924031ebd4"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "49568da3-cd6d-4ae9-8277-55924031ebd4",
+            "position": {
+                "x": -0.2014719396829605,
+                "y": 0.032555967569351199,
+                "z": 0.3386823534965515
+            },
+            "nodeTemplateName": "EggCore",
+            "connections": [],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        }
+    ]
+}

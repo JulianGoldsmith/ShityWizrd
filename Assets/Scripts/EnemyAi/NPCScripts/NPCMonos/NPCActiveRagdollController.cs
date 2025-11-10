@@ -11,8 +11,12 @@ public class NPCActiveRagdollController : NetworkBehaviour
 {
     [Header("Components")]
     public Rigidbody coreRB;
- 
+
+    [Header("RagDoll Strength"), Range(0,10)]
+    public float ragDollStrength = 1;
+
     [Header("Grounded Settings")]
+    public float extraRideHeight = 0f;
     public float extraGroundCheckDistance = 1.0f;
     public LayerMask groundLayer;
     public float suspensionCastRadius = 0.25f;
@@ -127,13 +131,13 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         float extraHeightToCastFrom = 0.2f;
 
-        float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + suspensionCastRadius + extraGroundCheckDistance;
+        float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + suspensionCastRadius + extraGroundCheckDistance + extraRideHeight;
 
         if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), suspensionCastRadius, Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
 
-            float targetHeight = useRootMotionY? rootMotionVerticalDelta : 0;
+            float targetHeight = useRootMotionY? rootMotionVerticalDelta + extraRideHeight : extraRideHeight;
 
             float compression = targetHeight - (coreRB.transform.position - hit.point).magnitude;
 
@@ -148,7 +152,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
             float damperForce = rideSpringDamper * verticalVelocity;
 
-            Vector3 suspensionForce = Vector3.up * (springForce - damperForce);
+            Vector3 suspensionForce = Vector3.up * (springForce - damperForce) * Mathf.Min(ragDollStrength, 1);
 
             coreRB.AddForce(suspensionForce, ForceMode.Acceleration);
         }
@@ -201,33 +205,6 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         //coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
 
-        //Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
-        //if (flatLook.sqrMagnitude < 1e-6f) flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
-        //flatLook.Normalize();
-        //Quaternion qBase = Quaternion.LookRotation(flatLook, Vector3.up);
-
-        //// Full animation delta from T-pose (already in world space)
-        //Quaternion qAnimDelta = animStateController ? animStateController.WorldDeltaFromTPose : Quaternion.identity;
-        ////qAnimDelta = Quaternion.identity; // test this
-        //// Target = base * full delta (x,y,z). Order matters: “add the root rotation onto the base”.
-        //Quaternion targetRot = qBase * qAnimDelta;
-
-        //// PD towards target (your existing code)
-        //Quaternion current = coreRB.rotation;
-        //Quaternion qErr = targetRot * Quaternion.Inverse(current);
-        //if (qErr.w < 0f) { qErr.x = -qErr.x; qErr.y = -qErr.y; qErr.z = -qErr.z; qErr.w = -qErr.w; }
-
-        //qErr.ToAngleAxis(out float errDeg, out Vector3 errAxis);
-        //if (errAxis.sqrMagnitude < 1e-12f || float.IsNaN(errAxis.x)) return;
-
-        //float errRad = errDeg * Mathf.Deg2Rad;
-        //Vector3 proportional = errAxis * errRad;
-        //Vector3 derivative = -coreRB.angularVelocity;
-
-        //float groundedScale = IsGrounded ? 1f : 0.5f;
-        //Vector3 torque = proportional * uprightSpringStrength + derivative * uprightSpringDamper;
-        //coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
-
         Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
         if (flatLook.sqrMagnitude < 1e-6f)
             flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
@@ -235,31 +212,17 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         Quaternion qBase = Quaternion.LookRotation(flatLook, Vector3.up);
 
-        // 2) Full animation delta (pitch + roll + yaw) in WORLD space
         Quaternion qAnimDelta = animStateController ? animStateController.WorldDeltaFromTPose : Quaternion.identity;
 
-        // 3) Compose: "add the hips delta onto the base"
         Quaternion targetRot = qBase * qAnimDelta;
 
-        // 4) Apply PdBone-style rotation PD to the core
-        //    (No real parent for the core → parent angular velocity = Vector3.zero)
-        float kp = uprightSpringStrength;     // e.g. start 40–80
-        float kd = uprightSpringDamper;       // e.g. start 4–10
-        float maxAngleRad = 60f * Mathf.Deg2Rad;   // generous to avoid clipping non-upright moves
-        float maxAccel = 4000f;               // enough headroom to be responsive
+        float springDrive = uprightSpringStrength * Mathf.Min(ragDollStrength, 1) * Mathf.Min(ragDollStrength, 1);   
+        float springDamp = uprightSpringDamper * Mathf.Min(ragDollStrength, 1);   
+        float maxAngleRad = 60f * Mathf.Deg2Rad; 
+        float maxAccel = 4000f;           
 
-        // If you want shaping like your PdBone curve, you can expose it;
-        // otherwise pass null and it behaves linearly.
-        ApplyPdRotationLikeBone(
-            childRB: coreRB,
-            targetRotationWorld: targetRot,
-            parentAngularVelocityWorld: Vector3.zero,
-            kp: kp,
-            kd: kd,
-            maximumAngleRadians: maxAngleRad,
-            maximumTorqueAcceleration: maxAccel,
-            rotationErrorCurve: null
-        );
+        ApplyPdRotationLikeBone(childRB: coreRB,targetRotationWorld: targetRot, parentAngularVelocityWorld: Vector3.zero, kp: springDrive, kd: springDamp,
+            maximumAngleRadians: maxAngleRad, maximumTorqueAcceleration: maxAccel, rotationErrorCurve: null);
     }
 
     private void UpdateCoreMovement()
@@ -323,7 +286,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
         {
             var bone = pdBones[i];
             bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
-            bone.Step(Runner.DeltaTime);
+            bone.Step(Runner.DeltaTime, ragDollStrength);
         }
     }
 
@@ -397,18 +360,9 @@ public class NPCActiveRagdollController : NetworkBehaviour
         }
     }
 
-    private void ApplyPdRotationLikeBone(
-    Rigidbody childRB,
-    Quaternion targetRotationWorld,
-    Vector3 parentAngularVelocityWorld,   // if no parent, pass Vector3.zero
-    float kp,                             // proportionalGainRotation
-    float kd,                             // derivativeGainRotation
-    float maximumAngleRadians,            // clamp like PdBone.maximumAngleRadians
-    float maximumTorqueAcceleration,      // clamp like PdBone.maximumTorqueAcceleration
-    AnimationCurve rotationErrorCurve = null // optional shaping curve (nullable)
-)
-    {
-        // Error = target * inv(current)
+    private void ApplyPdRotationLikeBone(Rigidbody childRB, Quaternion targetRotationWorld, Vector3 parentAngularVelocityWorld, float kp, 
+        float kd, float maximumAngleRadians, float maximumTorqueAcceleration, AnimationCurve rotationErrorCurve = null ) {
+
         Quaternion rotationError = targetRotationWorld * Quaternion.Inverse(childRB.rotation);
 
         rotationError.ToAngleAxis(out float angleDegrees, out Vector3 errorAxisWorld);
@@ -420,13 +374,10 @@ public class NPCActiveRagdollController : NetworkBehaviour
         else
             errorAxisWorld.Normalize();
 
-        // Safety clamp identical to PdBone
         angleRadians = Mathf.Clamp(angleRadians, -maximumAngleRadians, maximumAngleRadians);
 
-        // Relative angular velocity (child - parent)
         Vector3 angularVelocityErrorWorld = childRB.angularVelocity - parentAngularVelocityWorld;
 
-        // Optional shaping curve exactly like PdBone
         float rotationMult = 1f;
         if (rotationErrorCurve != null && maximumAngleRadians > 1e-4f)
         {
@@ -434,17 +385,14 @@ public class NPCActiveRagdollController : NetworkBehaviour
             rotationMult = rotationErrorCurve.Evaluate(normalizedAngle);
         }
 
-        // Torque in world space
         Vector3 torqueAccelerationWorld =
             (kp * angleRadians) * errorAxisWorld - (kd * angularVelocityErrorWorld);
 
         torqueAccelerationWorld *= rotationMult;
 
-        // Clamp magnitude like PdBone
         if (torqueAccelerationWorld.sqrMagnitude > maximumTorqueAcceleration * maximumTorqueAcceleration)
             torqueAccelerationWorld = torqueAccelerationWorld.normalized * maximumTorqueAcceleration;
 
-        // Let the solver spin fast enough
         childRB.maxAngularVelocity = Mathf.Max(childRB.maxAngularVelocity, 50f);
 
         childRB.AddTorque(torqueAccelerationWorld, ForceMode.Acceleration);
