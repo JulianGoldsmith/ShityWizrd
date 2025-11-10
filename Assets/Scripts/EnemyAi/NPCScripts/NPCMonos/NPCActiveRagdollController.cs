@@ -12,8 +12,8 @@ public class NPCActiveRagdollController : NetworkBehaviour
     [Header("Components")]
     public Rigidbody coreRB;
 
-    [Header("RagDoll Strength"), Range(0,10)]
-    public float ragDollStrength = 1;
+    [Header("RagDoll Strength"), Range(0,2f)]
+    [Networked] public float ragDollStrength { get; set; } = 1;
 
     [Header("Grounded Settings")]
     public float extraRideHeight = 0f;
@@ -23,6 +23,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
     [Networked] public NetworkBool IsGrounded { get; set; }
 
     public float rideSpringStrength = 100f;
+    public float rideSpringDampingRatio = 1.0f;
     public float rideSpringDamper = 10f;
 
     [Header("Upright Settings")]
@@ -135,24 +136,36 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), suspensionCastRadius, Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
         {
+            
+
             IsGrounded = true;
 
             float targetHeight = useRootMotionY? rootMotionVerticalDelta + extraRideHeight : extraRideHeight;
+            float currentHeight = (coreRB.transform.position - hit.point).magnitude;
+            float compression = targetHeight - currentHeight;
 
-            float compression = targetHeight - (coreRB.transform.position - hit.point).magnitude;
+            //if (compression <= 0)
+            //{
+            //    return;
+            //}
 
-            if (compression <= 0)
+            float springForce = 0f;
+
+            if (compression > 0)
             {
-                return;
+                springForce = rideSpringStrength * compression * Mathf.Min(ragDollStrength, 1);
             }
 
-            float springForce = rideSpringStrength * compression;
+            float kp = rideSpringStrength * Mathf.Min(ragDollStrength, 1);
+            float kd = 2 * Mathf.Sqrt(kp * coreRB.mass);
+
+            //springForce = rideSpringStrength * compression;
 
             float verticalVelocity = coreRB.linearVelocity.y;
 
-            float damperForce = rideSpringDamper * verticalVelocity;
+            float damperForce = (kd * rideSpringDampingRatio) * verticalVelocity;
 
-            Vector3 suspensionForce = Vector3.up * (springForce - damperForce) * Mathf.Min(ragDollStrength, 1);
+            Vector3 suspensionForce = Vector3.up * (springForce - damperForce) ;
 
             coreRB.AddForce(suspensionForce, ForceMode.Acceleration);
         }
@@ -269,12 +282,12 @@ public class NPCActiveRagdollController : NetworkBehaviour
         if (NetworkedMoveVector.magnitude > 0.01f)
         {
             force = velocityError * acceleration;
-            Debug.Log($"Adding force to core {force} as we are ACCELERATING");
+            //Debug.Log($"Adding force to core {force} as we are ACCELERATING");
         }
         else
         {
             force = velocityError * braking;
-            Debug.Log($"Adding force to core {force} as we are BRAKING");
+            //Debug.Log($"Adding force to core {force} as we are BRAKING");
         }
         
         coreRB.AddForce(force, ForceMode.Acceleration);

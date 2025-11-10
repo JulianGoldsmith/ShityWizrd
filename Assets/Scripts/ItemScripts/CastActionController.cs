@@ -79,7 +79,7 @@ public abstract class CastActionController : NetworkBehaviour
         }
 
         // Compiled all spell by doing promotablevalues.
-        item.primaryActionSpell.CompileSpell();
+        item.primaryActionSpell.CompileSpell(this);
 
         var entries = item.primaryActionSpell.GetComboEntries(); //Get the entry point of the spell from the entryPointController
         if (entries.Count == 0)

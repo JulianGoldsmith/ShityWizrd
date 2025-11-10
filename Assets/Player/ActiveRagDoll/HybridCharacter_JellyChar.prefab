@@ -2901,6 +2901,7 @@ MonoBehaviour:
     usePositionDrive: 1
     parentAnchorLocal: {x: 0, y: 0.34477454, z: -0.000000005656074}
     childAnchorLocal: {x: -1.5571557e-15, y: 4.0450182e-10, z: -0.0000000055732756}
+    worldTargetToChild: {x: 0, y: 0, z: 0, w: 0}
     proportionalGainPosition: 150
     derivativeGainPosition: 15
     positionErrorCurve:
@@ -2975,6 +2976,7 @@ MonoBehaviour:
     usePositionDrive: 1
     parentAnchorLocal: {x: 0.000000004502181, y: 0.38839287, z: 0.016113939}
     childAnchorLocal: {x: -1.3340769e-20, y: -1.7486013e-14, z: 0.00000023469329}
+    worldTargetToChild: {x: 0, y: 0, z: 0, w: 0}
     proportionalGainPosition: 1000
     derivativeGainPosition: 15
     positionErrorCurve:
@@ -3795,6 +3797,11 @@ MonoBehaviour:
   modelRenderer: {fileID: 4017780399309859659}
   ragDollRenderer: {fileID: 2306535042081438512}
   robeRenderer: {fileID: 1246188516695306768}
+  apparel:
+  - {fileID: 5735279919401193963}
+  - {fileID: 8886958828129352578}
+  - {fileID: 8503963049672239485}
+  - {fileID: 6428076231800347399}
   hostMat: {fileID: 2100000, guid: e09614160cb77a0498ad88d9b300cff8, type: 2}
   clientMat: {fileID: 2100000, guid: 099c94d8d75be114b827069f92f46f83, type: 2}
   _IsHost: 0
@@ -3819,8 +3826,6 @@ MonoBehaviour:
   bonkedRig: {fileID: 8595309036505255360}
   animatedSkeletonRoot: {fileID: 978480337921388448}
   ragdollSkeletonRoot: {fileID: 1878188522034964794}
-  clothingRenderers:
-  - {fileID: 1246188516695306768}
 --- !u!114 &4629630018618923149
 MonoBehaviour:
   m_ObjectHideFlags: 0

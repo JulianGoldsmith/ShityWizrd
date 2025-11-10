@@ -27,7 +27,7 @@ public partial class NpcUseAttackAction : Action
         if(actionToUse == null) return Status.Failure;
 
         //Debug.Log($"NPC called to perform aciton called and action is spell");
-        actionController.StartCast(NPCActionID);
+       // actionController.StartCast(NPCActionID);
 
         durationToHold = actionToUse.holdDuration;
 

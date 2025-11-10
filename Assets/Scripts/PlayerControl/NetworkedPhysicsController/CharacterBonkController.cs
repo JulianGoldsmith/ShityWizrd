@@ -24,17 +24,20 @@ public class CharacterBonkController : NetworkBehaviour
     public Transform ragdollSkeletonRoot;
 
     [Header("Renderers to Rebind")]
-    public List<SkinnedMeshRenderer> clothingRenderers;
+    private CharacterCustomization characterCustomization;
+    //public List<SkinnedMeshRenderer> clothingRenderers;
 
     private Dictionary<SkinnedMeshRenderer, Transform[]> animatedBoneMap;
     private Dictionary<SkinnedMeshRenderer, Transform[]> ragdollBoneMap;
 
     public override void Spawned()
     {
-        BuildBoneMaps();
-
+        characterCustomization = this.GetComponent<CharacterCustomization>();
         characterController = this.GetComponent<HybridCharacterController>();
         ragDollController = transform.GetComponent<NetworkedRagDoll>();
+        
+        BuildBoneMaps();
+        
         if (BonkedState == BONKEDSTATE.ALIVE)
         {
             ragDollController.DeactivateRagDoll();
@@ -140,7 +143,7 @@ public class CharacterBonkController : NetworkBehaviour
         characterController.modelRenderer.enabled = false;
         characterController.ragDollRenderer.enabled = true;
 
-        foreach (var renderer in clothingRenderers)
+        foreach (SkinnedMeshRenderer renderer in characterCustomization.apparel)
         {
             if (ragdollBoneMap.ContainsKey(renderer))
             {
@@ -155,7 +158,7 @@ public class CharacterBonkController : NetworkBehaviour
     {
         characterController.modelRenderer.enabled = HasInputAuthority ? false : true;
         characterController.ragDollRenderer.enabled = false;
-        foreach (var renderer in clothingRenderers)
+        foreach (SkinnedMeshRenderer renderer in characterCustomization.apparel)
         {
             if (animatedBoneMap.ContainsKey(renderer))
             {
@@ -173,7 +176,7 @@ public class CharacterBonkController : NetworkBehaviour
         var animatedBones = animatedSkeletonRoot.GetComponentsInChildren<Transform>().ToDictionary(b => b.name);
         var ragdollBones = ragdollSkeletonRoot.GetComponentsInChildren<Transform>().ToDictionary(b => b.name);
 
-        foreach (var renderer in clothingRenderers)
+        foreach (SkinnedMeshRenderer renderer in characterCustomization.apparel)
         {
             var animBones = new Transform[renderer.bones.Length];
             var ragBones = new Transform[renderer.bones.Length];

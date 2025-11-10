@@ -70,12 +70,18 @@ public class SpellGraph : ScriptableObject
         return entries[index];
     }
 
-    public void CompileSpell()
+    public void CompileSpell(CastActionController caster)
     {
         foreach(KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
         {
             kv.Value.Compile();
+
+            if(kv.Value is HitBoxCastNode hitBoxNode)
+            {
+                // logic here for assigning hitBox to the cloned hitBoxNode so we can reference it in the node. 
+            }
         }
+        
     }
 
 

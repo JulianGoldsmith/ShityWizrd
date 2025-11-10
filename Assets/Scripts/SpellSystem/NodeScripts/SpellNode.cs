@@ -30,6 +30,7 @@ public abstract class SpellNode : ScriptableObject
     public virtual void Compile()
     {
         ApplyPromotableValues();
+        AssignCasterSpecificReferecnes(); //things like hitBoxs
     }
 
     ////Promotable attribues settings setting 
@@ -283,6 +284,13 @@ public abstract class SpellNode : ScriptableObject
         }
         return null;
     }
+
+    public void AssignCasterSpecificReferecnes()
+    {
+
+    }
+
+
 }
 
 public enum RuneCategoryTag

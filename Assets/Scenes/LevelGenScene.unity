@@ -1851,9 +1851,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 774958069}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &851387561 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6254608097831381651, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+  m_PrefabInstance: {fileID: 88507033556753612}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &879763336 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7255465060347639581, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+  m_PrefabInstance: {fileID: 88507033556753612}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &880374307 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3683987700595446189, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
   m_PrefabInstance: {fileID: 88507033556753612}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &903965573
@@ -2123,6 +2139,97 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!1 &1007269169
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1007269170}
+  - component: {fileID: 1007269173}
+  - component: {fileID: 1007269172}
+  - component: {fileID: 1007269171}
+  m_Layer: 21
+  m_Name: LowerArmRHitBox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1007269170
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007269169}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.000000029802319, z: 0.000000029802319, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 880374307}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1007269171
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007269169}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 3669119
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.9, y: 1.21, z: 0.57}
+  m_Center: {x: 0.08, y: 0.37, z: 0}
+--- !u!114 &1007269172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007269169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  SyncScale: 0
+  SyncParent: 0
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0
+--- !u!114 &1007269173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007269169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 1975721742
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 1007269172}
+  ForceRemoteRenderTimeframe: 0
 --- !u!1001 &1060422777
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3940,10 +4047,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 58483992
       objectReference: {fileID: 0}
+    - target: {fileID: 977323075106825255, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: NestedObjects.Array.size
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 977323075106825255, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: 'NestedObjects.Array.data[6]'
+      value: 
+      objectReference: {fileID: 1007269173}
+    - target: {fileID: 977323075106825255, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: 'NestedObjects.Array.data[7]'
+      value: 
+      objectReference: {fileID: 851387561}
     - target: {fileID: 1295802927799524885, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       propertyPath: SortKey
       value: 3106166193
       objectReference: {fileID: 0}
+    - target: {fileID: 1295802927799524885, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: NestedObjects.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1295802927799524885, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: 'NestedObjects.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1007269173}
     - target: {fileID: 2132260028787612383, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       propertyPath: retargetedBones.Array.data[2].physicsProxy
       value: 
@@ -3964,9 +4091,45 @@ PrefabInstance:
       propertyPath: retargetedBones.Array.data[48].physicsProxy
       value: 
       objectReference: {fileID: 1999531924}
+    - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: _ragDollStrength
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: rideSpringStrength
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: rideSpringDampingRatio
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: pdBones.Array.data[0].maximumForceAcceleration
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: pdBones.Array.data[1].maximumForceAcceleration
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: pdBones.Array.data[2].maximumForceAcceleration
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: pdBones.Array.data[3].maximumForceAcceleration
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: pdBones.Array.data[5].maximumForceAcceleration
+      value: 1000
+      objectReference: {fileID: 0}
     - target: {fileID: 5016635474999433936, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       propertyPath: SortKey
       value: 2709720264
+      objectReference: {fileID: 0}
+    - target: {fileID: 5367296735728331735, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: managedReferences[789947579786068107].m_Value
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6254608097831381651, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       propertyPath: SortKey
@@ -4047,6 +4210,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7165836301037178469, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       insertIndex: 9
       addedObject: {fileID: 1480186061}
+    - targetCorrespondingSourceObject: {fileID: 3683987700595446189, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      insertIndex: 0
+      addedObject: {fileID: 1007269170}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
 --- !u!1001 &414579808191817107
