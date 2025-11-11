@@ -28,4 +28,18 @@ public class PlayerPhysicsObject : PhysicsObject
         // Recovered from bonk.
         hybridCharacterController.GetUnBonked();
     }
+
+    public override void OnBonkednessChanged(NetworkBehaviourBuffer previous)
+    {
+        base.OnBonkednessChanged(previous); 
+        UpdateHUD(); 
+    }
+
+    private void UpdateHUD()
+    {
+        if (HasInputAuthority)
+        {
+            HUDController.Instance.UpdateBonkBar(current_bonkedness, starting_bonkedness);
+        }
+    }
 }

@@ -14,6 +14,8 @@ public class ArmatureRetargeter : MonoBehaviour
     public Vector3 animatedHipRootMotion = Vector3.zero;
     public Quaternion animatedHipRotation = Quaternion.identity;
 
+    public bool disableRetargetingToProxys = false;
+
     /// <summary>
     /// Holds the references for a single bone in the retargeting chain.
     /// </summary>
@@ -84,7 +86,7 @@ public class ArmatureRetargeter : MonoBehaviour
         }
 
         var rootBone = retargetedBones[0];
-        if (rootBone.physicsProxy != null)
+        if (rootBone.physicsProxy != null && !disableRetargetingToProxys)
         {
             rootBone.targetBone.SetPositionAndRotation(rootBone.physicsProxy.position, rootBone.physicsProxy.rotation);
         }
@@ -102,7 +104,7 @@ public class ArmatureRetargeter : MonoBehaviour
 
             Vector3 targetPos = Vector3.zero;
             Quaternion targetRot = Quaternion.identity;
-            if (bone.physicsProxy != null)
+            if (bone.physicsProxy != null && !disableRetargetingToProxys)
             {
                 targetPos = bone.physicsProxy.position;
                 targetRot= bone.physicsProxy.rotation;

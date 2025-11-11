@@ -19,6 +19,8 @@ public partial class NpcActionCastSpellAction : Action
     private SpellState _currentSpellState;
     private float _phaseTimer;
 
+    private float activateHitBoxTime =-1f, deactivateHitBoxTime =-1f;
+
     private float CurrentClipTime => _actionController.GetActionClipTime(NPCActionID.Value, (int)_currentPhase);
     private float CurrentClipLength => _actionController.GetActionClipLength(NPCActionID.Value, (int)_currentPhase);
 
@@ -36,13 +38,16 @@ public partial class NpcActionCastSpellAction : Action
             return Status.Failure;
         }
 
+        activateHitBoxTime = -1; 
+        deactivateHitBoxTime = -1f;
+
         _currentPhase = Phase.Windup;
         return Status.Running;
     }
 
     protected override Status OnUpdate()
     {
-        Debug.Log($"NPC Action - Phase = {_currentPhase} current clip time = {CurrentClipTime} / {CurrentClipLength}");
+        //Debug.Log($"NPC Action - Phase = {_currentPhase} current clip time = {CurrentClipTime} / {CurrentClipLength}");
         switch (_currentPhase)
         {
             case Phase.Windup: return HandleWindup();
@@ -54,6 +59,8 @@ public partial class NpcActionCastSpellAction : Action
 
     protected override void OnEnd()
     {
+        CleanUpHitBoxsOnEnd();
+
         if (_currentPhase != Phase.Idle)
         {
             if (this.CurrentStatus != Status.Success) //if this failed
@@ -62,6 +69,7 @@ public partial class NpcActionCastSpellAction : Action
                 //_actionController.GoToLocomotion(); // Hard stop
             }
         }
+
         _currentPhase = Phase.Idle; // Reset for next time
     }
 
@@ -93,32 +101,85 @@ public partial class NpcActionCastSpellAction : Action
 
     private Status HandleHold()
     {
-        // Wait for our timer to finish
         if (Time.time >= _phaseTimer)
         {
-            // --- Transition to Release ---
-            _actionController.PlayActionClip(NPCActionID.Value, 2); // Play Release clip
+            _actionController.PlayActionClip(NPCActionID.Value, 2);
             _currentPhase = Phase.Release;
 
-            // This is the moment to "release" the spell
             _actionController.ExecuteAction(_currentSpellState);
 
+            StartHitBoxTimers();
             return Status.Running;
         }
-        return Status.Running; // Still holding
+        return Status.Running; 
     }
 
     private Status HandleRelease()
     {
-        // Wait for the "Release" animation to finish
+        ActivateHitBoxIfUsingHitBox();
+        DeactivateHitBoxIfUsingHitBox();
         if (CurrentClipTime >= CurrentClipLength)
         {
-            // --- Action is complete ---
-            _actionController.CleanupAction(null); // Just set canAttack = true, isCasting = false
+            _actionController.CleanupAction(null); 
             _currentPhase = Phase.Idle;
-            return Status.Success; // We are done!
+            DeactivateHitBoxIfUsingHitBox();
+            return Status.Success; 
         }
-        return Status.Running; // Still in release animation
+        return Status.Running; 
+    }
+
+    private void StartHitBoxTimers()
+    {
+        if(_actionData is NPCActionSpell spell)
+        {
+            activateHitBoxTime = Time.time + spell.timeAfterReleaseToActivateHitBox;
+            deactivateHitBoxTime = activateHitBoxTime + spell.hitBoxDuration;
+        }
+    }
+
+    private void ActivateHitBoxIfUsingHitBox()
+    {
+        if (_currentSpellState.OriginalCasterNode is HitBoxCastNode hitBoxNode)
+        {
+            if (activateHitBoxTime != -1 && _actionData is NPCActionSpell spell)
+            {
+                if (spell.hitBoxID < 0 || spell.hitBoxID >= _actionController.hitboxes.Count)
+                    return;
+                if (Time.time > activateHitBoxTime && _actionController.hitboxes[spell.hitBoxID].hitBoxCollider.enabled == false)
+                {
+                    Debug.Log("Activating hit box from the NPC BT ACTION");
+
+                    _actionController.ActivateHitbox(spell.hitBoxID, _currentSpellState);
+                }
+            }
+        }
+    }
+
+    private void DeactivateHitBoxIfUsingHitBox()
+    {
+        if (_currentSpellState.OriginalCasterNode is HitBoxCastNode hitBoxNode)
+        {
+            if (activateHitBoxTime != -1 && _actionData is NPCActionSpell spell)
+            {
+                if (spell.hitBoxID < 0 || spell.hitBoxID >= _actionController.hitboxes.Count)
+                    return;
+                if (Time.time > deactivateHitBoxTime && _actionController.hitboxes[spell.hitBoxID].hitBoxCollider.enabled == true)
+                {
+                    _actionController.DeactivateHitbox(spell.hitBoxID);
+                }
+            }
+        }
+    }
+
+    private void CleanUpHitBoxsOnEnd()
+    {
+        if (_actionData is NPCActionSpell spell && spell.hitBoxID != -1) //cleanUpHitbox
+        {
+            if (spell.hitBoxID >= 0 && spell.hitBoxID < _actionController.hitboxes.Count && _actionController.hitboxes[spell.hitBoxID].hitBoxCollider.enabled)
+            {
+                _actionController.DeactivateHitbox(spell.hitBoxID);
+            }
+        }
     }
 }
 

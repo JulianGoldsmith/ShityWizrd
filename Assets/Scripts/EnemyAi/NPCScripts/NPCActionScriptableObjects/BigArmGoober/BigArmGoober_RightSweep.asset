@@ -20,30 +20,33 @@ MonoBehaviour:
   spell: {fileID: 0}
   bakedJson: "{\n    \"entryPointControllerNodeGuid\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n   
     \"nodes\": [\n        {\n            \"guid\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n           
-    \"position\": {\n                \"x\": -0.9146854877471924,\n               
-    \"y\": -0.014445751905441285,\n                \"z\": 0.015622764825820923\n           
+    \"position\": {\n                \"x\": -0.9146854281425476,\n               
+    \"y\": -0.014445573091506958,\n                \"z\": 0.015622973442077637\n           
     },\n            \"nodeTemplateName\": \"EntryPointControler\",\n            \"connections\":
     [\n                {\n                    \"fromOutputSocketName\": \"Combo 1\",\n                   
     \"fromOutputOwnerGUID\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n                   
-    \"targetNodeGUID\": \"91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4\",\n                   
+    \"targetNodeGUID\": \"72432f74-6ea2-46f7-afcf-31b32bba4d29\",\n                   
     \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
-    \"91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4\"\n                }\n            ],\n           
+    \"72432f74-6ea2-46f7-afcf-31b32bba4d29\"\n                }\n            ],\n           
     \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
-    },\n        {\n            \"guid\": \"91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4\",\n           
-    \"position\": {\n                \"x\": -0.6601918339729309,\n               
-    \"y\": 0.000023111701011657715,\n                \"z\": 0.35800644755363467\n           
-    },\n            \"nodeTemplateName\": \"ChargeCastNode\",\n            \"connections\":
+    },\n        {\n            \"guid\": \"72432f74-6ea2-46f7-afcf-31b32bba4d29\",\n           
+    \"position\": {\n                \"x\": -0.4473683834075928,\n               
+    \"y\": -0.011429846286773682,\n                \"z\": 0.2784986197948456\n           
+    },\n            \"nodeTemplateName\": \"HitBoxCastNode\",\n            \"connections\":
     [\n                {\n                    \"fromOutputSocketName\": \"Exec Out\",\n                   
-    \"fromOutputOwnerGUID\": \"91fd1dd7-1c68-4d59-80c9-2ffb98ae6ca4\",\n                   
-    \"targetNodeGUID\": \"49568da3-cd6d-4ae9-8277-55924031ebd4\",\n                   
+    \"fromOutputOwnerGUID\": \"72432f74-6ea2-46f7-afcf-31b32bba4d29\",\n                   
+    \"targetNodeGUID\": \"ad9f9847-aa30-4dc6-af51-868e6a83ab1d\",\n                   
     \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
-    \"49568da3-cd6d-4ae9-8277-55924031ebd4\"\n                }\n            ],\n           
+    \"ad9f9847-aa30-4dc6-af51-868e6a83ab1d\"\n                }\n            ],\n           
     \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
-    },\n        {\n            \"guid\": \"49568da3-cd6d-4ae9-8277-55924031ebd4\",\n           
-    \"position\": {\n                \"x\": -0.2014719396829605,\n               
-    \"y\": 0.032555967569351199,\n                \"z\": 0.3386823534965515\n           
-    },\n            \"nodeTemplateName\": \"EggCore\",\n            \"connections\":
-    [],\n            \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\":
+    },\n        {\n            \"guid\": \"ad9f9847-aa30-4dc6-af51-868e6a83ab1d\",\n           
+    \"position\": {\n                \"x\": 0.036928415298461917,\n               
+    \"y\": 0.0002830922603607178,\n                \"z\": 0.275734543800354\n           
+    },\n            \"nodeTemplateName\": \"PushInImapctDirection\",\n           
+    \"connections\": [],\n            \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\":
     \"\"\n        }\n    ]\n}"
-  spellName: GlassSimpleEgg
+  spellName: HitBoxForceSpell
   networkObjectBuffer: {fileID: 0}
+  hitBoxID: 0
+  timeAfterReleaseToActivateHitBox: 0.05
+  hitBoxDuration: 1.5

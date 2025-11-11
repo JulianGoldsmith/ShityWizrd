@@ -162,6 +162,17 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     #endregion
 
 
+    public void BonkFromImpulse(float impulse, PhysicsObject otherPhysicsObject)
+    {
+        float bonk_amount = BonkAmount(impulse, otherPhysicsObject?.physicsObjectProperties);
+
+        if (IfGetBonked(bonk_amount))
+        {
+            OnBonk(bonk_amount);
+        }
+    }
+
+
     public Vector3 velocity_before_physics_update;
     public override void FixedUpdateNetwork()
     {
@@ -434,7 +445,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     
     // Everything has 100 starting.
     protected const float starting_bonkedness = 100f;
-    private const float bonk_threshold = 10.0f;
+    private const float bonk_threshold = 2.5f;
 
     bool IfGetBonked(float bonk_amount)
     {

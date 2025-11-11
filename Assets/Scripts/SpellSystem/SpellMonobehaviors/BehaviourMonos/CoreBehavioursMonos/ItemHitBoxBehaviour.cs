@@ -1,5 +1,9 @@
 using UnityEngine;
 
+
+/// <summary>
+/// depreciated
+/// </summary>
 public class ItemHitBoxBehaviour : SpellBehaviour
 {
     GameObject hitBox;

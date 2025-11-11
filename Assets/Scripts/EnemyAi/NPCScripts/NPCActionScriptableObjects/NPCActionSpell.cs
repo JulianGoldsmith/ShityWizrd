@@ -11,7 +11,7 @@ using UnityEditor; // Required for AssetDatabase and EditorUtility
 public class NPCActionSpell : NPCAction
 {
 
-    [Tooltip("The actual SpellGraph asset. This will be populated by the 'Bake Spell From Name' command.")]
+    [Tooltip("populated by the 'Bake Spell From Name in context menu'")]
     public SpellGraph spell;
 
     [TextArea(4, 20)] public string bakedJson;
@@ -21,6 +21,9 @@ public class NPCActionSpell : NPCAction
 
     public NetworkObjectBuffer networkObjectBuffer;
 
+    [Header("HitBoxID - 1 is no hitbox")]
+    public int hitBoxID = -1;
+    public float timeAfterReleaseToActivateHitBox, hitBoxDuration; 
 
     public void LoadSpells(NetworkObjectBuffer nob)
     {
@@ -64,9 +67,6 @@ public class NPCActionSpell : NPCAction
             SpellStateManager.instance.OnEquipSpellGraph(spell.spellGraphId, spell);
         }
     
-
-        
-
         if (networkObjectBuffer != null)
             networkObjectBuffer.Initialise(spell);
     }

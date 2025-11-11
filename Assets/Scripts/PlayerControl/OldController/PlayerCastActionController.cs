@@ -153,7 +153,48 @@ public class PlayerCastActionController : CastActionController
         return lookDirection * Vector3.forward;
     }
 
-    
+    #region Hitbox TODO
+
+    public override void ActivateHitbox(int hitBoxID, SpellState state)
+    {
+        if (inventory.activeItem == null) return;
+
+        EquipableItem item = inventory.activeItem.GetComponent<EquipableItem>();
+        if (item == null) return;
+
+        //HitBoxBehaviour hitbox = item.GetHitbox(hitBoxID);
+
+        //if (hitbox != null)
+        //{
+        //    hitbox.Initialize(this, state);
+        //    hitbox.ResetHitBox();
+        //    hitbox.EnableHitBox();
+        //}
+        //else
+        //{
+        //    Debug.LogError($"Player item {item.name} has no hitbox with ID {hitBoxID}");
+        //}
+    }
+
+    public override void DeactivateHitbox(int hitBoxID)
+    {
+        if (inventory.activeItem == null) return;
+
+        EquipableItem item = inventory.activeItem.GetComponent<EquipableItem>();
+        if (item == null) return;
+
+        //HitBoxBehaviour hitbox = item.GetHitbox(hitBoxID);
+
+        //if (hitbox != null)
+        //{
+        //    hitbox.DisableHitBox();
+        //    hitbox.Initialize(null, null); // Unlink
+        //}
+    }
+
+    #endregion
+
+
 }
 
 

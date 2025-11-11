@@ -70,18 +70,25 @@ public class SpellGraph : ScriptableObject
         return entries[index];
     }
 
-    public void CompileSpell(CastActionController caster)
+    //I think we should move this to a 1 time event -- after recieving a spell over network or sending (rather than every cast?)
+    //We could have a compile for all of this, and an Update for special circustances. But we shouldnt re-compile without sending etc...
+    public void CompileSpell(CastActionController caster) 
     {
-        foreach(KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
+        foreach (KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
         {
             kv.Value.Compile();
-
-            if(kv.Value is HitBoxCastNode hitBoxNode)
+        }
+        foreach (KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
+        {
+            if (kv.Value is HitBoxCastNode hitBoxNode)
             {
+                //GetCaster 
+                //Find hitBox object to "clone" and add triggers too 
+                
                 // logic here for assigning hitBox to the cloned hitBoxNode so we can reference it in the node. 
+                //needs to be after all
             }
         }
-        
     }
 
 
@@ -237,9 +244,12 @@ public class SpellGraph : ScriptableObject
                     while (entryPoint.orderedEntries.Count <= comboIndex) entryPoint.orderedEntries.Add(null);
                     entryPoint.orderedEntries[comboIndex] = casterNode;
                 }
-                else if (logicalSource is CasterNode caster && logicalTarget is CoreNode core)
+                else if (logicalSource is CasterNode caster && (logicalTarget is CoreNode || logicalTarget is EffectNode))
                 {
-                    if (!caster.outcomeCoreNodes.Contains(core)) caster.outcomeCoreNodes.Add(core);
+                    if (!caster.outcomeCoreNodes.Contains(logicalTarget))
+                    {
+                        caster.outcomeCoreNodes.Add(logicalTarget);
+                    }
                 }
                 else if (logicalSource is CoreNode sourceCore && logicalTarget is TriggerNode trigger)
                 {

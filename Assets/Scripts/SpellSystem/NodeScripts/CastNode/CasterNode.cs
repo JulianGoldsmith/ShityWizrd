@@ -8,10 +8,6 @@ public abstract class CasterNode : SpellNode
 
     public bool upperBodyOnly = true;
     public Transform castPointTransform;
-    [Header("Needs to be on if melee - dosnt actually check collisions")]
-    public bool activatesHitBox = false;
-    [Header("How long we make the hitbox active for")]
-    public float hitboxActivationDelay, hitboxActiveDuration;
     public float cooldown = 0.5f;
     public float comboResetTime = 1;
 

@@ -209,6 +209,13 @@ public abstract class CastActionController : NetworkBehaviour
 
     public virtual Vector3 GetForward() { return transform.forward; }
 
+
+    public abstract void ActivateHitbox(int hitBoxID, SpellState state);
+    public abstract void DeactivateHitbox(int hitBoxID);
+
+
+
+
     public void HandleAnimationEvent(string eventName)
     {
         if (eventName == "DeactivateHitBox")
@@ -268,6 +275,8 @@ public abstract class CastActionController : NetworkBehaviour
         _activeHitboxInstance = hitbox;
     }
 
+
+    //not used 
     public void OnDeactivateHitbox()
     {
         if (_activeHitboxInstance != null)

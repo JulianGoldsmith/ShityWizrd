@@ -9,7 +9,8 @@ public class NPCActionController : CastActionController
     [SerializeField] private string targetVariableName = "Target";
     [SerializeField] private string canAttackVariableName = "CanAttack";
 
-    [SerializeField] public List<NPCAction> actions = new List<NPCAction>(); 
+    [SerializeField] public List<NPCAction> actions = new List<NPCAction>();
+    public List<HitBoxBehaviour> hitboxes = new List<HitBoxBehaviour>();
     private List<NPCAction> _runtimeActions = new List<NPCAction>(); // this is cloned list at runtime
 
     [SerializeField] private AnimationStateController _animStateController;
@@ -256,6 +257,45 @@ public class NPCActionController : CastActionController
     //    }
     //}
 
+
+    #region Hitbox's
+
+    public override void ActivateHitbox(int hitBoxID, SpellState state)
+    {
+        if (hitBoxID < 0 || hitBoxID >= hitboxes.Count)
+        {
+            Debug.LogError($"Invalid hitBoxID: {hitBoxID} for {gameObject.name}");
+            return;
+        }
+
+        HitBoxBehaviour hitbox = hitboxes[hitBoxID];
+        if (hitbox == null)
+        {
+            Debug.LogError($"Hitbox at index {hitBoxID} is null for {gameObject.name}");
+            return;
+        }
+        Debug.Log("Activating hit box from the NPCActionController");
+        hitbox.Initialize(this, state);
+        hitbox.ResetHitBox();
+        hitbox.EnableHitBox();
+    }
+
+    public override void DeactivateHitbox(int hitBoxID)
+    {
+        if (hitBoxID < 0 || hitBoxID >= hitboxes.Count)
+        {
+            return;
+        }
+
+        HitBoxBehaviour hitbox = hitboxes[hitBoxID];
+        if (hitbox != null)
+        {
+            hitbox.DisableHitBox();
+            hitbox.Initialize(null, null);
+        }
+    }
+
+    #endregion
 
     #region spells
     public SpellState Spell_StartCast(NPCActionSpell spellToCast, NPCAction actionToCast)
