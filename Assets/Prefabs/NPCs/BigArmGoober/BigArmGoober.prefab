@@ -791,6 +791,7 @@ MonoBehaviour:
     injectAnimatedHipsRootMotion: 0
   animatedHipRootMotion: {x: 0, y: 0, z: 0}
   animatedHipRotation: {x: 0, y: 0, z: 0, w: 1}
+  disableRetargetingToProxys: 0
 --- !u!114 &2057468793186091968
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5453,13 +5454,13 @@ GameObject:
   - component: {fileID: 2932665264638111977}
   - component: {fileID: 5367296735728331735}
   - component: {fileID: 1612943662871138154}
-  - component: {fileID: 2147361465568544861}
   - component: {fileID: 3127848842112245355}
   - component: {fileID: 5993742829548631744}
   - component: {fileID: 1118032055487504230}
   - component: {fileID: 4157549961463666729}
   - component: {fileID: 4368470985812312285}
   - component: {fileID: 5905079201172109022}
+  - component: {fileID: 134480768572974487}
   m_Layer: 0
   m_Name: BigArmGoober
   m_TagString: Untagged
@@ -5517,6 +5518,7 @@ MonoBehaviour:
   - {fileID: 1118032055487504230}
   - {fileID: 4157549961463666729}
   - {fileID: 4368470985812312285}
+  - {fileID: 134480768572974487}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3627964987660012144
 MonoBehaviour:
@@ -5549,12 +5551,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coreRB: {fileID: 8545550344169933716}
   _ragDollStrength: 0.3
+  sizeMult: 2
   extraRideHeight: 0
-  extraGroundCheckDistance: 0.05
+  extraGroundCheckDistance: 0.1
   groundLayer:
     serializedVersion: 2
     m_Bits: 5891
-  suspensionCastRadius: 0.125
+  suspensionCastRadius: 0.25
   _IsGrounded:
     _value: 1
   rideSpringStrength: 500
@@ -5612,8 +5615,8 @@ MonoBehaviour:
     maximumAngleRadians: 0.7
     maximumTorqueAcceleration: 1200
     usePositionDrive: 1
-    parentAnchorLocal: {x: -0.000000019087873, y: 1.0402398, z: -0.102984875}
-    childAnchorLocal: {x: -0, y: 0.00000023841858, z: 0}
+    parentAnchorLocal: {x: -0.000000016897925, y: 0.35977402, z: -0.04198962}
+    childAnchorLocal: {x: 0.000000020721927, y: 0, z: 0.0000007459894}
     worldTargetToChild: {x: 0.0000000022271947, y: 0.00000039835504, z: 3.5517592e-10, w: -1.0000001}
     proportionalGainPosition: 600
     derivativeGainPosition: 20
@@ -5687,8 +5690,8 @@ MonoBehaviour:
     maximumAngleRadians: 0.7
     maximumTorqueAcceleration: 1200
     usePositionDrive: 1
-    parentAnchorLocal: {x: 0.00000031316682, y: 1.0274956, z: -0.38045314}
-    childAnchorLocal: {x: -0, y: -0.00000047683716, z: 0}
+    parentAnchorLocal: {x: 0.00000017136335, y: 0.5137477, z: -0.19022581}
+    childAnchorLocal: {x: 0.00000017136335, y: 0.00000011920929, z: -0.00000010430813}
     worldTargetToChild: {x: -0.000000006613031, y: -1.0000001, z: 0.000000041468457, w: 0}
     proportionalGainPosition: 600
     derivativeGainPosition: 20
@@ -5762,8 +5765,8 @@ MonoBehaviour:
     maximumAngleRadians: 0.7
     maximumTorqueAcceleration: 1200
     usePositionDrive: 1
-    parentAnchorLocal: {x: 0.8266871, y: 0.84322476, z: 0.045779396}
-    childAnchorLocal: {x: -0.000007503857, y: -0.0000015244867, z: 0.00000069659626}
+    parentAnchorLocal: {x: 0.4133435, y: 0.42161226, z: 0.022890432}
+    childAnchorLocal: {x: 0.00000048275217, y: 0.00000006987244, z: 0.0000000124738335}
     worldTargetToChild: {x: 0.000000015579275, y: -0.0000000039292143, z: 0.0000000070837807, w: 1.0000001}
     proportionalGainPosition: 600
     derivativeGainPosition: 20
@@ -5837,8 +5840,8 @@ MonoBehaviour:
     maximumAngleRadians: 0.7
     maximumTorqueAcceleration: 1200
     usePositionDrive: 1
-    parentAnchorLocal: {x: -0.0000059679232, y: 1.0226802, z: 0.00000013167201}
-    childAnchorLocal: {x: 0, y: -0, z: 0}
+    parentAnchorLocal: {x: 0.0000012228265, y: 0.51134086, z: -0.00000025331974}
+    childAnchorLocal: {x: 0.00000023821954, y: 0.00000053723784, z: 0.000000101970315}
     worldTargetToChild: {x: 0.000000038586187, y: 0.00000010264206, z: -0.000000036655543, w: -1}
     proportionalGainPosition: 600
     derivativeGainPosition: 20
@@ -5912,8 +5915,8 @@ MonoBehaviour:
     maximumAngleRadians: 0.7
     maximumTorqueAcceleration: 1200
     usePositionDrive: 1
-    parentAnchorLocal: {x: -0.826687, y: 0.84322476, z: 0.04577902}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
+    parentAnchorLocal: {x: -0.4133434, y: 0.42161226, z: 0.022890264}
+    childAnchorLocal: {x: -0.00000031720023, y: -0.000000022859734, z: -0.0000000040810733}
     worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000002}
     proportionalGainPosition: 600
     derivativeGainPosition: 20
@@ -5987,8 +5990,8 @@ MonoBehaviour:
     maximumAngleRadians: 0.7
     maximumTorqueAcceleration: 1200
     usePositionDrive: 1
-    parentAnchorLocal: {x: -0.0000019404042, y: 1.022621, z: -0.00000009644815}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
+    parentAnchorLocal: {x: -0.0000012377277, y: 0.51131046, z: -0.000000059604645}
+    childAnchorLocal: {x: -0.00000030090672, y: 0.000000022130244, z: 0.000000004192316}
     worldTargetToChild: {x: 4.646381e-10, y: -0.0000000049493636, z: -0.000000011132876, w: 1.0000001}
     proportionalGainPosition: 600
     derivativeGainPosition: 20
@@ -6084,7 +6087,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f0038c16c34866b4f9e25c9c0dc0f7e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Graph: {fileID: -2221796376738893910, guid: 3ae8be7466d444247a031810599277e3, type: 2}
+  m_Graph: {fileID: -2221796376738893910, guid: 8f25a843d9837974aaff5e3bc17d7a0f, type: 2}
   m_BlackboardVariableOverridesList:
   - rid: 711863005192388747
   - rid: 789947579786068107
@@ -6131,34 +6134,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   agent: {fileID: 0}
---- !u!114 &2147361465568544861
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6942250765550435529}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0aee99d1aa6fbc9458b393caef778e0a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  agent: {fileID: 5367296735728331735}
-  targetVariableName: Target
-  lastSeenPositionVariableName: TargetLastSeenPosition
-  homeLocationVariableName: HomeLocation
-  perceptionRadius: 10
-  perceptionAngle: 180
-  targetTag: Player
-  targetLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  obstacleLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  eyeOffset: {x: 0, y: 0.5, z: 0}
-  root: {fileID: 5433764112903814149}
-  controller: {fileID: 0}
 --- !u!114 &3127848842112245355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6194,6 +6169,8 @@ MonoBehaviour:
   physicsMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
   velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
   OnZeroBonk_event:
@@ -6242,6 +6219,8 @@ MonoBehaviour:
   canAttackVariableName: CanAttack
   actions:
   - {fileID: 11400000, guid: 7b192615a3655c3478cf11bab1536819, type: 2}
+  hitboxes:
+  - {fileID: 6008862809002261112}
   _animStateController: {fileID: 2932665264638111977}
   spellSpawnPoint: {fileID: 5433764112903814149}
   activeRagdollController: {fileID: 0}
@@ -6282,6 +6261,49 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &134480768572974487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6942250765550435529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e20b946a0a734c54eba63da0612e88b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 0}
+  targetVariableName: Target
+  chasePositionVariableName: ChasePosition
+  investigatePositionVariableName: InvestigatePosition
+  aggroStateVariableName: AggroState
+  canSeeCurrentTargetVariableName: CanSeeCurrentTarget
+  generalAggroValueVariableName: GeneralAggro
+  targetStickinessMultiplier: 1.2
+  aggroActivationThreshold: 1
+  persistentThreatRampUpRate: 20
+  persistentThreatDecayRate: 1
+  spikeThreatDecayRate: 30
+  bonkToThreatMultiplier: 1.5
+  lineOfSightMultiplier: 3
+  hearingRadius: 25
+  hearingSensitivity: 1
+  minHearingThreshold: 10
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 320
+  visionRadius: 30
+  visionAngle: 181
+  sightThreatPerSecond: 25
+  visionBlockers:
+    serializedVersion: 2
+    m_Bits: 4096
+  eyeOffset: {x: 0, y: 1.5, z: 0}
+  _CurrentAggroState: 0
+  _CurrentTarget: {fileID: 0}
+  _inspectorDebugThreatTable: []
+  showThreatDebug: 1
 --- !u!1 &6983809620397037641
 GameObject:
   m_ObjectHideFlags: 0
@@ -7330,6 +7352,7 @@ GameObject:
   - component: {fileID: 8065175834684990450}
   - component: {fileID: 4205542533896950279}
   - component: {fileID: 1244236917589750283}
+  - component: {fileID: 6008862809002261112}
   m_Layer: 21
   m_Name: LowerArmRHitBox
   m_TagString: Untagged
@@ -7405,10 +7428,25 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Size: {x: 0.9, y: 1.21, z: 0.57}
   m_Center: {x: 0.08, y: 0.37, z: 0}
+--- !u!114 &6008862809002261112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8427148444440382818}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94a6885e98ba7d6408a6e99ded72e192, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objectsHitThisActivation: []
+  hitBoxCollider: {fileID: 1244236917589750283}
+  _drivingRigidbody: {fileID: 5206101990445450973}
 --- !u!1 &8428192500657168412
 GameObject:
   m_ObjectHideFlags: 0

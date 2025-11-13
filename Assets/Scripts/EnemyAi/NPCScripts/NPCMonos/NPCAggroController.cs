@@ -14,6 +14,10 @@ public class NPCAggroController : NetworkBehaviour
     [SerializeField] private string canSeeCurrentTargetVariableName = "CanSeeCurrentTarget";
     [SerializeField] private string generalAggroValueVariableName = "GeneralAggro";
 
+    [SerializeField] private string unattributedThreatVariableName = "UnattributedThreat";
+    [SerializeField] private string unattributedThreatDirectionVariableName = "UnattributedThreatDirection";
+    [SerializeField] private string currentTargetThreatVariableName = "CurrentTargetThreat";
+
     [Header("NPC variables")]
     private NPCActiveRagdollController activeRagdollController;
     private Transform core;
@@ -48,10 +52,13 @@ public class NPCAggroController : NetworkBehaviour
     [Networked] public NetworkObject CurrentTarget { get; set; }
     [Networked] private InterestPoint CurrentInterestPoint { get; set; }
     [Networked] private float GeneralAggro { get; set; }
+    [Networked, SerializeField] private float UnattributedThreat { get; set; }
+    [Networked, SerializeField] private Vector3 UnattributedThreatDirection { get; set; }
 
 
     private Dictionary<NetworkObject, ThreatInfo> _threatTable = new Dictionary<NetworkObject, ThreatInfo>();
     [SerializeField] private List<ThreatDebugEntry> _inspectorDebugThreatTable = new List<ThreatDebugEntry>();
+    
     private List<NetworkObject> _targetsToRemove = new List<NetworkObject>();
     private Vector3 _eyePosition => core.transform.TransformPoint(eyeOffset);
 
@@ -64,6 +71,7 @@ public class NPCAggroController : NetworkBehaviour
         if (agent == null)
             agent = GetComponent<BehaviorGraphAgent>();
         agent.enabled = false;
+        eyeOffset *= activeRagdollController.sizeMult;
     }
 
 
@@ -164,15 +172,20 @@ public class NPCAggroController : NetworkBehaviour
 
                 info.spikeThreat += threatAmount;
                 info.spikeThreat += CurrentInterestPoint.Threat;
+                info.spikeThreat += UnattributedThreat;
 
                 CurrentInterestPoint = default;
-
+                UnattributedThreat = 0;
+                
+                UnattributedThreatDirection = Vector3.zero;
                 info.lastKnownPosition = GetTargetPosition(instigator);
             }
             else
             {
-                
-                UpdateInterestPoint(threatAmount, sensationPosition);
+                UnattributedThreat += threatAmount;
+                if (sensationPosition.HasValue)
+                    UnattributedThreatDirection = (sensationPosition.Value - _eyePosition).normalized;
+               // UpdateInterestPoint(threatAmount, sensationPosition);
             }
         }
         else //otherwise update an interest point where the "sound/ sensation etc.. was felt"
@@ -242,6 +255,15 @@ public class NPCAggroController : NetworkBehaviour
                     info.debugDisplay = target.GetComponent<AggroDebugDisplay>();
                 }
 
+
+                if (UnattributedThreat > 0 && target != CurrentTarget) // this needs to be updated as could target someone else theyve seen isnt the instigator
+                {
+                    info.spikeThreat += UnattributedThreat;
+                    UnattributedThreat = 0;
+                    UnattributedThreatDirection = Vector3.zero;
+                }
+
+
                 float distance = Vector3.Distance(_eyePosition, GetTargetPosition(target));
                 float targetThreatCap = 100f / (distance + 1f);
 
@@ -287,13 +309,20 @@ public class NPCAggroController : NetworkBehaviour
 
     private void DecayCurrentTargetsThreat()
     {
-        float ipDecay = spikeThreatDecayRate * Runner.DeltaTime; //maybe we want to use a different decay rate for interest? ill leave it as spike decay for now
-
+        float ipDecay = spikeThreatDecayRate * Runner.DeltaTime; //maybe we want to use a different decay rate for interest? spike decay for now
         if (CurrentInterestPoint.Threat > 0)
         {
             var ip = CurrentInterestPoint; 
             ip.Threat = Mathf.Max(0, ip.Threat - ipDecay);
             CurrentInterestPoint = ip;
+        }
+
+        float frustrationDecay = persistentThreatDecayRate * Runner.DeltaTime; 
+        if (UnattributedThreat > 0)
+        {
+            UnattributedThreat = Mathf.Max(0, UnattributedThreat - frustrationDecay);
+            if (UnattributedThreat == 0)
+                UnattributedThreatDirection = Vector3.zero;
         }
 
         float spikeDecay = spikeThreatDecayRate * Runner.DeltaTime;
@@ -346,7 +375,7 @@ public class NPCAggroController : NetworkBehaviour
 
     private void DeterminState()
     {
-        float totalThreat = CurrentInterestPoint.Threat;
+        float totalThreat = CurrentInterestPoint.Threat + UnattributedThreat;
         foreach (var pair in _threatTable)
         {
             totalThreat += pair.Value.TotalThreat;
@@ -363,23 +392,27 @@ public class NPCAggroController : NetworkBehaviour
     {
         if (agent == null) return;
 
-        if(CurrentTarget != null)
+        agent.SetVariableValue(unattributedThreatVariableName, UnattributedThreat);
+        agent.SetVariableValue(unattributedThreatDirectionVariableName, UnattributedThreatDirection);
+
+        if (CurrentTarget != null)
             agent.SetVariableValue(targetVariableName, CurrentTarget.gameObject);
+
         agent.SetVariableValue(aggroStateVariableName, CurrentAggroState);
         agent.SetVariableValue(investigatePositionVariableName, CurrentInterestPoint.Position);
 
+        float currentTargetThreat = 0f;
         bool canSeeTarget = false;
+
         if (CurrentTarget != null && _threatTable.TryGetValue(CurrentTarget, out ThreatInfo info))
         {
             agent.SetVariableValue(chasePositionVariableName, info.lastKnownPosition);
-            canSeeTarget = info.hasLineOfSight; 
-        }
-        else 
-        {
-            canSeeTarget = false;
+            canSeeTarget = info.hasLineOfSight;
+            currentTargetThreat = info.TotalThreat;
         }
 
         agent.SetVariableValue(canSeeCurrentTargetVariableName, canSeeTarget);
+        agent.SetVariableValue(currentTargetThreatVariableName, currentTargetThreat);
     }
 
     private void UpdateInspectorDebug()

@@ -6,12 +6,13 @@ using static UnityEngine.GraphicsBuffer;
 using Action = Unity.Behavior.Action;
 
 [Serializable, GeneratePropertyBag]
-[NodeDescription(name: "NPCMoveToPoint", story: "[Self] moves to [Point] [running]", category: "Action", id: "9ec5e4d11b7415d6052e0f80ddf6b67b")]
+[NodeDescription(name: "NPCMoveToPoint", story: "[Self] moves to [Point] [running] and faces target [FacesTarget]", category: "Action", id: "9ec5e4d11b7415d6052e0f80ddf6b67b")]
 public partial class NpcMoveToPointAction : Action
 {
     [SerializeReference] public BlackboardVariable<GameObject> Self;
     [SerializeReference] public BlackboardVariable<Vector3> Point;
     [SerializeReference] public BlackboardVariable<bool> Running;
+    [SerializeReference] public BlackboardVariable<bool> FacesTarget;
     private NPCMovementController controller;
 
     protected override Status OnStart()
@@ -36,7 +37,10 @@ public partial class NpcMoveToPointAction : Action
 
         controller.MoveToPoint(targetPosition, Running ? 2 : 1);
         //controller.RotateInMovementDirection();
-        controller.RotateTowardsPoint(targetPosition);
+        if(!FacesTarget)
+            controller.RotateInMovementDirection();
+        else
+            controller.RotateTowardsPoint(targetPosition);
 
         return Status.Running;
     }

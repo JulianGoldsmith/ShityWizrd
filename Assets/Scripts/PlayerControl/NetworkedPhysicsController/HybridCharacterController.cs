@@ -1030,7 +1030,7 @@ public class PdBone
     const float snapDistance = 4f;
 
 
-    public void Step(float deltaTime, float ragDollRotationStrength = 1)
+    public void Step(float deltaTime, float ragDollRotationStrength = 1, float sizeMult = 1f)
     {
         if (childRigidbody == null || parentRigidbody == null || targetTransform == null)
             return;
@@ -1090,16 +1090,19 @@ public class PdBone
 
         if (usePositionDrive)
         {
-            Vector3 parentAnchorWorld = parentRigidbody.position + parentRigidbody.rotation * parentAnchorLocal;
-            Vector3 childAnchorWorld = childRigidbody.position + childRigidbody.rotation * childAnchorLocal;
+            //Vector3 parentAnchorWorld = parentRigidbody.position + parentRigidbody.rotation * parentAnchorLocal;
+            //Vector3 childAnchorWorld = childRigidbody.position + childRigidbody.rotation * childAnchorLocal;
+
+            Vector3 parentAnchorWorld = parentRigidbody.transform.TransformPoint(parentAnchorLocal);
+            Vector3 childAnchorWorld = childRigidbody.transform.TransformPoint(childAnchorLocal);
 
             Vector3 parentAnchorVelocityWorld = parentRigidbody.GetPointVelocity(parentAnchorWorld);
             Vector3 childAnchorVelocityWorld = childRigidbody.GetPointVelocity(childAnchorWorld);
 
             Vector3 positionErrorWorld = parentAnchorWorld - childAnchorWorld;
 
-
-            if (positionErrorWorld.sqrMagnitude > snapDistance * snapDistance) //teleport if far away
+            float scaledSnapDistance = snapDistance * sizeMult;
+            if (positionErrorWorld.sqrMagnitude > scaledSnapDistance * scaledSnapDistance) //teleport if far away
             {
                 Vector3 newPos = childRigidbody.position + positionErrorWorld;
 
@@ -1135,13 +1138,26 @@ public class PdBone
                 parentRigidbody.AddForceAtPosition(((-forceAccelerationWorld * forceTransfereRatio ) * childRigidbody.mass )/ parentRigidbody.mass, parentAnchorWorld, ForceMode.Acceleration) ;
             }
 
-            if(Vector3.Distance(childAnchorWorld, parentAnchorWorld) > 4)
+            if(Vector3.Distance(childAnchorWorld, parentAnchorWorld) > scaledSnapDistance)
             {
                 childRigidbody.MovePosition(parentAnchorWorld);
             }
 
         }
 
+    }
+
+    public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)
+    {
+        if (parentRigidbody == null || childRigidbody == null)
+        {
+            Debug.LogWarning("[PdBone] Cannot bake anchors: missing rigidbodies.");
+            return;
+        }
+
+        parentAnchorLocal = parentRigidbody.transform.InverseTransformPoint(jointPivotWorld);
+        childAnchorLocal = childRigidbody.transform.InverseTransformPoint(jointPivotWorld);
+        worldTargetToChild = childRigidbody.rotation * Quaternion.Inverse(targetTransform.rotation);
     }
 
     //public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)
@@ -1152,21 +1168,8 @@ public class PdBone
     //        return;
     //    }
 
-    //    parentAnchorLocal = parentRigidbody.transform.InverseTransformPoint(jointPivotWorld);
-    //    childAnchorLocal = childRigidbody.transform.InverseTransformPoint(jointPivotWorld);
-    //    worldTargetToChild = childRigidbody.rotation * Quaternion.Inverse(targetTransform.rotation);
+    //    parentAnchorLocal = Quaternion.Inverse(parentRigidbody.rotation) * (jointPivotWorld - parentRigidbody.position);
+    //    childAnchorLocal = Quaternion.Inverse(childRigidbody.rotation) * (jointPivotWorld - childRigidbody.position);
     //}
-
-    public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)
-    {
-        if (parentRigidbody == null || childRigidbody == null)
-        {
-            Debug.LogWarning("[PdBone] Cannot bake anchors: missing rigidbodies.");
-            return;
-        }
-
-        parentAnchorLocal = Quaternion.Inverse(parentRigidbody.rotation) * (jointPivotWorld - parentRigidbody.position);
-        childAnchorLocal = Quaternion.Inverse(childRigidbody.rotation) * (jointPivotWorld - childRigidbody.position);
-    }
 }
 

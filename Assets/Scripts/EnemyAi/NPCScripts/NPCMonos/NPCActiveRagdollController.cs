@@ -137,11 +137,11 @@ public class NPCActiveRagdollController : NetworkBehaviour
         //get the y (differecne between armeture and root from the animator (this is already scaled in the animator)
         float rootMotionVerticalDelta = animStateController.RootMotionRaw.y * sizeMult; //this is our ride height now
 
-        float extraHeightToCastFrom = 0.2f;
+        float extraHeightToCastFrom = 0.1f * sizeMult;
 
-        float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + (suspensionCastRadius/sizeMult) + extraGroundCheckDistance + extraRideHeight;
+        float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + (suspensionCastRadius*sizeMult) + (extraGroundCheckDistance*sizeMult)+ extraRideHeight;
 
-        if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), (suspensionCastRadius / sizeMult), Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
+        if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), (suspensionCastRadius * sizeMult), Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
         {
             
 
@@ -306,7 +306,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
         {
             var bone = pdBones[i];
             bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
-            bone.Step(Runner.DeltaTime, ragDollStrength);
+            bone.Step(Runner.DeltaTime, ragDollStrength, sizeMult);
         }
     }
 
