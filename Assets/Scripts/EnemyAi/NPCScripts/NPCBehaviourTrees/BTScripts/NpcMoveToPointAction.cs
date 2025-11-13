@@ -1,17 +1,17 @@
 using System;
 using Unity.Behavior;
-using UnityEngine;
-using Action = Unity.Behavior.Action;
 using Unity.Properties;
+using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
+using Action = Unity.Behavior.Action;
 
 [Serializable, GeneratePropertyBag]
-[NodeDescription(name: "NPCMoveToTarget", story: "[Self] Moves To [Target] and is running [isRun]", category: "Action", id: "5789e974e4f15bdd5de04ed89ce6bd58")]
-public partial class NpcMoveToTargetAction : Action
+[NodeDescription(name: "NPCMoveToPoint", story: "[Self] moves to [Point] [running]", category: "Action", id: "9ec5e4d11b7415d6052e0f80ddf6b67b")]
+public partial class NpcMoveToPointAction : Action
 {
     [SerializeReference] public BlackboardVariable<GameObject> Self;
-    [SerializeReference] public BlackboardVariable<GameObject> Target;
-    [SerializeReference] public BlackboardVariable<bool> IsRun;
-
+    [SerializeReference] public BlackboardVariable<Vector3> Point;
+    [SerializeReference] public BlackboardVariable<bool> Running;
     private NPCMovementController controller;
 
     protected override Status OnStart()
@@ -26,15 +26,15 @@ public partial class NpcMoveToTargetAction : Action
 
     protected override Status OnUpdate()
     {
-        if (controller == null || Target.Value == null)
+        if (controller == null || Self.Value == null)
         {
-           // Debug.Log($"Failure check  {( Target.Value == null? "target" : "controller" )}");
+            // Debug.Log($"Failure check  {( Target.Value == null? "target" : "controller" )}");
             return Status.Failure;
         }
 
-        Vector3 targetPosition =NPCHelpers.GetCoreTransformFromRoot(Target.Value).position;
+        Vector3 targetPosition = Point.Value;
 
-        controller.MoveToPoint(targetPosition, IsRun? 2: 1);
+        controller.MoveToPoint(targetPosition, Running ? 2 : 1);
         //controller.RotateInMovementDirection();
         controller.RotateTowardsPoint(targetPosition);
 

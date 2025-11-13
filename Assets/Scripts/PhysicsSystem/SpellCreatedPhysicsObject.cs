@@ -49,7 +49,10 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         corresponding_spell_node = node as SpellNode;
         corresponding_node_instance_guid = node.InstanceGuid;
         if (state != null)
+        {
             corresponding_spellgraph_id = state.SpellGraphIdFrom;
+            creator = state.Caster;
+        }
 
         SubscribeToSpellStateManager();
 

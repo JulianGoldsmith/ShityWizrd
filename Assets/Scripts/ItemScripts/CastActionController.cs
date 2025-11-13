@@ -100,7 +100,7 @@ public abstract class CastActionController : NetworkBehaviour
         Debug.Log($"{this.gameObject.name} cast {item.name} with spell {item.primarySpellID} at entry node {entryCast.name}");
 
         int actionId = _nextActionId;
-        SpellState newCast = new SpellState(this, item, item.primaryActionSpell, entryCast);
+        SpellState newCast = new SpellState(this, item, item.primaryActionSpell, entryCast, this.GetComponent<NetworkObject>());
         
         //SpellStateManager.instance.AddSpellState(newCast);
 

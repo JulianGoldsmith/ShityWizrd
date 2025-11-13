@@ -28,4 +28,16 @@ public class NPCPhysicsObject : PhysicsObject
         // Recovered from bonk.
         controller.GetUnBonked();
     }
+
+    protected override void OnBonk(float bonk_ammount, NetworkObject bonk_instigator = null, Vector3? pos = null)
+    {
+        base.OnBonk(bonk_ammount, bonk_instigator);
+        if(this.TryGetComponent<NPCAggroController>(out NPCAggroController npcac))
+        {
+            Debug.Log($"Reporting Bonk to aggro controller bonker - {bonk_instigator} ammount - {bonk_ammount}");
+            npcac.ReportBonk(bonk_instigator, bonk_ammount, pos);
+
+            
+        }
+    }
 }

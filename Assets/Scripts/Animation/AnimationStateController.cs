@@ -279,12 +279,14 @@ public class AnimationStateController : NetworkBehaviour
     {
         if (!Object.HasStateAuthority) return;
 
+        ClipWeights.Set(clipIndex, 1.0f);
+
         for (int i = 0; i < TOTAL_CAPACITY; i++)
         {
             if (i != clipIndex)
                 ClipWeights.Set(i, 0);
         }
-        ClipWeights.Set(clipIndex, 1.0f);
+        
         CurrentState = AnimState.Action;
         ActiveClipIndex = clipIndex;
         ClipTimes.Set(clipIndex, 0); // Reset time

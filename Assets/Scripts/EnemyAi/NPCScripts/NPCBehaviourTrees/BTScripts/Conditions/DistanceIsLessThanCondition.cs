@@ -15,7 +15,7 @@ public partial class DistanceIsLessThanCondition : Condition
         var controller = Self.Value.GetComponent<NPCActiveRagdollController>();
         if (controller == null) return false;
         if (Target.Value == null) return false;
-        float distance = Vector3.Distance(controller.coreRB.transform.position, Target.Value.transform.position);
+        float distance = Vector3.Distance(controller.coreRB.transform.position, NPCHelpers.GetCoreTransformFromRoot(Target.Value).position);
         return (distance <= X);
     }
 

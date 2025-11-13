@@ -11,19 +11,19 @@ public class PushPullNode : EffectNode
         TO_SOURCE = 0,
         PUSH_FROM_SOURCE,
         SOURCE_FORWARD,
-        [Tooltip("Pushes in the direction of the spell's trigger e.g, hitbox momentum")]
+        [Tooltip("Pushes in the direction of the spell's trigger e.g hitbox momentum")]
         TRIGGER_DIRECTION
     }
 
     public enum ForceScaling
     {
-        [Tooltip("Applies a simple, static Force Multiplier value.")]
+        [Tooltip("Applies a static Force Multiplier value.")]
         STATIC,
 
         [Tooltip("Scales the Force Multiplier based on distance from the source.")]
         BY_DISTANCE,
 
-        [Tooltip("The force is the Force Multiplier multiplied by the trigger's momentum magnitude.")]
+        [Tooltip("The force is the Force Multiplier multiplied by the triggers momentum magnitude.")]
         BY_TRIGGER_FORCE
     }
 
@@ -67,7 +67,7 @@ public class PushPullNode : EffectNode
             }
             else if(target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject PSO))
             {
-                PSO.parent_physics_object.BonkFromImpulse(magnitude, null);
+                PSO.parent_physics_object.BonkFromImpulse(magnitude, null); //NEED TO PUT INSTIGATOR HERE!! 
             }
         }
     }
@@ -86,10 +86,10 @@ public class PushPullNode : EffectNode
                 return info.Source.transform.forward;
 
             case PUSH_PULL_DIRECTION.TRIGGER_DIRECTION:
-                // This is the momentum vector from the hitbox
+                // This could be like momentum vector from the hitbox
                 return info.TriggerVector;
         }
-        return Vector3.zero; // Fallback
+        return Vector3.zero; 
     }
 
 

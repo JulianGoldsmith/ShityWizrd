@@ -1,6 +1,7 @@
-using UnityEngine;
+using Fusion;
 using System.Collections.Generic;
 using Unity.Behavior;
+using UnityEngine;
 
 public class NPCActionController : CastActionController
 {
@@ -63,7 +64,7 @@ public class NPCActionController : CastActionController
     
     public void RegisterActionBaseIndex(NPCAction action, int baseIndex)
     {
-        //This is called by our animationStateControler - it registers a "base" int that is used for action animation clips to a dictionary
+        //Called by our animationStateControler - it registers a "base" int that is used for action animation clips to a dictionary
         if (action == null) return;
         _actionBaseIndices[action] = baseIndex;
     } 
@@ -326,7 +327,7 @@ public class NPCActionController : CastActionController
         }
 
 
-        SpellState newCast = new SpellState(this, null, spellToCast.spell, entryCast);
+        SpellState newCast = new SpellState(this, null, spellToCast.spell, entryCast, this.GetComponent<NetworkObject>());
 
         activeCasts.Add(newCast);
         isCasting = true;

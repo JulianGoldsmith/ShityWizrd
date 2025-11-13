@@ -209,7 +209,7 @@ public class DraggableItem : InteractableItem
         // Debug.Log($"picked up or drag called on local player");
         if (HasStateAuthority) return;
         if (HasInputAuthority) return;
-        if (IsProxy) return; 
+        if (IsProxy) return;  //this dosnt actually run now but ive left it incase
         
         //after looking at this again i think this dosnt need to run at all as the state is now networked i think ive over complicated things
 
@@ -259,6 +259,10 @@ public class DraggableItem : InteractableItem
 
         if (true) //if we the server
         {
+            if(TryGetComponent<PhysicsObject>(out PhysicsObject PO))
+            {
+                PO.lastInteractor = playerObject;
+            }
             HolderChangedCount++;
             AddPlayerToCurrentHoldingPlayers(playerObject);
             if (playerObject.TryGetComponent<NetworkedHandsController>(out NetworkedHandsController hands))

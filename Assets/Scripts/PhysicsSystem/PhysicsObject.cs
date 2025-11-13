@@ -27,7 +27,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
      */
 
 
-    [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))] 
+    [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))]
     public PhysicsObjectProperties physicsObjectProperties { get; set; }
     public Rigidbody rb;
     public PhysicsMaterial physicsMaterial;
@@ -35,9 +35,13 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     protected Tick? tick_spawned = null;
     // bonkedness is the standin for consciousness (player)
     // and health (object).
-    [Networked, OnChangedRender(nameof(OnBonkednessChanged))] 
+    [Networked, OnChangedRender(nameof(OnBonkednessChanged))]
     public float current_bonkedness { get; set; }
     protected bool zero_bonkedness { get { return current_bonkedness <= 0.0f; } }
+
+    public NetworkObject creator;
+    public NetworkObject lastInteractor;
+    public NetworkObject currentThreatCause => (lastInteractor ?? creator)?? null;
 
     #region Data Networking
     public void OnPhysicsObjectPropertiesChanged()
@@ -156,19 +160,24 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         //Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
         if (IfGetBonked(bonk_amount))
         {
-            OnBonk(bonk_amount);
+            NetworkObject instigatorOfBonk = null;
+            if(collision.gameObject.TryGetComponent<PhysicsObject>(out PhysicsObject otherPO))
+            {
+                instigatorOfBonk = otherPO.currentThreatCause;
+            }
+            OnBonk(bonk_amount, instigatorOfBonk, collision.contacts[0].point);
         }
     }
     #endregion
 
-
-    public void BonkFromImpulse(float impulse, PhysicsObject otherPhysicsObject)
+    //This needs
+    public void BonkFromImpulse(float impulse, PhysicsObject otherPhysicsObject, NetworkObject bonk_instigator = null, Vector3? pos = null)
     {
         float bonk_amount = BonkAmount(impulse, otherPhysicsObject?.physicsObjectProperties);
 
         if (IfGetBonked(bonk_amount))
         {
-            OnBonk(bonk_amount);
+            OnBonk(bonk_amount , bonk_instigator, pos);
         }
     }
 
@@ -476,7 +485,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             mass;
     }
 
-    void OnBonk(float bonk_amount)
+    protected virtual void OnBonk(float bonk_amount, NetworkObject bonk_instigator = null, Vector3? pos = null)
     {
         current_bonkedness -= bonk_amount;
         Debug.Log($"new bonkedness: {current_bonkedness} {bonk_amount}");

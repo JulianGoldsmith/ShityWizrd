@@ -15,6 +15,9 @@ public class NPCActiveRagdollController : NetworkBehaviour
     [Header("RagDoll Strength"), Range(0,2f)]
     [Networked] public float ragDollStrength { get; set; } = 1;
 
+    [Header("Size")]
+    public float sizeMult = 1;
+
     [Header("Grounded Settings")]
     public float extraRideHeight = 0f;
     public float extraGroundCheckDistance = 1.0f;
@@ -70,8 +73,12 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     public override void Spawned()
     {
-
-
+        if(TryGetComponent<NPCPhysicsObject>(out NPCPhysicsObject NPCPO))
+        {
+            PhysicsObjectProperties props = NPCPO.physicsObjectProperties;
+            props.size = sizeMult;
+            NPCPO.physicsObjectProperties = props;
+        }
         Runner.SetIsSimulated(this.Object, true);
         foreach (NetworkRigidbody3D nrb in rbComponents)
         {
@@ -128,13 +135,13 @@ public class NPCActiveRagdollController : NetworkBehaviour
     private void ApplyCoreSuspention()
     {
         //get the y (differecne between armeture and root from the animator (this is already scaled in the animator)
-        float rootMotionVerticalDelta = animStateController.RootMotionRaw.y * transform.localScale.y; //this is our ride height now
+        float rootMotionVerticalDelta = animStateController.RootMotionRaw.y * sizeMult; //this is our ride height now
 
         float extraHeightToCastFrom = 0.2f;
 
-        float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + suspensionCastRadius + extraGroundCheckDistance + extraRideHeight;
+        float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + (suspensionCastRadius/sizeMult) + extraGroundCheckDistance + extraRideHeight;
 
-        if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), suspensionCastRadius, Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
+        if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), (suspensionCastRadius / sizeMult), Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
         {
             
 
