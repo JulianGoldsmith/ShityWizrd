@@ -65,20 +65,25 @@ public class CharacterBonkController : NetworkBehaviour
     public void GetBonked()
     {
 
-        Debug.Log("Ran got bonked");
-        ragDollController.ActivateRagDoll();
+        //Debug.Log("Ran got bonked");
+        //ragDollController.ActivateRagDoll();
 
-        foreach (PdBone headAndTorso in characterController.pdBones)
-        {
-            var rb3d = headAndTorso.childRigidbody.transform.GetComponent<NetworkRigidbody3D>();
-            //headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
-            rb3d.RBIsKinematic = true;
-            rb3d.GetComponent<Collider>().enabled = false;
-        }
-        var hipsNRB = characterController.hipsRb.GetComponent<NetworkRigidbody3D>();
-        wasKinematic = hipsNRB.RBIsKinematic;
-        hipsNRB.RBIsKinematic = true;
-        hipsNRB.GetComponent<Collider>().enabled = false;
+        //foreach (PdBone headAndTorso in characterController.pdBones)
+        //{
+        //    var rb3d = headAndTorso.childRigidbody.transform.GetComponent<NetworkRigidbody3D>();
+        //    //headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
+        //    rb3d.RBIsKinematic = true;
+        //    rb3d.GetComponent<Collider>().enabled = false;
+        //}
+        //var hipsNRB = characterController.hipsRb.GetComponent<NetworkRigidbody3D>();
+        //wasKinematic = hipsNRB.RBIsKinematic;
+        //hipsNRB.RBIsKinematic = true;
+        //hipsNRB.GetComponent<Collider>().enabled = false;
+
+
+        characterController.armatureRetargetingLerp = 1;
+
+
 
         if (HasStateAuthority)
         {
@@ -92,24 +97,24 @@ public class CharacterBonkController : NetworkBehaviour
 
     public void GetUnBonked()
     {
-        ragDollController.DeactivateRagDoll();
+        //ragDollController.DeactivateRagDoll();
         if (HasStateAuthority)
         {
             BonkedState = BONKEDSTATE.ALIVE;
         }
         _swapAtTick = Runner.Tick + 1;
+        characterController.armatureRetargetingLerp = 0;
 
+        //foreach (PdBone headAndTorso in characterController.pdBones)
+        //{
+        //    var rb3d = headAndTorso.childRigidbody.transform.GetComponent<NetworkRigidbody3D>();
+        //    rb3d.RBIsKinematic = false;
+        //    rb3d.GetComponent<Collider>().enabled = true;
 
-        foreach (PdBone headAndTorso in characterController.pdBones)
-        {
-            var rb3d = headAndTorso.childRigidbody.transform.GetComponent<NetworkRigidbody3D>();
-            rb3d.RBIsKinematic = false;
-            rb3d.GetComponent<Collider>().enabled = true;
-
-        }
-        var hipsNRB = characterController.hipsRb.GetComponent<NetworkRigidbody3D>();
-        hipsNRB.RBIsKinematic = false;
-        hipsNRB.GetComponent<Collider>().enabled = true;
+        //}
+        //var hipsNRB = characterController.hipsRb.GetComponent<NetworkRigidbody3D>();
+        //hipsNRB.RBIsKinematic = false;
+        //hipsNRB.GetComponent<Collider>().enabled = true;
 
 
         characterController.handController.EnableHands();
@@ -125,11 +130,11 @@ public class CharacterBonkController : NetworkBehaviour
 
             if (showRagdoll)
             {
-                SwitchToRagdoll();
+                //SwitchToRagdoll();
             }
             else
             {
-                SwitchToAnimated();
+               // SwitchToAnimated();
             }
             //characterController.modelRenderer.enabled = HasInputAuthority ? false : !showRagdoll;
             //characterController.ragDollRenderer.enabled = showRagdoll;

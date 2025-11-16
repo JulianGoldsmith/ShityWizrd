@@ -14,8 +14,11 @@ public class NPCAggroController : NetworkBehaviour
     [SerializeField] private string canSeeCurrentTargetVariableName = "CanSeeCurrentTarget";
     [SerializeField] private string generalAggroValueVariableName = "GeneralAggro";
 
+    [SerializeField] private string interestPointThreatVariableName = "InterestPointThreat";
+
     [SerializeField] private string unattributedThreatVariableName = "UnattributedThreat";
     [SerializeField] private string unattributedThreatDirectionVariableName = "UnattributedThreatDirection";
+
     [SerializeField] private string currentTargetThreatVariableName = "CurrentTargetThreat";
 
     [Header("NPC variables")]
@@ -50,7 +53,7 @@ public class NPCAggroController : NetworkBehaviour
     [Header("Networking")] //im not sure if this needs networking ? im working under the theory that we network predict NPC actions on clients although i have changed this now 
     [Networked] public AggroState CurrentAggroState { get; set; }
     [Networked] public NetworkObject CurrentTarget { get; set; }
-    [Networked] private InterestPoint CurrentInterestPoint { get; set; }
+    [Networked] public InterestPoint CurrentInterestPoint { get; set; }
     [Networked] private float GeneralAggro { get; set; }
     [Networked, SerializeField] private float UnattributedThreat { get; set; }
     [Networked, SerializeField] private Vector3 UnattributedThreatDirection { get; set; }
@@ -198,7 +201,6 @@ public class NPCAggroController : NetworkBehaviour
     {
         if(newPosition == null)
         {
-            //add too unknown threat? 
             return;
         }
         else if (newThreat > CurrentInterestPoint.Threat)
@@ -400,6 +402,8 @@ public class NPCAggroController : NetworkBehaviour
 
         agent.SetVariableValue(aggroStateVariableName, CurrentAggroState);
         agent.SetVariableValue(investigatePositionVariableName, CurrentInterestPoint.Position);
+
+        agent.SetVariableValue(interestPointThreatVariableName, CurrentInterestPoint.Threat);
 
         float currentTargetThreat = 0f;
         bool canSeeTarget = false;

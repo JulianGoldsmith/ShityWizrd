@@ -13,6 +13,7 @@ public partial class NpcMoveToPointAction : Action
     [SerializeReference] public BlackboardVariable<Vector3> Point;
     [SerializeReference] public BlackboardVariable<bool> Running;
     [SerializeReference] public BlackboardVariable<bool> FacesTarget;
+    [SerializeReference] public BlackboardVariable<float> SucsessDistance;
     private NPCMovementController controller;
 
     protected override Status OnStart()
@@ -41,6 +42,11 @@ public partial class NpcMoveToPointAction : Action
             controller.RotateInMovementDirection();
         else
             controller.RotateTowardsPoint(targetPosition);
+
+        if(Vector3.Distance(controller.controller.coreRB.transform.position, Point.Value) < SucsessDistance)
+        {
+            return Status.Success;
+        }
 
         return Status.Running;
     }

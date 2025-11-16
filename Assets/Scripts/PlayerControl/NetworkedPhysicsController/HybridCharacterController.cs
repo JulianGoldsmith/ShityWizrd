@@ -21,6 +21,10 @@ public class HybridCharacterController : NetworkBehaviour
     public List<NetworkRigidbody3D> networkRigidbody3Ds = new List<NetworkRigidbody3D>();
     public float totalMass;
 
+    [Header("Armature Retargeter LErp")]
+    public float armatureRetargetingLerp = 0;
+    public ArmatureRetargeter armatureRetargeter;
+
     [Header("Grounded Settings")]
     public float groundCheckExtraDistance = 1f;
     public LayerMask groundLayer;
@@ -55,10 +59,13 @@ public class HybridCharacterController : NetworkBehaviour
 
     [Header("PD armature")]
     public List<PDSpring> pDSprings = new List<PDSpring>();
+     //this is a new list of "ghost rigidbodies" used only when in ragdoll mode or near
+
     [Networked] Quaternion initialTorsoRot { get; set; }
     [Networked] Quaternion initialHeadRot { get; set; }
 
     public List<PdBone> pdBones = new List<PdBone>();
+    public List<PdBone> ragDollBones = new List<PdBone>();
 
     private float pdDesignDt  = 1f / 64f;
 
@@ -262,26 +269,27 @@ public class HybridCharacterController : NetworkBehaviour
 
 
         //changed
-        if (bonkController.BonkedState == BONKEDSTATE.BONKED) return;
+        if (bonkController.BonkedState != BONKEDSTATE.BONKED)
+        {
 
-        UpdateAnimatorPos(true);
+            UpdateAnimatorPos(true);
 
-        ApplyUprightTorque();
+            ApplyUprightTorque();
 
-        // 1) look torque
-        ApplyLookRotation();
-
-
-        // 2) suspension
-        UpdateHips();
+            // 1) look torque
+            ApplyLookRotation();
 
 
-        // 3) planar movement PD
-        ApplyHipsMovement();
+            // 2) suspension
+            UpdateHips();
 
-        // 5) anything past here
-        UpdateSpineIK();
 
+            // 3) planar movement PD
+            ApplyHipsMovement();
+
+            // 5) anything past here
+            UpdateSpineIK();
+        }
 
         // 4) PD springs (joints)
         UpdateTorsoAndHead();
@@ -401,6 +409,9 @@ public class HybridCharacterController : NetworkBehaviour
                 armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z) - armatureHipsStartOffset) * 0.01f;
             retargeter.animatedHipRotation = armatureHipsRoot.transform.localRotation;
         }
+
+        armatureRetargeter.SetRagdollBlend(armatureRetargetingLerp);
+        
     }
 
     void UpdateAnimatorPos(bool inFixedUpdate)
@@ -732,15 +743,22 @@ public class HybridCharacterController : NetworkBehaviour
 
         float deltaTime = Mathf.Max((float)Runner.DeltaTime, 1e-4f);
 
-        // Ensure physics bodies use interpolation = None and matching solver iterations elsewhere.
-
         for (int i = 0; i < pdBones.Count; i++)
         {
             var bone = pdBones[i];
             bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
             bone.Step(Runner.DeltaTime);
         }
-
+        
+        //if (armatureRetargetingLerp > 0)
+        //{
+            for (int i = 0; i < ragDollBones.Count; i++)
+            {
+                var bone = ragDollBones[i];
+                bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
+                bone.Step(Runner.DeltaTime, bonkController.BonkedState == BONKEDSTATE.ALIVE? 1: 0.2f);
+            }
+        //}
     }
 
     public Quaternion GetLookRot()
@@ -863,18 +881,33 @@ public class HybridCharacterController : NetworkBehaviour
 
         for (int i = 0; i < pdBones.Count; i++)
         {
-          var bone = pdBones[i];
-          if (bone == null) continue;
-          if (bone.targetTransform == null)
-          {
-            Debug.LogWarning($"PdBone {i}: targetTransform is missing, skipped.");
-            continue;
-          }
-          bone.BakeAnchorsFromWorldPivot(bone.targetTransform.position);
+            var bone = pdBones[i];
+            BakeBone(bone);
+        }
+        for (int i = 0; i < ragDollBones.Count; i++)
+        {
+            var bone = ragDollBones[i];
+            BakeBone(bone);
         }
 
-    Debug.Log("Baked PD anchors from each bone's targetTransform remember to save");
+        Debug.Log("Baked PD anchors from each bone's targetTransform remember to save");
 
+    }
+    private void BakeBone(PdBone bone)
+    {
+        if (bone == null) return;
+        if (bone.targetTransform == null)
+        {
+            Debug.LogWarning($"PdBone {bone}: targetTransform is missing, skipped.");
+            return;
+        }
+        bone.BakeAnchorsFromWorldPivot(bone.targetTransform.position);
+        //if (bone.childRigidbody == null)
+        //{
+        //    Debug.LogWarning($"PdBone {bone}: childRigidbody is missing, skipped.");
+        //    return;
+        //}
+        bone.BakeAnchorsFromWorldPivot(bone.childRigidbody.transform.position);
     }
 
 }
