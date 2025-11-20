@@ -19,10 +19,13 @@ public class HybridCharacterController : NetworkBehaviour
     public Rigidbody hipsRb;
     public Vector3 hipsOffset;
     public List<NetworkRigidbody3D> networkRigidbody3Ds = new List<NetworkRigidbody3D>();
+    public List<NetworkRigidbody3D> networkRagdollRigidbody3Ds = new List<NetworkRigidbody3D>();
     public float totalMass;
 
     [Header("Armature Retargeter LErp")]
+    public float strenght = 1f;
     public float armatureRetargetingLerp = 0;
+    public bool retargetRagDoll = false;
     public ArmatureRetargeter armatureRetargeter;
 
     [Header("Grounded Settings")]
@@ -121,6 +124,7 @@ public class HybridCharacterController : NetworkBehaviour
     [Header("Disable/Enable CC")]
     private int disableCC = -1; // -1 = enabled - > 0 = disabled for X ticks.
 
+
     public override void Spawned()
     {
         _lastVisibleJump = _jumpCount;
@@ -148,19 +152,7 @@ public class HybridCharacterController : NetworkBehaviour
             }
         }
 
-        //boneMapper.Spawn(false, targetAnimator.transform, finalAnimator.transform);
-
-        //for (int i = 0; i < pDSprings.Count; i++)
-        //{
-        //    var spring = pDSprings[i];
-        //    spring.Init(hipsRb.transform, HasInputAuthority);
-        //}
-        //if (HasStateAuthority)
-        //{
-        //    initialTorsoRot = pDSprings[1].startJointRotation;
-        //    initialHeadRot = pDSprings[0].startJointRotation;
-        //}
-
+   
 
         //hands
         handController.Spawn(networkedRenderRoot, HasInputAuthority);
@@ -185,13 +177,15 @@ public class HybridCharacterController : NetworkBehaviour
         {
             Runner.SetIsSimulated(nrb.Object, true);
             totalMass += nrb.Rigidbody.mass;
-
-           // NetworkTRSP nt = nrb.Object.GetComponent<NetworkTRSP>();
-
+        }
+        foreach (NetworkRigidbody3D nrb in networkRagdollRigidbody3Ds)
+        {
+            Runner.SetIsSimulated(nrb.Object, true);
         }
 
         armatureHipsStartOffset = new Vector3(armatureHipsRoot.transform.localPosition.x,
                 armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z);
+
     }
 
 
@@ -257,42 +251,45 @@ public class HybridCharacterController : NetworkBehaviour
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
             {
                 if (bonkController.BonkedState != BONKEDSTATE.BONKED)
-                    GetBonked(); //animation is applied in Render -> Update Animations()
+                {
+                    if (TryGetComponent<PlayerPhysicsObject>(out PlayerPhysicsObject PPO))
+                    {
+                        //GetBonked();
+                        PPO.current_bonkedness = -50f;
+                    }
+                }
+                    //GetBonked(); //animation is applied in Render -> Update Animations()
             }
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.UN_SELF_BONK))
             {
-                GetUnBonked(); //animation is applied in Render -> Update Animations()
+                if (TryGetComponent<PlayerPhysicsObject>(out PlayerPhysicsObject PPO))
+                {
+                    PPO.current_bonkedness = 100f;
+                }
+                //GetUnBonked(); //animation is applied in Render -> Update Animations()
             }
             _lastButtonsInput = data.buttons;
         }
 
 
-        //changed
+       
         if (bonkController.BonkedState != BONKEDSTATE.BONKED)
         {
-
             UpdateAnimatorPos(true);
 
             ApplyUprightTorque();
 
-            // 1) look torque
             ApplyLookRotation();
 
-
-            // 2) suspension
             UpdateHips();
-
-
-            // 3) planar movement PD
+            
             ApplyHipsMovement();
 
-            // 5) anything past here
             UpdateSpineIK();
         }
-
-        // 4) PD springs (joints)
-        UpdateTorsoAndHead();
+        if(!bonkController.bonkChangedThisUpdate)
+            UpdateTorsoAndHead();
 
       
 
@@ -734,31 +731,26 @@ public class HybridCharacterController : NetworkBehaviour
 
     private void UpdateTorsoAndHead()
     {
-        //float dt = Mathf.Max((float)Runner.DeltaTime, 1e-4f);
-        //for (int i = 0; i < pDSprings.Count; i++)
-        //{
-        //    var spring = pDSprings[i];
-        //    spring.UpdateBoneDrive(dt, pdDesignDt, i == 1 ? initialTorsoRot : initialHeadRot);
-        //}
+        float dt = (float)Runner.DeltaTime;
+        int jointIterations = 1; 
 
-        float deltaTime = Mathf.Max((float)Runner.DeltaTime, 1e-4f);
-
-        for (int i = 0; i < pdBones.Count; i++)
+        for (int iteration = 0; iteration < jointIterations; iteration++)
         {
-            var bone = pdBones[i];
-            bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
-            bone.Step(Runner.DeltaTime);
-        }
-        
-        //if (armatureRetargetingLerp > 0)
-        //{
-            for (int i = 0; i < ragDollBones.Count; i++)
+            float subStep = dt / jointIterations;
+
+            if (retargetRagDoll || bonkController.BonkedState == BONKEDSTATE.BONKED)
             {
-                var bone = ragDollBones[i];
-                bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
-                bone.Step(Runner.DeltaTime, bonkController.BonkedState == BONKEDSTATE.ALIVE? 1: 0.2f);
+                for (int i = 0; i < pdBones.Count; i++)
+                    pdBones[i].Step(subStep, 0, 1f);
+                for (int i = 0; i < ragDollBones.Count; i++)
+                    ragDollBones[i].Step(subStep, 0, 1f);
             }
-        //}
+            else
+            {
+                for (int i = 0; i < pdBones.Count; i++)
+                    pdBones[i].Step(subStep, strenght, 1f);
+            }
+        }
     }
 
     public Quaternion GetLookRot()
@@ -805,7 +797,7 @@ public class HybridCharacterController : NetworkBehaviour
 
         foreach(NetworkRigidbody3D nrb in networkRigidbody3Ds)
         {
-            hipsNRB.Teleport(targetPos, rotation);
+            nrb.Teleport(targetPos, rotation);
             nrb.ResetRigidbody();
             Debug.Log($"Teleported {nrb.name}");
         }
@@ -873,7 +865,27 @@ public class HybridCharacterController : NetworkBehaviour
         Debug.LogWarning($"[RB] {where} scale={scl} inertia={it} inertiaRot={itR} CCD={hipsRb.collisionDetectionMode}");
     }
 
-    [ContextMenu("PD Ragdoll/Bake Anchors • Use Each Target Transform")]
+    private void OnDrawGizmosSelected()
+    {
+        if (pdBones == null) return;
+
+        foreach (var b in pdBones)
+        {
+            if (b != null)
+            {
+                b.DrawAngularLimitGizmos();
+            }
+        }
+        foreach (var b in ragDollBones)
+        {
+            if (b != null)
+            {
+                b.DrawAngularLimitGizmos();
+            }
+        }
+    }
+
+    [ContextMenu("PD Ragdoll/Bake Anchors - Use Each Target Transform")]
     private void ContextBakeAnchorsFromTargets()
     {
 
@@ -909,6 +921,8 @@ public class HybridCharacterController : NetworkBehaviour
         //}
         bone.BakeAnchorsFromWorldPivot(bone.childRigidbody.transform.position);
     }
+
+
 
 }
 
@@ -1016,193 +1030,5 @@ public class PDSpring
 }
 
 
-[Serializable]
-public class PdBone
-{
-    [Header("Rigidbodies (child follows parent)")]
-    public Rigidbody childRigidbody;      
-    public Rigidbody parentRigidbody;      
 
-    [Header("Target (LOCAL to parent frame)")]
-    public Transform targetTransform;       
-
-    [Header("Rotation PD")]
-    public float proportionalGainRotation = 400f; 
-    public float derivativeGainRotation = 40f;
-
-    public bool applyEqualAndOppositeTorque = false; 
-
-    public AnimationCurve rotationErrorCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    [Header("Safety clamp")]
-    public float maximumAngleRadians = 45f * Mathf.Deg2Rad; 
-    public float maximumTorqueAcceleration = 2000f;       
-
-    [Header("------------Position-----------------")]
-
-    [Header("Optional Position PD (anchors)")]
-    public bool usePositionDrive = false;
-    public Vector3 parentAnchorLocal = Vector3.zero; 
-    public Vector3 childAnchorLocal = Vector3.zero;
-    [HideInInspector] public Quaternion worldTargetToChild;
-
-    public float proportionalGainPosition = 2000f;
-    public float derivativeGainPosition = 80f;
-
-    public AnimationCurve positionErrorCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    public bool applyEqualAndOppositeForce = false;
-    public float forceTransfereRatio = 1f;
-
-    [Header("Safety clamp")]
-    public float maximumForceAcceleration = 2000f;              
-
-    [Header("Time step reference")]
-    public float designDeltaTime = 1f / 64f;
-
-    const float snapDistance = 4f;
-
-
-    public void Step(float deltaTime, float ragDollRotationStrength = 1, float sizeMult = 1f)
-    {
-        if (childRigidbody == null || parentRigidbody == null || targetTransform == null)
-            return;
-
-        float safeDeltaTime = Mathf.Max(deltaTime, 1e-4f);
-        //float scale = Mathf.Max(designDeltaTime / safeDeltaTime, 0.01f);
-        float s = Mathf.Clamp(ragDollRotationStrength, 0.05f, 10f);
-
-        Quaternion parentRotationWorld = parentRigidbody.rotation;
-        //Quaternion targetRotationWorld = parentRotationWorld * targetTransform.localRotation;
-
-        Quaternion targetParentRotationWorld = targetTransform.parent.rotation;
-        Quaternion targetLocalRotation = Quaternion.Inverse(targetParentRotationWorld) * targetTransform.rotation;
-
-        Quaternion targetRotationWorld = parentRotationWorld * targetLocalRotation;
-
-
-        Quaternion rotationError = targetRotationWorld * Quaternion.Inverse(childRigidbody.rotation);
-        rotationError.ToAngleAxis(out float angleDegrees, out Vector3 errorAxisWorld);
-
-        if (angleDegrees > 180f) angleDegrees -= 360f;
-        float angleRadians = angleDegrees * Mathf.Deg2Rad;
-
-        if (errorAxisWorld.sqrMagnitude < 1e-8f)
-            errorAxisWorld = Vector3.zero;
-        else
-            errorAxisWorld.Normalize();
-
-        angleRadians = Mathf.Clamp(angleRadians, -maximumAngleRadians, maximumAngleRadians);
-
-        Vector3 angularVelocityErrorWorld = childRigidbody.angularVelocity - parentRigidbody.angularVelocity;
-
-        float proportionalRotationScaled = proportionalGainRotation * (s*s);
-        float derivativeRotationScaled = derivativeGainRotation * s;
-
-        float normalizedAngle = Mathf.Clamp01(Mathf.Abs(angleRadians) / Mathf.Max(maximumAngleRadians, 1e-4f));
-        
-        float rotationMult =  rotationErrorCurve.Evaluate(normalizedAngle);
-
-        //insert logic here to increase PD torque based on ragDollRotationStrength
-        //Also logic to increase dampening to avoid jitter without making it too sluggish 
-        //rotation strength can be default value of 1 or from 0 to 10x, try to make this wihtout jitter
-
-        Vector3 torqueAccelerationWorld = (proportionalRotationScaled * rotationMult * angleRadians ) * errorAxisWorld - (derivativeRotationScaled * (Mathf.Sqrt(rotationMult)) * angularVelocityErrorWorld);
-
-        //torqueAccelerationWorld *= rotationMult;
-
-        if (torqueAccelerationWorld.sqrMagnitude > maximumTorqueAcceleration * maximumTorqueAcceleration)
-            torqueAccelerationWorld = torqueAccelerationWorld.normalized * maximumTorqueAcceleration;
-
-        childRigidbody.AddTorque(torqueAccelerationWorld, ForceMode.Acceleration);
-        if (applyEqualAndOppositeTorque)
-        {
-            parentRigidbody.AddTorque(-torqueAccelerationWorld, ForceMode.Acceleration);
-        }
-        //parentRigidbody.AddTorque(-torqueAccelerationWorld, ForceMode.Acceleration);
-
-        if (usePositionDrive)
-        {
-            //Vector3 parentAnchorWorld = parentRigidbody.position + parentRigidbody.rotation * parentAnchorLocal;
-            //Vector3 childAnchorWorld = childRigidbody.position + childRigidbody.rotation * childAnchorLocal;
-
-            Vector3 parentAnchorWorld = parentRigidbody.transform.TransformPoint(parentAnchorLocal);
-            Vector3 childAnchorWorld = childRigidbody.transform.TransformPoint(childAnchorLocal);
-
-            Vector3 parentAnchorVelocityWorld = parentRigidbody.GetPointVelocity(parentAnchorWorld);
-            Vector3 childAnchorVelocityWorld = childRigidbody.GetPointVelocity(childAnchorWorld);
-
-            Vector3 positionErrorWorld = parentAnchorWorld - childAnchorWorld;
-
-            float scaledSnapDistance = snapDistance * sizeMult;
-            if (positionErrorWorld.sqrMagnitude > scaledSnapDistance * scaledSnapDistance) //teleport if far away
-            {
-                Vector3 newPos = childRigidbody.position + positionErrorWorld;
-
-                childRigidbody.position = newPos;
-
-                Vector3 dv = parentAnchorVelocityWorld - childAnchorVelocityWorld;
-                childRigidbody.linearVelocity += dv;
-
-                childRigidbody.WakeUp();
-
-                return;
-            }
-
-
-
-            Vector3 velocityErrorWorld = parentAnchorVelocityWorld - childAnchorVelocityWorld;
-
-            float forceMult = positionErrorCurve.Evaluate(velocityErrorWorld.magnitude);
-
-            float proportionalPositionScaled = proportionalGainPosition;
-            float derivativePositionScaled = derivativeGainPosition;
-
-            Vector3 forceAccelerationWorld =
-              proportionalPositionScaled * positionErrorWorld
-              + derivativePositionScaled * velocityErrorWorld;
-
-            if (forceAccelerationWorld.sqrMagnitude > maximumForceAcceleration * maximumForceAcceleration)
-                forceAccelerationWorld = forceAccelerationWorld.normalized * maximumForceAcceleration;
-
-            childRigidbody.AddForceAtPosition((forceAccelerationWorld * parentRigidbody.mass )/ childRigidbody.mass, childAnchorWorld, ForceMode.Acceleration);
-            if (applyEqualAndOppositeForce)
-            {
-                parentRigidbody.AddForceAtPosition(((-forceAccelerationWorld * forceTransfereRatio ) * childRigidbody.mass )/ parentRigidbody.mass, parentAnchorWorld, ForceMode.Acceleration) ;
-            }
-
-            if(Vector3.Distance(childAnchorWorld, parentAnchorWorld) > scaledSnapDistance)
-            {
-                childRigidbody.MovePosition(parentAnchorWorld);
-            }
-
-        }
-
-    }
-
-    public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)
-    {
-        if (parentRigidbody == null || childRigidbody == null)
-        {
-            Debug.LogWarning("[PdBone] Cannot bake anchors: missing rigidbodies.");
-            return;
-        }
-
-        parentAnchorLocal = parentRigidbody.transform.InverseTransformPoint(jointPivotWorld);
-        childAnchorLocal = childRigidbody.transform.InverseTransformPoint(jointPivotWorld);
-        worldTargetToChild = childRigidbody.rotation * Quaternion.Inverse(targetTransform.rotation);
-    }
-
-    //public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)
-    //{
-    //    if (parentRigidbody == null || childRigidbody == null)
-    //    {
-    //        Debug.LogWarning("[PdBone] Cannot bake anchors: missing rigidbodies.");
-    //        return;
-    //    }
-
-    //    parentAnchorLocal = Quaternion.Inverse(parentRigidbody.rotation) * (jointPivotWorld - parentRigidbody.position);
-    //    childAnchorLocal = Quaternion.Inverse(childRigidbody.rotation) * (jointPivotWorld - childRigidbody.position);
-    //}
-}
 

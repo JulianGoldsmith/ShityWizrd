@@ -25,6 +25,10 @@ public class LocalSmoothingForNetworkedRenderTarget : MonoBehaviour
 
     public bool syncScale = true;
 
+    private bool _justTeleported;
+
+    public bool smoothingEnabled = true;
+
     void Start()
     {
         // Try to get the runner from the singleton you mentioned
@@ -53,25 +57,46 @@ public class LocalSmoothingForNetworkedRenderTarget : MonoBehaviour
     {
         if (target == null) return;
 
-        float dt = Time.deltaTime;
-        if (dt <= 1e-6f) return; 
-
-        float currentSmoothing = baseSmoothingFactor;
-
-        if (scaleByPing && _runner != null && _runner.IsRunning)
+        if (_justTeleported)
         {
+            transform.position = target.position;
+            transform.rotation = target.rotation;
+            if (syncScale)
+                transform.localScale = target.localScale;
 
-            double pingInSeconds = _runner.GetPlayerRtt(_runner.LocalPlayer);
-
-
-            float pingScale = 1.0f + ((float)pingInSeconds * pingScalar);
-
-            currentSmoothing = baseSmoothingFactor / pingScale;
+            _justTeleported = false;
+            return;
         }
 
+        if (smoothingEnabled)
+        {
 
-        transform.position = Vector3.Lerp(transform.position, target.position, dt * currentSmoothing);
-        transform.rotation = Quaternion.Slerp(transform.rotation, target.rotation, dt * currentSmoothing);
+            float dt = Time.deltaTime;
+            if (dt <= 1e-6f) return;
+
+            float currentSmoothing = baseSmoothingFactor;
+
+            if (scaleByPing && _runner != null && _runner.IsRunning)
+            {
+
+                double pingInSeconds = _runner.GetPlayerRtt(_runner.LocalPlayer);
+
+
+                float pingScale = 1.0f + ((float)pingInSeconds * pingScalar);
+
+                currentSmoothing = baseSmoothingFactor / pingScale;
+            }
+
+
+            transform.position = Vector3.Lerp(transform.position, target.position, dt * currentSmoothing);
+            transform.rotation = Quaternion.Slerp(transform.rotation, target.rotation, dt * currentSmoothing);
+        }
+        else
+        {
+            transform.position = target.position;
+            transform.rotation = target.rotation;
+        }
+
 
         if (syncScale)
         {
@@ -79,14 +104,27 @@ public class LocalSmoothingForNetworkedRenderTarget : MonoBehaviour
         }
     }
 
-    void Teleport()
+    public void Teleport()
     {
         transform.position = target.position;
-        transform.rotation = transform.rotation;
+        transform.rotation = target.rotation;
 
         if (syncScale)
         {
             transform.localScale = target.localScale;
         }
+        _justTeleported = true;
+    }
+
+    public void Teleport(Vector3 pos, Quaternion rot)
+    {
+        transform.position = pos;
+        transform.rotation = rot;
+
+        if (syncScale)
+        {
+            transform.localScale = target.localScale;
+        }
+        _justTeleported = true;
     }
 }

@@ -1,10 +1,12 @@
-using UnityEngine;
 using Fusion;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Assertions.Must;
 using UnityEngine.Events;
+using static Fusion.NetworkBehaviour;
 
+[DefaultExecutionOrder(+50)]
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
     /* Defines interactions of physics objects in the physics system.
@@ -25,7 +27,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
      *  Relevant for spell-objects (e.g. tangible projectiles), 
      *      players, enemies, world-objects.
      */
-
+    private ChangeDetector _changeDetector;
 
     [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))]
     public PhysicsObjectProperties physicsObjectProperties { get; set; }
@@ -35,8 +37,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     protected Tick? tick_spawned = null;
     // bonkedness is the standin for consciousness (player)
     // and health (object).
-    [Networked, OnChangedRender(nameof(OnBonkednessChanged))]
-    public float current_bonkedness { get; set; }
+    [Networked] public float current_bonkedness { get; set; }
     protected bool zero_bonkedness { get { return current_bonkedness <= 0.0f; } }
 
     public NetworkObject creator;
@@ -56,7 +57,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         base.Spawned();
         tick_spawned = Runner.Tick;
         InitialisePhysicsObject();
-
+        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         current_bonkedness = starting_bonkedness;
     }
     #endregion
@@ -185,6 +186,19 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public Vector3 velocity_before_physics_update;
     public override void FixedUpdateNetwork()
     {
+        foreach (var propertyname in _changeDetector.DetectChanges(this, out var previousBuffer, out var currentBuffer))
+        {
+            switch (propertyname)
+            {
+                case nameof(current_bonkedness):
+                    {
+                        OnBonkednessChanged(previousBuffer);
+                        break;
+                    }
+            }
+        }
+
+
         if (rb != null)
         {
             velocity_before_physics_update = rb.linearVelocity;
@@ -489,6 +503,8 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         current_bonkedness -= bonk_amount;
         Debug.Log($"new bonkedness: {current_bonkedness} {bonk_amount}");
+
+        //OnBonkednessChanged();
         // Do stuff when zero-bonkedness.
         // Different for object versus player.
 

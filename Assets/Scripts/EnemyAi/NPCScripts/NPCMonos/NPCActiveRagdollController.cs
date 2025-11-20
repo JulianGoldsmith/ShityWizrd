@@ -305,7 +305,6 @@ public class NPCActiveRagdollController : NetworkBehaviour
         for (int i = 0; i < pdBones.Count; i++)
         {
             var bone = pdBones[i];
-            bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
             bone.Step(Runner.DeltaTime, ragDollStrength, sizeMult);
         }
     }

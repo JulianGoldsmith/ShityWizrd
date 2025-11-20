@@ -46,7 +46,7 @@ public class CharacterCustomization : NetworkBehaviour
     {
         Material mat = IsHost ? hostMat : clientMat;
         modelRenderer.material = mat;
-        ragDollRenderer.material = mat;
+        //ragDollRenderer.material = mat;
         this.GetComponent<NetworkedHandsController>().SetHandModelMaterial(mat);
     }
 
