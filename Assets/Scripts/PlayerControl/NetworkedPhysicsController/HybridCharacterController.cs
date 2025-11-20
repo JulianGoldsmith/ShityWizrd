@@ -124,6 +124,8 @@ public class HybridCharacterController : NetworkBehaviour
     [Header("Disable/Enable CC")]
     private int disableCC = -1; // -1 = enabled - > 0 = disabled for X ticks.
 
+    public XpbdConstraintSolver xpbdSolver;
+
 
     public override void Spawned()
     {
@@ -303,6 +305,8 @@ public class HybridCharacterController : NetworkBehaviour
             Acceleration = Vector3.zero;
         }
         previousVelocity = hipsRb.linearVelocity;
+
+        UpdateJointSolver();
 
     }
 
@@ -731,26 +735,37 @@ public class HybridCharacterController : NetworkBehaviour
 
     private void UpdateTorsoAndHead()
     {
-        float dt = (float)Runner.DeltaTime;
-        int jointIterations = 1; 
+        //float dt = (float)Runner.DeltaTime;
+        //int jointIterations = 1; 
 
-        for (int iteration = 0; iteration < jointIterations; iteration++)
-        {
-            float subStep = dt / jointIterations;
+        //for (int iteration = 0; iteration < jointIterations; iteration++)
+        //{
+        //    float subStep = dt / jointIterations;
 
-            if (retargetRagDoll || bonkController.BonkedState == BONKEDSTATE.BONKED)
-            {
-                for (int i = 0; i < pdBones.Count; i++)
-                    pdBones[i].Step(subStep, 0, 1f);
-                for (int i = 0; i < ragDollBones.Count; i++)
-                    ragDollBones[i].Step(subStep, 0, 1f);
-            }
-            else
-            {
-                for (int i = 0; i < pdBones.Count; i++)
-                    pdBones[i].Step(subStep, strenght, 1f);
-            }
-        }
+        //    if (retargetRagDoll || bonkController.BonkedState == BONKEDSTATE.BONKED)
+        //    {
+        //        for (int i = 0; i < pdBones.Count; i++)
+        //            pdBones[i].Step(subStep, 0, 1f);
+        //        for (int i = 0; i < ragDollBones.Count; i++)
+        //            ragDollBones[i].Step(subStep, 0, 1f);
+        //    }
+        //    else
+        //    {
+        //        for (int i = 0; i < pdBones.Count; i++)
+        //            pdBones[i].Step(subStep, strenght, 1f);
+        //    }
+        //}
+    }
+
+    private void UpdateJointSolver()
+    {
+
+        if (xpbdSolver == null) return;
+        
+        float dt = Runner.DeltaTime;
+        xpbdSolver.ApplyRotationalPD(1, dt);
+        xpbdSolver.Solve(dt);
+       // xpbdSolver.ApplyAnchorTorqueFromLambda(1, dt);
     }
 
     public Quaternion GetLookRot()

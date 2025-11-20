@@ -2555,6 +2555,7 @@ GameObject:
   - component: {fileID: 2204065667809111582}
   - component: {fileID: 4629630018618923149}
   - component: {fileID: 4081331116634787597}
+  - component: {fileID: 8400460405807038855}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -3624,6 +3625,7 @@ MonoBehaviour:
   cameraAnchorSmoothSpeed: 20
   handController: {fileID: 9045712812768551006}
   bonkController: {fileID: 0}
+  xpbdSolver: {fileID: 8400460405807038855}
 --- !u!114 &2693293064502896331
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4350,6 +4352,63 @@ MonoBehaviour:
   mainCamera: {fileID: 0}
   height: 1.5
   _CurrentDebugThreat: 0
+--- !u!114 &8400460405807038855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 658d34e6331f0e646aaeea01ff89ffd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  joints:
+  - parent: {fileID: 6006997495019278083}
+    child: {fileID: 2010255686653279327}
+    parentAnchorLocal: {x: 0, y: 0.34477454, z: -0.000000005656074}
+    childAnchorLocal: {x: -1.5571557e-15, y: 4.0450182e-10, z: -0.0000000055732756}
+    targetTransform: {fileID: 3209749074331946496}
+    enableDistanceConstraint: 1
+    restLength: 0
+    distanceStiffness: 0.5
+    distanceCompliance: 0.000001
+    distanceDamping: 0.7
+    leverArmScale: 0.2
+    maxDistanceImpulse: 20
+    enableRotationPD: 1
+    rotationKp: 800
+    rotationKd: 5
+    maxTorque: 8000
+    parentRotationInfluence: 0.2
+    restChildLocalRotation: {x: -0.036217954, y: -0.00000013960677, z: 0.0000000050595896, w: 0.99934393}
+    designRotationInertia: 1.7320508
+    worldTargetToChild: {x: 0.0000000037228463, y: -1.8848447e-17, z: 5.2007574e-16, w: 1}
+    anchorParentInfluence: 0.5
+  - parent: {fileID: 2010255686653279327}
+    child: {fileID: 7810365307095594437}
+    parentAnchorLocal: {x: 0.000000004502181, y: 0.38839287, z: 0.016113939}
+    childAnchorLocal: {x: -1.3340769e-20, y: -1.7486013e-14, z: 0.00000023469329}
+    targetTransform: {fileID: 7324967554987265396}
+    enableDistanceConstraint: 1
+    restLength: 0
+    distanceStiffness: 0.5
+    distanceCompliance: 0.00001
+    distanceDamping: 0.7
+    leverArmScale: 0.2
+    maxDistanceImpulse: 20
+    enableRotationPD: 1
+    rotationKp: 800
+    rotationKd: 5
+    maxTorque: 8000
+    parentRotationInfluence: 1
+    restChildLocalRotation: {x: 0.03621793, y: 0.0000001396068, z: -0.0000000050595887, w: 0.99934393}
+    designRotationInertia: 1.7320508
+    worldTargetToChild: {x: 0.0000000014937243, y: 5.3067904e-24, z: -4.6597067e-22, w: 1}
+    anchorParentInfluence: 0.5
+  distanceBiasScale: 1
+  iterations: 20
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0
@@ -8480,7 +8539,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7957453248147669982
 Transform:
   m_ObjectHideFlags: 0
