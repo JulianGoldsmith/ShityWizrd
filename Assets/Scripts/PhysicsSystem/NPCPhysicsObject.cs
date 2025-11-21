@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class NPCPhysicsObject : PhysicsObject
 {
-    [SerializeField] NPCCoreController controller;
+    [SerializeField] CharacterBonkController bonkController;
     const float character_bonkedness_recovery_rate_per_tick = 0.05f;
 
     public override void FixedUpdateNetwork()
@@ -18,7 +18,7 @@ public class NPCPhysicsObject : PhysicsObject
         base.OnZeroBonk();
 
         // can also go to a death state at a high bonk threshold.
-        controller.GetBonked();
+        bonkController.GetBonked();
     }
 
     protected override void OnRecoverFromBonk()
@@ -26,7 +26,7 @@ public class NPCPhysicsObject : PhysicsObject
         base.OnRecoverFromBonk();
 
         // Recovered from bonk.
-        controller.GetUnBonked();
+        bonkController.GetUnBonked();
     }
 
     protected override void OnBonk(float bonk_ammount, NetworkObject bonk_instigator = null, Vector3? pos = null)

@@ -75,22 +75,17 @@ public class CharacterBonkController : NetworkBehaviour
         }
         _swapAtTick = Runner.Tick + 1;
 
-        ActivateRagDoll();
+       
         if (characterController != null) //character 
         {
-
-            foreach(StretchyArmIK ik in armIKs)
+            ActivateRagDoll();
+            foreach (StretchyArmIK ik in armIKs)
             {
                 ik.enabled = false;
             }
             characterController.handController.DisableHands();
             characterController.armatureRetargetingLerp = 1;
-            //characterController.armatureRetargetingLerp = 1;
-            //foreach(PdBone bone in characterController.ragDollBones)
-            //{
-            //    bone.childRigidbody.MovePosition(bone.targetTransform.position);
-            //    bone.childRigidbody.MoveRotation(bone.targetTransform.rotation);
-            //}
+  
         }
     }
 
@@ -103,9 +98,10 @@ public class CharacterBonkController : NetworkBehaviour
         }
         _swapAtTick = Runner.Tick + 1;
 
-        DeactivateRagDoll();
+        
         if (characterController != null) //character 
         {
+            DeactivateRagDoll();
             foreach (StretchyArmIK ik in armIKs)
             {
                 ik.enabled = true;
@@ -140,23 +136,25 @@ public class CharacterBonkController : NetworkBehaviour
     public void ActivateRagDoll()
     {
 
-
-        //ragdollProxysRoot.SetActive(true);
-        foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
+        if (characterController != null)
         {
-            var nrb = joint.rb3d;
-            if (nrb == null) continue;
-            var rb = nrb.Rigidbody;
-            if (rb == null) continue;
+            //ragdollProxysRoot.SetActive(true);
+            foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
+            {
+                var nrb = joint.rb3d;
+                if (nrb == null) continue;
+                var rb = nrb.Rigidbody;
+                if (rb == null) continue;
 
-            var col = rb.GetComponent<Collider>();
-            if (col) col.enabled = true;
+                var col = rb.GetComponent<Collider>();
+                if (col) col.enabled = true;
 
-            nrb.RBIsKinematic = false;
-            if (nrb.Object.HasStateAuthority)
-                nrb.ResetRigidbody();
+                nrb.RBIsKinematic = false;
+                if (nrb.Object.HasStateAuthority)
+                    nrb.ResetRigidbody();
 
-            joint.AddForcesAndApplyPhycis(HasStateAuthority);
+                joint.AddForcesAndApplyPhycis(HasStateAuthority);
+            }
         }
        
         //ragdollProxysRoot.SetActive(true);
@@ -164,28 +162,28 @@ public class CharacterBonkController : NetworkBehaviour
 
     public void DeactivateRagDoll()
     {
+        if(characterController != null) { 
+            foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
+            {
+                var nrb = joint.rb3d;
+                if (nrb == null) continue;
+                var rb = nrb.Rigidbody;
+                if (rb == null) continue;
 
-        foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
-        {
-            var nrb = joint.rb3d;
-            if (nrb == null) continue;
-            var rb = nrb.Rigidbody;
-            if (rb == null) continue;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
 
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+                nrb.RBIsKinematic = true;
 
-            nrb.RBIsKinematic = true;
+                var col = rb.GetComponent<Collider>();
+                if (col) col.enabled = false;
 
-            var col = rb.GetComponent<Collider>();
-            if (col) col.enabled = false;
+                if (nrb.Object.HasStateAuthority)
+                    nrb.ResetRigidbody();
 
-            if (nrb.Object.HasStateAuthority)
-                nrb.ResetRigidbody();
-
-            joint.SleepBone(HasStateAuthority);
+                joint.SleepBone(HasStateAuthority);
+            }
         }
-      
         //ragdollProxysRoot.SetActive(false);
     }
 

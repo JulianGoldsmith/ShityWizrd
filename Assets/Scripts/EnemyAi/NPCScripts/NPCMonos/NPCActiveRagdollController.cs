@@ -69,7 +69,11 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     [Header("Behaviour Graph")]
     [SerializeField] public BehaviorGraphAgent agent;
-    public string homeLocationVaraibleName; 
+    public string homeLocationVaraibleName;
+
+    public XpbdConstraintSolver xpbdSolver;
+
+    public CharacterBonkController characterBonkController;
 
     public override void Spawned()
     {
@@ -93,7 +97,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
         }
 
         agent = this.GetComponent<BehaviorGraphAgent>();
-
+        characterBonkController = this.GetComponent<CharacterBonkController>();
     }
 
     public override void FixedUpdateNetwork()
@@ -102,12 +106,17 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         animStateController.SimulateAnimation();
 
+        ragDollStrength = this.GetComponent<NPCPhysicsObject>().current_bonkedness/100;
 
-        ApplyUprightStabilization();
+        if (characterBonkController.BonkedState == BONKEDSTATE.ALIVE)
+        {
+            ApplyUprightStabilization();
 
-        UpdateCoreMovement();
+            UpdateCoreMovement();
 
-        ApplyCoreSuspention();
+            ApplyCoreSuspention();
+        }
+        
         //ApplyRootMotionForce();
 
         UpdatePDDrives();
@@ -302,40 +311,72 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     private void UpdatePDDrives()
     {
-        for (int i = 0; i < pdBones.Count; i++)
-        {
-            var bone = pdBones[i];
-            bone.Step(Runner.DeltaTime, ragDollStrength, sizeMult);
-        }
+        //for (int i = 0; i < pdBones.Count; i++)
+        //{
+        //    var bone = pdBones[i];
+        //    bone.Step(Runner.DeltaTime, ragDollStrength, sizeMult);
+        //}
+        if (xpbdSolver == null) return;
+
+        float dt = Runner.DeltaTime;
+        xpbdSolver.ApplyRotationalPD(ragDollStrength, dt);
+        xpbdSolver.Solve(dt, false,1, sizeMult);
     }
 
     public void UpdateAnimators()
     {
+        //if (!targetAnimator || coreRB == null) return;
+
+        //var targetPos = smoothedNetworkRoot.position + hipsOffset;
+        //var targetRot = smoothedNetworkRoot.rotation;
+
+        //Vector3 vel = coreRB.linearVelocity;
+        //vel.y = 0f;
+
+        //Vector3 fwd = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
+        //if (fwd.sqrMagnitude < 1e-6f)
+        //{
+        //    fwd = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
+        //}
+        //fwd.Normalize();
+
+        //Vector3 right = Vector3.Cross(Vector3.up, fwd);
+
+        //float localX = Vector3.Dot(vel, right); 
+        //float localY = Vector3.Dot(vel, fwd);   
+
+        //float normFactor = maxWalkSpeed > 0f ? maxWalkSpeed : 1f;
+        //localX /= normFactor;
+        //localY /= normFactor;
+
+        //animStateController.SetTargetMovement(new Vector2(localX, localY));
+
         if (!targetAnimator || coreRB == null) return;
 
-        var targetPos = smoothedNetworkRoot.position + hipsOffset;
-        var targetRot = smoothedNetworkRoot.rotation;
-
-        Vector3 vel = coreRB.linearVelocity;
-        vel.y = 0f;
+        
+        float desiredSpeed = NetworkedWantsToSprint ? maxSprintSpeed : maxWalkSpeed;
 
         Vector3 fwd = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
         if (fwd.sqrMagnitude < 1e-6f)
         {
-            fwd = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
+            fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
         }
         fwd.Normalize();
-
         Vector3 right = Vector3.Cross(Vector3.up, fwd);
 
-        float localX = Vector3.Dot(vel, right); 
-        float localY = Vector3.Dot(vel, fwd);   
+        float inputX = Vector3.Dot(NetworkedMoveVector, right);
+        float inputY = Vector3.Dot(NetworkedMoveVector, fwd);
 
-        float normFactor = maxWalkSpeed > 0f ? maxWalkSpeed : 1f;
-        localX /= normFactor;
-        localY /= normFactor;
+        float normalizedSpeed = (NetworkedMoveVector.magnitude > 0.01f) ? (desiredSpeed / maxSprintSpeed) : 0f;
 
-        animStateController.SetTargetMovement(new Vector2(localX, localY));
+
+        float finalX = inputX * normalizedSpeed;
+        float finalY = inputY * normalizedSpeed;
+
+        animStateController.SetTargetMovement(new Vector2(finalX, finalY));
+
+        var targetPos = smoothedNetworkRoot.position + hipsOffset;
+        var targetRot = smoothedNetworkRoot.rotation;
     }
 
     [ContextMenu("PD Ragdoll/ Bake Anchors")]
@@ -369,7 +410,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
             NetworkedLookVector = worldDirection.normalized;
         }
     }
-    public void SetMoveInput(Vector3 input, float speed) //place for the AI to set input
+    public void SetMoveInput(Vector3 input, float speed) 
     {
         if (!HasStateAuthority) return;
         if (Object.isActiveAndEnabled)

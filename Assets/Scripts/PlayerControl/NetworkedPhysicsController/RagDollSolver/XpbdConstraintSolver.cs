@@ -21,11 +21,12 @@ public class XpbdConstraintSolver : MonoBehaviour
     [Tooltip("Number of XPBD iterations per tick.")]
     public int iterations = 4;
 
-    public void Solve(float deltaTime, bool includeRagdollJoints = false, float strenght = 1)
+    public void Solve(float deltaTime, bool includeRagdollJoints = false, float strength = 1f, float _sizeMult = 1f)
     {
         if (joints.Count == 0 || deltaTime <= 0f)
             return;
 
+        
 
         var bodySnapshots = BuildBodySnapshots();
 
@@ -33,68 +34,52 @@ public class XpbdConstraintSolver : MonoBehaviour
         if (includeRagdollJoints)
             ResetJointState(ragdollJoints);
 
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            foreach (var j in joints)
+            {
+                if (j == null || !j.jointActive || !j.enableDistanceConstraint)
+                    continue;
+                float sizeMult = _sizeMult / j.bakedScale;
+                SolveDistanceConstraintXPBD(j, deltaTime, sizeMult);
+            }
+
+            if (!includeRagdollJoints)
+                continue;
+
+            foreach (var rj in ragdollJoints)
+            {
+                if (rj == null || !rj.jointActive || !rj.enableDistanceConstraint)
+                    continue;
+                float sizeMult = _sizeMult / rj.bakedScale;
+                SolveDistanceConstraintXPBD(rj, deltaTime, sizeMult);
+            }
+        }
+
+        RecomputeVelocities(bodySnapshots, deltaTime);
 
         for (int iter = 0; iter < iterations; iter++)
         {
-            foreach (var joint in joints)
+            foreach (var j in joints)
             {
-                if (joint == null)
+                if (j == null || !j.jointActive || !j.enableAngularLimits)
                     continue;
-                if (joint.jointActive == false)
-                    continue;
-
-                if (joint.enableDistanceConstraint)
-                    SolveDistanceConstraintVelocity(joint, deltaTime, includeRagdollJoints);
-                
-                    
+                SolveAngularLimits(j, deltaTime);
             }
 
-            if (!includeRagdollJoints) continue;
-            foreach (var ragJoint in ragdollJoints)
+            if (!includeRagdollJoints)
+                continue;
+
+            foreach (var rj in ragdollJoints)
             {
-                if (ragJoint == null)
+                if (rj == null || !rj.jointActive || !rj.enableAngularLimits)
                     continue;
-                if (ragJoint.jointActive == false)
-                    continue;
-                if (ragJoint.enableDistanceConstraint)
-                    SolveDistanceConstraintVelocity(ragJoint, deltaTime, includeRagdollJoints);
-               
+                SolveAngularLimits(rj, deltaTime);
             }
         }
-        for (int iter = 0; iter < iterations; iter++)
-        {
-            foreach (var joint in joints)
-            {
-                if (joint == null)
-                    continue;
-                if (joint.jointActive == false)
-                    continue;
-                if (joint.enableAngularLimits)
-                {
-                    //Debug.Log($"[XPBD] SolveAngularLimits for {joint.child?.name}");
-                    SolveAngularLimits(joint, deltaTime);
-                }
-            }
-
-            foreach (var ragJoint in ragdollJoints)
-            {
-                if(ragJoint == null)
-                    continue;
-                if (ragJoint.jointActive == false)
-                    continue;
-                if (ragJoint.enableAngularLimits)
-                {
-                    //Debug.Log($"[XPBD] SolveAngularLimits (ragdoll) for {ragJoint.child?.name}");
-                    SolveAngularLimits(ragJoint, deltaTime);
-                }
-            }
-
-        }
-
 
     }
 
-    
 
     void ResetJointState(List<XpbdJoint> list)
     {
@@ -112,36 +97,44 @@ public class XpbdConstraintSolver : MonoBehaviour
     {
         var dict = new Dictionary<Rigidbody, BodySnapshot>();
 
-        foreach (var j in joints)
+        void AddFromList(List<XpbdJoint> list)
         {
-            if (j == null) continue;
+            if (list == null) return;
 
-            if (j.parent != null && !dict.ContainsKey(j.parent))
+            foreach (var j in list)
             {
-                var rb = j.parent;
-                dict[rb] = new BodySnapshot
-                {
-                    rb = rb,
-                    prePosition = rb.position,
-                    preRotation = rb.rotation,
-                    preLinearVelocity = rb.linearVelocity,
-                    preAngularVelocity = rb.angularVelocity,
-                };
-            }
+                if (j == null) continue;
 
-            if (j.child != null && !dict.ContainsKey(j.child))
-            {
-                var rb = j.child;
-                dict[rb] = new BodySnapshot
+                if (j.parent != null && !dict.ContainsKey(j.parent))
                 {
-                    rb = rb,
-                    prePosition = rb.position,
-                    preRotation = rb.rotation,
-                    preLinearVelocity = rb.linearVelocity,
-                    preAngularVelocity = rb.angularVelocity,
-                };
+                    var rb = j.parent;
+                    dict[rb] = new BodySnapshot
+                    {
+                        rb = rb,
+                        prePosition = rb.position,
+                        preRotation = rb.rotation,
+                        preLinearVelocity = rb.linearVelocity,
+                        preAngularVelocity = rb.angularVelocity,
+                    };
+                }
+
+                if (j.child != null && !dict.ContainsKey(j.child))
+                {
+                    var rb = j.child;
+                    dict[rb] = new BodySnapshot
+                    {
+                        rb = rb,
+                        prePosition = rb.position,
+                        preRotation = rb.rotation,
+                        preLinearVelocity = rb.linearVelocity,
+                        preAngularVelocity = rb.angularVelocity,
+                    };
+                }
             }
         }
+
+        AddFromList(joints);
+        AddFromList(ragdollJoints);
 
         return dict;
     }
@@ -339,6 +332,134 @@ public class XpbdConstraintSolver : MonoBehaviour
         B.linearVelocity = vB;
         B.angularVelocity = wB;
     }
+
+    void SolveDistanceConstraintXPBD(XpbdJoint j, float dt, float sizeMult = 1f, bool ragdoll = false)
+    {
+        var A = j.parent;
+        var B = j.child;
+        if (A == null || B == null || dt <= 0f)
+            return;
+
+        float dtSafe = Mathf.Max(dt, 1e-4f);
+
+        Vector3 xA = A.position;
+        Vector3 xB = B.position;
+        Quaternion qA = A.rotation;
+        Quaternion qB = B.rotation;
+
+        Vector3 parentAnchorLocalScaled = j.parentAnchorLocal * sizeMult;
+        Vector3 childAnchorLocalScaled = j.childAnchorLocal * sizeMult;
+
+        Vector3 anchorWorldA = xA + qA * parentAnchorLocalScaled;
+        Vector3 anchorWorldB = xB + qB * childAnchorLocalScaled;
+
+        Vector3 d = anchorWorldB - anchorWorldA;
+        float dist = d.magnitude;
+        if (dist < 1e-6f)
+            return;
+
+        Vector3 n = d / dist;
+
+        float scaledRestLength = j.restLength * sizeMult;
+        float C = dist - scaledRestLength;
+        if (Mathf.Abs(C) < 1e-5f)
+            return;
+
+        float invMassA = A.isKinematic ? 0f : 1f / A.mass;
+        float invMassB = B.isKinematic ? 0f : 1f / B.mass;
+
+        Vector3 rA = anchorWorldA - A.worldCenterOfMass;
+        Vector3 rB = anchorWorldB - B.worldCenterOfMass;
+
+        Vector3 raCrossN = Vector3.Cross(rA, n);
+        Vector3 rbCrossN = Vector3.Cross(rB, n);
+
+        Vector3 angA = ApplyInvInertiaWorld(A, raCrossN);
+        Vector3 angB = ApplyInvInertiaWorld(B, rbCrossN);
+
+        float k =
+            invMassA + invMassB +
+            Vector3.Dot(Vector3.Cross(angA, rA), n) +
+            Vector3.Dot(Vector3.Cross(angB, rB), n);
+
+        if (k <= 1e-8f)
+            return;
+
+
+        float scaledCompliance = j.distanceCompliance * (sizeMult * sizeMult);
+        float alpha = scaledCompliance / (dtSafe * dtSafe);
+
+        float denom = k + alpha;
+        if (denom <= 1e-8f)
+            return;
+
+        float deltaLambda = -(C + alpha * j.lambdaDistance) / denom;
+
+        float maxImpulse = Mathf.Max(j.maxDistanceImpulse, 0f);
+        if (maxImpulse > 0f)
+        {
+            float newLambda = Mathf.Clamp(j.lambdaDistance + deltaLambda, -maxImpulse, maxImpulse);
+            deltaLambda = newLambda - j.lambdaDistance;
+            j.lambdaDistance = newLambda;
+        }
+        else
+        {
+            j.lambdaDistance += deltaLambda;
+        }
+
+        Vector3 corr = deltaLambda * n;
+        float lever = Mathf.Clamp01(j.leverArmScale); 
+
+        if (!A.isKinematic)
+        {
+            xA -= invMassA * corr;
+
+            if (lever > 0f && angA.sqrMagnitude > 1e-8f)
+            {
+                Vector3 dThetaA = -lever * angA * deltaLambda;
+                ApplyRotationDelta(ref qA, dThetaA);
+            }
+
+            A.position = xA;
+            A.rotation = qA;
+        }
+
+        if (!B.isKinematic)
+        {
+            xB += invMassB * corr;
+
+            if (lever > 0f && angB.sqrMagnitude > 1e-8f)
+            {
+                Vector3 dThetaB = lever * angB * deltaLambda;
+                ApplyRotationDelta(ref qB, dThetaB);
+            }
+
+            B.position = xB;
+            B.rotation = qB;
+        }
+    }
+
+    void ApplyRotationDelta(ref Quaternion q, Vector3 dTheta)
+    {
+        float angle = dTheta.magnitude;
+        if (angle < 1e-6f)
+            return;
+
+        const float maxStepRad = 0.5f; 
+        if (angle > maxStepRad)
+        {
+            dTheta *= maxStepRad / angle;
+            angle = maxStepRad;
+        }
+
+        Vector3 axis = dTheta / angle;
+        float angleDeg = angle * Mathf.Rad2Deg;
+
+        Quaternion dq = Quaternion.AngleAxis(angleDeg, axis);
+        q = dq * q;
+    }
+
+
     Vector3 ApplyInvInertiaWorld(Rigidbody rb, Vector3 torqueWorld)
     {
         if (rb.isKinematic)
@@ -452,24 +573,18 @@ public class XpbdConstraintSolver : MonoBehaviour
 
     float GetAngleAroundAxis(Quaternion q, Vector3 axis)
     {
-        // Normalise axis safely
         axis = axis.normalized;
         if (axis.sqrMagnitude < 1e-8f)
             return 0f;
 
-        // Make sure q is unit length
         q = Quaternion.Normalize(q);
 
-        // q = [v, w] (vector part v, scalar part w)
         Vector3 v = new Vector3(q.x, q.y, q.z);
 
-        // Project v onto axis → twist component
         Vector3 proj = Vector3.Dot(v, axis) * axis;
 
-        // Build twist quaternion with same w and projected vector part
         Quaternion twist = new Quaternion(proj.x, proj.y, proj.z, q.w);
 
-        // Check magnitude manually (since Quaternion has no sqrMagnitude)
         float sqMag = twist.x * twist.x +twist.y * twist.y +twist.z * twist.z + twist.w * twist.w;
 
         if (sqMag < 1e-8f)
@@ -477,13 +592,11 @@ public class XpbdConstraintSolver : MonoBehaviour
 
         twist = Quaternion.Normalize(twist);
 
-        // Convert twist to axis-angle
         twist.ToAngleAxis(out float angleDeg, out Vector3 outAxis);
 
         if (angleDeg > 180f)
             angleDeg -= 360f;
 
-        // Work out sign using the twist's vector part vs our axis
         Vector3 twistVec = new Vector3(twist.x, twist.y, twist.z);
         float sign = Vector3.Dot(axis, twistVec) >= 0f ? 1f : -1f;
 
@@ -502,11 +615,9 @@ public class XpbdConstraintSolver : MonoBehaviour
         var A = j.parent;
         var B = j.child;
 
-        // Parent->child now
         Quaternion qRelNow = Quaternion.Inverse(A.rotation) * B.rotation;
 
-        // qDelta: rotation from REST to CURRENT, in parent space
-        // qRelNow = qDelta * restChildLocalRotation  ⇒  qDelta = qRelNow * Inverse(rest)
+        
         Quaternion qRestInv = Quaternion.Inverse(j.restChildLocalRotation);
         Quaternion qDelta = qRelNow * qRestInv;
         qDelta.Normalize();
@@ -541,7 +652,6 @@ public class XpbdConstraintSolver : MonoBehaviour
         if (axisParentNorm.sqrMagnitude < 1e-6f)
             return;
 
-        // 1) Measure signed angle of qDelta around this parent-space axis (degrees)
         float angleDeg = GetAngleAroundAxis(qDelta, axisParentNorm);
 
         float min = limitsDeg.x;
@@ -554,35 +664,28 @@ public class XpbdConstraintSolver : MonoBehaviour
         float clamped = Mathf.Clamp(angleDeg, min, max);
         float violationDeg = angleDeg - clamped;
 
-        // Inside limits → no correction
         if (Mathf.Abs(violationDeg) < 0.01f)
             return;
 
-        // Position error C in radians
         float violationRad = violationDeg * Mathf.Deg2Rad;
         float C = violationRad;
 
-        // *** NEW: clamp how much correction we attempt per-step ***
-        // e.g. don't try to fix more than ~30 degrees per iteration
+        
         const float maxCorrectionRad = 30f * Mathf.Deg2Rad;
         C = Mathf.Clamp(C, -maxCorrectionRad, maxCorrectionRad);
 
-        // 2) World-space axis for torques
         Vector3 axisWorld = A.rotation * axisParentNorm;
         if (axisWorld.sqrMagnitude < 1e-6f)
             return;
         axisWorld.Normalize();
 
-        // 3) Relative angular velocity along this axis (rad/s)
         Vector3 wA = A.angularVelocity;
         Vector3 wB = B.angularVelocity;
         float Cdot = Vector3.Dot(wB - wA, axisWorld);
 
-        // *** NEW: clamp relative angular velocity seen by the constraint ***
-        const float maxCdot = 50f; // rad/s, just a safety ceiling
+        const float maxCdot = 50f; 
         Cdot = Mathf.Clamp(Cdot, -maxCdot, maxCdot);
 
-        // 4) Profile params (we treat them analogous to distanceStiffness/damping)
         float stiffness01 = Mathf.Max(j.angularLimitProfile.limitStiffness, 0f); // 0..1
         float damping01 = Mathf.Max(j.angularLimitProfile.limitDamping, 0f);   // 0..1
         float parentInf = Mathf.Clamp01(j.angularLimitProfile.parentLimitInfluence);
@@ -591,17 +694,13 @@ public class XpbdConstraintSolver : MonoBehaviour
 
         float dtSafe = Mathf.Max(dt, 1e-4f);
 
-        // 5) Bias term (Baumgarte) – slightly softened vs distance
-        // Distance used: beta = distanceBiasScale * stiffness;
-        // Here we scale down a bit because rotation explosions are nastier.
+
         float beta = stiffness01 * 0.5f;
         float bias = beta * C / dtSafe;        // bias ~ rad/s
 
-        // 6) Damping on Cdot
         float damp = damping01;
         float CdotDamped = Cdot * (1f + damp);
 
-        // 7) Effective inverse inertia along axisWorld
         float kA = GetInverseInertiaAlongAxis(A, axisWorld) * parentInf;
         float kB = GetInverseInertiaAlongAxis(B, axisWorld);
         float k = kA + kB;
@@ -613,18 +712,15 @@ public class XpbdConstraintSolver : MonoBehaviour
         if (denom <= 1e-8f)
             return;
 
-        // 8) Solve for impulse scalar (XPBD-ish)
         float deltaLambda = -(CdotDamped + bias) / denom;
 
-        // Clamp impulse for safety
         if (maxImpulse > 0f)
             deltaLambda = Mathf.Clamp(deltaLambda, -maxImpulse, maxImpulse);
         else
-            deltaLambda = Mathf.Clamp(deltaLambda, -50f, 50f); // global hard cap if profile has 0
+            deltaLambda = Mathf.Clamp(deltaLambda, -50f, 50f); 
 
         Vector3 impulse = deltaLambda * axisWorld;
 
-        // 9) Apply angular impulses using inertia
         if (!A.isKinematic && kA > 0f)
         {
             Vector3 deltaWA = ApplyInvInertiaWorld(A, -impulse);
@@ -775,6 +871,8 @@ public class XpbdJoint
     [Range(0f, 1f)]
     public float anchorParentInfluence = 0.5f;
 
+    [HideInInspector] public float bakedScale = 1f;
+
     [HideInInspector] public float frameLambdaDistance;   
     [HideInInspector] public Vector3 lastDistanceDir;
     [HideInInspector] public float lambdaDistance;
@@ -818,18 +916,14 @@ public class XpbdJoint
             worldTargetToChild = Quaternion.identity;
         }
 
-        //designRotationInertia = child.inertiaTensor.magnitude;
-        // Parent->child rotation at *rest*
+
         restChildLocalRotation = Quaternion.Inverse(parent.rotation) * child.rotation;
 
-        // ---- ANGULAR AXES ----
-        // Child-local "design" axes
         Vector3 twistLocal = AxisToVector(twistAxis);
         Vector3 swing1Local, swing2Local;
         GetSwingAxes(twistAxis, out swing1Local, out swing2Local);
 
-        // Express those child-local axes in parent space at rest:
-        // axisParent = rest * axisChildLocal
+
         twistAxisParent = (restChildLocalRotation * twistLocal).normalized;
         swing1AxisParent = (restChildLocalRotation * swing1Local).normalized;
         swing2AxisParent = (restChildLocalRotation * swing2Local).normalized;
@@ -845,7 +939,9 @@ public class XpbdJoint
         lambdaDistance = 0f;
         lambdaRotation = 0f;
         rb3d = child.GetComponent<NetworkRigidbody3D>();
-       // Debug.Log($"baked Ragdoll joint for {this.child.name}");
+        // Debug.Log($"baked Ragdoll joint for {this.child.name}");
+
+        bakedScale = parent.transform.lossyScale.y;
 
     }
     public void DrawAngularLimitGizmos()
@@ -855,13 +951,11 @@ public class XpbdJoint
         if (parent == null || child == null)
             return;
 
-        // If we haven't baked yet, don't draw misleading junk
         if (twistAxisParent == Vector3.zero &&
             swing1AxisParent == Vector3.zero &&
             swing2AxisParent == Vector3.zero)
             return;
 
-        // Pivot: where the joint actually "is"
         Vector3 pivotWorld =
             parentAnchorLocal != Vector3.zero
             ? parent.transform.TransformPoint(parentAnchorLocal)
@@ -869,14 +963,12 @@ public class XpbdJoint
 
         Quaternion parentRot = parent.rotation;
 
-        // EXACTLY the axes the solver uses, in world space
         Vector3 twistWorld = (parentRot * twistAxisParent).normalized;
         Vector3 swing1World = (parentRot * swing1AxisParent).normalized;
         Vector3 swing2World = (parentRot * swing2AxisParent).normalized;
 
         float size = angularLimitGizmoSize;
 
-        // Axes (just visual lines)
         Gizmos.color = Color.red;
         Gizmos.DrawLine(pivotWorld, pivotWorld + twistWorld * size * 1.3f);
 
@@ -886,20 +978,13 @@ public class XpbdJoint
         Gizmos.color = Color.blue;
         Gizmos.DrawLine(pivotWorld, pivotWorld + swing2World * size);
 
-        // --- Arcs ---
-        // For each DOF, we must use the SAME axis as in SolveAngularLimitAxis.
-        // The "startDir" just needs to be perpendicular to that axis; using one 
-        // of the other axes is fine.
-
-        // Twist limits: rotation around twistWorld
+       
         DrawArc(pivotWorld, twistWorld, swing1World, twistLimits.x, twistLimits.y,
                 size * 0.9f, Color.red);
 
-        // Swing1 limits: rotation around swing1World
         DrawArc(pivotWorld, swing1World, twistWorld, swing1Limits.x, swing1Limits.y,
                 size * 0.8f, Color.green);
 
-        // Swing2 limits: rotation around swing2World
         DrawArc(pivotWorld, swing2World, twistWorld, swing2Limits.x, swing2Limits.y,
                 size * 0.8f, Color.blue);
     }
@@ -966,15 +1051,13 @@ public class XpbdJoint
 
     public void SleepBone(bool _hasStateAuth)
     {
-        // Optional: zero out constraint-local velocities if you like
         if (child != null)
         {
             child.angularVelocity = Vector3.zero;
             child.linearVelocity = Vector3.zero;
         }
 
-        // DO NOT touch kinematic / colliders here
-        // That should be controlled at the ragdoll-controller level.
+      
 
         jointActive = false;
     }
@@ -987,18 +1070,14 @@ public class XpbdJoint
         Vector3 pos = targetTransform.position;
         Quaternion rot = targetTransform.rotation;
 
-        // Snap bone to its animated/target pose
         child.position = pos;
         child.rotation = rot;
 
         if (rb3d != null && rb3d.Object != null && rb3d.Object.HasStateAuthority)
         {
-            // Teleport for Fusion so prediction stays sane
             rb3d.Teleport(pos, rot);
         }
 
-        // Don't toggle colliders or kinematic here
-        // Just seed velocities so it starts from a sane state:
         if (parent != null)
         {
             child.linearVelocity = parent.linearVelocity;

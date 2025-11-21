@@ -281,6 +281,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &434795172298674520
 GameObject:
   m_ObjectHideFlags: 0
@@ -1345,6 +1346,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &1496649450781162346
 GameObject:
   m_ObjectHideFlags: 0
@@ -2061,6 +2063,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &2615311057598979259
 GameObject:
   m_ObjectHideFlags: 0
@@ -2205,6 +2208,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &2791463134594456532
 GameObject:
   m_ObjectHideFlags: 0
@@ -2964,6 +2968,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &3778170741113583893
 GameObject:
   m_ObjectHideFlags: 0
@@ -3629,6 +3634,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &4963405596913044934
 GameObject:
   m_ObjectHideFlags: 0
@@ -5522,6 +5528,7 @@ GameObject:
   - component: {fileID: 4368470985812312285}
   - component: {fileID: 5905079201172109022}
   - component: {fileID: 134480768572974487}
+  - component: {fileID: 7445956144677081907}
   m_Layer: 0
   m_Name: BigArmGoober
   m_TagString: Untagged
@@ -5611,7 +5618,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coreRB: {fileID: 8545550344169933716}
-  _ragDollStrength: 0.63
+  _ragDollStrength: 1
   sizeMult: 2
   extraRideHeight: 0
   extraGroundCheckDistance: 0.1
@@ -5621,7 +5628,7 @@ MonoBehaviour:
   suspensionCastRadius: 0.125
   _IsGrounded:
     _value: 1
-  rideSpringStrength: 250
+  rideSpringStrength: 100
   rideSpringDampingRatio: 0.4
   rideSpringDamper: 60
   uprightSpringStrength: 100
@@ -5637,8 +5644,9 @@ MonoBehaviour:
   - childRigidbody: {fileID: 5916505749221327462}
     parentRigidbody: {fileID: 8545550344169933716}
     targetTransform: {fileID: 7868227431769439304}
-    proportionalGainRotation: 60
-    derivativeGainRotation: 10
+    smoothingTransform: {fileID: 0}
+    proportionalGainRotation: 20
+    derivativeGainRotation: 5
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -5677,8 +5685,8 @@ MonoBehaviour:
     parentAnchorLocal: {x: -0.000000016897925, y: 0.35977402, z: -0.04198962}
     childAnchorLocal: {x: 0.000000020721927, y: 0, z: 0.0000007459894}
     worldTargetToChild: {x: 0.0000000022271947, y: 0.00000039835504, z: 3.5517592e-10, w: -1.0000001}
-    proportionalGainPosition: 600
-    derivativeGainPosition: 20
+    proportionalGainPosition: 1000
+    derivativeGainPosition: 10
     positionErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -5717,11 +5725,13 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     restChildLocalRotation: {x: 0, y: -1.0000001, z: 0, w: 0}
+    limitSettings: {fileID: 0}
   - childRigidbody: {fileID: 5397832325439710801}
     parentRigidbody: {fileID: 5916505749221327462}
     targetTransform: {fileID: 6573704937598173113}
-    proportionalGainRotation: 60
-    derivativeGainRotation: 10
+    smoothingTransform: {fileID: 0}
+    proportionalGainRotation: 20
+    derivativeGainRotation: 5
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -5760,8 +5770,8 @@ MonoBehaviour:
     parentAnchorLocal: {x: 0.00000017136335, y: 0.5137477, z: -0.19022581}
     childAnchorLocal: {x: 0.00000017136335, y: 0.00000011920929, z: -0.00000010430813}
     worldTargetToChild: {x: -0.000000006613031, y: -1.0000001, z: 0.000000041468457, w: 0}
-    proportionalGainPosition: 600
-    derivativeGainPosition: 20
+    proportionalGainPosition: 1000
+    derivativeGainPosition: 10
     positionErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -5800,11 +5810,13 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     restChildLocalRotation: {x: 0, y: 0, z: -0, w: -1.0000001}
+    limitSettings: {fileID: 0}
   - childRigidbody: {fileID: 4706868771879484532}
     parentRigidbody: {fileID: 5916505749221327462}
     targetTransform: {fileID: 2840228585378284342}
-    proportionalGainRotation: 60
-    derivativeGainRotation: 10
+    smoothingTransform: {fileID: 0}
+    proportionalGainRotation: 20
+    derivativeGainRotation: 5
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -5843,8 +5855,8 @@ MonoBehaviour:
     parentAnchorLocal: {x: 0.4133435, y: 0.42161214, z: 0.022890432}
     childAnchorLocal: {x: 0.00000048275217, y: 0.00000009082269, z: -0.00000010488009}
     worldTargetToChild: {x: 0.000000015579275, y: -0.0000000039292143, z: 0.0000000070837807, w: 1.0000001}
-    proportionalGainPosition: 600
-    derivativeGainPosition: 20
+    proportionalGainPosition: 1000
+    derivativeGainPosition: 10
     positionErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -5883,11 +5895,13 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     restChildLocalRotation: {x: -0.5357457, y: -0.45924962, z: -0.5484965, w: 0.44857356}
+    limitSettings: {fileID: 0}
   - childRigidbody: {fileID: 6361040460583952207}
     parentRigidbody: {fileID: 4706868771879484532}
     targetTransform: {fileID: 4028624936885215001}
-    proportionalGainRotation: 60
-    derivativeGainRotation: 10
+    smoothingTransform: {fileID: 0}
+    proportionalGainRotation: 20
+    derivativeGainRotation: 5
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -5926,8 +5940,8 @@ MonoBehaviour:
     parentAnchorLocal: {x: 0.0000012228265, y: 0.51134086, z: -0.00000025331974}
     childAnchorLocal: {x: 0.00000023821954, y: 0.00000053723784, z: 0.000000101970315}
     worldTargetToChild: {x: 0.000000038586187, y: 0.00000010264206, z: -0.000000036655543, w: -1}
-    proportionalGainPosition: 600
-    derivativeGainPosition: 20
+    proportionalGainPosition: 1000
+    derivativeGainPosition: 10
     positionErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -5966,11 +5980,13 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     restChildLocalRotation: {x: 0.0054560704, y: -0.0016399752, z: 0.008904871, w: -0.99994427}
+    limitSettings: {fileID: 0}
   - childRigidbody: {fileID: 4188193378954933603}
     parentRigidbody: {fileID: 5916505749221327462}
     targetTransform: {fileID: 3003321144955084498}
-    proportionalGainRotation: 60
-    derivativeGainRotation: 10
+    smoothingTransform: {fileID: 0}
+    proportionalGainRotation: 20
+    derivativeGainRotation: 5
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -6009,8 +6025,8 @@ MonoBehaviour:
     parentAnchorLocal: {x: -0.4133434, y: 0.42161226, z: 0.022890264}
     childAnchorLocal: {x: -0.00000031720023, y: -0.000000022859734, z: -0.0000000040810733}
     worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000002}
-    proportionalGainPosition: 600
-    derivativeGainPosition: 20
+    proportionalGainPosition: 1000
+    derivativeGainPosition: 10
     positionErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -6049,11 +6065,13 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     restChildLocalRotation: {x: 0.53650147, y: -0.45863026, z: -0.54775923, w: -0.44920436}
+    limitSettings: {fileID: 0}
   - childRigidbody: {fileID: 5206101990445450973}
     parentRigidbody: {fileID: 4188193378954933603}
     targetTransform: {fileID: 301659887911101080}
-    proportionalGainRotation: 60
-    derivativeGainRotation: 10
+    smoothingTransform: {fileID: 0}
+    proportionalGainRotation: 20
+    derivativeGainRotation: 5
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -6092,8 +6110,8 @@ MonoBehaviour:
     parentAnchorLocal: {x: -0.0000012377277, y: 0.51131046, z: -0.000000059604645}
     childAnchorLocal: {x: -0.00000030090672, y: 0.000000022130244, z: 0.000000004192316}
     worldTargetToChild: {x: 4.646381e-10, y: -0.0000000049493636, z: -0.000000011132876, w: 1.0000001}
-    proportionalGainPosition: 600
-    derivativeGainPosition: 20
+    proportionalGainPosition: 1000
+    derivativeGainPosition: 10
     positionErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -6132,6 +6150,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     restChildLocalRotation: {x: -0.005272745, y: -0.0048802253, z: 0.026525978, w: 0.9996224}
+    limitSettings: {fileID: 0}
   rbComponents:
   - {fileID: 958490132539489674}
   - {fileID: 6300554065069310681}
@@ -6148,6 +6167,7 @@ MonoBehaviour:
   _NetworkedMoveVector: {x: -0.6551084, y: -0.055931594, z: -0.75346184}
   agent: {fileID: 5367296735728331735}
   homeLocationVaraibleName: HomeLocation
+  xpbdSolver: {fileID: 0}
 --- !u!114 &2932665264638111977
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6419,6 +6439,251 @@ MonoBehaviour:
   _UnattributedThreatDirection: {x: 0, y: 0, z: 0}
   _inspectorDebugThreatTable: []
   showThreatDebug: 1
+--- !u!114 &7445956144677081907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6942250765550435529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 658d34e6331f0e646aaeea01ff89ffd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  joints:
+  - parent: {fileID: 8545550344169933716}
+    child: {fileID: 5916505749221327462}
+    rb3d: {fileID: 6300554065069310681}
+    parentAnchorLocal: {x: -0.000000016897925, y: 0.35977402, z: -0.04198962}
+    childAnchorLocal: {x: 0.000000020721927, y: 0, z: 0.0000007459894}
+    targetTransform: {fileID: 7868227431769439304}
+    jointActive: 1
+    enableDistanceConstraint: 1
+    restLength: 0
+    distanceStiffness: 0.5
+    distanceCompliance: 0.000001
+    distanceDamping: 0.7
+    leverArmScale: 0.2
+    maxDistanceImpulse: 20
+    enableRotationPD: 1
+    rotationKp: 800
+    rotationKd: 5
+    maxTorque: 8000
+    parentRotationInfluence: 0.2
+    restChildLocalRotation: {x: 0, y: -1.0000001, z: 0, w: 0}
+    designRotationInertia: 1.7320508
+    worldTargetToChild: {x: 0.0000000022271947, y: 0.00000039835504, z: 3.5517592e-10, w: -1.0000001}
+    enableAngularLimits: 1
+    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
+    twistAxis: 1
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -45, y: 45}
+    swing2Limits: {x: -90, y: 90}
+    drawAngularLimitGizmos: 1
+    angularLimitGizmoSize: 1.13
+    anchorParentInfluence: 0.5
+    frameLambdaDistance: 0
+    lastDistanceDir: {x: 0, y: 0, z: 0}
+    lambdaDistance: 0
+    lambdaRotation: 0
+    twistAxisParent: {x: 0, y: 1, z: 0}
+    swing1AxisParent: {x: 0, y: 0, z: -1}
+    swing2AxisParent: {x: -1, y: 0, z: 0}
+  - parent: {fileID: 5916505749221327462}
+    child: {fileID: 5397832325439710801}
+    rb3d: {fileID: 6655656463048883857}
+    parentAnchorLocal: {x: 0.00000017136335, y: 0.5137476, z: -0.19022581}
+    childAnchorLocal: {x: 0.00000017136335, y: 0, z: -0.00000010430813}
+    targetTransform: {fileID: 6573704937598173113}
+    jointActive: 1
+    enableDistanceConstraint: 1
+    restLength: 0
+    distanceStiffness: 0.5
+    distanceCompliance: 0.000001
+    distanceDamping: 0.7
+    leverArmScale: 0.2
+    maxDistanceImpulse: 20
+    enableRotationPD: 1
+    rotationKp: 800
+    rotationKd: 5
+    maxTorque: 8000
+    parentRotationInfluence: 0.2
+    restChildLocalRotation: {x: 0, y: 0, z: -0, w: -1.0000001}
+    designRotationInertia: 1.7320508
+    worldTargetToChild: {x: -0.000000006613031, y: -1.0000001, z: 0.000000041468457, w: 0}
+    enableAngularLimits: 1
+    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
+    twistAxis: 1
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -45, y: 45}
+    swing2Limits: {x: -90, y: 90}
+    drawAngularLimitGizmos: 1
+    angularLimitGizmoSize: 1.64
+    anchorParentInfluence: 0.5
+    frameLambdaDistance: 0
+    lastDistanceDir: {x: 0, y: 0, z: 0}
+    lambdaDistance: 0
+    lambdaRotation: 0
+    twistAxisParent: {x: 0, y: 1, z: 0}
+    swing1AxisParent: {x: 0, y: 0, z: 1}
+    swing2AxisParent: {x: 1, y: 0, z: 0}
+  - parent: {fileID: 5916505749221327462}
+    child: {fileID: 4188193378954933603}
+    rb3d: {fileID: 3858984194971898571}
+    parentAnchorLocal: {x: -0.4133434, y: 0.42161226, z: 0.022890264}
+    childAnchorLocal: {x: -0.00000031720023, y: -0.000000022859734, z: -0.0000000040810733}
+    targetTransform: {fileID: 3003321144955084498}
+    jointActive: 1
+    enableDistanceConstraint: 1
+    restLength: 0
+    distanceStiffness: 0.5
+    distanceCompliance: 0.000001
+    distanceDamping: 0.7
+    leverArmScale: 0.2
+    maxDistanceImpulse: 20
+    enableRotationPD: 1
+    rotationKp: 800
+    rotationKd: 5
+    maxTorque: 8000
+    parentRotationInfluence: 0.2
+    restChildLocalRotation: {x: 0.53650147, y: -0.45863026, z: -0.54775923, w: -0.44920436}
+    designRotationInertia: 1.7320508
+    worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000002}
+    enableAngularLimits: 1
+    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
+    twistAxis: 1
+    twistLimits: {x: -180, y: 90}
+    swing1Limits: {x: -160, y: 90}
+    swing2Limits: {x: -90, y: 90}
+    drawAngularLimitGizmos: 1
+    angularLimitGizmoSize: 1.64
+    anchorParentInfluence: 0.5
+    frameLambdaDistance: 0
+    lastDistanceDir: {x: 0, y: 0, z: 0}
+    lambdaDistance: 0
+    lambdaRotation: 0
+    twistAxisParent: {x: -0.98422295, y: -0.17574793, z: 0.020440362}
+    swing1AxisParent: {x: -0.17570978, y: 0.9844352, z: 0.0036489354}
+    swing2AxisParent: {x: -0.020763807, y: 0.000000059604623, z: -0.99978435}
+  - parent: {fileID: 5916505749221327462}
+    child: {fileID: 4706868771879484532}
+    rb3d: {fileID: 8111949369613231522}
+    parentAnchorLocal: {x: 0.4133435, y: 0.42161226, z: 0.022890432}
+    childAnchorLocal: {x: 0.00000048275217, y: 0.00000006987244, z: 0.0000000124738335}
+    targetTransform: {fileID: 2840228585378284342}
+    jointActive: 1
+    enableDistanceConstraint: 1
+    restLength: 0
+    distanceStiffness: 0.5
+    distanceCompliance: 0.000001
+    distanceDamping: 0.7
+    leverArmScale: 0.2
+    maxDistanceImpulse: 20
+    enableRotationPD: 1
+    rotationKp: 800
+    rotationKd: 5
+    maxTorque: 8000
+    parentRotationInfluence: 0.2
+    restChildLocalRotation: {x: -0.5357457, y: -0.45924962, z: -0.5484965, w: 0.44857356}
+    designRotationInertia: 1.7320508
+    worldTargetToChild: {x: 0.000000015579275, y: -0.0000000039292143, z: 0.0000000070837807, w: 1.0000001}
+    enableAngularLimits: 1
+    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
+    twistAxis: 1
+    twistLimits: {x: -90, y: 180}
+    swing1Limits: {x: -90, y: 160}
+    swing2Limits: {x: -90, y: 90}
+    drawAngularLimitGizmos: 1
+    angularLimitGizmoSize: 1.64
+    anchorParentInfluence: 0.5
+    frameLambdaDistance: 0
+    lastDistanceDir: {x: 0, y: 0, z: 0}
+    lambdaDistance: 0
+    lambdaRotation: 0
+    twistAxisParent: {x: 0.98416376, y: -0.1757436, z: 0.023150885}
+    swing1AxisParent: {x: 0.17569472, y: 0.98443604, z: 0.004132717}
+    swing2AxisParent: {x: -0.023517212, y: -0.000000029802312, z: 0.9997234}
+  - parent: {fileID: 4188193378954933603}
+    child: {fileID: 5206101990445450973}
+    rb3d: {fileID: 7952486641280460584}
+    parentAnchorLocal: {x: -0.0000012377277, y: 0.51131046, z: -0.000000059604645}
+    childAnchorLocal: {x: -0.00000030090672, y: 0.000000022130244, z: 0.000000004192316}
+    targetTransform: {fileID: 301659887911101080}
+    jointActive: 1
+    enableDistanceConstraint: 1
+    restLength: 0
+    distanceStiffness: 0.5
+    distanceCompliance: 0.000001
+    distanceDamping: 0.7
+    leverArmScale: 0.2
+    maxDistanceImpulse: 20
+    enableRotationPD: 1
+    rotationKp: 800
+    rotationKd: 5
+    maxTorque: 8000
+    parentRotationInfluence: 0.2
+    restChildLocalRotation: {x: -0.005272745, y: -0.0048802253, z: 0.026525978, w: 0.9996224}
+    designRotationInertia: 1.7320508
+    worldTargetToChild: {x: 4.646381e-10, y: -0.0000000049493636, z: -0.000000011132876, w: 1.0000001}
+    enableAngularLimits: 1
+    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
+    twistAxis: 1
+    twistLimits: {x: -90, y: 90}
+    swing1Limits: {x: -150, y: -10}
+    swing2Limits: {x: -90, y: 90}
+    drawAngularLimitGizmos: 1
+    angularLimitGizmoSize: 1.64
+    anchorParentInfluence: 0.5
+    frameLambdaDistance: 0
+    lastDistanceDir: {x: 0, y: 0, z: 0}
+    lambdaDistance: 0
+    lambdaRotation: 0
+    twistAxisParent: {x: -0.05298046, y: 0.9985371, z: -0.010800414}
+    swing1AxisParent: {x: -0.010036495, y: 0.010282602, z: 0.99989676}
+    swing2AxisParent: {x: 0.9985451, y: 0.05308339, z: 0.009477036}
+  - parent: {fileID: 4706868771879484532}
+    child: {fileID: 6361040460583952207}
+    rb3d: {fileID: 3266714335128581227}
+    parentAnchorLocal: {x: 0.0000012228265, y: 0.51134086, z: -0.00000025331974}
+    childAnchorLocal: {x: 0.00000023821954, y: 0.00000053723784, z: 0.000000101970315}
+    targetTransform: {fileID: 4028624936885215001}
+    jointActive: 1
+    enableDistanceConstraint: 1
+    restLength: 0
+    distanceStiffness: 0.5
+    distanceCompliance: 0.000001
+    distanceDamping: 0.7
+    leverArmScale: 0.2
+    maxDistanceImpulse: 20
+    enableRotationPD: 1
+    rotationKp: 800
+    rotationKd: 5
+    maxTorque: 8000
+    parentRotationInfluence: 0.2
+    restChildLocalRotation: {x: 0.0054560704, y: -0.0016399752, z: 0.008904871, w: -0.99994427}
+    designRotationInertia: 1.7320508
+    worldTargetToChild: {x: 0.000000038586187, y: 0.00000010264206, z: -0.000000036655543, w: -1}
+    enableAngularLimits: 1
+    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
+    twistAxis: 1
+    twistLimits: {x: -90, y: 90}
+    swing1Limits: {x: -10, y: 160}
+    swing2Limits: {x: -90, y: 90}
+    drawAngularLimitGizmos: 1
+    angularLimitGizmoSize: 1.64
+    anchorParentInfluence: 0.5
+    frameLambdaDistance: 0
+    lastDistanceDir: {x: 0, y: 0, z: 0}
+    lambdaDistance: 0
+    lambdaRotation: 0
+    twistAxisParent: {x: 0.017790852, y: 0.99978185, z: -0.01094074}
+    swing1AxisParent: {x: 0.0033769389, y: 0.0108823255, z: 0.9999351}
+    swing2AxisParent: {x: 0.999836, y: -0.017826645, z: -0.0031825965}
+  ragdollJoints: []
+  distanceBiasScale: 1
+  distanceBiasScaleRagdoll: 0.5
+  iterations: 8
 --- !u!1 &6983809620397037641
 GameObject:
   m_ObjectHideFlags: 0
@@ -6629,6 +6894,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &7521881830619338912
 GameObject:
   m_ObjectHideFlags: 0
