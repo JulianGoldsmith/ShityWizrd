@@ -45,10 +45,7 @@ public class XpbdConstraintSolver : MonoBehaviour
 
                 if (joint.enableDistanceConstraint)
                     SolveDistanceConstraintVelocity(joint, deltaTime, includeRagdollJoints);
-                if (joint.enableAngularLimits) {
-                    //Debug.Log($"[XPBD] SolveAngularLimits for {joint.child?.name}");
-                    SolveAngularLimits(joint, deltaTime);
-                }
+                
                     
             }
 
@@ -57,18 +54,41 @@ public class XpbdConstraintSolver : MonoBehaviour
             {
                 if (ragJoint == null)
                     continue;
-
                 if (ragJoint.jointActive == false)
                     continue;
-
                 if (ragJoint.enableDistanceConstraint)
                     SolveDistanceConstraintVelocity(ragJoint, deltaTime, includeRagdollJoints);
+               
+            }
+        }
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            foreach (var joint in joints)
+            {
+                if (joint == null)
+                    continue;
+                if (joint.jointActive == false)
+                    continue;
+                if (joint.enableAngularLimits)
+                {
+                    //Debug.Log($"[XPBD] SolveAngularLimits for {joint.child?.name}");
+                    SolveAngularLimits(joint, deltaTime);
+                }
+            }
+
+            foreach (var ragJoint in ragdollJoints)
+            {
+                if(ragJoint == null)
+                    continue;
+                if (ragJoint.jointActive == false)
+                    continue;
                 if (ragJoint.enableAngularLimits)
                 {
                     //Debug.Log($"[XPBD] SolveAngularLimits (ragdoll) for {ragJoint.child?.name}");
                     SolveAngularLimits(ragJoint, deltaTime);
                 }
             }
+
         }
 
 
