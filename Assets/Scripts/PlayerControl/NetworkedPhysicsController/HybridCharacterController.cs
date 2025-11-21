@@ -763,8 +763,8 @@ public class HybridCharacterController : NetworkBehaviour
         if (xpbdSolver == null) return;
         
         float dt = Runner.DeltaTime;
-        xpbdSolver.ApplyRotationalPD(1, dt);
-        xpbdSolver.Solve(dt);
+        xpbdSolver.ApplyRotationalPD(bonkController.BonkedState == BONKEDSTATE.ALIVE? strenght: 0f, dt);
+        xpbdSolver.Solve(dt, bonkController.BonkedState != BONKEDSTATE.ALIVE);
        // xpbdSolver.ApplyAnchorTorqueFromLambda(1, dt);
     }
 

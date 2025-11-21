@@ -140,14 +140,23 @@ public class CharacterBonkController : NetworkBehaviour
     public void ActivateRagDoll()
     {
 
-        foreach (PdBone bone in characterController.ragDollBones)
-        {
-            bone.WakeBone(HasStateAuthority);
-        }
+
         //ragdollProxysRoot.SetActive(true);
-        foreach (PdBone bone in characterController.ragDollBones)
+        foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
         {
-            bone.AddForcesAndApplyPhycis(HasStateAuthority);
+            var nrb = joint.rb3d;
+            if (nrb == null) continue;
+            var rb = nrb.Rigidbody;
+            if (rb == null) continue;
+
+            var col = rb.GetComponent<Collider>();
+            if (col) col.enabled = true;
+
+            nrb.RBIsKinematic = false;
+            if (nrb.Object.HasStateAuthority)
+                nrb.ResetRigidbody();
+
+            joint.AddForcesAndApplyPhycis(HasStateAuthority);
         }
        
         //ragdollProxysRoot.SetActive(true);
@@ -156,9 +165,25 @@ public class CharacterBonkController : NetworkBehaviour
     public void DeactivateRagDoll()
     {
 
-        foreach (PdBone bone in characterController.ragDollBones)
+        foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
         {
-            bone.SleepBone(HasStateAuthority);
+            var nrb = joint.rb3d;
+            if (nrb == null) continue;
+            var rb = nrb.Rigidbody;
+            if (rb == null) continue;
+
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+
+            nrb.RBIsKinematic = true;
+
+            var col = rb.GetComponent<Collider>();
+            if (col) col.enabled = false;
+
+            if (nrb.Object.HasStateAuthority)
+                nrb.ResetRigidbody();
+
+            joint.SleepBone(HasStateAuthority);
         }
       
         //ragdollProxysRoot.SetActive(false);
