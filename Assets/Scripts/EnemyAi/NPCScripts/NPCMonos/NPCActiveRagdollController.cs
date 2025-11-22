@@ -106,7 +106,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         animStateController.SimulateAnimation();
 
-        ragDollStrength = this.GetComponent<NPCPhysicsObject>().current_bonkedness/100;
+       // ragDollStrength = this.GetComponent<NPCPhysicsObject>().current_bonkedness/100;
 
         if (characterBonkController.BonkedState == BONKEDSTATE.ALIVE)
         {
@@ -169,10 +169,10 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
             if (compression > 0)
             {
-                springForce = rideSpringStrength * compression * Mathf.Min(ragDollStrength, 1);
+                springForce = rideSpringStrength * compression /** Mathf.Min(ragDollStrength, 1)*/;
             }
 
-            float kp = rideSpringStrength * Mathf.Min(ragDollStrength, 1);
+            float kp = rideSpringStrength /* Mathf.Min(ragDollStrength, 1)*/;
             float kd = 2 * Mathf.Sqrt(kp * coreRB.mass);
 
             //springForce = rideSpringStrength * compression;
@@ -319,7 +319,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
         if (xpbdSolver == null) return;
 
         float dt = Runner.DeltaTime;
-        xpbdSolver.ApplyRotationalPD(ragDollStrength, dt);
+        xpbdSolver.ApplyRotationalPD(characterBonkController.BonkedState == BONKEDSTATE.ALIVE? ragDollStrength : 0f, dt);
         xpbdSolver.Solve(dt, false,1, sizeMult);
     }
 
