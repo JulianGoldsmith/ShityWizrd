@@ -6,6 +6,8 @@ public class OverlapSphereNode : TriggerNode
 {
     [Promotable("Size", DataTypeTag.Radius)]
     public float size;
+    [Tooltip("If this should only trigger once per overlaped object, rather than every tick")]
+    public bool singleTrigger = false;
     public override void SetUp(GameObject spellCore, SpellState state)
     {
         OverlapSphereST sphereChecker = spellCore.AddComponent<OverlapSphereST>();
@@ -13,6 +15,7 @@ public class OverlapSphereNode : TriggerNode
         sphereChecker.filterNodes = this.filterNodes;
         sphereChecker.outcomeNodes = this.outcomeNodes;
         sphereChecker.size = size;
+        sphereChecker.singleTrigger = singleTrigger;    
 
         OnAttach(sphereChecker, size);
     }

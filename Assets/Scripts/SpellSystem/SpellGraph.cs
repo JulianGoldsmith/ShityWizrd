@@ -70,11 +70,24 @@ public class SpellGraph : ScriptableObject
         return entries[index];
     }
 
-    public void CompileSpell()
+    //I think we should move this to a 1 time event -- after recieving a spell over network or sending (rather than every cast?)
+    //We could have a compile for all of this, and an Update for special circustances. But we shouldnt re-compile without sending etc...
+    public void CompileSpell(CastActionController caster) 
     {
-        foreach(KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
+        foreach (KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
         {
             kv.Value.Compile();
+        }
+        foreach (KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
+        {
+            if (kv.Value is HitBoxCastNode hitBoxNode)
+            {
+                //GetCaster 
+                //Find hitBox object to "clone" and add triggers too 
+                
+                // logic here for assigning hitBox to the cloned hitBoxNode so we can reference it in the node. 
+                //needs to be after all
+            }
         }
     }
 
@@ -231,9 +244,12 @@ public class SpellGraph : ScriptableObject
                     while (entryPoint.orderedEntries.Count <= comboIndex) entryPoint.orderedEntries.Add(null);
                     entryPoint.orderedEntries[comboIndex] = casterNode;
                 }
-                else if (logicalSource is CasterNode caster && logicalTarget is CoreNode core)
+                else if (logicalSource is CasterNode caster && (logicalTarget is CoreNode || logicalTarget is EffectNode))
                 {
-                    if (!caster.outcomeCoreNodes.Contains(core)) caster.outcomeCoreNodes.Add(core);
+                    if (!caster.outcomeCoreNodes.Contains(logicalTarget))
+                    {
+                        caster.outcomeCoreNodes.Add(logicalTarget);
+                    }
                 }
                 else if (logicalSource is CoreNode sourceCore && logicalTarget is TriggerNode trigger)
                 {
@@ -289,6 +305,118 @@ public class SpellGraph : ScriptableObject
         if (!binder.ModifyingNodes.Contains(sourceNode))
         {
             binder.ModifyingNodes.Add(sourceNode);
+        }
+    }
+
+    public void InitilizeFromNodeData(SpellGraphController controller)
+    {
+
+        this.runeUIsByGuid = new Dictionary<string, RuneUI>();
+        this.liveNodeClonesByGuid = new Dictionary<string, SpellNode>();
+
+        foreach (var nodeData in this.nodes)
+        {
+            SpellNode nodeTemplate = controller.FindTemplateByName(nodeData.nodeTemplateName);
+            if (nodeTemplate != null)
+            {
+                SpellNode clone = nodeTemplate.CloneThisNode();
+                clone.InstanceGuid = nodeData.guid;
+                this.liveNodeClonesByGuid[nodeData.guid] = clone;
+
+                if (clone is CoreNode core)
+                {
+                    core.defaultBehaviourNodes = new List<BehaviourNode>();
+                    core.defaultTriggerNodes = new List<TriggerNode>();
+                    core.behaviourNodes = new List<BehaviourNode>();
+                    core.triggerNodes = new List<TriggerNode>();
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[Hydrate] Could not find template: {nodeData.nodeTemplateName}");
+            }
+        }
+
+        foreach (var nodeData in this.nodes)
+        {
+            if (!this.liveNodeClonesByGuid.TryGetValue(nodeData.guid, out var parentClone)) continue;
+
+            if (parentClone is CoreNode coreClone)
+            {
+                foreach (var childGuid in nodeData.childNodeGUIDs)
+                {
+                    if (!this.liveNodeClonesByGuid.TryGetValue(childGuid, out var childClone)) continue;
+
+                    if (childClone is BehaviourNode behaviour)
+                    {
+                        coreClone.defaultBehaviourNodes.Add(behaviour);
+                    }
+                    else if (childClone is TriggerNode trigger)
+                    {
+                        coreClone.defaultTriggerNodes.Add(trigger);
+                    }
+                }
+            }
+        }
+
+        foreach (var nodeData in this.nodes)
+        {
+            if (!this.liveNodeClonesByGuid.TryGetValue(nodeData.guid, out var clone)) continue;
+            if (clone is not SubgraphNode subClone) continue;
+
+            var guidMap = new Dictionary<string, string>();
+            var liveInternalNodes = new List<NodeInstanceData>();
+
+            foreach (var childGuid in nodeData.childNodeGUIDs)
+            {
+                var liveChild = this.GetNodeInstance(childGuid); 
+                if (liveChild == null) continue;
+
+                if (!string.IsNullOrEmpty(liveChild.sourceTemplateNodeGuid))
+                {
+                    guidMap[liveChild.sourceTemplateNodeGuid] = liveChild.guid;
+                }
+                liveInternalNodes.Add(liveChild);
+            }
+
+            subClone.internalNodes = liveInternalNodes;
+
+            if (!string.IsNullOrEmpty(subClone.rootNodeGuid) && guidMap.TryGetValue(subClone.rootNodeGuid, out var liveRoot))
+            {
+                subClone.rootNodeGuid = liveRoot;
+            }
+
+            for (int i = 0; i < subClone.exposedSockets.Count; i++)
+            {
+                var info = subClone.exposedSockets[i];
+                if (guidMap.TryGetValue(info.internalNodeGuid, out var liveOwner))
+                {
+                    info.internalNodeGuid = liveOwner;
+                    subClone.exposedSockets[i] = info;
+                }
+                else
+                {
+                    Debug.LogWarning($"[Load] Subgraph '{subClone.name}': no live owner for template guid '{info.internalNodeGuid}'.");
+                }
+            }
+        }
+
+        foreach (var nodeData in this.nodes)
+        {
+            foreach (var connectionData in nodeData.connections)
+            {
+                this.CreateNodeLink(nodeData, this.GetNodeInstance(connectionData.targetNodeGUID), connectionData);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(this.entryPointControllerNodeGuid) &&
+            this.liveNodeClonesByGuid.TryGetValue(this.entryPointControllerNodeGuid, out SpellNode entryNode))
+        {
+            this.entryPointControllerNode = entryNode as EntryPointControlNode;
+        }
+        else
+        {
+            Debug.LogWarning($"[Hydrate] Could not find Entry Point Node ({this.entryPointControllerNodeGuid}) for graph '{this.name}'.");
         }
     }
 

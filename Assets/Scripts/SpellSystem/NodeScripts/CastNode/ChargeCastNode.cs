@@ -12,8 +12,15 @@ public class ChargeCastNode : CasterNode
 
     public override void OnCastStarted(SpellState state, CastActionController castController)
     {
- 
-        state.chargeCastVFX = SpellSystemHelpers.CreateVFX(VFXContext.CastChargeEffect, ModifierType.Arcane, state.CastItem.projectileSpawnPoint, 1);
+        if(castController is NPCActionController)
+        {
+            // if this is an NPC
+        }
+        else
+        {
+            state.chargeCastVFX = SpellSystemHelpers.CreateVFX(VFXContext.CastChargeEffect, ModifierType.Arcane, state.CastItem.projectileSpawnPoint, 1);
+        }
+        
         state.CastChargeLevel = 0;
     }
 
@@ -26,8 +33,18 @@ public class ChargeCastNode : CasterNode
 
     public override void OnCastCanceled(SpellState state, CastActionController castController)
     {
+        Vector3 spawnPosition;
+        if (castController is NPCActionController NPC)
+        {
+            spawnPosition = NPC.spellSpawnPoint.position;
+        }
+        else
+        {
+            spawnPosition = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().projectileSpawnPoint.position;
+        }
 
-        Vector3 spawnPosition = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().projectileSpawnPoint.position;
+
+        //spawnPosition = state.Controller.inventory.activeItem.GetComponent<EquipableItem>().projectileSpawnPoint.position;
         Quaternion spawnRotation = Quaternion.LookRotation(castController.GetForward());
 
         var triggerInfo = new SpellTriggerInfo(

@@ -1,4 +1,5 @@
 using Fusion;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CharacterCustomization : NetworkBehaviour
@@ -6,7 +7,9 @@ public class CharacterCustomization : NetworkBehaviour
     [Header("Component References")]
     [SerializeField] private SkinnedMeshRenderer modelRenderer;
     [SerializeField] private SkinnedMeshRenderer ragDollRenderer;
-    [SerializeField] private SkinnedMeshRenderer robeRenderer;
+    //[SerializeField] private SkinnedMeshRenderer robeRenderer;
+
+    public List<SkinnedMeshRenderer> apparel;
 
     [Header("Material Options")]
     [SerializeField] private Material hostMat;
@@ -30,7 +33,11 @@ public class CharacterCustomization : NetworkBehaviour
         if (HasInputAuthority)
         {
             modelRenderer.enabled = false;
-            robeRenderer.enabled = false;
+            //robeRenderer.enabled = false;
+            foreach(var appa in apparel)
+            {
+                appa.enabled = false;
+            }
         }
         OnAppearanceStateChanged();
     }
@@ -39,7 +46,7 @@ public class CharacterCustomization : NetworkBehaviour
     {
         Material mat = IsHost ? hostMat : clientMat;
         modelRenderer.material = mat;
-        ragDollRenderer.material = mat;
+        //ragDollRenderer.material = mat;
         this.GetComponent<NetworkedHandsController>().SetHandModelMaterial(mat);
     }
 

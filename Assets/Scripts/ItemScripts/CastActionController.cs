@@ -11,15 +11,12 @@ using Fusion;
 /// Main script controlling player casting, ie sword swing, cast spell etc, works with player movement controller and player animation controller
 /// </summary>
 
-
-[RequireComponent(typeof(NetworkedInventoryManager))]
 public abstract class CastActionController : NetworkBehaviour
 {
     //public Animator animator;
     public NetworkedInventoryManager inventory;
     
     public bool isCasting;
-    public bool canCombo;
     public bool isUpperBodyAction;
     public float currentAttackCooldown = 0f;
 
@@ -63,7 +60,7 @@ public abstract class CastActionController : NetworkBehaviour
 
     }
 
-    public void StartCast(bool isAlreadyReleased)
+    public virtual void StartCast(bool isAlreadyReleased)
     {
         if (isCasting) return;
 
@@ -82,7 +79,7 @@ public abstract class CastActionController : NetworkBehaviour
         }
 
         // Compiled all spell by doing promotablevalues.
-        item.primaryActionSpell.CompileSpell();
+        item.primaryActionSpell.CompileSpell(this);
 
         var entries = item.primaryActionSpell.GetComboEntries(); //Get the entry point of the spell from the entryPointController
         if (entries.Count == 0)
@@ -103,7 +100,7 @@ public abstract class CastActionController : NetworkBehaviour
         Debug.Log($"{this.gameObject.name} cast {item.name} with spell {item.primarySpellID} at entry node {entryCast.name}");
 
         int actionId = _nextActionId;
-        SpellState newCast = new SpellState(this, item, item.primaryActionSpell, entryCast);
+        SpellState newCast = new SpellState(this, item, item.primaryActionSpell, entryCast, this.GetComponent<NetworkObject>());
         
         //SpellStateManager.instance.AddSpellState(newCast);
 
@@ -119,7 +116,7 @@ public abstract class CastActionController : NetworkBehaviour
         if (isAlreadyReleased) EndCast();
     }
 
-    public void UpdateActiveCasts()
+    public virtual void UpdateActiveCasts()
     {
         for (int i = activeCasts.Count - 1; i >= 0; i--)
         {
@@ -131,7 +128,7 @@ public abstract class CastActionController : NetworkBehaviour
         }
     }
 
-    public void EndCast()
+    public virtual void EndCast()
     {
         if (primaryAttackBuffered)
         {
@@ -212,6 +209,13 @@ public abstract class CastActionController : NetworkBehaviour
 
     public virtual Vector3 GetForward() { return transform.forward; }
 
+
+    public abstract void ActivateHitbox(int hitBoxID, SpellState state);
+    public abstract void DeactivateHitbox(int hitBoxID);
+
+
+
+
     public void HandleAnimationEvent(string eventName)
     {
         if (eventName == "DeactivateHitBox")
@@ -271,6 +275,8 @@ public abstract class CastActionController : NetworkBehaviour
         _activeHitboxInstance = hitbox;
     }
 
+
+    //not used 
     public void OnDeactivateHitbox()
     {
         if (_activeHitboxInstance != null)

@@ -33,69 +33,31 @@ public class DraggableItem : InteractableItem
 
     public override void FixedUpdateNetwork()
     {
-        //Debug.Log("this is running on a proxy ");
-
-        //if (HasStateAuthority && _removeIATick > 0 && Runner.Tick >= _removeIATick) //small delay to remove inputAuth
-        //{
-        //    var no = GetComponent<NetworkObject>();
-        //    if (no.HasInputAuthority)
-        //    {
-        //        no.RemoveInputAuthority();
-        //    }
-        //    _removeIATick = -1;
-        //}
 
         Vector3 forceToAdd = Vector3.zero;
         Vector3 torqueToAdd = Vector3.zero;
 
         int numberOfHolders = 0;
-        int lastActivePlayer = -1;
         for(int i = 0; i < CurrentHoldingPlayers.Length; i++)
         {
             PlayerRef playerRef = CurrentHoldingPlayers[i];
 
-            // 1. First, check if the slot is logically empty.
             if (playerRef == PlayerRef.None)
             {
                 continue;
             }
 
-            // If we are a proxy, log what the network gave us
-            if (IsProxy)
-            {
-               // Debug.Log($"[Proxy: {this.name}] Slot {i} contains PlayerRef {playerRef.PlayerId}");
-            }
-
-            // 2. Now, try to get the player object.
             if (!Runner.TryGetPlayerObject(playerRef, out NetworkObject player) || player == null)
-            {
-                if (IsProxy)
-                {
-                    // This is the most likely point of failure.
-                    //Debug.LogWarning($"[Proxy: {this.name}] Failed to get NetworkObject for PlayerRef {playerRef.PlayerId}. Skipping.");
-                }
-                continue; // Skip this holder if we can't find their object.
-            }
-
-            lastActivePlayer = i;
-
-            bool isLocalHolder = (CurrentHoldingPlayers[i] == Runner.LocalPlayer);
-
-            // input auth client: skip the local holder’s force contribution for the drop tick window
-            if (_localPendingDrop && HasInputAuthority && isLocalHolder)
             {
                 continue;
             }
 
-            //if (!Runner.TryGetInputForPlayer(CurrentHoldingPlayers[i], out NetworkInputData holderInput)) //predicted / networked target dragpos
-            //{
-            //    Debug.Log("No holdPos Data?");
-            //    continue; // no input => don't apply spring this tick
-            //}
-            //if (holderInput.dragTargetPos == Vector3.zero)
-            //{
-            //    continue;
-            //}
+            bool isLocalHolder = (CurrentHoldingPlayers[i] == Runner.LocalPlayer);
+
+            if (_localPendingDrop && HasInputAuthority && isLocalHolder)
+            {
+                continue;
+            }
 
             if(!player.TryGetComponent(out NetworkedInventoryManager inv)){
                 continue;
@@ -118,8 +80,31 @@ public class DraggableItem : InteractableItem
 
             float strengthMultiplier = handController.dragStrengthCurve.Evaluate(Mathf.Clamp01(distance / handController.dragRange));
             Vector3 springForce = positionError * handController.dragStength * strengthMultiplier;
-            
-            forceToAdd += springForce;
+
+            Vector3 actualForceOnObject = Vector3.ClampMagnitude(springForce, handController.maxDragStrength);
+
+            forceToAdd += actualForceOnObject;
+
+            float targetDistanceToPlayer = (targetHoldPos - handController.rightHand.shoulderTransform.position).magnitude;
+            float actualDistanceToPlayer = (rb.worldCenterOfMass - handController.rightHand.shoulderTransform.position).magnitude;
+            float dist = actualDistanceToPlayer - targetDistanceToPlayer;
+            Debug.Log("Dist " + dist);
+            if (dist > 0)
+            {
+                Vector3 tensionForce = (rb.worldCenterOfMass - handController.rightHand.shoulderTransform.position).normalized * (dist) * handController.handElasticForceOnPlayer.Evaluate(dist/handController.maxDistanceBeforeMaxElasticForce) * 10f;
+                controller.hipsRb.AddForce(tensionForce / controller.totalMass, ForceMode.Acceleration);
+            }
+
+            //controller.pdBones[0].childRigidbody.AddForceAtPosition(tensionForce * actualForceOnObject.magnitude / 5f, handController.rightHand.shoulderTransform.position, ForceMode.Acceleration);
+
+            //if (actualForceOnObject.magnitude > handController.maxDragStrength * handController.maxStableStrengthRatio)
+            //{
+            //    Vector3 forceOnPlayer = -(actualForceOnObject.magnitude - (handController.maxDragStrength * handController.maxStableStrengthRatio)) * actualForceOnObject.normalized;
+            //    controller.pdBones[0].childRigidbody.AddForceAtPosition((forceOnPlayer / controller.pdBones[0].childRigidbody.mass) / 2f, transform.position, ForceMode.Acceleration);
+            //}
+
+            //Vector3 forceOnPlayer = -actualForceOnObject / (controller.totalMass);
+            //controller.hipsRb.AddForce(forceOnPlayer, ForceMode.Acceleration);
 
             //rotation
 
@@ -145,7 +130,6 @@ public class DraggableItem : InteractableItem
             }
         }
         
-       // DetermineInputAuth(numberOfHolders, lastActivePlayer != -1? CurrentHoldingPlayers[lastActivePlayer]: PlayerRef.None);
 
         if(numberOfHolders > 0)
         {
@@ -156,6 +140,8 @@ public class DraggableItem : InteractableItem
             Vector3 angularDamp = rb.angularVelocity * rotationalDampening;
             rb.AddTorque(torqueToAdd - angularDamp);
         }
+
+
 
     }
 
@@ -197,7 +183,6 @@ public class DraggableItem : InteractableItem
             Vector3 targetPos = eyePos + (lookRot * offset);
             dragTargetPos = targetPos;
 
-            // FACING: aim from the item COM to the eye (same as your server logic conceptually)
             var itemNO = inv.currentItemInHand;
             var item = itemNO.GetComponent<DraggableItem>();
             Vector3 com = (item != null && item.rb != null) ? item.rb.worldCenterOfMass : itemNO.transform.position;
@@ -224,7 +209,7 @@ public class DraggableItem : InteractableItem
         // Debug.Log($"picked up or drag called on local player");
         if (HasStateAuthority) return;
         if (HasInputAuthority) return;
-        if (IsProxy) return; 
+        if (IsProxy) return;  //this dosnt actually run now but ive left it incase
         
         //after looking at this again i think this dosnt need to run at all as the state is now networked i think ive over complicated things
 
@@ -274,6 +259,10 @@ public class DraggableItem : InteractableItem
 
         if (true) //if we the server
         {
+            if(TryGetComponent<PhysicsObject>(out PhysicsObject PO))
+            {
+                PO.lastInteractor = playerObject;
+            }
             HolderChangedCount++;
             AddPlayerToCurrentHoldingPlayers(playerObject);
             if (playerObject.TryGetComponent<NetworkedHandsController>(out NetworkedHandsController hands))

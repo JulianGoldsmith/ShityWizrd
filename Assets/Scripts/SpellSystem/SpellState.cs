@@ -9,6 +9,8 @@ public class SpellState
     // A simple way to avoid infinites.
     const int max_spawnable_cores = 50; // hard-cutoff for number cores to spawn within a single spell cast.
 
+    public NetworkObject Caster { get; set; }
+
     public SpellGraphId SpellGraphIdFrom { get; private set; }
     public CastActionController Controller { get; } //this means we can always get the player / enemies pos and rot + GetForward etc
 
@@ -28,7 +30,7 @@ public class SpellState
 
     public CasterNode OriginalCasterNode { get; set; }  //Node responsible for casting the spell. 
 
-    public SpellState(CastActionController controller, EquipableItem item, SpellGraph spell, CasterNode originalCasterNode)
+    public SpellState(CastActionController controller, EquipableItem item, SpellGraph spell, CasterNode originalCasterNode, NetworkObject caster)
     {
         this.Controller = controller;
         this.CastItem = item;
@@ -48,6 +50,7 @@ public class SpellState
         OriginalCasterNode = originalCasterNode;
 
         SpawnedCoresCounter = 0;
+        Caster = caster;
     }
 
     public bool CanSpawnAnotherCore()

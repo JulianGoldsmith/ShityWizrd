@@ -57,8 +57,16 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
             NetworkObjectBuffer buffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
             spellCore = buffer.Get(corePrefabRef, pos, rot);
         }
-        
-        if(spellCore == null)
+        else if(triggerInfo != null
+            && triggerInfo.State != null
+            && triggerInfo.State.Controller != null) //added a new check for a buffer on the controller who made the object - ie an NPC
+        {
+            Debug.Log("Trying to buffer spawn");
+            NetworkObjectBuffer buffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();
+            spellCore = buffer.Get(corePrefabRef, pos, rot);
+        }
+
+        if (spellCore == null)
         {
             // Fallback if we couldn't buffer-spawn it.
             // -> just do it manually.

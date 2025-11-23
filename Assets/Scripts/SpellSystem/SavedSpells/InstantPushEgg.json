@@ -1,0 +1,117 @@
+{
+    "entryPointControllerNodeGuid": "314f315e-b5ea-4dcd-8fc6-35ba10b78582",
+    "nodes": [
+        {
+            "guid": "314f315e-b5ea-4dcd-8fc6-35ba10b78582",
+            "position": {
+                "x": -1.2454719543457032,
+                "y": 0.0068514347076416019,
+                "z": 0.0977933406829834
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "314f315e-b5ea-4dcd-8fc6-35ba10b78582",
+                    "targetNodeGUID": "cb973105-8101-4dfb-ad86-d7c1a31a8ae1",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "cb973105-8101-4dfb-ad86-d7c1a31a8ae1"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "cb973105-8101-4dfb-ad86-d7c1a31a8ae1",
+            "position": {
+                "x": -0.3875121772289276,
+                "y": 0.035272449254989627,
+                "z": 0.29447150230407717
+            },
+            "nodeTemplateName": "ChargeCastNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "fromOutputOwnerGUID": "cb973105-8101-4dfb-ad86-d7c1a31a8ae1",
+                    "targetNodeGUID": "0751c142-3693-4785-bfb9-e759c2cd9f0c",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "0751c142-3693-4785-bfb9-e759c2cd9f0c"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "0751c142-3693-4785-bfb9-e759c2cd9f0c",
+            "position": {
+                "x": 0.06211003661155701,
+                "y": 0.02514532208442688,
+                "z": 0.2654423713684082
+            },
+            "nodeTemplateName": "QuickEggCore",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Triggers Out",
+                    "fromOutputOwnerGUID": "0751c142-3693-4785-bfb9-e759c2cd9f0c",
+                    "targetNodeGUID": "cc33cf78-6a60-4253-8ab0-b739638dff70",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "cc33cf78-6a60-4253-8ab0-b739638dff70"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "f0fedad9-194f-4c84-b402-a7e0851aa401",
+            "position": {
+                "x": 0.2493930459022522,
+                "y": -0.005392611026763916,
+                "z": -0.4093114137649536
+            },
+            "nodeTemplateName": "InstantPushEffect",
+            "connections": [],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "6c3746ce-3b5f-46c1-b625-0b0569845ff4",
+            "position": {
+                "x": -0.37323421239852908,
+                "y": -0.006209850311279297,
+                "z": -0.6558937430381775
+            },
+            "nodeTemplateName": "Expand",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Value Out",
+                    "fromOutputOwnerGUID": "6c3746ce-3b5f-46c1-b625-0b0569845ff4",
+                    "targetNodeGUID": "cc33cf78-6a60-4253-8ab0-b739638dff70",
+                    "toInputSocketName": "size",
+                    "toInputOwnerGUID": "cc33cf78-6a60-4253-8ab0-b739638dff70"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "cc33cf78-6a60-4253-8ab0-b739638dff70",
+            "position": {
+                "x": -0.21928390860557557,
+                "y": 0.0009884759783744813,
+                "z": -0.06393279135227204
+            },
+            "nodeTemplateName": "OverlapSphereOnceNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "On Event",
+                    "fromOutputOwnerGUID": "cc33cf78-6a60-4253-8ab0-b739638dff70",
+                    "targetNodeGUID": "f0fedad9-194f-4c84-b402-a7e0851aa401",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "f0fedad9-194f-4c84-b402-a7e0851aa401"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        }
+    ]
+}

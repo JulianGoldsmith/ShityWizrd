@@ -18,14 +18,29 @@ public class PlayerPhysicsObject : PhysicsObject
         base.OnZeroBonk();
 
         // can also go to a death state at a high bonk threshold.
-        hybridCharacterController.GetBonked();
+        if(HasStateAuthority)
+            hybridCharacterController.GetBonked();
     }
 
     protected override void OnRecoverFromBonk()
     {
         base.OnRecoverFromBonk();
+        if (HasStateAuthority)
+            // Recovered from bonk.
+            hybridCharacterController.GetUnBonked();
+    }
 
-        // Recovered from bonk.
-        hybridCharacterController.GetUnBonked();
+    public override void OnBonkednessChanged(NetworkBehaviourBuffer previous)
+    {
+        base.OnBonkednessChanged(previous); 
+        UpdateHUD(); 
+    }
+
+    private void UpdateHUD()
+    {
+        if (HasInputAuthority)
+        {
+            HUDController.Instance.UpdateBonkBar(current_bonkedness, starting_bonkedness);
+        }
     }
 }

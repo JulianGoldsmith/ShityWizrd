@@ -1,0 +1,57 @@
+{
+    "entryPointControllerNodeGuid": "e9490911-4ac8-4bae-ba21-6c8030bdab97",
+    "nodes": [
+        {
+            "guid": "e9490911-4ac8-4bae-ba21-6c8030bdab97",
+            "position": {
+                "x": -0.9146857261657715,
+                "y": -0.014445483684539795,
+                "z": 0.015622764825820923
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "e9490911-4ac8-4bae-ba21-6c8030bdab97",
+                    "targetNodeGUID": "726c59f7-2b01-4d3b-8045-04dfffaba0d5",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "726c59f7-2b01-4d3b-8045-04dfffaba0d5"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "726c59f7-2b01-4d3b-8045-04dfffaba0d5",
+            "position": {
+                "x": -0.5460962057113648,
+                "y": 0.020573541522026063,
+                "z": 0.17580679059028626
+            },
+            "nodeTemplateName": "HitBoxCastNode",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Exec Out",
+                    "fromOutputOwnerGUID": "726c59f7-2b01-4d3b-8045-04dfffaba0d5",
+                    "targetNodeGUID": "31b5b9ab-dbb9-4e9d-aab9-872b32b50d8e",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "31b5b9ab-dbb9-4e9d-aab9-872b32b50d8e"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "31b5b9ab-dbb9-4e9d-aab9-872b32b50d8e",
+            "position": {
+                "x": -0.018637515604496003,
+                "y": -0.000054094940423965454,
+                "z": -0.03133919835090637
+            },
+            "nodeTemplateName": "PushInImapctDirection",
+            "connections": [],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        }
+    ]
+}

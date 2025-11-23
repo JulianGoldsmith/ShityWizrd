@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1675de2f165830e4fb8190ee3222370a, type: 3}
+  m_Name: BigArmGoober_RightSweep
+  m_EditorClassIdentifier: 
+  windUpClip: {fileID: -1903853533451568363, guid: 67496b5798bce9044893c0509c630117, type: 3}
+  holdClip: {fileID: 8171402764322112196, guid: 67496b5798bce9044893c0509c630117, type: 3}
+  releaseClip: {fileID: -2408017366080655815, guid: 67496b5798bce9044893c0509c630117, type: 3}
+  comboPoint: 0
+  holdDuration: 0.2
+  spell: {fileID: 0}
+  bakedJson: "{\n    \"entryPointControllerNodeGuid\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n   
+    \"nodes\": [\n        {\n            \"guid\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n           
+    \"position\": {\n                \"x\": -0.9146854281425476,\n               
+    \"y\": -0.014445573091506958,\n                \"z\": 0.015622973442077637\n           
+    },\n            \"nodeTemplateName\": \"EntryPointControler\",\n            \"connections\":
+    [\n                {\n                    \"fromOutputSocketName\": \"Combo 1\",\n                   
+    \"fromOutputOwnerGUID\": \"e9490911-4ac8-4bae-ba21-6c8030bdab97\",\n                   
+    \"targetNodeGUID\": \"72432f74-6ea2-46f7-afcf-31b32bba4d29\",\n                   
+    \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
+    \"72432f74-6ea2-46f7-afcf-31b32bba4d29\"\n                }\n            ],\n           
+    \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
+    },\n        {\n            \"guid\": \"72432f74-6ea2-46f7-afcf-31b32bba4d29\",\n           
+    \"position\": {\n                \"x\": -0.4473683834075928,\n               
+    \"y\": -0.011429846286773682,\n                \"z\": 0.2784986197948456\n           
+    },\n            \"nodeTemplateName\": \"HitBoxCastNode\",\n            \"connections\":
+    [\n                {\n                    \"fromOutputSocketName\": \"Exec Out\",\n                   
+    \"fromOutputOwnerGUID\": \"72432f74-6ea2-46f7-afcf-31b32bba4d29\",\n                   
+    \"targetNodeGUID\": \"ad9f9847-aa30-4dc6-af51-868e6a83ab1d\",\n                   
+    \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
+    \"ad9f9847-aa30-4dc6-af51-868e6a83ab1d\"\n                }\n            ],\n           
+    \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
+    },\n        {\n            \"guid\": \"ad9f9847-aa30-4dc6-af51-868e6a83ab1d\",\n           
+    \"position\": {\n                \"x\": 0.036928415298461917,\n               
+    \"y\": 0.0002830922603607178,\n                \"z\": 0.275734543800354\n           
+    },\n            \"nodeTemplateName\": \"PushInImapctDirection\",\n           
+    \"connections\": [],\n            \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\":
+    \"\"\n        }\n    ]\n}"
+  spellName: HitBoxForceSpell
+  networkObjectBuffer: {fileID: 0}
+  hitBoxID: 0
+  timeAfterReleaseToActivateHitBox: 0.05
+  hitBoxDuration: 1.5

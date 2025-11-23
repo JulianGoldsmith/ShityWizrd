@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1675de2f165830e4fb8190ee3222370a, type: 3}
+  m_Name: Squidder_Spell_Push
+  m_EditorClassIdentifier: 
+  windUpClip: {fileID: 6406483259926246330, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+  holdClip: {fileID: 5609279948659666501, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+  releaseClip: {fileID: -8636237031439778447, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+  comboPoint: 0
+  holdDuration: 1
+  spell: {fileID: 0}
+  bakedJson: "{\n    \"entryPointControllerNodeGuid\": \"314f315e-b5ea-4dcd-8fc6-35ba10b78582\",\n   
+    \"nodes\": [\n        {\n            \"guid\": \"314f315e-b5ea-4dcd-8fc6-35ba10b78582\",\n           
+    \"position\": {\n                \"x\": -1.2454719543457032,\n               
+    \"y\": 0.0068514347076416019,\n                \"z\": 0.0977933406829834\n           
+    },\n            \"nodeTemplateName\": \"EntryPointControler\",\n            \"connections\":
+    [\n                {\n                    \"fromOutputSocketName\": \"Combo 1\",\n                   
+    \"fromOutputOwnerGUID\": \"314f315e-b5ea-4dcd-8fc6-35ba10b78582\",\n                   
+    \"targetNodeGUID\": \"cb973105-8101-4dfb-ad86-d7c1a31a8ae1\",\n                   
+    \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
+    \"cb973105-8101-4dfb-ad86-d7c1a31a8ae1\"\n                }\n            ],\n           
+    \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
+    },\n        {\n            \"guid\": \"cb973105-8101-4dfb-ad86-d7c1a31a8ae1\",\n           
+    \"position\": {\n                \"x\": -0.3875121772289276,\n               
+    \"y\": 0.035272449254989627,\n                \"z\": 0.29447150230407717\n           
+    },\n            \"nodeTemplateName\": \"ChargeCastNode\",\n            \"connections\":
+    [\n                {\n                    \"fromOutputSocketName\": \"Exec Out\",\n                   
+    \"fromOutputOwnerGUID\": \"cb973105-8101-4dfb-ad86-d7c1a31a8ae1\",\n                   
+    \"targetNodeGUID\": \"0751c142-3693-4785-bfb9-e759c2cd9f0c\",\n                   
+    \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
+    \"0751c142-3693-4785-bfb9-e759c2cd9f0c\"\n                }\n            ],\n           
+    \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
+    },\n        {\n            \"guid\": \"0751c142-3693-4785-bfb9-e759c2cd9f0c\",\n           
+    \"position\": {\n                \"x\": 0.06211003661155701,\n               
+    \"y\": 0.02514532208442688,\n                \"z\": 0.2654423713684082\n           
+    },\n            \"nodeTemplateName\": \"QuickEggCore\",\n            \"connections\":
+    [\n                {\n                    \"fromOutputSocketName\": \"Triggers
+    Out\",\n                    \"fromOutputOwnerGUID\": \"0751c142-3693-4785-bfb9-e759c2cd9f0c\",\n                   
+    \"targetNodeGUID\": \"cc33cf78-6a60-4253-8ab0-b739638dff70\",\n                   
+    \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
+    \"cc33cf78-6a60-4253-8ab0-b739638dff70\"\n                }\n            ],\n           
+    \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
+    },\n        {\n            \"guid\": \"f0fedad9-194f-4c84-b402-a7e0851aa401\",\n           
+    \"position\": {\n                \"x\": 0.2493930459022522,\n               
+    \"y\": -0.005392611026763916,\n                \"z\": -0.4093114137649536\n           
+    },\n            \"nodeTemplateName\": \"InstantPushEffect\",\n            \"connections\":
+    [],\n            \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\":
+    \"\"\n        },\n        {\n            \"guid\": \"6c3746ce-3b5f-46c1-b625-0b0569845ff4\",\n           
+    \"position\": {\n                \"x\": -0.37323421239852908,\n               
+    \"y\": -0.006209850311279297,\n                \"z\": -0.6558937430381775\n           
+    },\n            \"nodeTemplateName\": \"Expand\",\n            \"connections\":
+    [\n                {\n                    \"fromOutputSocketName\": \"Value Out\",\n                   
+    \"fromOutputOwnerGUID\": \"6c3746ce-3b5f-46c1-b625-0b0569845ff4\",\n                   
+    \"targetNodeGUID\": \"cc33cf78-6a60-4253-8ab0-b739638dff70\",\n                   
+    \"toInputSocketName\": \"size\",\n                    \"toInputOwnerGUID\": \"cc33cf78-6a60-4253-8ab0-b739638dff70\"\n               
+    }\n            ],\n            \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\":
+    \"\"\n        },\n        {\n            \"guid\": \"cc33cf78-6a60-4253-8ab0-b739638dff70\",\n           
+    \"position\": {\n                \"x\": -0.21928390860557557,\n               
+    \"y\": 0.0009884759783744813,\n                \"z\": -0.06393279135227204\n           
+    },\n            \"nodeTemplateName\": \"OverlapSphereOnceNode\",\n           
+    \"connections\": [\n                {\n                    \"fromOutputSocketName\":
+    \"On Event\",\n                    \"fromOutputOwnerGUID\": \"cc33cf78-6a60-4253-8ab0-b739638dff70\",\n                   
+    \"targetNodeGUID\": \"f0fedad9-194f-4c84-b402-a7e0851aa401\",\n                   
+    \"toInputSocketName\": \"Exec In\",\n                    \"toInputOwnerGUID\":
+    \"f0fedad9-194f-4c84-b402-a7e0851aa401\"\n                }\n            ],\n           
+    \"childNodeGUIDs\": [],\n            \"sourceTemplateNodeGuid\": \"\"\n       
+    }\n    ]\n}"
+  spellName: InstantPushEgg
+  networkObjectBuffer: {fileID: 0}

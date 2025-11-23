@@ -27,7 +27,7 @@ public class NetworkedHandsController : NetworkBehaviour
 
         public Transform targetFORFinalArmature; //the target the finalArmature aims for
 
-        public Transform shoulderTransform; //the shoulder
+        public Transform shoulderTransform; //the shoulder can be used as the point for reciprical force
 
         public Transform palmTransform;
 
@@ -56,7 +56,7 @@ public class NetworkedHandsController : NetworkBehaviour
         [HideInInspector] public AnimatorOverrideController overrideController;
 
         public TwoBoneIKConstraint armatureHandIK;
-        [HideInInspector] public Transform casheDefaultHandIKTarget, temporaryArmtureHandTarget;
+        public Transform casheDefaultHandIKTarget, temporaryArmtureHandTarget;
         public void InitHand( bool isL, HybridCharacterController controller, bool hasInputAuth)
         {
 
@@ -68,7 +68,7 @@ public class NetworkedHandsController : NetworkBehaviour
             animator = transformNet.transform.GetComponentInChildren<Animator>();
             overrideController = new AnimatorOverrideController(animator.runtimeAnimatorController);
             animator.runtimeAnimatorController = overrideController;
-            casheDefaultHandIKTarget = armatureHandIK.data.target;
+            //casheDefaultHandIKTarget = armatureHandIK.data.target;
             temporaryArmtureHandTarget = new GameObject($"tmpHandTransform {isLeft}").transform;
             temporaryArmtureHandTarget.parent = transformNet.transform;
 
@@ -98,12 +98,16 @@ public class NetworkedHandsController : NetworkBehaviour
     public Vector3 dragTargetOffset = new Vector3(0, 0, 0.35f);
     [Networked] public float DragDistance { get; set; }
     public Vector3 dragHandModelPosOffset = new Vector3(0, -0.2f, 0);
+    public float maxStableStrengthRatio = 0.5f;
+    public float maxDragStrength = 150f;
 
     public float dragStength = 50, dragDamp = 10, dragRange = 10;
     public AnimationCurve dragStrengthCurve;
     public float dragRotationalStrength = 50;
     public AnimationCurve dragRotationStrengthCurve = AnimationCurve.Linear(0, 0, 1, 1);
-    public AnimationCurve dragPitchToHeightModifierCurve; 
+    public AnimationCurve dragPitchToHeightModifierCurve;
+    public AnimationCurve handElasticForceOnPlayer;
+    public float maxDistanceBeforeMaxElasticForce = 20f;
 
     [Header("Cashe Values")]
     public HybridCharacterController characterController;
@@ -849,15 +853,22 @@ public class NetworkedHandsController : NetworkBehaviour
 
         if (isReach)
         {
-            Vector3 reachDir = (hand.transformNet.transform.position-hand.shoulderTransform.position).normalized;
+            Vector3 handPos = (hand.shouldUpdateInLateUpdate ? hand.transformLocal.transform.position : hand.transformNet.transform.position);
+            Vector3 reachDir = (handPos - hand.shoulderTransform.position).normalized;
           
             TargetingMode tM = isLeft? LeftHandMode: RightHandMode;
             reachDir *= hand.armLength * ((tM == TargetingMode.DRAGG) ? 0.85f : 1.2f);
+            hand.casheDefaultHandIKTarget.transform.parent = hand.shoulderTransform;
             hand.casheDefaultHandIKTarget.position = hand.shoulderTransform.position + reachDir;
             hand.casheDefaultHandIKTarget.rotation = Quaternion.LookRotation(reachDir, Vector3.up) * Quaternion.Euler(pickUpWristRotOffset);
+            if (!isLeft)
+            {
+                Debug.Log($"player is reaching = {isReach}");
+            }
         }
         else 
         {
+            hand.casheDefaultHandIKTarget.transform.parent = hand.shouldUpdateInLateUpdate ? hand.transformLocal.transform : hand.transformNet.transform;
             hand.casheDefaultHandIKTarget.localPosition = Vector3.zero;
             hand.casheDefaultHandIKTarget.localRotation = Quaternion.identity;
         }

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
+[DefaultExecutionOrder(+10)]
 public class ArmatureRetargeter : MonoBehaviour
 {
     [Tooltip("Root transform of the armature that has the source animations (animationToTargetArmature).")]
@@ -10,18 +11,28 @@ public class ArmatureRetargeter : MonoBehaviour
     [Tooltip("list of bones to be retargeted. Populated by the 'Map Bones by Name' context menu")]
     public List<RetargetedBone> retargetedBones = new List<RetargetedBone>();
 
-    /// <summary>
-    /// Holds the references for a single bone in the retargeting chain.
-    /// </summary>
+    public Vector3 animatedHipRootMotion = Vector3.zero;
+    public Quaternion animatedHipRotation = Quaternion.identity;
+
+    public bool disableRetargetingToProxys = false;
+
+    public float lerpTProxy = 0; // value of lerp from "target" to "prxy"
+
+
     [System.Serializable]
     public class RetargetedBone
     {
-
         public Transform sourceBone;
 
         public Transform targetBone;
 
         public Transform physicsProxy;
+
+        public bool enabled = true;
+
+        public bool ragDollBone = false;
+
+        public bool injectAnimatedHipsRootMotion = false;
     }
 
     [ContextMenu("Map Bones by Name")]
@@ -69,6 +80,11 @@ public class ArmatureRetargeter : MonoBehaviour
         }
     }
 
+    public void SetRagdollBlend(float blendToProxy)
+    {
+        lerpTProxy = Mathf.Clamp01(blendToProxy);
+    }
+
     void LateUpdate()
     {
         if (retargetedBones == null || retargetedBones.Count == 0)
@@ -77,7 +93,7 @@ public class ArmatureRetargeter : MonoBehaviour
         }
 
         var rootBone = retargetedBones[0];
-        if (rootBone.physicsProxy != null)
+        if (rootBone.physicsProxy != null && !disableRetargetingToProxys)
         {
             rootBone.targetBone.SetPositionAndRotation(rootBone.physicsProxy.position, rootBone.physicsProxy.rotation);
         }
@@ -88,18 +104,65 @@ public class ArmatureRetargeter : MonoBehaviour
 
         for (int i = 1; i < retargetedBones.Count; i++)
         {
+
             var bone = retargetedBones[i];
 
-            if (bone.physicsProxy != null)
-            {
+            if (!bone.enabled) continue;
 
-                bone.targetBone.SetPositionAndRotation(bone.physicsProxy.position, bone.physicsProxy.rotation);
-            }
-            else if (bone.sourceBone != null)
+            if (bone.ragDollBone)
             {
-  
-                bone.targetBone.SetLocalPositionAndRotation(bone.sourceBone.localPosition, bone.sourceBone.localRotation);
+                if (bone.physicsProxy != null && !disableRetargetingToProxys)
+                {
+                    Vector3 sourcePos = bone.sourceBone.position;
+                    Quaternion sourceRot = bone.sourceBone.rotation;
+                    Vector3 proxyPos = bone.physicsProxy.position;
+                    Quaternion proxyRot = bone.physicsProxy.rotation;
+
+                    Vector3 targetPos = Vector3.Lerp(sourcePos, proxyPos, lerpTProxy);
+                    Quaternion targetRot = Quaternion.Slerp(sourceRot, proxyRot, lerpTProxy);
+
+                    bone.targetBone.SetPositionAndRotation(targetPos, targetRot);
+                }
+                else
+                {
+                    bone.targetBone.SetLocalPositionAndRotation(bone.sourceBone.localPosition, bone.sourceBone.localRotation);
+                }
             }
+            else
+            {
+                if (bone.physicsProxy != null && !disableRetargetingToProxys)
+                {
+                    bone.targetBone.SetPositionAndRotation(bone.physicsProxy.position, bone.physicsProxy.rotation);
+                }
+                else
+                {
+                    bone.targetBone.SetLocalPositionAndRotation(bone.sourceBone.localPosition, bone.sourceBone.localRotation);
+                }
+            }
+
+            //Vector3 targetPos = Vector3.zero;
+            //Quaternion targetRot = Quaternion.identity;
+            //if (bone.physicsProxy != null && !disableRetargetingToProxys)
+            //{
+            //    targetPos = bone.physicsProxy.position;
+            //    targetRot= bone.physicsProxy.rotation;
+            //    bone.targetBone.SetPositionAndRotation(targetPos, targetRot);
+
+
+
+            //}
+            //else if (bone.sourceBone != null)
+            //{
+            //    targetPos = bone.sourceBone.localPosition;
+            //    targetRot = bone.sourceBone.localRotation;
+            //    bone.targetBone.SetLocalPositionAndRotation(targetPos, targetRot);
+            //}
+
+            if (bone.injectAnimatedHipsRootMotion)
+            {
+                bone.targetBone.position += animatedHipRootMotion;
+            }
+            
         }
     }
 }

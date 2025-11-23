@@ -32,7 +32,7 @@ public class SpellTriggerInfo
     public SpellTriggerInfo(bool isCast, GameObject source, SpellState state, Vector3 position, Quaternion rotation, Vector3 tiggerVector, GameObject hitObject = null)
     {
         IsCast = isCast;
-        Source = Source;
+        Source = source;
         State = state;
         HasOverridePosition = true;
         TriggerPoint = position;

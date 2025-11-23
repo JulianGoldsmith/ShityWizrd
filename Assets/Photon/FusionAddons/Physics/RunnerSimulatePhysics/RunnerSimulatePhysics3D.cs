@@ -61,7 +61,7 @@ namespace Fusion.Addons.Physics {
     protected override void SimulatePrimaryScene(float deltaTime) {
       if (Runner.SceneManager.TryGetPhysicsScene3D(out var physicsScene)) {
         if (physicsScene.IsValid()) {
-          physicsScene.Simulate(deltaTime);
+          physicsScene.Simulate(deltaTime); 
         } else {
           UnityEngine.Physics.Simulate(deltaTime);
         }

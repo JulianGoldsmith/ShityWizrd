@@ -46,4 +46,14 @@ public class EnemyCastActionController : CastActionController
             return transform.position + transform.forward * 10f;
         }
     }
+
+    public override void ActivateHitbox(int hitBoxID, SpellState state)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void DeactivateHitbox(int hitBoxID)
+    {
+        throw new System.NotImplementedException();
+    }
 }

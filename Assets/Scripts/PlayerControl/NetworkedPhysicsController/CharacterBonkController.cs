@@ -4,50 +4,57 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
+using static NetworkedRagDoll;
 
-
+[DefaultExecutionOrder(100)]
 public class CharacterBonkController : NetworkBehaviour
 {
     [HideInInspector] public HybridCharacterController characterController;
+    public List<StretchyArmIK> armIKs;
 
-    [Networked, OnChangedRender(nameof(OnBonkedStateChanged))] public BONKEDSTATE BonkedState { get; set; }
+    [Networked] public BONKEDSTATE BonkedState { get; set; }
+    public bool bonkChangedThisUpdate = false;
     [HideInInspector] int _swapAtTick = -1;
-    [HideInInspector] bool wasKinematic;
+    public GameObject ragdollProxysRoot;
 
-    public Transform ragDollHips;
-    public GameObject ragDoll;
-    public NetworkedRagDoll ragDollController;
-    public Rig aliveRig, bonkedRig;
+    public ChangeDetector _changeDetector;
 
-    [Header("Skeletons")]
-    public Transform animatedSkeletonRoot;
-    public Transform ragdollSkeletonRoot;
-
-    [Header("Renderers to Rebind")]
-    public List<SkinnedMeshRenderer> clothingRenderers;
-
-    private Dictionary<SkinnedMeshRenderer, Transform[]> animatedBoneMap;
-    private Dictionary<SkinnedMeshRenderer, Transform[]> ragdollBoneMap;
 
     public override void Spawned()
     {
-        BuildBoneMaps();
-
+        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         characterController = this.GetComponent<HybridCharacterController>();
-        ragDollController = transform.GetComponent<NetworkedRagDoll>();
+
         if (BonkedState == BONKEDSTATE.ALIVE)
         {
-            ragDollController.DeactivateRagDoll();
+            //DeActivateConfigurableJoint()
+            DeactivateRagDoll();
         }
         else
         {
-            ragDollController.ActivateRagDoll();
+            ActivateRagDoll();
+        }
+
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        bonkChangedThisUpdate = false;
+        foreach (var change in _changeDetector.DetectChanges(this))
+        {
+            switch (change)
+            {
+                case nameof(BonkedState):
+                    bonkChangedThisUpdate = true;
+                    OnBonkedStateChangedFixed();
+                    break;
+            }
         }
     }
 
-    public void OnBonkedStateChanged()
+    public void OnBonkedStateChangedFixed()
     {
-        if (HasStateAuthority) return;
+        //if (HasStateAuthority) return;
 
         if (BonkedState == BONKEDSTATE.BONKED)
         {
@@ -57,59 +64,51 @@ public class CharacterBonkController : NetworkBehaviour
         {
             GetUnBonked();
         }
+        bonkChangedThisUpdate = true;
     }
 
     public void GetBonked()
     {
-
-        Debug.Log("Ran got bonked");
-        ragDollController.ActivateRagDoll();
-
-        foreach (PdBone headAndTorso in characterController.pdBones)
-        {
-            var rb3d = headAndTorso.childRigidbody.transform.GetComponent<NetworkRigidbody3D>();
-            //headAndTorso.wasKinematicOnDisable = rb3d.RBIsKinematic;
-            rb3d.RBIsKinematic = true;
-            rb3d.GetComponent<Collider>().enabled = false;
-        }
-        var hipsNRB = characterController.hipsRb.GetComponent<NetworkRigidbody3D>();
-        wasKinematic = hipsNRB.RBIsKinematic;
-        hipsNRB.RBIsKinematic = true;
-        hipsNRB.GetComponent<Collider>().enabled = false;
-
         if (HasStateAuthority)
         {
             BonkedState = BONKEDSTATE.BONKED;
         }
         _swapAtTick = Runner.Tick + 1;
 
-        characterController.handController.DisableHands();
-
+       
+        if (characterController != null) //character 
+        {
+            ActivateRagDoll();
+            foreach (StretchyArmIK ik in armIKs)
+            {
+                ik.enabled = false;
+            }
+            characterController.handController.DisableHands();
+            characterController.armatureRetargetingLerp = 1;
+  
+        }
     }
 
     public void GetUnBonked()
     {
-        ragDollController.DeactivateRagDoll();
+        //ragDollController.DeactivateRagDoll();
         if (HasStateAuthority)
         {
             BonkedState = BONKEDSTATE.ALIVE;
         }
         _swapAtTick = Runner.Tick + 1;
 
-
-        foreach (PdBone headAndTorso in characterController.pdBones)
+        
+        if (characterController != null) //character 
         {
-            var rb3d = headAndTorso.childRigidbody.transform.GetComponent<NetworkRigidbody3D>();
-            rb3d.RBIsKinematic = false;
-            rb3d.GetComponent<Collider>().enabled = true;
-
+            DeactivateRagDoll();
+            foreach (StretchyArmIK ik in armIKs)
+            {
+                ik.enabled = true;
+            }
+            characterController.armatureRetargetingLerp = 0;
+            characterController.handController.EnableHands();
         }
-        var hipsNRB = characterController.hipsRb.GetComponent<NetworkRigidbody3D>();
-        hipsNRB.RBIsKinematic = false;
-        hipsNRB.GetComponent<Collider>().enabled = true;
-
-
-        characterController.handController.EnableHands();
     }
 
     public override void Render()
@@ -120,82 +119,83 @@ public class CharacterBonkController : NetworkBehaviour
             bool showRagdoll = (BonkedState == BONKEDSTATE.BONKED);
 
 
-            if (showRagdoll)
-            {
-                SwitchToRagdoll();
-            }
-            else
-            {
-                SwitchToAnimated();
-            }
-            //characterController.modelRenderer.enabled = HasInputAuthority ? false : !showRagdoll;
-            //characterController.ragDollRenderer.enabled = showRagdoll;
+            //if (showRagdoll)
+            //{
+            //    characterController.armatureRetargetingLerp = 1;
+            //}
+            //else
+            //{
+            //   characterController.armatureRetargetingLerp = 0;
+            //}
+
         }
     }
 
 
 
-    public void SwitchToRagdoll()
+    public void ActivateRagDoll()
     {
-        characterController.modelRenderer.enabled = false;
-        characterController.ragDollRenderer.enabled = true;
 
-        foreach (var renderer in clothingRenderers)
+        if (characterController != null)
         {
-            if (ragdollBoneMap.ContainsKey(renderer))
+            //ragdollProxysRoot.SetActive(true);
+            foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
             {
-                renderer.bones = ragdollBoneMap[renderer];
-                renderer.rootBone = ragdollSkeletonRoot;
+                var nrb = joint.rb3d;
+                if (nrb == null) continue;
+                var rb = nrb.Rigidbody;
+                if (rb == null) continue;
+
+                var col = rb.GetComponent<Collider>();
+                if (col) col.enabled = true;
+
+                nrb.RBIsKinematic = false;
+                if (nrb.Object.HasStateAuthority)
+                    nrb.ResetRigidbody();
+
+                joint.AddForcesAndApplyPhycis(HasStateAuthority);
             }
         }
+       
+        //ragdollProxysRoot.SetActive(true);
+    }
+
+    public void DeactivateRagDoll()
+    {
+        if(characterController != null) { 
+            foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
+            {
+                var nrb = joint.rb3d;
+                if (nrb == null) continue;
+                var rb = nrb.Rigidbody;
+                if (rb == null) continue;
+
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+
+                nrb.RBIsKinematic = true;
+
+                var col = rb.GetComponent<Collider>();
+                if (col) col.enabled = false;
+
+                if (nrb.Object.HasStateAuthority)
+                    nrb.ResetRigidbody();
+
+                joint.SleepBone(HasStateAuthority);
+            }
+        }
+        //ragdollProxysRoot.SetActive(false);
+    }
+
+    public void SwitchToRagdoll()
+    {
+
     }
 
     // Call this from your 'GetUnBonked' method
     public void SwitchToAnimated()
     {
-        characterController.modelRenderer.enabled = HasInputAuthority ? false : true;
-        characterController.ragDollRenderer.enabled = false;
-        foreach (var renderer in clothingRenderers)
-        {
-            if (animatedBoneMap.ContainsKey(renderer))
-            {
-                renderer.bones = animatedBoneMap[renderer];
-                renderer.rootBone = animatedSkeletonRoot;
-            }
-        }
+       
     }
 
-    private void BuildBoneMaps()
-    {
-        animatedBoneMap = new Dictionary<SkinnedMeshRenderer, Transform[]>();
-        ragdollBoneMap = new Dictionary<SkinnedMeshRenderer, Transform[]>();
-
-        var animatedBones = animatedSkeletonRoot.GetComponentsInChildren<Transform>().ToDictionary(b => b.name);
-        var ragdollBones = ragdollSkeletonRoot.GetComponentsInChildren<Transform>().ToDictionary(b => b.name);
-
-        foreach (var renderer in clothingRenderers)
-        {
-            var animBones = new Transform[renderer.bones.Length];
-            var ragBones = new Transform[renderer.bones.Length];
-
-            for (int i = 0; i < renderer.bones.Length; i++)
-            {
-                string boneName = renderer.bones[i].name;
-
-                // Find the matching bone in both skeletons
-                if (animatedBones.TryGetValue(boneName, out var animBone))
-                {
-                    animBones[i] = animBone;
-                }
-                if (ragdollBones.TryGetValue(boneName, out var ragdollBone))
-                {
-                    ragBones[i] = ragdollBone;
-                }
-            }
-
-            // Store the pre-calculated arrays in our dictionaries
-            animatedBoneMap[renderer] = animBones;
-            ragdollBoneMap[renderer] = ragBones;
-        }
-    }
 }

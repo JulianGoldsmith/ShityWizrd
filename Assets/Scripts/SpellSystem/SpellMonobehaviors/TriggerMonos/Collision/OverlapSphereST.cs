@@ -14,6 +14,9 @@ public class OverlapSphereST : SpellTrigger
 
     public float size = 1.0f;
     Collider[] non_alloc_colliders = new Collider[MAX_TARGETS];
+    List<Collider> colliders_already_applied_To = new List<Collider>();
+
+    public bool singleTrigger = false;
         
     public override void OnTick()
     {
@@ -42,11 +45,18 @@ public class OverlapSphereST : SpellTrigger
 
         for (int i = 0; i < hit; ++i)
         {
-            HandleOverlap(
-                non_alloc_colliders[i].gameObject,
-                transform.position,
-                (transform.position - non_alloc_colliders[i].transform.position).normalized
-            );
+            
+            bool shouldHanldeCollision = singleTrigger? !colliders_already_applied_To.Contains(non_alloc_colliders[i]) : true;
+            if (shouldHanldeCollision)
+            {
+                colliders_already_applied_To.Add(non_alloc_colliders[i]);
+                HandleOverlap(
+                    non_alloc_colliders[i].gameObject,
+                    transform.position,
+                    (transform.position - non_alloc_colliders[i].transform.position).normalized
+                );
+            }
+            
         }
     }
 

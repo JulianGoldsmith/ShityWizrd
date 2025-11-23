@@ -19,9 +19,17 @@ public class HybridCharacterController : NetworkBehaviour
     public Rigidbody hipsRb;
     public Vector3 hipsOffset;
     public List<NetworkRigidbody3D> networkRigidbody3Ds = new List<NetworkRigidbody3D>();
+    public List<NetworkRigidbody3D> networkRagdollRigidbody3Ds = new List<NetworkRigidbody3D>();
+    public float totalMass;
+
+    [Header("Armature Retargeter LErp")]
+    public float strenght = 1f;
+    public float armatureRetargetingLerp = 0;
+    public bool retargetRagDoll = false;
+    public ArmatureRetargeter armatureRetargeter;
 
     [Header("Grounded Settings")]
-    public float groundCheckDistance = 1f;
+    public float groundCheckExtraDistance = 1f;
     public LayerMask groundLayer;
     [Networked] public bool IsGrounded { get; set; }
 
@@ -30,6 +38,7 @@ public class HybridCharacterController : NetworkBehaviour
     public float rideSpringStrength = 100f; // How stiff the suspension spring is
     public float rideSpringDamper = 10f; // How much the spring is damped to prevent bouncing
     public float suspensionCastRadius = 0.25f; // The radius of the spherecast
+
 
     [Header("Movement Settings")]
     public float maxWalkSpeed = 3f, maxSprintSpeed = 5f;
@@ -47,13 +56,19 @@ public class HybridCharacterController : NetworkBehaviour
     public BoneMapper boneMapper;
     public Transform spineIKTarget;
     public Vector3 headOffset;
+    public Transform armatureHipsRoot;
+    private Vector3 armatureHipsStartOffset;
+    public ArmatureRetargeter retargeter;
 
     [Header("PD armature")]
     public List<PDSpring> pDSprings = new List<PDSpring>();
+     //this is a new list of "ghost rigidbodies" used only when in ragdoll mode or near
+
     [Networked] Quaternion initialTorsoRot { get; set; }
     [Networked] Quaternion initialHeadRot { get; set; }
 
     public List<PdBone> pdBones = new List<PdBone>();
+    public List<PdBone> ragDollBones = new List<PdBone>();
 
     private float pdDesignDt  = 1f / 64f;
 
@@ -109,6 +124,9 @@ public class HybridCharacterController : NetworkBehaviour
     [Header("Disable/Enable CC")]
     private int disableCC = -1; // -1 = enabled - > 0 = disabled for X ticks.
 
+    public XpbdConstraintSolver xpbdSolver;
+
+
     public override void Spawned()
     {
         _lastVisibleJump = _jumpCount;
@@ -136,19 +154,7 @@ public class HybridCharacterController : NetworkBehaviour
             }
         }
 
-        boneMapper.Spawn(false, targetAnimator.transform, finalAnimator.transform);
-
-        //for (int i = 0; i < pDSprings.Count; i++)
-        //{
-        //    var spring = pDSprings[i];
-        //    spring.Init(hipsRb.transform, HasInputAuthority);
-        //}
-        //if (HasStateAuthority)
-        //{
-        //    initialTorsoRot = pDSprings[1].startJointRotation;
-        //    initialHeadRot = pDSprings[0].startJointRotation;
-        //}
-
+   
 
         //hands
         handController.Spawn(networkedRenderRoot, HasInputAuthority);
@@ -162,6 +168,7 @@ public class HybridCharacterController : NetworkBehaviour
         this.cameraAnchorTransform.parent = null;
 
         bonkController = this.GetComponent<CharacterBonkController>();
+      //  Debug.Log($"Bonk controller loaded {bonkController != null}");
 
         hipsRb.maxDepenetrationVelocity = 10f;
         hipsRb.maxAngularVelocity = 20f;
@@ -171,10 +178,16 @@ public class HybridCharacterController : NetworkBehaviour
         foreach (NetworkRigidbody3D nrb in networkRigidbody3Ds)
         {
             Runner.SetIsSimulated(nrb.Object, true);
-
-           // NetworkTRSP nt = nrb.Object.GetComponent<NetworkTRSP>();
-
+            totalMass += nrb.Rigidbody.mass;
         }
+        foreach (NetworkRigidbody3D nrb in networkRagdollRigidbody3Ds)
+        {
+            Runner.SetIsSimulated(nrb.Object, true);
+        }
+
+        armatureHipsStartOffset = new Vector3(armatureHipsRoot.transform.localPosition.x,
+                armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z);
+
     }
 
 
@@ -216,7 +229,7 @@ public class HybridCharacterController : NetworkBehaviour
 
         if (disableCC > 0)
         {
-            disableCC--; // Count down the timer
+            disableCC--; 
             return;      // Skip ALL simulation logic for this tick
         }
 
@@ -240,41 +253,45 @@ public class HybridCharacterController : NetworkBehaviour
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
             {
                 if (bonkController.BonkedState != BONKEDSTATE.BONKED)
-                    GetBonked(); //animation is applied in Render -> Update Animations()
+                {
+                    if (TryGetComponent<PlayerPhysicsObject>(out PlayerPhysicsObject PPO))
+                    {
+                        //GetBonked();
+                        PPO.current_bonkedness = -50f;
+                    }
+                }
+                    //GetBonked(); //animation is applied in Render -> Update Animations()
             }
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.UN_SELF_BONK))
             {
-                GetUnBonked(); //animation is applied in Render -> Update Animations()
+                if (TryGetComponent<PlayerPhysicsObject>(out PlayerPhysicsObject PPO))
+                {
+                    PPO.current_bonkedness = 100f;
+                }
+                //GetUnBonked(); //animation is applied in Render -> Update Animations()
             }
             _lastButtonsInput = data.buttons;
         }
 
 
-        //changed
-        if (bonkController.BonkedState == BONKEDSTATE.BONKED) return;
+       
+        if (bonkController.BonkedState != BONKEDSTATE.BONKED)
+        {
+            UpdateAnimatorPos(true);
 
-        UpdateAnimatorPos(true);
+            ApplyUprightTorque();
 
-        ApplyUprightTorque();
+            ApplyLookRotation();
 
-        // 1) look torque
-        ApplyLookRotation();
+            UpdateHips();
+            
+            ApplyHipsMovement();
 
-
-        // 2) suspension
-        UpdateHips();
-
-
-        // 3) planar movement PD
-        ApplyHipsMovement();
-
-        // 5) anything past here
-        UpdateSpineIK();
-
-
-        // 4) PD springs (joints)
-        UpdateTorsoAndHead();
+            UpdateSpineIK();
+        }
+        if(!bonkController.bonkChangedThisUpdate)
+            UpdateTorsoAndHead();
 
       
 
@@ -288,6 +305,8 @@ public class HybridCharacterController : NetworkBehaviour
             Acceleration = Vector3.zero;
         }
         previousVelocity = hipsRb.linearVelocity;
+
+        UpdateJointSolver();
 
     }
 
@@ -306,6 +325,8 @@ public class HybridCharacterController : NetworkBehaviour
 
     }
 
+  
+
     private void UpdateCameraAnchor()
     {
         //if (!cameraAnchorTransform || !networkedRenderRoot) return;
@@ -316,15 +337,11 @@ public class HybridCharacterController : NetworkBehaviour
 
         if (HasInputAuthority)
         {
-            // For the local player, the networkedRenderRoot is jittery due to prediction/reconciliation.
-            // We MUST smoothly Lerp the camera anchor towards it to hide the jitter.
             cameraAnchorTransform.position = Vector3.Lerp(cameraAnchorTransform.position, targetPos, dt * cameraAnchorSmoothSpeed);
             cameraAnchorTransform.rotation = Quaternion.Slerp(cameraAnchorTransform.rotation, targetRot, dt * cameraAnchorSmoothSpeed);
         }
         else
         {
-            // For remote players, the networkedRenderRoot is already interpolated by Fusion.
-            // We can just snap the anchor directly to it.
             cameraAnchorTransform.position = targetPos;
             cameraAnchorTransform.rotation = targetRot;
         }
@@ -373,19 +390,29 @@ public class HybridCharacterController : NetworkBehaviour
         targetAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
 
         //animationController.UpdateSpineIkTarget(lookRot);
-        finalAnimator.SetFloat("forwardSpeed", localVel.z / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
-        finalAnimator.SetFloat("rightSpeed", localVel.x / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
-        finalAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
+        //finalAnimator.SetFloat("forwardSpeed", localVel.z / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
+        //finalAnimator.SetFloat("rightSpeed", localVel.x / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
+        //finalAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
 
         //Jumping 
         targetAnimator.SetBool("IsGrounded", IsGrounded);
-        finalAnimator.SetBool("IsGrounded", IsGrounded);
+        //finalAnimator.SetBool("IsGrounded", IsGrounded);
         if (_jumpCount > _lastVisibleJump)
         {
             targetAnimator.SetTrigger("Jump");
-            finalAnimator.SetTrigger("Jump");
+            //finalAnimator.SetTrigger("Jump");
             _lastVisibleJump = _jumpCount;
         }
+
+        if (retargeter != null)
+        {
+            retargeter.animatedHipRootMotion = (new Vector3(armatureHipsRoot.transform.localPosition.x,
+                armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z) - armatureHipsStartOffset) * 0.01f;
+            retargeter.animatedHipRotation = armatureHipsRoot.transform.localRotation;
+        }
+
+        armatureRetargeter.SetRagdollBlend(armatureRetargetingLerp);
+        
     }
 
     void UpdateAnimatorPos(bool inFixedUpdate)
@@ -402,6 +429,7 @@ public class HybridCharacterController : NetworkBehaviour
 
             targetPos = hipsRb.transform.position + hipsOffset;
             targetRot = hipsRb.transform.rotation;
+            //hipsRootMotionYDetla = armatureHipsRoot.localPosition.z / 100f; // i think this will use z as up from blender
         }
 
 
@@ -414,9 +442,10 @@ public class HybridCharacterController : NetworkBehaviour
             Debug.Log($"<color=red> CRITIAL target RENDERER ROT is INFINATE IN UPDATE ANIMATOR? ");
         }
 
-        targetAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + hipsOffset; ;
+        targetAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + hipsOffset; 
         targetAnimator.gameObject.transform.rotation = smoothedNetworkedRenderRoot.transform.rotation;
-        finalAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + hipsOffset; 
+        finalAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + ((new Vector3(armatureHipsRoot.transform.localPosition.x,
+                armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z)) /100); 
         finalAnimator.gameObject.transform.rotation = smoothedNetworkedRenderRoot.transform.rotation;
     }
 
@@ -609,15 +638,20 @@ public class HybridCharacterController : NetworkBehaviour
     {
         // IsGrounded = Physics.Raycast(hipsRb.transform.position, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
 
-        Vector3 castOrigin = hipsRb.transform.position;
-        IsGrounded = Physics.SphereCast(castOrigin, suspensionCastRadius, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
-        Debug.DrawRay(hipsRb.transform.position, Vector3.down * groundCheckDistance, Color.aliceBlue);
+        Vector3 castOrigin = hipsRb.worldCenterOfMass;
+
+        float distanceToCast = rideHeight + suspensionCastRadius + groundCheckExtraDistance;
+
+        //Debug.DrawRay(castOrigin, Vector3.down* distanceToCast, Color.red);
+
+        IsGrounded = Physics.SphereCast(castOrigin, suspensionCastRadius, Vector3.down, out RaycastHit hitInfo, distanceToCast, groundLayer);
+        Debug.DrawRay(castOrigin, Vector3.down * distanceToCast, Color.aliceBlue);
 
         if (IsGrounded)
         {
             float currentDistance = hitInfo.distance;
 
-            float heightError = rideHeight - currentDistance;
+            float heightError = (rideHeight) - currentDistance;
 
             float springForce = heightError * rideSpringStrength;
 
@@ -685,7 +719,7 @@ public class HybridCharacterController : NetworkBehaviour
 
         Vector3 velocityError = targetVelocity - currentVelocity;
 
-        float forceMagnitude = _moveInput.sqrMagnitude > 0.01f ? acceleration : braking;
+        float forceMagnitude = _moveInput.sqrMagnitude > 0.01f ? acceleration : IsGrounded?braking: braking/20f;
         Vector3 correctiveForce = velocityError * forceMagnitude;
 
         if (!IsFinite(correctiveForce))
@@ -701,24 +735,37 @@ public class HybridCharacterController : NetworkBehaviour
 
     private void UpdateTorsoAndHead()
     {
-        //float dt = Mathf.Max((float)Runner.DeltaTime, 1e-4f);
-        //for (int i = 0; i < pDSprings.Count; i++)
+        //float dt = (float)Runner.DeltaTime;
+        //int jointIterations = 1; 
+
+        //for (int iteration = 0; iteration < jointIterations; iteration++)
         //{
-        //    var spring = pDSprings[i];
-        //    spring.UpdateBoneDrive(dt, pdDesignDt, i == 1 ? initialTorsoRot : initialHeadRot);
+        //    float subStep = dt / jointIterations;
+
+        //    if (retargetRagDoll || bonkController.BonkedState == BONKEDSTATE.BONKED)
+        //    {
+        //        for (int i = 0; i < pdBones.Count; i++)
+        //            pdBones[i].Step(subStep, 0, 1f);
+        //        for (int i = 0; i < ragDollBones.Count; i++)
+        //            ragDollBones[i].Step(subStep, 0, 1f);
+        //    }
+        //    else
+        //    {
+        //        for (int i = 0; i < pdBones.Count; i++)
+        //            pdBones[i].Step(subStep, strenght, 1f);
+        //    }
         //}
+    }
 
-        float deltaTime = Mathf.Max((float)Runner.DeltaTime, 1e-4f);
+    private void UpdateJointSolver()
+    {
 
-        // Ensure physics bodies use interpolation = None and matching solver iterations elsewhere.
-
-        for (int i = 0; i < pdBones.Count; i++)
-        {
-            var bone = pdBones[i];
-            bone.designDeltaTime = pdDesignDt; // same reference dt across the rig
-            bone.Step(Runner.DeltaTime);
-        }
-
+        if (xpbdSolver == null) return;
+        
+        float dt = Runner.DeltaTime;
+        xpbdSolver.ApplyRotationalPD(bonkController.BonkedState == BONKEDSTATE.ALIVE? strenght: 0f, dt);
+        xpbdSolver.Solve(dt, bonkController.BonkedState != BONKEDSTATE.ALIVE);
+       // xpbdSolver.ApplyAnchorTorqueFromLambda(1, dt);
     }
 
     public Quaternion GetLookRot()
@@ -765,9 +812,9 @@ public class HybridCharacterController : NetworkBehaviour
 
         foreach(NetworkRigidbody3D nrb in networkRigidbody3Ds)
         {
-            hipsNRB.Teleport(targetPos, rotation);
-            hipsNRB.Rigidbody.linearVelocity = Vector3.zero;
-            hipsNRB.Rigidbody.angularVelocity = Vector3.zero;
+            nrb.Teleport(targetPos, rotation);
+            nrb.ResetRigidbody();
+            Debug.Log($"Teleported {nrb.name}");
         }
 
         //foreach (var spring in pDSprings)
@@ -799,6 +846,10 @@ public class HybridCharacterController : NetworkBehaviour
     public void DisableCCFor(int ticks)
     {
         disableCC = ticks;
+        foreach(NetworkRigidbody3D n in networkRigidbody3Ds)
+        {
+            n.ResetRigidbody();
+        }
     }
 
     public static bool IsFinite(Quaternion q) => float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
@@ -829,7 +880,27 @@ public class HybridCharacterController : NetworkBehaviour
         Debug.LogWarning($"[RB] {where} scale={scl} inertia={it} inertiaRot={itR} CCD={hipsRb.collisionDetectionMode}");
     }
 
-    [ContextMenu("PD Ragdoll/Bake Anchors • Use Each Target Transform")]
+    private void OnDrawGizmosSelected()
+    {
+        if (pdBones == null) return;
+
+        foreach (var b in pdBones)
+        {
+            if (b != null)
+            {
+                b.DrawAngularLimitGizmos();
+            }
+        }
+        foreach (var b in ragDollBones)
+        {
+            if (b != null)
+            {
+                b.DrawAngularLimitGizmos();
+            }
+        }
+    }
+
+    [ContextMenu("PD Ragdoll/Bake Anchors - Use Each Target Transform")]
     private void ContextBakeAnchorsFromTargets()
     {
 
@@ -837,19 +908,36 @@ public class HybridCharacterController : NetworkBehaviour
 
         for (int i = 0; i < pdBones.Count; i++)
         {
-          var bone = pdBones[i];
-          if (bone == null) continue;
-          if (bone.targetTransform == null)
-          {
-            Debug.LogWarning($"PdBone {i}: targetTransform is missing, skipped.");
-            continue;
-          }
-          bone.BakeAnchorsFromWorldPivot(bone.targetTransform.position);
+            var bone = pdBones[i];
+            BakeBone(bone);
+        }
+        for (int i = 0; i < ragDollBones.Count; i++)
+        {
+            var bone = ragDollBones[i];
+            BakeBone(bone);
         }
 
-    Debug.Log("Baked PD anchors from each bone's targetTransform remember to save");
+        Debug.Log("Baked PD anchors from each bone's targetTransform remember to save");
 
     }
+    private void BakeBone(PdBone bone)
+    {
+        if (bone == null) return;
+        if (bone.targetTransform == null)
+        {
+            Debug.LogWarning($"PdBone {bone}: targetTransform is missing, skipped.");
+            return;
+        }
+        bone.BakeAnchorsFromWorldPivot(bone.targetTransform.position);
+        //if (bone.childRigidbody == null)
+        //{
+        //    Debug.LogWarning($"PdBone {bone}: childRigidbody is missing, skipped.");
+        //    return;
+        //}
+        bone.BakeAnchorsFromWorldPivot(bone.childRigidbody.transform.position);
+    }
+
+
 
 }
 
@@ -957,133 +1045,5 @@ public class PDSpring
 }
 
 
-[Serializable]
-public class PdBone
-{
-    [Header("Rigidbodies (child follows parent)")]
-    public Rigidbody childRigidbody;      
-    public Rigidbody parentRigidbody;      
 
-    [Header("Target (LOCAL to parent frame)")]
-    public Transform targetTransform;       
-
-    [Header("Rotation PD")]
-    public float proportionalGainRotation = 400f; 
-    public float derivativeGainRotation = 40f;
-
-    public bool applyEqualAndOppositeTorque = false; 
-
-    public AnimationCurve rotationErrorCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    [Header("Safety clamp")]
-    public float maximumAngleRadians = 45f * Mathf.Deg2Rad; 
-    public float maximumTorqueAcceleration = 2000f;       
-
-    [Header("------------Position-----------------")]
-
-    [Header("Optional Position PD (anchors)")]
-    public bool usePositionDrive = false;
-    public Vector3 parentAnchorLocal = Vector3.zero; 
-    public Vector3 childAnchorLocal = Vector3.zero; 
-    public float proportionalGainPosition = 2000f;
-    public float derivativeGainPosition = 80f;
-
-    public bool applyEqualAndOppositeForce = false;
-
-    [Header("Safety clamp")]
-    public float maximumForceAcceleration = 2000f;              
-
-    [Header("Time step reference")]
-    public float designDeltaTime = 1f / 64f; 
-
-
-    public void Step(float deltaTime)
-    {
-        if (childRigidbody == null || parentRigidbody == null || targetTransform == null)
-            return;
-
-        float safeDeltaTime = Mathf.Max(deltaTime, 1e-4f);
-        float scale = Mathf.Max(designDeltaTime / safeDeltaTime, 0.01f);
-
-        Quaternion parentRotationWorld = parentRigidbody.rotation;
-        Quaternion targetRotationWorld = parentRotationWorld * targetTransform.localRotation;
-
-        Quaternion rotationError = targetRotationWorld * Quaternion.Inverse(childRigidbody.rotation);
-        rotationError.ToAngleAxis(out float angleDegrees, out Vector3 errorAxisWorld);
-
-        if (angleDegrees > 180f) angleDegrees -= 360f;
-        float angleRadians = angleDegrees * Mathf.Deg2Rad;
-
-        if (errorAxisWorld.sqrMagnitude < 1e-8f)
-            errorAxisWorld = Vector3.zero;
-        else
-            errorAxisWorld.Normalize();
-
-        angleRadians = Mathf.Clamp(angleRadians, -maximumAngleRadians, maximumAngleRadians);
-
-        Vector3 angularVelocityErrorWorld = childRigidbody.angularVelocity - parentRigidbody.angularVelocity;
-
-        float proportionalRotationScaled = proportionalGainRotation * scale * scale;
-        float derivativeRotationScaled = derivativeGainRotation * scale;
-
-        float normalizedAngle = Mathf.Clamp01(Mathf.Abs(angleRadians) / Mathf.Max(maximumAngleRadians, 1e-4f));
-        
-        float rotationMult =  rotationErrorCurve.Evaluate(normalizedAngle);
-        
-
-        Vector3 torqueAccelerationWorld = (proportionalRotationScaled * angleRadians) * errorAxisWorld - (derivativeRotationScaled * angularVelocityErrorWorld);
-
-        torqueAccelerationWorld *= rotationMult;
-
-        if (torqueAccelerationWorld.sqrMagnitude > maximumTorqueAcceleration * maximumTorqueAcceleration)
-            torqueAccelerationWorld = torqueAccelerationWorld.normalized * maximumTorqueAcceleration;
-
-        childRigidbody.AddTorque(torqueAccelerationWorld, ForceMode.Acceleration);
-        if (applyEqualAndOppositeTorque)
-        {
-            parentRigidbody.AddTorque(-torqueAccelerationWorld, ForceMode.Acceleration);
-        }
-        //parentRigidbody.AddTorque(-torqueAccelerationWorld, ForceMode.Acceleration);
-
-        if (usePositionDrive)
-        {
-            Vector3 parentAnchorWorld = parentRigidbody.transform.TransformPoint(parentAnchorLocal);
-            Vector3 childAnchorWorld = childRigidbody.transform.TransformPoint(childAnchorLocal);
-
-            Vector3 parentAnchorVelocityWorld = parentRigidbody.GetPointVelocity(parentAnchorWorld);
-            Vector3 childAnchorVelocityWorld = childRigidbody.GetPointVelocity(childAnchorWorld);
-
-            Vector3 positionErrorWorld = parentAnchorWorld - childAnchorWorld;
-            Vector3 velocityErrorWorld = parentAnchorVelocityWorld - childAnchorVelocityWorld;
-
-            float proportionalPositionScaled = proportionalGainPosition * scale * scale;
-            float derivativePositionScaled = derivativeGainPosition * scale;
-
-            Vector3 forceAccelerationWorld =
-              proportionalPositionScaled * positionErrorWorld
-              + derivativePositionScaled * velocityErrorWorld;
-
-            if (forceAccelerationWorld.sqrMagnitude > maximumForceAcceleration * maximumForceAcceleration)
-                forceAccelerationWorld = forceAccelerationWorld.normalized * maximumForceAcceleration;
-
-            childRigidbody.AddForceAtPosition(forceAccelerationWorld, childAnchorWorld, ForceMode.Acceleration);
-            if (applyEqualAndOppositeForce)
-            {
-                parentRigidbody.AddForceAtPosition(-forceAccelerationWorld, parentAnchorWorld, ForceMode.Acceleration);
-            }
-        }
-    }
-
-    public void BakeAnchorsFromWorldPivot(Vector3 jointPivotWorld)
-    {
-        if (parentRigidbody == null || childRigidbody == null)
-        {
-            Debug.LogWarning("[PdBone] Cannot bake anchors: missing rigidbodies.");
-            return;
-        }
-
-        parentAnchorLocal = parentRigidbody.transform.InverseTransformPoint(jointPivotWorld);
-        childAnchorLocal = childRigidbody.transform.InverseTransformPoint(jointPivotWorld);
-    }
-}
 
