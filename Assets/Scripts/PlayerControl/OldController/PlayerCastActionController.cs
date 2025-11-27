@@ -17,27 +17,23 @@ public class PlayerCastActionController : CastActionController
     //public Transform cameraTrans;
     [Networked] NetworkButtons prior_buttons { get; set; }
     [Networked] int primary_attack_pressed {  get; set; }
-    int local_prior_primary_attack_pressed;
     [Networked] int primary_attack_released { get; set; }
-    int local_prior_primary_attack_released;
     [Networked] Quaternion lookDirection { get; set; }
+    private ChangeDetector _changes;
 
     public override void Spawned()
     {
-        //if (animator == null) animator = GetComponentInChildren<Animator>();
+        base.Spawned();
+
+        _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
+
         if (inventory == null) inventory = GetComponent<NetworkedInventoryManager>();
-        //if (cameraTrans == null)
-        //{
-        //    cameraTrans = Camera.main.transform;
-        //}
-        //if (animationController != null)
-        //{
-        //    animationController = GetComponentInChildren<GenericAnimationController>();
-        //    animationController.OnAnimationEventTriggered += HandleAnimationEvent;
-        //}
+      
     }
     public override void FixedUpdateNetwork()
     {
+        base.FixedUpdateNetwork();
+
         if (GetInput(out NetworkInputData data))
         {
             if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
@@ -49,94 +45,65 @@ public class PlayerCastActionController : CastActionController
                 primary_attack_released++;
             }
             prior_buttons = data.buttons;
-
             lookDirection = data.lookRotation;
         }
 
-        OnInputTryCast();
-    }
-
-    public override void Render()
-    {
-        base.Render();
-
-        // clients all
-        if (HasStateAuthority || HasInputAuthority)
-            return;
-
-        // all clients also try cast the spell.
-        OnInputTryCast();
-    }
-    void OnInputTryCast()
-    {
-        //if(!HasInputAuthority)
-        //    Debug.Log($"trycast {name} {primary_attack_pressed} {primary_attack_released}");
-        if (primary_attack_pressed > local_prior_primary_attack_pressed)
+        foreach (var change in _changes.DetectChanges(this))
         {
-            if (currentAttackCooldown <= 0)
+            if (change == nameof(primary_attack_pressed))
             {
-                local_prior_primary_attack_pressed = primary_attack_pressed;
-                //primary_attack_pressed = 0;
-                StartCast(primary_attack_released > local_prior_primary_attack_released);
-                if (primary_attack_released > local_prior_primary_attack_released)
-                    local_prior_primary_attack_released = primary_attack_released;
+                OnInputEvent(true);
+            }
+
+            if (change == nameof(primary_attack_released))
+            {
+                OnInputEvent(false);
             }
         }
-        else if (primary_attack_released > local_prior_primary_attack_released)
+
+        //OnInputTryCast();
+    }
+
+    private void OnInputEvent(bool isPress)
+    {
+        if(inventory == null || inventory.activeItem == null)
+            return;
+
+        var item = inventory.activeItem.GetComponent<EquipableItem>();
+        if (item == null)
+            return;
+
+        var actions = item.primaryActions;
+        if (actions == null || actions.Count == 0)
+            return;
+
+        int comboIndex = primaryComboCounter;
+        if (comboTimer <= 0f)
         {
-            local_prior_primary_attack_released = primary_attack_released;
-            //primary_attack_released = 0;
-            EndCast();
+            comboIndex = 0;
+            primaryComboCounter = 0;
+        }
+
+        if (comboIndex < 0 || comboIndex >= actions.Count)
+            comboIndex = 0;
+
+        ItemAction action = actions[comboIndex];
+        if (action == null)
+            return;
+
+        if (isPress)
+        {
+            action.OnPress( comboIndex, false);
+        }
+        else
+        {
+            action.OnRelease( comboIndex);
         }
     }
 
-
-    public void OnPrimaryAttack(InputAction.CallbackContext context)
-    {
-        // Removing this for now.
-        // Deal with it later.
-
-        //switch (context.phase)
-        //{
-        //    case InputActionPhase.Started:
-
-        //        if (currentAttackCooldown > 0)
-        //        {
-        //            if (comboTimer > 0)
-        //            {
-        //                primaryAttackReleaseBuffered = false;
-        //                primaryAttackBuffered = true;
-                        
-        //            }
-        //            return; // Do nothing else
-        //        }
-        //        StartCast(false);
-        //        break;
-
-        //    case InputActionPhase.Canceled:
-
-        //        EndCast();
-        //        break;
-        //}
-        
-    }
-    private void Update()
-    {
-        //if (HasInputAuthority && Keyboard.current.tabKey.wasPressedThisFrame)
-        //    GameController.Instance.ToggleSpellEditor();
-    }
-    public void OnToggleEditor(InputAction.CallbackContext context)
-    {
-        //if (context.performed)
-        //{
-        //    Debug.Log("ContextPerformed");
-        //    GameController.Instance.ToggleSpellEditor();
-        //}
-    }
 
     public override Vector3 GetAimTarget()
     {
-        // This won't work right now.
         RaycastHit hit;
 
         HybridCharacterController hcc = GetComponent<HybridCharacterController>();
@@ -151,6 +118,13 @@ public class PlayerCastActionController : CastActionController
     public override Vector3 GetForward()
     {
         return lookDirection * Vector3.forward;
+    }
+
+    public override EyePosAndLookDir GetEyePosAndLookDir()
+    {
+        var hcc = GetComponent<HybridCharacterController>();
+ 
+        return hcc.GetEyePosAndLookDir();
     }
 
     #region Hitbox TODO
@@ -191,6 +165,7 @@ public class PlayerCastActionController : CastActionController
         //    hitbox.Initialize(null, null); // Unlink
         //}
     }
+
 
     #endregion
 

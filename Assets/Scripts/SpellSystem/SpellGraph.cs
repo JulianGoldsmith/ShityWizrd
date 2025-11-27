@@ -50,29 +50,102 @@ public class SpellGraph : ScriptableObject
     [System.NonSerialized]
     public Dictionary<string, SpellNode> liveNodeClonesByGuid = new Dictionary<string, SpellNode>();
 
-
-    public List<CasterNode> GetComboEntries()
+    public int GetComboCount()
     {
-        if (entryPointControllerNode == null) return new List<CasterNode>();
-        return entryPointControllerNode.orderedEntries?.OfType<CasterNode>().ToList() ?? new List<CasterNode>();
+        if (entryPointControllerNode == null)
+            return 0;
+
+        entryPointControllerNode.EnsureComboCapacity();
+        return entryPointControllerNode.comboRoots.Count;
     }
 
-    public CasterNode GetEntryPoint(int index)
+    public List<SpellNode> GetComboRoots(int index)
     {
-        var entries = GetComboEntries();
-        if (entries.Count == 0)
+        if (entryPointControllerNode == null)
+            return new List<SpellNode>();
+
+        return entryPointControllerNode.GetComboRoots(index);
+    }
+
+    public void ExecuteComboIndex(int comboIndex,SpellState state,CastActionController caster)
+    {
+        var roots = GetComboRoots(comboIndex);
+        if (roots == null || roots.Count == 0)
         {
-            Debug.LogWarning("SpellNodeGraph: No CasterNode children connected to EntryPointControlNode.");
-            return null;
+            Debug.LogWarning(
+                $"SpellGraph '{name}' has no combo roots wired for index {comboIndex}.");
+            return;
         }
-        if (index < 0) index = 0;
-        if (index >= entries.Count) index = 0; // wrap
-        return entries[index];
+
+        var triggerInfo = new SpellTriggerInfo(
+            isCast: true,
+            source: caster.gameObject,
+            state: state,
+            position: state.CastPosition,
+            rotation: state.CastRotation,
+            tiggerVector: caster.GetForward(),
+            hitObject: caster.gameObject
+        );
+        triggerInfo.State.CastAimTargetPos = caster.GetAimTarget();
+
+        foreach (var node in roots)
+        {
+            switch (node)
+            {
+                case CoreNode core:
+                    core.CreateSpellCore(triggerInfo);
+                    break;
+
+                case EffectNode effect:
+                    effect.Execute(triggerInfo);
+                    break;
+
+                default:
+                    Debug.LogWarning(
+                        $"Combo root node '{node.name}' is not a CoreNode or EffectNode. " +
+                        $"(Type: {node.GetType().Name})");
+                    break;
+            }
+        }
+    }
+
+    public void ExecuteComboIndex(int comboIndex, SpellTriggerInfo triggerInfo)
+    {
+        if (entryPointControllerNode == null)
+        {
+            Debug.LogWarning($"SpellGraph '{name}' has no EntryPointControlNode.");
+            return;
+        }
+
+        if (triggerInfo == null || triggerInfo.State == null)
+        {
+            Debug.LogError($"SpellGraph '{name}': ExecuteComboIndex called without a valid SpellTriggerInfo.State.");
+            return;
+        }
+
+        var chain = entryPointControllerNode.GetComboRoots(comboIndex);
+        if (chain == null || chain.Count == 0)
+        {
+            Debug.LogWarning($"SpellGraph '{name}' has no outcome chain for combo index {comboIndex}.");
+            return;
+        }
+
+        foreach (var node in chain)
+        {
+            if (node is CoreNode coreNode)
+            {
+                coreNode.CreateSpellCore(triggerInfo);
+            }
+            else if (node is EffectNode effectNode)
+            {
+                effectNode.Execute(triggerInfo);
+            }
+        }
     }
 
     //I think we should move this to a 1 time event -- after recieving a spell over network or sending (rather than every cast?)
     //We could have a compile for all of this, and an Update for special circustances. But we shouldnt re-compile without sending etc...
-    public void CompileSpell(CastActionController caster) 
+    public void CompileSpell() 
     {
         foreach (KeyValuePair<string, SpellNode> kv in liveNodeClonesByGuid)
         {
@@ -210,6 +283,22 @@ public class SpellGraph : ScriptableObject
         return graph;
     }
 
+    private static int ParseComboIndex(string socketName)
+    {
+        // names like "combo 1" "combo 2"
+        if (string.IsNullOrEmpty(socketName))
+            return 0;
+
+        var parts = socketName.Split(' ');
+        if (parts.Length < 2)
+            return 0;
+
+        if (int.TryParse(parts[1], out int oneBased))
+        {
+            return Mathf.Max(0, oneBased - 1);
+        }
+        return 0;
+    }
     public void CreateNodeLink(NodeInstanceData sourceData, NodeInstanceData targetData, NodeConnection connectionData)
     {
         if (!liveNodeClonesByGuid.TryGetValue(connectionData.fromOutputOwnerGUID, out var logicalSource) ||
@@ -238,17 +327,20 @@ public class SpellGraph : ScriptableObject
         switch (outputSocketDef.Type)
         {
             case SocketType.ExecutionLink:
-                if (logicalSource is EntryPointControlNode entryPoint && logicalTarget is CasterNode casterNode)
+                if (logicalSource is EntryPointControlNode entryPoint && (logicalTarget is CoreNode || logicalTarget is EffectNode))
                 {
-                    int comboIndex = int.Parse(connectionData.fromOutputSocketName.Split(' ')[1]) - 1;
-                    while (entryPoint.orderedEntries.Count <= comboIndex) entryPoint.orderedEntries.Add(null);
-                    entryPoint.orderedEntries[comboIndex] = casterNode;
-                }
-                else if (logicalSource is CasterNode caster && (logicalTarget is CoreNode || logicalTarget is EffectNode))
-                {
-                    if (!caster.outcomeCoreNodes.Contains(logicalTarget))
+                    int comboIndex = ParseComboIndex(connectionData.fromOutputSocketName);
+
+                    entryPoint.EnsureComboCapacity();
+                    while (entryPoint.comboRoots.Count <= comboIndex)
                     {
-                        caster.outcomeCoreNodes.Add(logicalTarget);
+                        entryPoint.comboRoots.Add(new List<SpellNode>());
+                    }
+
+                    var roots = entryPoint.comboRoots[comboIndex];
+                    if (!roots.Contains(logicalTarget))
+                    {
+                        roots.Add(logicalTarget);
                     }
                 }
                 else if (logicalSource is CoreNode sourceCore && logicalTarget is TriggerNode trigger)

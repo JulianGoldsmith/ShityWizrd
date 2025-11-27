@@ -7,9 +7,7 @@ using System;
 using System.Security.Cryptography;
 using NUnit.Framework.Interfaces;
 using Fusion;
-/// <summary>
-/// Main script controlling player casting, ie sword swing, cast spell etc, works with player movement controller and player animation controller
-/// </summary>
+
 
 public abstract class CastActionController : NetworkBehaviour
 {
@@ -30,40 +28,45 @@ public abstract class CastActionController : NetworkBehaviour
     public List<SpellState> activeCasts = new List<SpellState>();
     public int _nextActionId = 0;
 
-    //eventName (called by animation), action
     private Dictionary<string, List<Action>> _pendingAnimationActions = new Dictionary<string, List<Action>>();
     private GameObject _activeHitboxInstance;
 
-    public override void Render()
+
+
+    public override void FixedUpdateNetwork()
+    {
+        if (GetInput(out NetworkInputData input))
+        {
+           //hmm
+        }
+
+        SimulateCasting(Runner.DeltaTime);
+    }
+
+    private void SimulateCasting(float dt)
     {
         if (currentAttackCooldown > 0f)
-        {
-            currentAttackCooldown -= Time.deltaTime;
-        }
+            currentAttackCooldown -= dt;
 
-        if (comboTimer > 0)
-        {
-            comboTimer -= Time.deltaTime;
-        }
+        if (comboTimer > 0f)
+            comboTimer -= dt;
         else
-        {
-            comboTimer = 0;
-        }
+            comboTimer = 0f;
 
-        if (primaryAttackBuffered && currentAttackCooldown <= 0)
+        if (primaryAttackBuffered && currentAttackCooldown <= 0f)
         {
             primaryAttackBuffered = false;
             StartCast(primaryAttackReleaseBuffered);
             primaryAttackReleaseBuffered = false;
         }
-        UpdateActiveCasts();
 
+        UpdateActiveCasts();   // again this should be called from the item not here? 
+        //TickItemActions(dt);   // this should be called from the item -- not here? 
     }
 
     public virtual void StartCast(bool isAlreadyReleased)
     {
         if (isCasting) return;
-
         if (inventory.activeItem == null) return;
 
         if (comboTimer <= 0 && !isAlreadyReleased)
@@ -71,49 +74,50 @@ public abstract class CastActionController : NetworkBehaviour
             primaryComboCounter = 0;
         }
 
-        EquipableItem item = inventory.activeItem?.GetComponent<EquipableItem>(); //Get the active item from the inventory manager
+        EquipableItem item = inventory.activeItem.GetComponent<EquipableItem>();
         if (item == null || item.primaryActionSpell == null)
         {
             Debug.Log("No active spell or item found for this cast");
             return;
         }
 
-        // Compiled all spell by doing promotablevalues.
-        item.primaryActionSpell.CompileSpell(this);
+        SpellGraph graph = item.primaryActionSpell;
 
-        var entries = item.primaryActionSpell.GetComboEntries(); //Get the entry point of the spell from the entryPointController
-        if (entries.Count == 0)
+        graph.CompileSpell();
+
+        int comboCount = graph.GetComboCount();
+        if (comboCount <= 0)
         {
-            Debug.LogWarning("No Cast entries wired to EntryPointController.");
+            Debug.LogWarning("No combo roots wired to EntryPointControlNode.");
             return;
         }
 
-        if (primaryComboCounter >= entries.Count) primaryComboCounter = 0; //Loop the entryPoint
+        if (primaryComboCounter >= comboCount)
+            primaryComboCounter = 0;
 
-        var entryCast = item.primaryActionSpell.GetEntryPoint(primaryComboCounter);
-        if (entryCast == null)
-        {
-            Debug.LogWarning($"Entry Cast at index {primaryComboCounter} is null.");
-            return;
-        }
-
-        Debug.Log($"{this.gameObject.name} cast {item.name} with spell {item.primarySpellID} at entry node {entryCast.name}");
-
-        int actionId = _nextActionId;
-        SpellState newCast = new SpellState(this, item, item.primaryActionSpell, entryCast, this.GetComponent<NetworkObject>());
-        
-        //SpellStateManager.instance.AddSpellState(newCast);
+        var netObj = GetComponent<NetworkObject>();
+        SpellState newCast = new SpellState(this, item, graph, null, netObj);
 
         activeCasts.Add(newCast);
         isCasting = true;
         newCast.isHeld = true;
-        
-        entryCast.OnCastStarted(newCast, this);
+
+
+        graph.ExecuteComboIndex(primaryComboCounter, newCast, this);
+
+        Debug.Log(
+            $"{gameObject.name} cast {item.name} with spell {graph.name} at combo index {primaryComboCounter}");
+
 
         primaryComboCounter++;
-        if (primaryComboCounter >= entries.Count) primaryComboCounter = 0;
+        if (primaryComboCounter >= comboCount)
+            primaryComboCounter = 0;
 
-        if (isAlreadyReleased) EndCast();
+ 
+        if (isAlreadyReleased)
+        {
+            EndCast();
+        }
     }
 
     public virtual void UpdateActiveCasts()
@@ -153,7 +157,7 @@ public abstract class CastActionController : NetworkBehaviour
 
             if (castToEnd.OriginalCasterNode is CasterNode originalCastNode)
             {
-                originalCastNode.OnCastCanceled(castToEnd, this); //calls the castCancelled function in the caster Node for clean up etc
+                originalCastNode.OnCastCanceled(castToEnd, this); 
             }
             activeCasts.Remove(castToEnd);
         }
@@ -171,6 +175,19 @@ public abstract class CastActionController : NetworkBehaviour
         isCasting = false;
     }
 
+    public void AdvancePrimaryCombo(int totalActions)
+    {
+        if (totalActions <= 0)
+        {
+            primaryComboCounter = 0;
+            return;
+        }
+
+        primaryComboCounter++;
+        if (primaryComboCounter >= totalActions)
+            primaryComboCounter = 0;
+    }
+
     public void SetCoolDown(float cooldown) //Sets currentAttackCooldown
     {
         currentAttackCooldown = cooldown;
@@ -181,7 +198,49 @@ public abstract class CastActionController : NetworkBehaviour
         comboTimer = duration;
     }
 
-    //new
+    public void ClearCastsForItem(EquipableItem item)
+    {
+        for (int i = activeCasts.Count - 1; i >= 0; i--)
+        {
+            if (activeCasts[i].CastItem == item)
+            {
+                activeCasts.RemoveAt(i);
+            }
+        }
+    }
+
+    public virtual void OnItemHit(SpellState state,GameObject hitObject, Vector3 hitPoint,Vector3 swingMomentum)
+    {
+        if (state == null)
+            return;
+
+        var graph = state.Spell;
+        if (graph == null)
+        {
+            Debug.LogWarning($"OnItemHit: SpellState has no Spell reference on {name}.");
+            return;
+        }
+
+        Quaternion hitRotation = Quaternion.LookRotation(GetForward());
+
+        var triggerInfo = new SpellTriggerInfo(
+            isCast: true,
+            source: gameObject,
+            state: state,
+            position: hitPoint,
+            rotation: hitRotation,
+            tiggerVector: swingMomentum,
+            hitObject: hitObject
+        );
+
+        state.CastAimTargetPos = GetAimTarget();
+        state.CastPosition = triggerInfo.TriggerPoint;
+        state.CastRotation = triggerInfo.TriggerRotation;
+
+        int comboIndex = state.ComboIndex;  
+        graph.ExecuteComboIndex(comboIndex, triggerInfo);
+    }
+
     public void ExecuteNodeAfterDelay(SpellNode node, SpellState state, float delay) //Executes a node after a delay, 
     {
         StartCoroutine(ExecuteNodeCoroutine(node, state, delay));
@@ -208,6 +267,34 @@ public abstract class CastActionController : NetworkBehaviour
     public abstract Vector3 GetAimTarget();
 
     public virtual Vector3 GetForward() { return transform.forward; }
+
+    #region ItemAnimations
+
+    public abstract EyePosAndLookDir GetEyePosAndLookDir();
+
+
+    protected virtual void TickItemActions(float deltaTime) //maybe this should be called from the item, not here
+    {
+        if (inventory == null || inventory.activeItem == null)
+            return;
+
+        var item = inventory.activeItem.GetComponent<EquipableItem>();
+        if (item == null)
+            return;
+
+        if (item.primaryActions == null || item.primaryActions.Count == 0)
+            return;
+
+        for (int i = 0; i < item.primaryActions.Count; i++)
+        {
+            var action = item.primaryActions[i];
+            if (action == null) continue;
+
+            action.Tick( i, deltaTime);
+        }
+    }
+    #endregion
+
 
 
     public abstract void ActivateHitbox(int hitBoxID, SpellState state);
@@ -296,6 +383,20 @@ public abstract class CastActionController : NetworkBehaviour
         yield return new WaitForSeconds(delay);
         handController.SetHandState(hand, newState);
     }
+
+
+
+    public SpellState GetActiveSpellState(int comboIndex)
+    {
+        for (int i = activeCasts.Count - 1; i >= 0; i--)
+        {
+            if (activeCasts[i].ComboIndex == comboIndex && activeCasts[i].isHeld)
+                return activeCasts[i];
+        }
+        return null;
+    }
+
+
 }
 
 

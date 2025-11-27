@@ -180,7 +180,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.dragTargetPos = Vector3.zero;
                 _accumulatedInput.dragFacingDir = Vector3.zero;
             }
-
+           
            // Debug.Log($"drag pos {_accumulatedInput.dragTargetPos} drag rot {_accumulatedInput.dragFacingDir}");
         }
 

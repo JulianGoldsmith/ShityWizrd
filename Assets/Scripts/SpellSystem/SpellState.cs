@@ -8,10 +8,13 @@ public class SpellState
     // track the number of cores created in the current casting.
     // A simple way to avoid infinites.
     const int max_spawnable_cores = 50; // hard-cutoff for number cores to spawn within a single spell cast.
-
+    public int ComboIndex { get; set; } = 0;
     public NetworkObject Caster { get; set; }
 
     public SpellGraphId SpellGraphIdFrom { get; private set; }
+
+    public SpellGraph Spell { get; private set; }
+
     public CastActionController Controller { get; } //this means we can always get the player / enemies pos and rot + GetForward etc
 
     //Snapshot on cast varibales geenrally set by the CasterNode
@@ -35,7 +38,7 @@ public class SpellState
         this.Controller = controller;
         this.CastItem = item;
         this.SpellGraphIdFrom = spell.spellGraphId;
-
+        this.Spell = spell;
         if (item != null && item.projectileSpawnPoint != null)
         {
             this.CastPosition = item.projectileSpawnPoint.position;

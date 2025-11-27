@@ -56,4 +56,9 @@ public class EnemyCastActionController : CastActionController
     {
         throw new System.NotImplementedException();
     }
+
+    public override EyePosAndLookDir GetEyePosAndLookDir()
+    {
+        throw new System.NotImplementedException();
+    }
 }

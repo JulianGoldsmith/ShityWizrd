@@ -542,6 +542,22 @@ public class SpellGraphController : MonoBehaviour
         }
     }
 
+    private static int ParseComboIndexFromSocketName(string socketName)
+    {
+        if (string.IsNullOrEmpty(socketName))
+            return 0;
+
+        var parts = socketName.Split(' ');
+        if (parts.Length < 2)
+            return 0;
+
+        if (int.TryParse(parts[1], out int oneBased))
+        {
+            return Mathf.Max(0, oneBased - 1);
+        }
+        return 0;
+    }
+
     private void RemoveConnection(NodeInstanceData sourceNodeData, NodeConnection connectionData)
     {
 
@@ -555,14 +571,15 @@ public class SpellGraphController : MonoBehaviour
             switch (socketDef.Type)
             {
                 case SocketType.ExecutionLink:
-                    if (sourceClone is EntryPointControlNode entry && targetClone is CasterNode caster)
+                    if (sourceClone is EntryPointControlNode entry)
                     {
-                        int index = entry.orderedEntries.IndexOf(caster);
-                        if (index != -1) entry.orderedEntries[index] = null;
-                    }
-                    else if (sourceClone is CasterNode c && targetClone is CoreNode core)
-                    {
-                        c.outcomeCoreNodes.Remove(core);
+                        int comboIndex = ParseComboIndexFromSocketName(connectionData.fromOutputSocketName);
+                        entry.EnsureComboCapacity();
+
+                        if (comboIndex >= 0 && comboIndex < entry.comboRoots.Count)
+                        {
+                            entry.comboRoots[comboIndex].Remove(targetClone);
+                        }
                     }
                     else if (sourceClone is CoreNode co && targetClone is TriggerNode trigger)
                     {

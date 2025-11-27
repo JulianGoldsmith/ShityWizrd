@@ -5298,6 +5298,7 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
+  - {fileID: 8371929101398896414}
   - {fileID: 978130939108880615}
   - {fileID: 529238521499398488}
   ForceRemoteRenderTimeframe: 0
@@ -5363,8 +5364,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20f6bae2c43360e45bae960bfcb9671f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  character: {fileID: 978130939108880615}
-  rootRigidbody: {fileID: 8670349835484724299}
+  cameraAnchor: {fileID: 0}
   cameraTransform: {fileID: 0}
   localEyeOffset: {x: 0, y: 1.45, z: 0}
   lookInput: {x: 0, y: 0}
@@ -5374,6 +5374,7 @@ MonoBehaviour:
   maxPitch: 85
   useRbMoveRotation: 1
   maxYawDegreesPerSec: 720
+  pitchOffset: {x: 0.5, y: 0.3, z: 0}
   targetYaw: 0
   targetPitch: 0
   finalYaw: 0
@@ -5381,6 +5382,7 @@ MonoBehaviour:
   finalPitch: 0
   pitchVel: 0
   camActive: 1
+  isLocalAuthority: 0
 --- !u!114 &978130939108880615
 MonoBehaviour:
   m_ObjectHideFlags: 0

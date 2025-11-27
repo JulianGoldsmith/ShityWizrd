@@ -22,7 +22,7 @@ public class AddMomentumSBMono : SpellBehaviour
             return;
 
         triggerInfo = _triggerInfo;
-        velocity = _triggerInfo.TriggerVector;
+        velocity = _triggerInfo.TriggerVector * _triggerInfo.State.CastChargeLevel;
 
         if (rb == null) rb = GetComponent<Rigidbody>();
         mass = rb != null ? rb.mass : 1f;

@@ -234,7 +234,10 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         currentItemInHand = potentialItemToPickup;
         potentialItemToPickup = null;
-
+        if(currentItemInHand.TryGetBehaviour<EquipableItem>(out EquipableItem ei))
+        {
+          //  ei.HoldingPlayer = this.GetComponent<NetworkObject>();
+        }
         currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>()); //meat and potatoes 
     }
 
@@ -244,6 +247,10 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         InteractableItem droppedItem = currentItemInHand.GetComponent<InteractableItem>();
 
+        if (currentItemInHand.TryGetBehaviour<EquipableItem>(out EquipableItem ei))
+        {
+           // ei.HoldingPlayer = null;
+        }
         droppedItem.DropItem(this.GetComponent<NetworkObject>(), HasInputAuthority, HasStateAuthority);
 
         handController.DragDistance = 0;

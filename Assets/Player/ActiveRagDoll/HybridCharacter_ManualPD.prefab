@@ -3107,7 +3107,13 @@ MonoBehaviour:
   - {fileID: 4423803848393768358}
   - {fileID: 122229024194474645}
   - {fileID: 1842752650210984842}
-  groundCheckDistance: 0.5
+  networkRagdollRigidbody3Ds: []
+  totalMass: 0
+  strenght: 1
+  armatureRetargetingLerp: 0
+  retargetRagDoll: 0
+  armatureRetargeter: {fileID: 0}
+  groundCheckExtraDistance: 1
   groundLayer:
     serializedVersion: 2
     m_Bits: 130943
@@ -3163,6 +3169,8 @@ MonoBehaviour:
   boneMapper: {fileID: 8989903795369921412}
   spineIKTarget: {fileID: 7269081012123417873}
   headOffset: {x: 0, y: 0, z: 0}
+  armatureHipsRoot: {fileID: 0}
+  retargeter: {fileID: 0}
   pDSprings:
   - joint: {fileID: 0}
     target: {fileID: 2649153736978097401}
@@ -3244,9 +3252,9 @@ MonoBehaviour:
   - childRigidbody: {fileID: 824516292893634586}
     parentRigidbody: {fileID: 4907360237725692496}
     targetTransform: {fileID: 1825580123422520746}
+    smoothingTransform: {fileID: 0}
     proportionalGainRotation: 250
     derivativeGainRotation: 20
-    applyEqualAndOppositeTorque: 0
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -3280,22 +3288,58 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    maximumAngleRadians: 0.7
-    maximumTorqueAcceleration: 1200
+    designRotationInertia: 1
     usePositionDrive: 1
     parentAnchorLocal: {x: 0, y: 0.34477454, z: -0.000000005656074}
     childAnchorLocal: {x: -1.5571557e-15, y: 4.0450182e-10, z: -0.0000000055732756}
+    worldTargetToChild: {x: 0, y: 0, z: 0, w: 0}
     proportionalGainPosition: 300
     derivativeGainPosition: 20
+    positionErrorCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     applyEqualAndOppositeForce: 0
-    maximumForceAcceleration: 200
-    designDeltaTime: 0.015625
+    forceTransfereRatio: 1
+    designChildMass: 1
+    designParentMass: 1
+    childLeverArmRatio: 0.2
+    parentLeverArmRatio: 0.2
+    useAngularLimits: 0
+    twistAxis: 0
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -30, y: 60}
+    swing2Limits: {x: -30, y: 30}
+    drawAngularLimitGizmos: 1
+    angularLimitGizmoSize: 0.25
+    restChildLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    limitSettings: {fileID: 0}
   - childRigidbody: {fileID: 1693913296455200963}
     parentRigidbody: {fileID: 824516292893634586}
     targetTransform: {fileID: 2649153736978097401}
+    smoothingTransform: {fileID: 0}
     proportionalGainRotation: 250
     derivativeGainRotation: 20
-    applyEqualAndOppositeTorque: 1
     rotationErrorCurve:
       serializedVersion: 2
       m_Curve:
@@ -3329,16 +3373,53 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    maximumAngleRadians: 0.7
-    maximumTorqueAcceleration: 1200
+    designRotationInertia: 1
     usePositionDrive: 1
     parentAnchorLocal: {x: 0.000000004502181, y: 0.38839287, z: 0.016113939}
     childAnchorLocal: {x: -1.3340769e-20, y: -1.7486013e-14, z: 0.00000023469329}
+    worldTargetToChild: {x: 0, y: 0, z: 0, w: 0}
     proportionalGainPosition: 300
     derivativeGainPosition: 20
+    positionErrorCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     applyEqualAndOppositeForce: 1
-    maximumForceAcceleration: 200
-    designDeltaTime: 0.015625
+    forceTransfereRatio: 1
+    designChildMass: 1
+    designParentMass: 1
+    childLeverArmRatio: 0.2
+    parentLeverArmRatio: 0.2
+    useAngularLimits: 0
+    twistAxis: 0
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -30, y: 60}
+    swing2Limits: {x: -30, y: 30}
+    drawAngularLimitGizmos: 1
+    angularLimitGizmoSize: 0.25
+    restChildLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+    limitSettings: {fileID: 0}
+  ragDollBones: []
   _moveInput: {x: 0, y: 0}
   _lookRot: {x: 0, y: 0, z: 0, w: 0}
   _sprint: 0
@@ -3362,6 +3443,7 @@ MonoBehaviour:
   cameraAnchorSmoothSpeed: 20
   handController: {fileID: 5973678317447874118}
   bonkController: {fileID: 0}
+  xpbdSolver: {fileID: 0}
 --- !u!114 &8989903795369921412
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3411,6 +3493,7 @@ MonoBehaviour:
   - {fileID: 7489012561359239712}
   NetworkedBehaviours:
   - {fileID: 128414941927326041}
+  - {fileID: 4683602691936953765}
   - {fileID: 2492619078705171490}
   - {fileID: 5973678317447874118}
   - {fileID: 4546582751402003313}
@@ -3765,6 +3848,8 @@ MonoBehaviour:
   dragTargetOffset: {x: 0, y: 0, z: 1.5}
   _DragDistance: 0
   dragHandModelPosOffset: {x: 0, y: -0.2, z: 0}
+  maxStableStrengthRatio: 0.5
+  maxDragStrength: 150
   dragStength: 50
   dragDamp: 10
   dragRange: 10
@@ -3859,6 +3944,13 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  handElasticForceOnPlayer:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  maxDistanceBeforeMaxElasticForce: 20
   characterController: {fileID: 128414941927326041}
   playerRoot: {fileID: 4214954759859994803}
   armDistFalloff:
@@ -3958,7 +4050,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inventory: {fileID: 835482249114472622}
   isCasting: 0
-  canCombo: 0
   isUpperBodyAction: 0
   currentAttackCooldown: 0
   primaryComboCounter: 0
@@ -4079,6 +4170,8 @@ MonoBehaviour:
   physicsMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
   velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
   OnZeroBonk_event:
@@ -4102,7 +4195,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   modelRenderer: {fileID: 4159441321845315334}
   ragDollRenderer: {fileID: 8407329776386873117}
-  robeRenderer: {fileID: 5049478185099904193}
+  apparel: []
   hostMat: {fileID: 2100000, guid: e09614160cb77a0498ad88d9b300cff8, type: 2}
   clientMat: {fileID: 2100000, guid: 099c94d8d75be114b827069f92f46f83, type: 2}
   _IsHost: 0
@@ -4119,16 +4212,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   characterController: {fileID: 0}
+  armIKs: []
   _BonkedState: 0
-  ragDollHips: {fileID: 7345394056810358900}
-  ragDoll: {fileID: 8212219774833691615}
-  ragDollController: {fileID: 7869560093524357021}
-  aliveRig: {fileID: 6828577418526468616}
-  bonkedRig: {fileID: 5348395977936719046}
-  animatedSkeletonRoot: {fileID: 3355363729863148789}
-  ragdollSkeletonRoot: {fileID: 4779595292813083035}
-  clothingRenderers:
-  - {fileID: 5049478185099904193}
+  bonkChangedThisUpdate: 0
+  ragdollProxysRoot: {fileID: 0}
 --- !u!114 &7418071757709877675
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9991,6 +10078,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &6798704243941166079
 GameObject:
   m_ObjectHideFlags: 0
@@ -11689,6 +11777,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &7953665787674280051
 GameObject:
   m_ObjectHideFlags: 0
@@ -13169,6 +13258,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &8936888206712598793
 GameObject:
   m_ObjectHideFlags: 0

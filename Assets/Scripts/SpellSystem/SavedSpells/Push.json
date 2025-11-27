@@ -1,0 +1,57 @@
+{
+    "entryPointControllerNodeGuid": "7ba4aba3-c2c0-4531-ab84-63ff5f8f543f",
+    "nodes": [
+        {
+            "guid": "7ba4aba3-c2c0-4531-ab84-63ff5f8f543f",
+            "position": {
+                "x": -1.0864843130111695,
+                "y": -0.007352948188781738,
+                "z": -0.03434260934591293
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "7ba4aba3-c2c0-4531-ab84-63ff5f8f543f",
+                    "targetNodeGUID": "7cae2e1d-6883-4598-ba2d-57d8f610785b",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "7cae2e1d-6883-4598-ba2d-57d8f610785b"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "7cae2e1d-6883-4598-ba2d-57d8f610785b",
+            "position": {
+                "x": -0.34881484508514407,
+                "y": 0.02550014853477478,
+                "z": 0.18589571118354798
+            },
+            "nodeTemplateName": "PushInImapctDirection",
+            "connections": [],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "edf46211-7a59-4a93-9ffa-8ee48bcfe3f6",
+            "position": {
+                "x": 0.18267565965652467,
+                "y": -0.0062007904052734379,
+                "z": 0.5192602872848511
+            },
+            "nodeTemplateName": "ForceMult",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Value Out",
+                    "fromOutputOwnerGUID": "edf46211-7a59-4a93-9ffa-8ee48bcfe3f6",
+                    "targetNodeGUID": "7cae2e1d-6883-4598-ba2d-57d8f610785b",
+                    "toInputSocketName": "PushPullForce",
+                    "toInputOwnerGUID": "7cae2e1d-6883-4598-ba2d-57d8f610785b"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        }
+    ]
+}

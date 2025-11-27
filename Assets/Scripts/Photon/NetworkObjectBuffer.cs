@@ -136,6 +136,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     public override void Render()
     {
+        //if (HasInputAuthority) return;
         ReconcileLocalAndNetworkBuffers();
     }
     public void ReconcileLocalAndNetworkBuffers()

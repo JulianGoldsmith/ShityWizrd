@@ -64,11 +64,7 @@ public class HitBoxBehaviour : MonoBehaviour
 
         objectsHitThisActivation.Add(hitObject);
 
-        // Report the hit back to the spell node
-        if (_activeSpellState.OriginalCasterNode is HitBoxCastNode node)
-        {
-            // Pass the state, caster, and *what* we hit
-            node.HandleTrigger(_activeSpellState, _caster, hitObject, hitPoint, swingMomentum);
-        }
+        // NEW: just forward to the caster – no more HitBoxCastNode.
+        _caster.OnItemHit(_activeSpellState, hitObject, hitPoint, swingMomentum);
     }
 }

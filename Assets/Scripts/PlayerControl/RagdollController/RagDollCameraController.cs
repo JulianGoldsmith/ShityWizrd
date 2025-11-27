@@ -3,8 +3,8 @@ using System.Xml.Serialization;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[DefaultExecutionOrder(20)]
-public class RagDollCameraController : MonoBehaviour
+[DefaultExecutionOrder(100)]
+public class RagDollCameraController : NetworkBehaviour, IAfterRender
 {
     [SerializeField] private Transform cameraAnchor;
     public Transform cameraTransform;       
@@ -33,6 +33,8 @@ public class RagDollCameraController : MonoBehaviour
 
     public bool isLocalAuthority = false;
 
+    private HybridCharacterController hcc;
+
 
     public void Spawned(bool _isLocalAuthority)
     {
@@ -40,9 +42,10 @@ public class RagDollCameraController : MonoBehaviour
         if (!isLocalAuthority) return;
         cameraTransform = Camera.main.transform;
         Debug.Log("Assigned camera");
+        hcc = this.GetComponent<HybridCharacterController>();
     }
 
-    void LateUpdate()
+    public void UpdateCam()
     {
         if (!isLocalAuthority) return;
         targetYaw += lookInput.x * mouseSensitivity;
@@ -56,10 +59,26 @@ public class RagDollCameraController : MonoBehaviour
 
         cameraTransform.rotation = Quaternion.Euler(finalPitch, finalYaw, 0f);
 
-        Vector3 eyeOffsetDueToPitch = GetEyePosBasedOnPitch(cameraTransform.rotation);
+        //Vector3 eyeOffsetDueToPitch = GetEyePosBasedOnPitch(cameraTransform.rotation);
 
+        cameraTransform.position = hcc.GetEyePos();
 
-        cameraTransform.position = cameraAnchor.transform.position + localEyeOffset + eyeOffsetDueToPitch;
+        //cameraTransform.position = cameraAnchor.transform.position + localEyeOffset + eyeOffsetDueToPitch;
+    }
+
+    void AfterRender()
+    {
+       
+    }
+
+    public override void Render()
+    {
+        UpdateCam();
+    }
+
+    void LateUpdate()
+    {
+        //UpdateCam();
 
         //if (Keyboard.current.escapeKey.wasPressedThisFrame)
         //{
@@ -88,5 +107,10 @@ public class RagDollCameraController : MonoBehaviour
         {
             lookInput = context.ReadValue<Vector2>(); 
         }
+    }
+
+    void IAfterRender.AfterRender()
+    {
+        AfterRender();
     }
 }

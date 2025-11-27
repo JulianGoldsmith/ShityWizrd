@@ -139,34 +139,43 @@ public partial class NpcActionCastSpellAction : Action
 
     private void ActivateHitBoxIfUsingHitBox()
     {
-        if (_currentSpellState.OriginalCasterNode is HitBoxCastNode hitBoxNode)
-        {
-            if (activateHitBoxTime != -1 && _actionData is NPCActionSpell spell)
-            {
-                if (spell.hitBoxID < 0 || spell.hitBoxID >= _actionController.hitboxes.Count)
-                    return;
-                if (Time.time > activateHitBoxTime && _actionController.hitboxes[spell.hitBoxID].hitBoxCollider.enabled == false)
-                {
-                    Debug.Log("Activating hit box from the NPC BT ACTION");
+        if (_currentSpellState == null)
+            return;
 
-                    _actionController.ActivateHitbox(spell.hitBoxID, _currentSpellState);
-                }
+        if (activateHitBoxTime == -1f)
+            return;
+
+        if (_actionData is NPCActionSpell spell)
+        {
+            if (spell.hitBoxID < 0 || spell.hitBoxID >= _actionController.hitboxes.Count)
+                return;
+
+            if (Time.time > activateHitBoxTime &&
+                _actionController.hitboxes[spell.hitBoxID].hitBoxCollider.enabled == false)
+            {
+                Debug.Log("Activating hit box from the NPC BT ACTION");
+                _actionController.ActivateHitbox(spell.hitBoxID, _currentSpellState);
             }
         }
     }
 
     private void DeactivateHitBoxIfUsingHitBox()
     {
-        if (_currentSpellState.OriginalCasterNode is HitBoxCastNode hitBoxNode)
+        if (_currentSpellState == null)
+            return;
+
+        if (activateHitBoxTime == -1f)
+            return;
+
+        if (_actionData is NPCActionSpell spell)
         {
-            if (activateHitBoxTime != -1 && _actionData is NPCActionSpell spell)
+            if (spell.hitBoxID < 0 || spell.hitBoxID >= _actionController.hitboxes.Count)
+                return;
+
+            if (Time.time > deactivateHitBoxTime &&
+                _actionController.hitboxes[spell.hitBoxID].hitBoxCollider.enabled == true)
             {
-                if (spell.hitBoxID < 0 || spell.hitBoxID >= _actionController.hitboxes.Count)
-                    return;
-                if (Time.time > deactivateHitBoxTime && _actionController.hitboxes[spell.hitBoxID].hitBoxCollider.enabled == true)
-                {
-                    _actionController.DeactivateHitbox(spell.hitBoxID);
-                }
+                _actionController.DeactivateHitbox(spell.hitBoxID);
             }
         }
     }

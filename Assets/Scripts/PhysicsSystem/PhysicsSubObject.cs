@@ -20,7 +20,7 @@ public class PhysicsSubObject : NetworkBehaviour
     void OnCollisionEnter(Collision collision)
     {
         if (collision.impulse.magnitude > 0.01)
-            Debug.Log($"{name} was hit for {collision.impulse.magnitude} impulse");
+            //Debug.Log($"{name} was hit for {collision.impulse.magnitude} impulse");
         parent_physics_object.OnCollisionEnter(collision);
     }
 }

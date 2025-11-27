@@ -87,10 +87,18 @@ public class HybridCharacterController : NetworkBehaviour
     [HideInInspector] public Vector3 rendererPos;
     [HideInInspector] public Quaternion rendererRot;
     [HideInInspector] public Vector3 rendererVelocity;
+    [HideInInspector] public Vector3 rendererAccel;
     [HideInInspector] public float rendererYawSpeed;
     [HideInInspector] public Vector3 rendererAngularVel;
     [HideInInspector] public Vector3 lastRendererPos;
     [HideInInspector] Quaternion lastRendererRot;
+
+    [HideInInspector] public Vector3 lastFixedPos;
+    [HideInInspector] public Vector3 calculatedFixedVel;
+    [HideInInspector] public Vector3 lastFixedVel;
+    [HideInInspector] public Vector3 calculatedFixedAccel;
+    [HideInInspector] public float lastRenderDt;
+
     private ChangeDetector _changeDetector;
     [Networked] public bool isHost { get; set; }
     [HideInInspector] public bool cashIsHost = false;
@@ -306,8 +314,9 @@ public class HybridCharacterController : NetworkBehaviour
         }
         previousVelocity = hipsRb.linearVelocity;
 
-        UpdateJointSolver();
 
+        UpdateJointSolver();
+        CalculateVelocityAndAcceleration();
     }
 
     public override void Render()
@@ -325,7 +334,15 @@ public class HybridCharacterController : NetworkBehaviour
 
     }
 
-  
+    private void CalculateVelocityAndAcceleration()
+    {
+        Vector3 pos = hipsRb.transform.position;
+        calculatedFixedVel = (pos - lastFixedPos) / Runner.DeltaTime ;
+        calculatedFixedAccel = (calculatedFixedVel - lastFixedVel) / Runner.DeltaTime;
+        lastFixedPos = pos;
+        lastFixedVel  = calculatedFixedVel;
+        lastRenderDt = Time.deltaTime;
+    }
 
     private void UpdateCameraAnchor()
     {
@@ -485,7 +502,9 @@ public class HybridCharacterController : NetworkBehaviour
 
         // Approximate render-space velocity (good enough for PD damping)
         var p = networkedRenderRoot.position;
+        var lastRendereVel = rendererVelocity;
         rendererVelocity = (p - lastRendererPos) / (Time.deltaTime);
+        rendererAccel = (rendererVelocity - lastRendereVel) / Time.deltaTime;
         lastRendererPos = p;
 
         //if (!IsFinite(lastRendererRot)) lastRendererRot = rendererRot;
@@ -775,9 +794,56 @@ public class HybridCharacterController : NetworkBehaviour
 
     public Vector3 GetEyePos()
     {
-        return networkedRenderRoot.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority ? cameraTransform.rotation : lookRot);
+        //if(HasInputAuthority)
+        //    return hipsRb.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority ? cameraTransform.rotation : lookRot);
+        //else
+            return networkedRenderRoot.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority ? cameraTransform.rotation : lookRot);
         //return hipsRb.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(HasInputAuthority?cameraTransform.rotation:lookRot);
     }
+
+    public EyePosAndLookDir GetEyePosAndLookDir()
+    {
+        Vector3 eyePos = GetEyePos();
+        Quaternion look = GetLookRot();
+
+        Vector3 fwd = look * Vector3.forward;
+        Vector3 up = look * Vector3.up; // or Vector3.up if you want strict world-up
+
+        return new EyePosAndLookDir(eyePos, fwd, up);
+    }
+
+    public Vector3 GetEyePosSim()
+    {
+        return hipsRb.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(lookRot);
+    }
+
+    public EyePosAndLookDir GetEyePosAndLookDirSim()
+    {
+        Vector3 eyePos = GetEyePosSim();
+        Quaternion look = lookRot;
+
+        Vector3 fwd = look * Vector3.forward;
+        Vector3 up = look * Vector3.up;
+
+        return new EyePosAndLookDir(eyePos, fwd, up);
+    }
+
+    public Vector3 GetEyePosSmoothed()
+    {
+        return smoothedNetworkedRenderRoot.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(lookRot);
+    }
+
+    public EyePosAndLookDir GetEyePosAndLookDirSmoothed()
+    {
+        Vector3 eyePos = GetEyePosSmoothed();
+        Quaternion look = lookRot;
+
+        Vector3 fwd = look * Vector3.forward;
+        Vector3 up = look * Vector3.up;
+
+        return new EyePosAndLookDir(eyePos, fwd, up);
+    }
+
 
     public void TeleportTo(Vector3 position, Quaternion rotation)
     {
@@ -855,6 +921,7 @@ public class HybridCharacterController : NetworkBehaviour
     public static bool IsFinite(Quaternion q) => float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
     public static bool IsFinite(Vector3 v) => float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.z);
 
+  
     bool CheckHips(string where)
     {
         var p = hipsRb.transform.position;

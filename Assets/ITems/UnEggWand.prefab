@@ -204,9 +204,6 @@ PrefabInstance:
       addedObject: {fileID: 249676508539368098}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 50924be041211a243b0ca813b3f1c2dd, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2949198728578349277}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 50924be041211a243b0ca813b3f1c2dd, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 542055396196666482}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 50924be041211a243b0ca813b3f1c2dd, type: 3}
       insertIndex: -1
@@ -272,29 +269,6 @@ CapsuleCollider:
   m_Height: 1.67
   m_Direction: 1
   m_Center: {x: 0, y: 0.75, z: 0}
---- !u!114 &2949198728578349277
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6602332113164471217}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 002ecf35ee4d6534da89603f7f96a9a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  itemName: EggWand
-  primarySpellID: EggerSpell
-  secondarySpellID: 
-  primaryActionSpell: {fileID: 0}
-  secondaryActionSpell: {fileID: 0}
-  heldHandState: {fileID: 11400000, guid: 903f93413bbf6744f8f636324924477b, type: 2}
-  primaryHandle: {fileID: 1757176285427469924}
-  secondaryHandle: {fileID: 0}
-  weaponBase: {fileID: 0}
-  weaponEnd: {fileID: 0}
-  projectileSpawnPoint: {fileID: 8589961487220705293}
 --- !u!114 &542055396196666482
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -312,7 +286,6 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 2949198728578349277}
   - {fileID: 7611054870768371262}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &7611054870768371262

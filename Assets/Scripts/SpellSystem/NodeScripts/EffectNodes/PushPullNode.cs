@@ -55,7 +55,7 @@ public class PushPullNode : EffectNode
 
             Vector3 rawDirection = GetRawDirection(info, target);
             float magnitude = GetForceMagnitude(info, rawDirection);
-            Debug.Log($"PUSHPULL node added {magnitude} force to {target} in direction {rawDirection.normalized}");
+            //Debug.Log($"PUSHPULL node added {magnitude} force to {target} in direction {rawDirection.normalized}");
             if (rawDirection.sqrMagnitude > 0.001f)
             {
                 rb.AddForce(rawDirection.normalized * magnitude, forceMode);

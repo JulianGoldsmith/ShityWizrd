@@ -6264,7 +6264,13 @@ MonoBehaviour:
   - {fileID: 6096479665446790084}
   - {fileID: 4821926085817117277}
   - {fileID: 6893507824606258484}
-  groundCheckDistance: 0.5
+  networkRagdollRigidbody3Ds: []
+  totalMass: 0
+  strenght: 1
+  armatureRetargetingLerp: 0
+  retargetRagDoll: 0
+  armatureRetargeter: {fileID: 0}
+  groundCheckExtraDistance: 1
   groundLayer:
     serializedVersion: 2
     m_Bits: 130943
@@ -6320,6 +6326,8 @@ MonoBehaviour:
   boneMapper: {fileID: 4441233011200215251}
   spineIKTarget: {fileID: 132459054243427191}
   headOffset: {x: 0, y: 0, z: 0}
+  armatureHipsRoot: {fileID: 0}
+  retargeter: {fileID: 0}
   pDSprings:
   - joint: {fileID: 0}
     target: {fileID: 2747907393351935040}
@@ -6397,79 +6405,13 @@ MonoBehaviour:
     nrb: {fileID: 0}
     localOffsetFromHips: {x: 0, y: 0, z: 0}
     localRotationFromHips: {x: 0, y: 0, z: 0, w: 0}
-  manualJoints:
-  - physicsRigidbody: {fileID: 5493043782483224575}
-    animationTarget: {fileID: 2747907393351935040}
-    connectedRigidbody: {fileID: 5107445244399539218}
-    angularSpringForce: 300
-    angularSpringDamp: 10
-    maxAngularForce: 20
-    angularErrorMultiplier:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 4.007635
-        outSlope: 4.007635
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0.054532062
-      - serializedVersion: 3
-        time: 1
-        value: 100
-        inSlope: 258.12067
-        outSlope: 258.12067
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.026529014
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 0
-    usePositionDrive: 1
-    positionSpringForce: 10000
-    positionSpringDamp: 100
-    maxPositionForce: 100
-  - physicsRigidbody: {fileID: 5107445244399539218}
-    animationTarget: {fileID: 7343396658092796643}
-    connectedRigidbody: {fileID: 7275000413263016744}
-    angularSpringForce: 300
-    angularSpringDamp: 10
-    maxAngularForce: 20
-    angularErrorMultiplier:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 4.007635
-        outSlope: 4.007635
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0.054532062
-      - serializedVersion: 3
-        time: 1
-        value: 100
-        inSlope: 258.12067
-        outSlope: 258.12067
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.026529014
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 0
-    usePositionDrive: 1
-    positionSpringForce: 10000
-    positionSpringDamp: 100
-    maxPositionForce: 100
+  pdBones: []
+  ragDollBones: []
   _moveInput: {x: 0, y: 0}
   _lookRot: {x: 0, y: 0, z: 0, w: 0}
   _sprint: 0
   networkedRenderRoot: {fileID: 3337669871098988345}
+  smoothedNetworkedRenderRoot: {fileID: 0}
   rendererPos: {x: 0, y: 0, z: 0}
   rendererRot: {x: 0, y: 0, z: 0, w: 0}
   rendererVelocity: {x: 0, y: 0, z: 0}
@@ -6488,6 +6430,7 @@ MonoBehaviour:
   cameraAnchorSmoothSpeed: 20
   handController: {fileID: 217951028737241466}
   bonkController: {fileID: 0}
+  xpbdSolver: {fileID: 0}
 --- !u!114 &4441233011200215251
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6537,6 +6480,7 @@ MonoBehaviour:
   - {fileID: 388643345319447384}
   NetworkedBehaviours:
   - {fileID: 6195748461925172910}
+  - {fileID: 4434358051165455125}
   - {fileID: 210248619347053474}
   - {fileID: 217951028737241466}
   - {fileID: 2004047190685296909}
@@ -6795,6 +6739,7 @@ MonoBehaviour:
       velocity: {x: 0, y: 0, z: 0}
       angularVelocity: {x: 0, y: 0, z: 0}
     armatureTarget: {fileID: 4280196786292158880}
+    targetFORFinalArmature: {fileID: 0}
     shoulderTransform: {fileID: 5401923038453180845}
     palmTransform: {fileID: 3499438219794453678}
     visableHandObject: {fileID: 1559601236660205466}
@@ -6815,6 +6760,7 @@ MonoBehaviour:
     armLength: 0
     isLeft: 0
     enabled: 1
+    shouldUpdateInLateUpdate: 1
   rightHand:
     transformNet:
       transform: {fileID: 7742432870361891637}
@@ -6825,6 +6771,7 @@ MonoBehaviour:
       velocity: {x: 0, y: 0, z: 0}
       angularVelocity: {x: 0, y: 0, z: 0}
     armatureTarget: {fileID: 7984383873056121737}
+    targetFORFinalArmature: {fileID: 0}
     shoulderTransform: {fileID: 2488643483987477740}
     palmTransform: {fileID: 8990044729373607680}
     visableHandObject: {fileID: 4116249875965613950}
@@ -6845,6 +6792,7 @@ MonoBehaviour:
     armLength: 0
     isLeft: 0
     enabled: 1
+    shouldUpdateInLateUpdate: 1
   defaultHandState: {fileID: 11400000, guid: 072fe238f7282244092660cc1837c744, type: 2}
   grabHandState: {fileID: 11400000, guid: 56332dce5df223a49a1acd08b21a1d22, type: 2}
   inventoryManager: {fileID: 6978061949586204830}
@@ -6887,6 +6835,8 @@ MonoBehaviour:
   dragTargetOffset: {x: 0, y: 0, z: 1.5}
   _DragDistance: 0
   dragHandModelPosOffset: {x: 0, y: -0.2, z: 0}
+  maxStableStrengthRatio: 0.5
+  maxDragStrength: 150
   dragStength: 50
   dragDamp: 10
   dragRange: 10
@@ -6981,6 +6931,13 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  handElasticForceOnPlayer:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  maxDistanceBeforeMaxElasticForce: 20
   characterController: {fileID: 6195748461925172910}
   playerRoot: {fileID: 3337669871098988345}
   armDistFalloff:
@@ -7017,6 +6974,7 @@ MonoBehaviour:
   activeMeshState: 0
   pickUpOffset: {x: -0.05, y: -0.08, z: -0.08}
   rigBuilder: {fileID: 696216545063333865}
+  cashedPLayerPos: {x: 0, y: 0, z: 0}
   pickUpWristRotOffset: {x: 210, y: 270, z: -90}
 --- !u!114 &2004047190685296909
 MonoBehaviour:
@@ -7063,6 +7021,8 @@ MonoBehaviour:
   _localHandPosOnItem: {x: 0, y: 0, z: 0}
   _PickUpPressCount: 0
   _DropPressCount: 0
+  __dragTargetPos: {x: 0, y: 0, z: 0}
+  __dragFacingDir: {x: 0, y: 0, z: 0}
 --- !u!114 &5231343068434598930
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7077,7 +7037,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inventory: {fileID: 6978061949586204830}
   isCasting: 0
-  canCombo: 0
   isUpperBodyAction: 0
   currentAttackCooldown: 0
   primaryComboCounter: 0
@@ -7198,7 +7157,16 @@ MonoBehaviour:
   physicsMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
   hybridCharacterController: {fileID: 6195748461925172910}
 --- !u!114 &239815188659276597
 MonoBehaviour:
@@ -7214,7 +7182,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   modelRenderer: {fileID: 2159277379848673421}
   ragDollRenderer: {fileID: 8302644767912741604}
-  robeRenderer: {fileID: 4663002687795789503}
+  apparel: []
   hostMat: {fileID: 2100000, guid: e09614160cb77a0498ad88d9b300cff8, type: 2}
   clientMat: {fileID: 2100000, guid: 099c94d8d75be114b827069f92f46f83, type: 2}
   _IsHost: 0
@@ -7231,16 +7199,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   characterController: {fileID: 0}
+  armIKs: []
   _BonkedState: 0
-  ragDollHips: {fileID: 6669131968257802104}
-  ragDoll: {fileID: 9014381616503347575}
-  ragDollController: {fileID: 1495835252745128354}
-  aliveRig: {fileID: 2299366013272482931}
-  bonkedRig: {fileID: 3148178070948974990}
-  animatedSkeletonRoot: {fileID: 2078354506747704850}
-  ragdollSkeletonRoot: {fileID: 5451448120578399651}
-  clothingRenderers:
-  - {fileID: 4663002687795789503}
+  bonkChangedThisUpdate: 0
+  ragdollProxysRoot: {fileID: 0}
 --- !u!114 &5571473309667192264
 MonoBehaviour:
   m_ObjectHideFlags: 0

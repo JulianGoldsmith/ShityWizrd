@@ -301,43 +301,43 @@ public class NPCActionController : CastActionController
     #region spells
     public SpellState Spell_StartCast(NPCActionSpell spellToCast, NPCAction actionToCast)
     {
-        Debug.Log($"NPC cast spell StartCast called and action is spell");
+        Debug.Log("NPC cast spell StartCast called and action is spell");
         if (spellToCast.spell == null) return null;
 
-        spellToCast.spell.CompileSpell(this);
+        SpellGraph graph = spellToCast.spell;
 
-        var entries = spellToCast.spell.GetComboEntries();
-        Debug.Log($"NPC cast spell got comboentries {entries.Count}");
-        if (entries.Count == 0)
+        // Compile the graph for this NPC caster.
+        graph.CompileSpell();
+
+        int comboCount = graph.GetComboCount();
+        if (comboCount <= 0)
         {
-            Debug.LogWarning("No Cast entries wired to EntryPointController.");
+            Debug.LogWarning("No combo roots wired to EntryPointControlNode.");
             return null;
         }
 
         int combo = actionToCast.comboPoint;
+        if (combo >= comboCount) combo = 0;
 
-        if (combo >= entries.Count) actionToCast.comboPoint = 0;
+        // NPC doesn't necessarily have an EquipableItem here, so pass null for item.
+        var netObj = GetComponent<NetworkObject>();
 
-        var entryCast = spellToCast.spell.GetEntryPoint(combo);
-        Debug.Log($"NPC cast spell got enty point{entryCast.name}");
-        if (entryCast == null)
-        {
-            Debug.LogWarning($"NPC Entry Cast at index {combo} is null.");
-            return null;
-        }
-
-
-        SpellState newCast = new SpellState(this, null, spellToCast.spell, entryCast, this.GetComponent<NetworkObject>());
-
+        SpellState newCast = new SpellState(this, null, graph, null, netObj);
+        //newCast.ComboIndex = combo;
         activeCasts.Add(newCast);
         isCasting = true;
         newCast.isHeld = true;
 
-        entryCast.OnCastStarted(newCast, this);
-        Debug.Log($"{this.gameObject.name} cast ability with spell {spellToCast.spell.name} at entry node {entryCast.name}");
+        // Fire all roots immediately for this combo index.
+        graph.ExecuteComboIndex(combo, newCast, this);
 
-        actionToCast.comboPoint++;
-        if (actionToCast.comboPoint >= entries.Count) actionToCast.comboPoint = 0;
+        Debug.Log(
+            $"{gameObject.name} cast ability with spell {graph.name} at combo index {combo}");
+
+        // Advance the NPC's internal combo counter for this action.
+        actionToCast.comboPoint = combo + 1;
+        if (actionToCast.comboPoint >= comboCount)
+            actionToCast.comboPoint = 0;
 
         return newCast;
     }
@@ -368,6 +368,11 @@ public class NPCActionController : CastActionController
     {
         int baseIndex = _actionBaseIndices[actions[actionID]];
         return _animStateController.ClipTimes[baseIndex + clipPhaseIndex];
+    }
+
+    public override EyePosAndLookDir GetEyePosAndLookDir()
+    {
+        throw new System.NotImplementedException();
     }
 
 
