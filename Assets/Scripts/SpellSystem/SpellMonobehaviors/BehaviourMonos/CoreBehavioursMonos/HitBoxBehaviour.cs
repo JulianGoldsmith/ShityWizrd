@@ -7,8 +7,9 @@ using UnityEngine;
 public class HitBoxBehaviour : MonoBehaviour
 {
 
-    private CastActionController _caster;
+    private CastActionController _npcCaster;
     private SpellState _activeSpellState;
+    private EquipableItem _itemOwner;
 
     public List<GameObject> objectsHitThisActivation = new List<GameObject>();
 
@@ -16,10 +17,28 @@ public class HitBoxBehaviour : MonoBehaviour
 
     public Rigidbody _drivingRigidbody;
 
+    public void InitializeNull()
+    {
+        _npcCaster = null;
+        _itemOwner = null;
+        _activeSpellState = null;
+        ResetHitBox();
+    }
+
     public void Initialize(CastActionController caster, SpellState state)
     {
-        _caster = caster;
+        _npcCaster = caster;
+        _itemOwner = null; 
         _activeSpellState = state;
+        ResetHitBox();
+    }
+
+    public void Initialize(EquipableItem item, SpellState state)
+    {
+        _itemOwner = item;
+        _npcCaster = null;
+        _activeSpellState = state;
+        ResetHitBox();
     }
 
     public void ResetHitBox()
@@ -30,11 +49,19 @@ public class HitBoxBehaviour : MonoBehaviour
     {
         Debug.Log("Activating hit box from the HITBOX");
 
-        hitBoxCollider.enabled = true;
+        ResetHitBox();
+        if (hitBoxCollider != null)
+        {
+            hitBoxCollider.enabled = true;
+            Debug.Log($"Hitbox Enabled on {gameObject.name}");
+        }
     }
     public void DisableHitBox()
     {
-        hitBoxCollider.enabled = false;
+        if (hitBoxCollider != null)
+        {
+            hitBoxCollider.enabled = false;
+        }
     }
 
 
@@ -50,21 +77,40 @@ public class HitBoxBehaviour : MonoBehaviour
 
     private void HandleHit(GameObject hitObject, Vector3 hitPoint)
     {
-        if (_caster == null || _activeSpellState == null)
-            return;
+        if(_activeSpellState == null) return;
+        if (_npcCaster == null && _itemOwner == null) return;
 
         if (objectsHitThisActivation.Contains(hitObject))
             return;
+
+        if (_itemOwner != null && _itemOwner.HoldingPlayer != null && hitObject == _itemOwner.HoldingPlayer.gameObject) return;
+        if (_npcCaster != null && hitObject == _npcCaster.gameObject) return;
+
 
         Vector3 swingMomentum = Vector3.zero;
         if (_drivingRigidbody != null)
         {
             swingMomentum = _drivingRigidbody.GetPointVelocity(hitPoint);
         }
+        else
+        {
+            // Fallback momentum based on forward direction if no RB
+            swingMomentum = transform.forward;
+        }
 
+        // 5. Register Hit
         objectsHitThisActivation.Add(hitObject);
 
-        // NEW: just forward to the caster – no more HitBoxCastNode.
-        _caster.OnItemHit(_activeSpellState, hitObject, hitPoint, swingMomentum);
+        // 6. Delegate to the correct owner
+        if (_itemOwner != null)
+        {
+            // NEW PATH: Tell the Item
+            _itemOwner.OnMeleeHit(hitObject, _activeSpellState, hitPoint, swingMomentum);
+        }
+        else if (_npcCaster != null)
+        {
+            // OLD PATH: Tell the NPC Controller
+            _npcCaster.OnItemHit(_activeSpellState, hitObject, hitPoint, swingMomentum);
+        }
     }
 }

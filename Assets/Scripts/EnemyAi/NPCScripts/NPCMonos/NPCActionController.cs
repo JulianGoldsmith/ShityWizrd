@@ -292,7 +292,7 @@ public class NPCActionController : CastActionController
         if (hitbox != null)
         {
             hitbox.DisableHitBox();
-            hitbox.Initialize(null, null);
+            hitbox.InitializeNull();
         }
     }
 

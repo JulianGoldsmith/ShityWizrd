@@ -30,6 +30,10 @@ public class EquipableItem : InteractableItem
 
     public Transform primaryHandle, secondaryHandle;
 
+    public List<HitBoxBehaviour> hitboxes = new List<HitBoxBehaviour>();
+    private bool _isHitboxActive = false;
+    public bool IsHitboxActive => _isHitboxActive;
+
     public NetworkObjectBuffer networkObjectBuffer;
 
     [Header("Pickup Variables")]
@@ -822,6 +826,58 @@ public class EquipableItem : InteractableItem
         if (isLeft && secondaryHandle != null) return secondaryHandle;
         return primaryHandle;
     }
+
+    #region
+
+    public void EnableHitbox(int index)
+    {
+        if (index < 0 || index >= hitboxes.Count) return;
+
+        hitboxes[index].Initialize(activeCaster, activeCast);
+        hitboxes[index].EnableHitBox();
+        _isHitboxActive = true;
+    }
+
+    public void DisableHitbox(int index)
+    {
+        if (index < 0 || index >= hitboxes.Count) return;
+        hitboxes[index].DisableHitBox();
+        _isHitboxActive = false;
+    }
+
+    public void OnMeleeHit(GameObject target, SpellState state, Vector3 hitPoint, Vector3 momentum)
+    {
+        // Only the Server should deal damage to prevent cheating/desync
+        if (true)
+        {
+            // Create the trigger context
+            var triggerInfo = new SpellTriggerInfo(
+                isCast: false,
+                source: HoldingPlayer.gameObject,
+                state: state,
+                position: hitPoint,
+                rotation: Quaternion.LookRotation(momentum.normalized + Vector3.up * 0.01f), // Safety for zero vector
+                tiggerVector: momentum,
+                hitObject: target
+            );
+
+            // Update State context
+            state.CastPosition = hitPoint;
+            state.CastAimTargetPos = target.transform.position;
+
+            // Execute the Spell Graph (Hit Logic)
+            // Assuming your graph has logic connected to the Combo Index or a specific "OnHit" node
+            primaryActionSpell.ExecuteComboIndex(state.ComboIndex, triggerInfo);
+
+            Debug.Log($"[Server] {itemName} hit {target.name}");
+        }
+        else
+        {
+            // Client Side: Play local hit sound / sparks immediately if you want zero latency feel
+        }
+    }
+
+    #endregion
 
 }
 

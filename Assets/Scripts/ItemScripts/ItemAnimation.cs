@@ -12,6 +12,8 @@ public class ItemAnimation : ScriptableObject
     public float speedMultiplier = 1.0f;
 
     public float castPointTime = 0.2f;
+
+    public float castEndTime = 0.4f;
     public bool IsFinished(float realTimePassed)
     {
         if (clip == null) return true; 
@@ -23,6 +25,17 @@ public class ItemAnimation : ScriptableObject
         if (clip == null) return true;
 
         return (realTimePassed * speedMultiplier) >= castPointTime;
+    }
+    public bool HasPassedEndPoint(float realTimePassed)
+    {
+        if (clip == null) return true;
+
+        return (realTimePassed * speedMultiplier) >= castEndTime;
+    }
+    public bool IsInActiveWindow(float realTime)
+    {
+        float animTime = realTime * speedMultiplier;
+        return animTime >= castPointTime && animTime < castEndTime;
     }
 }
 
