@@ -36,37 +36,47 @@ public class PlayerCastActionController : CastActionController
 
         if (GetInput(out NetworkInputData data))
         {
+            //if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
+            //{
+            //    primary_attack_pressed++;
+            //}
+            //if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
+            //{
+            //    primary_attack_released++;
+            //}
             if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
             {
-                primary_attack_pressed++;
+                OnInputEvent(true);
             }
             if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
             {
-                primary_attack_released++;
+                OnInputEvent(false);
             }
             prior_buttons = data.buttons;
             lookDirection = data.lookRotation;
         }
 
-        foreach (var change in _changes.DetectChanges(this))
-        {
-            if (change == nameof(primary_attack_pressed))
-            {
-                OnInputEvent(true);
-            }
+        //foreach (var change in _changes.DetectChanges(this))
+        //{
+        //    if (change == nameof(primary_attack_pressed))
+        //    {
+        //        OnInputEvent(true);
+        //    }
 
-            if (change == nameof(primary_attack_released))
-            {
-                OnInputEvent(false);
-            }
-        }
+        //    if (change == nameof(primary_attack_released))
+        //    {
+        //        OnInputEvent(false);
+        //    }
+        //}
 
         //OnInputTryCast();
     }
 
     private void OnInputEvent(bool isPress)
     {
-        if(inventory == null || inventory.activeItem == null)
+        if (!HasStateAuthority && Runner.IsResimulation)
+            Debug.Log("ReawakenAndPlaceCalledInResim");
+        if (inventory == null || inventory.activeItem == null)
             return;
 
         var item = inventory.activeItem.GetComponent<EquipableItem>();

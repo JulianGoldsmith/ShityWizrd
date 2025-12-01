@@ -266,18 +266,18 @@ public class EquipableItem : InteractableItem
         
         if (HoldingPlayer == null)
         {
-            Debug.Log($"Item {this.name} holder is NULL");
+           // Debug.Log($"Item {this.name} holder is NULL");
             return;
         }
         else
         {
-            Debug.Log($"Item {this.name} is held by {HoldingPlayer.name}");
+           // Debug.Log($"Item {this.name} is held by {HoldingPlayer.name}");
         }
 
 
         TickActions();
         SimulatePhysics(HoldingPlayer.GetComponent<HybridCharacterController>(), Runner.DeltaTime);
-        Debug.Log($"Simulating tick and hold pos on {this.name}");
+        //Debug.Log($"Simulating tick and hold pos on {this.name}");
 
         //SimulateHeldPose(hcc, cac, Runner.DeltaTime);
     }
@@ -332,7 +332,7 @@ public class EquipableItem : InteractableItem
             UpdateActionsToNewCaster(cac);
         }
 
-        //this.Object.AssignInputAuthority(playerObject.InputAuthority);
+      this.Object.AssignInputAuthority(playerObject.InputAuthority);
 
         if (HasStateAuthority || HasInputAuthority)
         {
@@ -349,7 +349,10 @@ public class EquipableItem : InteractableItem
 
         networkedRB.Rigidbody.angularVelocity = Vector3.zero;
         networkedRB.Rigidbody.linearVelocity = Vector3.zero;
-   
+
+        visualModel.localPosition = Vector3.zero;
+        visualModel.localRotation = Quaternion.identity;
+        visualModel.transform.SetParent(null);
 
         if (playerObject.TryGetComponent(out NetworkedHandsController hands))
         {
@@ -365,16 +368,17 @@ public class EquipableItem : InteractableItem
 
             //transform.SetPositionAndRotation(modelPos, modelRot);
 
-            visualModel.localPosition = Vector3.zero;
-            visualModel.localRotation = Quaternion.identity;
+            
 
             //if (localPlayer)
             //{
-                visualModel.transform.SetParent(null);
+               
                 //visualModel.transform.SetPositionAndRotation(modelPos, modelRot);
             //}
-           
+            
             hands.SetHandTarget_ToHold(false, heldHandState);
+            if (secondaryHandle != null)
+                hands.SetHandTarget_ToHold(true, heldHandState);
         }
 
         RestCastingState();
@@ -423,6 +427,7 @@ public class EquipableItem : InteractableItem
         visualModel.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
         handController.SetHandTarget_ToArmature(false);
+        handController.SetHandTarget_ToArmature(true);
 
         RestCastingState();
 
@@ -512,7 +517,7 @@ public class EquipableItem : InteractableItem
 
     private void SimulatePhysics(HybridCharacterController hcc, float dt)
     {
-        EyePosAndLookDir eye = hcc.GetEyePosAndLookDirSmoothed();
+        EyePosAndLookDir eye = hcc.GetEyePosAndLookDir();
 
         if (!GetTargetPose(ItemActionData, eye, dt, out Vector3 targetPos, out Quaternion targetRot))
             return; 
@@ -833,7 +838,7 @@ public class EquipableItem : InteractableItem
     {
         if (index < 0 || index >= hitboxes.Count) return;
 
-        hitboxes[index].Initialize(activeCaster, activeCast);
+        hitboxes[index].Initialize(this, activeCast);
         hitboxes[index].EnableHitBox();
         _isHitboxActive = true;
     }
@@ -848,7 +853,7 @@ public class EquipableItem : InteractableItem
     public void OnMeleeHit(GameObject target, SpellState state, Vector3 hitPoint, Vector3 momentum)
     {
         // Only the Server should deal damage to prevent cheating/desync
-        if (true)
+        if (Object.HasStateAuthority || activeCaster.HasInputAuthority)
         {
             // Create the trigger context
             var triggerInfo = new SpellTriggerInfo(

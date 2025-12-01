@@ -29,15 +29,17 @@ public class ChargeItemAction : ItemAction
     public override void OnPress(int comboIndex, bool isAlreadyReleased)
     {
 
-        Item.EnterNewPhaseAtTick((int)Phase.Windup, Item.Runner.Tick, comboIndex, Item.Runner.Tick);
+        Item.EnterNewPhaseAtTick((int)Phase.Windup, Item.activeCaster.Runner.Tick, comboIndex, Item.Runner.Tick);
         Item.activeCaster.isCasting = true;
 
         CreateAndRegisterSpellState(comboIndex);
+        if (!Item.HasStateAuthority && Item.Runner.IsResimulation)
+            Debug.Log("OnOnPressCalledInResim");
     }
 
     public override void OnRelease( int comboIndex)
     {
-        var pose = Item.HasInputAuthority? Item.localItemActionData: Item.ItemActionData;
+        var pose = /*Item.activeCaster.HasInputAuthority? Item.localItemActionData: */Item.ItemActionData;
         if (pose.actionID != comboIndex) return;
         if ((Phase)pose.phaseID == Phase.Idle) return;
 
@@ -50,7 +52,7 @@ public class ChargeItemAction : ItemAction
 
     public override void Tick( int comboIndex, float deltaTime)
     {
-        var pose = Item.HasInputAuthority ? Item.localItemActionData : Item.ItemActionData;
+        var pose = /*Item.activeCaster.HasInputAuthority ? Item.localItemActionData :*/ Item.ItemActionData;
         if (pose.actionID != comboIndex) return;
 
         Phase currentPhase = (Phase)pose.phaseID;
@@ -75,9 +77,9 @@ public class ChargeItemAction : ItemAction
 
             case Phase.Release:
 
-                if (!pose.hasFired && (Item.HasInputAuthority || Item.HasStateAuthority))
+                if (!pose.hasFired && (Item.activeCaster.HasInputAuthority || Item.HasStateAuthority))
                 {
-                    if (currentAnim.HasPassedCastPoint(timeInPhase))
+                    if (currentAnim != null && currentAnim.HasPassedCastTick(ticksInPhase))
                     {
                         int chargeTicks = Item.Runner.Tick - pose.chargeStartTick;
                         float chargeSeconds = chargeTicks * Item.Runner.DeltaTime;
@@ -86,7 +88,7 @@ public class ChargeItemAction : ItemAction
                     }
                 }
 
-                if (currentAnim.IsFinished(timeInPhase))
+                if (currentAnim != null && currentAnim.IsFinished(timeInPhase))
                 {
                     Item.activeCaster.isCasting = false;
                     Item.ClearItemActionData(); 
@@ -130,6 +132,9 @@ public class ChargeItemAction : ItemAction
 
         // Execute
         graph.ExecuteComboIndex(comboIndex, state, controller);
+        if (!Item.HasStateAuthority && Item.Runner.IsResimulation)
+            Debug.Log("SpellExecutedOnResim");
+
 
         Debug.Log($"Fired at {chargeDuration}s charge.");
     }
@@ -147,6 +152,14 @@ public class ChargeItemAction : ItemAction
             default: return null;
         }
     }
+
+    protected override void InitializeAnimationTickCache(float dt)
+    {
+        if (windupAnimation != null) windupAnimation.InitializeTickCache(dt);
+        if (holdAnimation != null) holdAnimation.InitializeTickCache(dt);
+        if (releaseAnimation != null) releaseAnimation.InitializeTickCache(dt);
+    }
+
 
 
 }

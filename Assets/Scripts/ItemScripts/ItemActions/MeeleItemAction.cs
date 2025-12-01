@@ -37,7 +37,7 @@ public class MeeleItemAction : ItemAction
 
     public override void OnRelease(int comboIndex)
     {
-        var pose = Item.HasInputAuthority ? Item.localItemActionData : Item.ItemActionData;
+        var pose =/* Item.activeCaster.HasInputAuthority ? Item.localItemActionData :*/ Item.ItemActionData;
         if (pose.actionID != comboIndex) return;
         if ((Phase)pose.phaseID == Phase.Idle) return;
 
@@ -50,7 +50,7 @@ public class MeeleItemAction : ItemAction
 
     public override void Tick(int comboIndex, float deltaTime)
     {
-        var pose = Item.HasInputAuthority ? Item.localItemActionData : Item.ItemActionData;
+        var pose =/* Item.activeCaster.HasInputAuthority ? Item.localItemActionData : */Item.ItemActionData;
         if (pose.actionID != comboIndex) return;
 
         Phase currentPhase = (Phase)pose.phaseID;
@@ -86,7 +86,7 @@ public class MeeleItemAction : ItemAction
                 //    }
                 //}
 
-                if (currentAnim.IsInActiveWindow(timeInPhase))
+                if (currentAnim.IsInActiveWindowTicks(ticksInPhase))
                 {
                     // Enable Hitbox if not already enabled
                     // You might need a flag on the item 'isHitboxActive' to avoid calling Enable every frame
@@ -167,6 +167,14 @@ public class MeeleItemAction : ItemAction
             default: return null;
         }
     }
+
+    protected override void InitializeAnimationTickCache(float dt)
+    {
+        if (windupAnimation != null) windupAnimation.InitializeTickCache(dt);
+        if (holdAnimation != null) holdAnimation.InitializeTickCache(dt);
+        if (releaseAnimation != null) releaseAnimation.InitializeTickCache(dt);
+    }
+
 
 
 }

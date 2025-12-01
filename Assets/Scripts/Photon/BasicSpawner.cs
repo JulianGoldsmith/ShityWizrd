@@ -16,6 +16,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     [SerializeField] private NetworkPrefabRef _handsPrefab;
     [SerializeField] private NetworkPrefabRef _itemPrefab;
+    [SerializeField] private NetworkPrefabRef _testCounterPrefab;
+
     public Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
     private List<double> pings = new List<double>();
@@ -73,6 +75,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
             Vector3 itemoffset = new Vector3(0, 2, -2);
             NetworkObject networkItem = runner.Spawn(_itemPrefab, spawnPosition + itemoffset, Quaternion.identity, player);
+            NetworkObject testCounter = runner.Spawn(_testCounterPrefab, spawnPosition + itemoffset, Quaternion.identity, player);
 
             // Keep track of the player avatars for easy access
             _spawnedCharacters.Add(player, networkPlayerObject);

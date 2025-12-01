@@ -11,6 +11,17 @@ public abstract class ItemAction : ScriptableObject
     {
         Item = item;
         ComboIndex = comboIndex;
+        // Let derived classes init their own animations
+        float dt = (Item != null && Item.Runner != null)
+            ? Item.Runner.DeltaTime
+            : Time.fixedDeltaTime;
+
+        InitializeAnimationTickCache(dt);
+    }
+
+    protected virtual void InitializeAnimationTickCache(float dt)
+    {
+        // default: do nothing
     }
 
     public abstract void OnPress(int comboIndex,bool isAlreadyReleased);
@@ -44,4 +55,6 @@ public abstract class ItemAction : ScriptableObject
     {
         Item.activeCast = null;
     }
+
+
 }

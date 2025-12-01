@@ -14,29 +14,69 @@ public class ItemAnimation : ScriptableObject
     public float castPointTime = 0.2f;
 
     public float castEndTime = 0.4f;
+
+    [System.NonSerialized] public int castPointTicks;
+    [System.NonSerialized] public int castEndTicks;
+
+    public void InitializeTickCache(float deltaTime)
+    {
+        if (deltaTime <= 0f)
+        {
+            castPointTicks = 0;
+            castEndTicks = 0;
+            return;
+        }
+
+        float invDt = 1f / deltaTime;
+
+        castPointTicks = Mathf.Max( 0,Mathf.RoundToInt(castPointTime * speedMultiplier * invDt));
+
+        castEndTicks = Mathf.Max(castPointTicks, Mathf.RoundToInt(castEndTime * speedMultiplier * invDt));
+    }
+
+    // ---- You can keep these time-based helpers if you still like them for non-network logic ----
+
     public bool IsFinished(float realTimePassed)
     {
-        if (clip == null) return true; 
-
+        if (clip == null) return true;
         return (realTimePassed * speedMultiplier) >= clip.length;
     }
+
     public bool HasPassedCastPoint(float realTimePassed)
     {
         if (clip == null) return true;
-
         return (realTimePassed * speedMultiplier) >= castPointTime;
     }
+
     public bool HasPassedEndPoint(float realTimePassed)
     {
         if (clip == null) return true;
-
         return (realTimePassed * speedMultiplier) >= castEndTime;
     }
+
     public bool IsInActiveWindow(float realTime)
     {
         float animTime = realTime * speedMultiplier;
         return animTime >= castPointTime && animTime < castEndTime;
     }
+
+    // ---- Tick-based helpers for network-critical logic ----
+
+    public bool HasPassedCastTick(int ticksInPhase)
+    {
+        return ticksInPhase >= castPointTicks;
+    }
+
+    public bool HasPassedEndTick(int ticksInPhase)
+    {
+        return ticksInPhase >= castEndTicks;
+    }
+
+    public bool IsInActiveWindowTicks(int ticksInPhase)
+    {
+        return ticksInPhase >= castPointTicks && ticksInPhase < castEndTicks;
+    }
+
 }
 
 [System.Serializable]

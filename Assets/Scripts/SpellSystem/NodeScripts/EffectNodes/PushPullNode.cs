@@ -42,11 +42,13 @@ public class PushPullNode : EffectNode
 
     public override void Execute(List<SpellTriggerInfo> triggerInfos)
     {
-        Debug.Log($"PUSHPULL node Executed");
+        //Debug.Log($"PUSHPULL node Executed");
 
         foreach (var info in triggerInfos)
         {
             GameObject target = info.HitObject;
+
+
 
             if (target == null || !target.TryGetComponent<Rigidbody>(out Rigidbody rb))
             {
@@ -59,6 +61,7 @@ public class PushPullNode : EffectNode
             if (rawDirection.sqrMagnitude > 0.001f)
             {
                 rb.AddForce(rawDirection.normalized * magnitude, forceMode);
+                //Debug.Log($"PUSHPULL node added force to {rb.name}");
 
             }
             if(target.TryGetComponent<PhysicsObject>(out PhysicsObject PO))

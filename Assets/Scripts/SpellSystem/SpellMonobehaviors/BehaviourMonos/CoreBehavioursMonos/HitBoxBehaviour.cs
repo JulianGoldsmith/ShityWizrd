@@ -84,8 +84,15 @@ public class HitBoxBehaviour : MonoBehaviour
             return;
 
         if (_itemOwner != null && _itemOwner.HoldingPlayer != null && hitObject == _itemOwner.HoldingPlayer.gameObject) return;
+
         if (_npcCaster != null && hitObject == _npcCaster.gameObject) return;
 
+        if (hitObject.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject PSO))
+        {
+            if ((_itemOwner != null && PSO.parent_physics_object.gameObject == _itemOwner.activeCaster.gameObject) ||
+                (_npcCaster != null && PSO.parent_physics_object.gameObject == _npcCaster)) return;
+        }
+        
 
         Vector3 swingMomentum = Vector3.zero;
         if (_drivingRigidbody != null)

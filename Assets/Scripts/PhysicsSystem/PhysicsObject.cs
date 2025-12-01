@@ -502,7 +502,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     protected virtual void OnBonk(float bonk_amount, NetworkObject bonk_instigator = null, Vector3? pos = null)
     {
         current_bonkedness -= bonk_amount;
-        Debug.Log($"new bonkedness: {current_bonkedness} {bonk_amount}");
+        //Debug.Log($"new bonkedness: {current_bonkedness} {bonk_amount}");
 
         //OnBonkednessChanged();
         // Do stuff when zero-bonkedness.

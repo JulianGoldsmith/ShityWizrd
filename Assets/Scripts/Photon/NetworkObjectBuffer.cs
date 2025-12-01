@@ -1,4 +1,4 @@
-
+﻿
 using Fusion;
 using Fusion.Addons.Physics;
 using System;
@@ -12,6 +12,7 @@ using UnityEngine;
 /// Each prefab is given a section of the buffer, with its own bufferhead that loops over its section.
 /// Cannot have more prefabs than max buffer capacity.
 /// </summary>
+[DefaultExecutionOrder(-100)]
 public class NetworkObjectBuffer : NetworkBehaviour
 {
     // CONSTANTS
@@ -31,6 +32,11 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     private Dictionary<NetworkPrefabRef, partial_buffer_info> prefab_partial_buffer_infos;
     [Networked] private byte initial_kinematic_states { get; set; } // only allows up to 8 unique prefabs. Would need to change to short/int for more.
+
+    private readonly HashSet<NetworkObject> _locallyClaimed = new HashSet<NetworkObject>();
+
+    public NetworkObject thisNO;
+    
     struct partial_buffer_info
     {
         public partial_buffer_info(int _buffer_head_index, int _partial_buffer_start_index, int _partial_buffer_length)
@@ -60,13 +66,8 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     public NetworkObject Get(NetworkPrefabRef prefabref, Vector3 position, Quaternion rotation)
     {
-        // This replaces the spawn method.
-
         if (!prefab_partial_buffer_infos.TryGetValue(prefabref, out partial_buffer_info buffer_info))
-            //throw new System.Exception("[NetworkObjectBuffer] buffer_info not found for prefab.");
             return FallbackGet(prefabref, position, rotation);
-
-        //Debug.Log($"buffer_info found {buffer_info.buffer_head_index} {buffer_info.partial_buffer_start_index} {buffer_info.partial_buffer_length}");
 
         int _bufferhead = _bufferHeads[buffer_info.buffer_head_index];
         var instance = _buffer[_bufferhead];
@@ -74,28 +75,30 @@ public class NetworkObjectBuffer : NetworkBehaviour
         if (instance == null)
         {
             Debug.LogError($"Instance was null at {_bufferhead} for index {buffer_info.buffer_head_index}");
-            // was null so refill the buffer and return a fallback.
-            ReplaceBuffer(prefabref, _bufferhead);
+            if (HasStateAuthority)
+                ReplaceBuffer(prefabref, _bufferhead);
             return FallbackGet(prefabref, position, rotation);
         }
 
-        //Debug.Log("Buffer spawning...");
+        if (HasStateAuthority)
+        {
+            _buffer.Set(_bufferhead, null);
+            ReplaceBuffer(prefabref, _bufferhead);
 
-        // REMOVED THIS LINE, it's pointless.
-        // amend localbuffer to avoid flicker
-        //_localBuffer[_bufferhead] = null;
-
-        // replace its spot in the buffer with a new copy of it.
-        _buffer.Set(_bufferhead, null);
-        ReplaceBuffer(prefabref, _bufferhead);
-
-        // reawaken the networkobject and put it in the right place.
+            int new_buffer_head_index = buffer_info.increment_partial_buffer_index(_bufferhead);
+            _bufferHeads.Set(buffer_info.buffer_head_index, new_buffer_head_index);
+        }
+        if (!HasStateAuthority && Runner.IsResimulation)
+            Debug.Log("ReawakenAndPlaceCalledInResim");
+        // This wakes the instance on this peer
         ReawakenAndPlace(instance, prefabref, position, rotation);
 
-        // progress the corresponding bufferhead (and loop within partial buffer).
-        int new_buffer_head_index = buffer_info.increment_partial_buffer_index(_bufferhead);
-        //Debug.Log($"new buffer head index: {new_buffer_head_index}");
-        _bufferHeads.Set(buffer_info.buffer_head_index, new_buffer_head_index);
+        // IMPORTANT: on non-authority clients, mark this as claimed so the buffer logic
+        // never tries to treat it as a hidden pooled object.
+        if (!HasStateAuthority)
+        {
+            _locallyClaimed.Add(instance);
+        }
 
         return instance;
     }
@@ -117,9 +120,12 @@ public class NetworkObjectBuffer : NetworkBehaviour
             return;
 
         Runner.SetIsSimulated(instance, true);
-        //instance.AssignInputAuthority(inputAuthority);
+        //if(thisNO != null)
+        //    instance.AssignInputAuthority(thisNO.InputAuthority);
 
         instance.gameObject.SetActive(true);
+
+        Debug.Log($"[Reawaken] instance={instance.Id} sim={instance.IsInSimulation}");
 
         NetworkRigidbody3D rb = instance.GetComponent<NetworkRigidbody3D>();
         if (rb != null)
@@ -134,7 +140,9 @@ public class NetworkObjectBuffer : NetworkBehaviour
         }
     }
 
-    public override void Render()
+    
+
+    public override void FixedUpdateNetwork()
     {
         //if (HasInputAuthority) return;
         ReconcileLocalAndNetworkBuffers();
@@ -144,41 +152,29 @@ public class NetworkObjectBuffer : NetworkBehaviour
         for (int i = 0; i < _bufferSize; i++)
         {
             var networkInstance = _buffer[i];
-            var localInstance = _localBuffer[i];
 
-            if (localInstance == networkInstance)
+            // 0) If this instance has been explicitly claimed for prediction on this client,
+            //    DO NOT let the buffer system touch it. Gameplay owns it.
+            if (networkInstance != null && _locallyClaimed.Contains(networkInstance))
             {
-                // When they spawn in, they might not be set to inactive yet,
-                // which causes weirdness where the buffered objects
-                // all interact for the client in the shadow zone.
+                _localBuffer[i] = networkInstance;
                 continue;
             }
 
-            if (localInstance != null && localInstance.IsValid)
-            {
-                // Network instance was released so we need to activate
-                // object on all clients (including proxies) not only
-                // on those where Get method was called
-                //Debug.Log($"setting active localinstance {i} {localInstance.name}");
-                localInstance.gameObject.SetActive(true);
-                // set is simulated to allow clientside predictions.
-                Runner.SetIsSimulated(localInstance, true);
-            }
-
+            // 1) For everything else, just mirror the buffer content.
             _localBuffer[i] = networkInstance;
 
+            // 2) If there is a buffer object in this slot, we enforce "hidden + not simulated".
             if (networkInstance != null && networkInstance.IsValid)
             {
-                // New instance was added to the buffer, we need to make sure
-                // that the object is inactive on all clients (including proxies)
-                //Debug.Log($"setting active networkinstance {i} {networkInstance.name}");
                 networkInstance.gameObject.SetActive(false);
                 Runner.SetIsSimulated(networkInstance, false);
+
+                if (thisNO != null)
+                    networkInstance.AssignInputAuthority(thisNO.InputAuthority);
             }
 
-            //var localName = localInstance != null ? localInstance.Id.ToString(): "null";
-            //var remoteName = networkInstance != null ? networkInstance.Id.ToString() : "null";
-            //Debug.Log($"{Runner.name} - {Object.InputAuthority} ({Time.frameCount}) - Changing local buffer on index {i} Local {localName} Network {remoteName}");
+            // 3) If networkInstance is null, slot empty - nothing else to do.
         }
     }
 
@@ -189,6 +185,8 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     public void Initialise()
     {
+        thisNO = this.GetComponent<NetworkObject>();
+
         if (!VerifyInputArrayLengths())
             throw new System.Exception("[NetworkObjectBuffer] Input prefab arrays of different lengths or null.");
         if (!VerifySumTotalPartialBufferLengths())
@@ -316,7 +314,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
         if (instance.TryGetComponent(out Rigidbody rb))
         {
             SetKinematicsByteBit(prefabref, rb.isKinematic);
-            rb.isKinematic = false;
+            rb.isKinematic = true;
         }
 
         Runner.SetIsSimulated(instance, false);

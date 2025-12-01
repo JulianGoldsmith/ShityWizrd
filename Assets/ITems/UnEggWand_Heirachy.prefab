@@ -96,7 +96,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8047021178530276143}
   m_Layer: 16
-  m_Name: GameObject
+  m_Name: ProjectileSpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -110,12 +110,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4839383806732061854}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.42, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
+  m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 5220390951732050473}
+  m_Father: {fileID: 7593883516908258463}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4844005429175820435
 GameObject:
@@ -148,7 +148,6 @@ Transform:
   m_Children:
   - {fileID: 4049595594831039268}
   - {fileID: 639391647993382997}
-  - {fileID: 8047021178530276143}
   - {fileID: 70880927531738438}
   m_Father: {fileID: 7593883516908258463}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -220,6 +219,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 8047021178530276143}
   - {fileID: 5220390951732050473}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -319,6 +319,7 @@ MonoBehaviour:
   heldHandState: {fileID: 11400000, guid: 903f93413bbf6744f8f636324924477b, type: 2}
   primaryHandle: {fileID: 70880927531738438}
   secondaryHandle: {fileID: 0}
+  hitboxes: []
   networkObjectBuffer: {fileID: 1812851221460989918}
   visualModel: {fileID: 5220390951732050473}
   weaponBase: {fileID: 0}
@@ -388,6 +389,7 @@ MonoBehaviour:
   prefab_ids: []
   prefab_counts: 
   _bufferSize: 8
+  thisNO: {fileID: 0}
 --- !u!95 &5900722414974312071
 Animator:
   serializedVersion: 7

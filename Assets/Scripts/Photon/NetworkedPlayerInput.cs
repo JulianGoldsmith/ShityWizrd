@@ -132,6 +132,8 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.SELF_BONK, keyboard.rKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.UN_SELF_BONK, keyboard.fKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.TEST_COUNT, keyboard.cKey.isPressed);
+
                 _accumulatedInput.scroll = scroll.y/5f;
             }
 

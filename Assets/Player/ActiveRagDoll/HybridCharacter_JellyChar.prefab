@@ -2760,9 +2760,15 @@ MonoBehaviour:
   rendererPos: {x: 0, y: 0, z: 0}
   rendererRot: {x: 0, y: 0, z: 0, w: 0}
   rendererVelocity: {x: 0, y: 0, z: 0}
+  rendererAccel: {x: 0, y: 0, z: 0}
   rendererYawSpeed: 0
   rendererAngularVel: {x: 0, y: 0, z: 0}
   lastRendererPos: {x: 0, y: 0, z: 0}
+  lastFixedPos: {x: 0, y: 0, z: 0}
+  calculatedFixedVel: {x: 0, y: 0, z: 0}
+  lastFixedVel: {x: 0, y: 0, z: 0}
+  calculatedFixedAccel: {x: 0, y: 0, z: 0}
+  lastRenderDt: 0
   _isHost: 0
   cashIsHost: 0
   hostMat: {fileID: 2100000, guid: e09614160cb77a0498ad88d9b300cff8, type: 2}
@@ -3090,6 +3096,8 @@ MonoBehaviour:
     draggingTransform: {fileID: 0}
     localDragPoint: {x: 0, y: 0, z: 0}
     cashePalmOffset: {x: 0, y: 0, z: 0}
+    localWristToPalmPos: {x: 0, y: 0, z: 0}
+    localWristToPalmRot: {x: 0, y: 0, z: 0, w: 0}
     currentFrametargetPos: {x: 0, y: 0, z: 0}
     currentFrametargetRot: {x: 0, y: 0, z: 0, w: 0}
     temporaryTarget: {fileID: 0}
@@ -3122,6 +3130,8 @@ MonoBehaviour:
     draggingTransform: {fileID: 0}
     localDragPoint: {x: 0, y: 0, z: 0}
     cashePalmOffset: {x: 0, y: 0, z: 0}
+    localWristToPalmPos: {x: 0, y: 0, z: 0}
+    localWristToPalmRot: {x: 0, y: 0, z: 0, w: 0}
     currentFrametargetPos: {x: 0, y: 0, z: 0}
     currentFrametargetRot: {x: 0, y: 0, z: 0, w: 0}
     temporaryTarget: {fileID: 0}
@@ -6850,7 +6860,7 @@ Transform:
   m_GameObject: {fileID: 3299187921067169248}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 73.9, z: 37.6}
+  m_LocalPosition: {x: -0, y: 41, z: 21}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

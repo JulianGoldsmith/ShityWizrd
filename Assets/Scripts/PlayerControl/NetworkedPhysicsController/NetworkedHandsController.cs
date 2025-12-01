@@ -207,7 +207,7 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
             {
                 Transform handle = eq.GetHandle(false); // right hand
                 float dist = Vector3.Distance(handle.position, rightHand.transformLocal.transform.position);
-                Debug.Log($"[HOLD DEBUG] Hand vs handle distance: {dist:F4}");
+                //Debug.Log($"[HOLD DEBUG] Hand vs handle distance: {dist:F4}");
             }
         }
     }
@@ -539,7 +539,6 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
         {
             rightHandState = holdState;
             RightHandMode = TargetingMode.HOLD;
-
         }
 
         SetHandPose(isLeft, holdState.holdClip);
