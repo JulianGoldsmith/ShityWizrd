@@ -67,7 +67,10 @@ public struct PhysicsObjectProperties : INetworkStruct
     {
         get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.stickiness : PhysicsObjectMaterial.default_stickiness; }
     }
-
+    public float friction
+    {
+        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.friction : PhysicsObjectMaterial.default_friction; }
+    }
     #endregion
 
 

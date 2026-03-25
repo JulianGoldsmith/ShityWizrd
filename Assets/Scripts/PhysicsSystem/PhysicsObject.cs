@@ -31,6 +31,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))]
     public PhysicsObjectProperties physicsObjectProperties { get; set; }
+    public CurrentPhysicsProperties currentProperties;
     public Rigidbody rb;
     public PhysicsMaterial physicsMaterial;
     [SerializeField] protected List<PhysicsSubObject> physicsSubObjects = new List<PhysicsSubObject>();
@@ -43,6 +44,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public NetworkObject creator;
     public NetworkObject lastInteractor;
     public NetworkObject currentThreatCause => (lastInteractor ?? creator)?? null;
+
+    [Networked]
+    public SpellEffectStates SpellEffectState { get; set; }
 
     #region Data Networking
     public void OnPhysicsObjectPropertiesChanged()
@@ -73,6 +77,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             UpdatePhysicsMaterial(col.material);
         UpdateVisuals();
         ModifyTransform();
+        UpdateDerivedPhysics();
     }
     public Rigidbody UpdateRigidbody(Rigidbody _rb)
     {
@@ -104,6 +109,77 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         return physicsMaterial;
     }
+
+    public void UpdateDerivedPhysics()
+    {
+        if (rb == null || physicsMaterial == null) return;
+
+        // 1. SIZE (Volume)
+        float scaleModifier = 1f + (SpellEffectState.Scale / 125f);
+        currentProperties.size = Mathf.Max(0.1f, physicsObjectProperties.size * scaleModifier);
+        transform.localScale = Vector3.one * currentProperties.size;
+
+        // 2. DENSITY & MASS
+        float densityModifier = 1f
+            + (SpellEffectState.Stone / 255f * 5f)
+            - (SpellEffectState.Feather / 255f * 0.9f)
+            + (SpellEffectState.Damp / 255f * 0.2f);
+
+        currentProperties.density = physicsObjectProperties.density * densityModifier;
+
+        // Mass = Density * Volume (Size^3 roughly)
+        currentProperties.mass = Mathf.Max(0.01f, currentProperties.density * Mathf.Pow(currentProperties.size, 1.5f));
+        rb.mass = currentProperties.mass;
+
+        // 3. ELASTICITY
+        float coldPenalty = SpellEffectState.Temperature < 0 ? (Mathf.Abs(SpellEffectState.Temperature) / 125f * 0.5f) : 0f;
+        currentProperties.elasticity = physicsObjectProperties.elasticity
+            + (SpellEffectState.Elastic / 255f * 1.5f)
+            - (SpellEffectState.Stone / 255f * 0.8f)
+            - coldPenalty;
+
+        physicsMaterial.bounciness = Mathf.Clamp01(currentProperties.elasticity);
+
+        // --- 4a. STICKINESS (Your Custom Momentum Engine) ---
+        currentProperties.stickiness = physicsObjectProperties.stickiness
+            + (SpellEffectState.Adhesion / 255f * 3f)   // Adhesion makes it glue to things
+            - (SpellEffectState.Phase / 255f * 0.8f);   // Phase makes it ghost through things
+
+        // Clamp between 0 (no stick) and 1 (perfect momentum share)
+        currentProperties.stickiness = Mathf.Clamp01(currentProperties.stickiness);
+
+
+        // --- 4b. FRICTION / DRAG (Unity Physics Engine) ---
+        // Cold massively drops friction (Ice). Damp slightly increases it (Wet drag).
+        float icePenalty = SpellEffectState.Temperature < 0 ? (Mathf.Abs(SpellEffectState.Temperature) / 125f * 0.8f) : 0f;
+
+        currentProperties.friction = physicsObjectProperties.friction
+            + (SpellEffectState.Damp / 255f * 0.2f)     // Wet surface drag
+            - (SpellEffectState.Phase / 255f * 0.8f)    // Ethereal objects slide easily
+            - icePenalty;                               // Ice removes sliding resistance
+
+        // Apply strictly to the Unity Physics Material for sliding
+        physicsMaterial.staticFriction = Mathf.Max(0f, currentProperties.friction);
+        physicsMaterial.dynamicFriction = Mathf.Max(0f, currentProperties.friction);
+
+        // 5. HARDNESS & BRITTLENESS
+        float heatBonus = SpellEffectState.Temperature > 0 ? (SpellEffectState.Temperature / 125f * 0.5f) : 0f;
+
+        currentProperties.hardness = physicsObjectProperties.hardness
+            + (SpellEffectState.Stone / 255f * 2f)
+            - heatBonus;
+
+        currentProperties.brittleness = physicsObjectProperties.brittleness
+            + coldPenalty
+            + (SpellEffectState.Feather / 255f * 0.5f)
+            - heatBonus
+            - (SpellEffectState.Stone / 255f * 0.9f);
+
+        // Ensure we don't hit zero or negatives
+        currentProperties.hardness = Mathf.Max(0.01f, currentProperties.hardness);
+        currentProperties.brittleness = Mathf.Max(0.01f, currentProperties.brittleness);
+    }
+
     public void UpdateVisuals()
     {
         // Update VFX based on the physicsobjectmaterial, if appropriate.
@@ -156,7 +232,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (other == null || other.Object == null || other.Object.IsValid == false)
             other = null;
 
-        float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.physicsObjectProperties);
+        float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.currentProperties);
 
         //Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
         if (IfGetBonked(bonk_amount))
@@ -174,7 +250,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     //This needs
     public void BonkFromImpulse(float impulse, PhysicsObject otherPhysicsObject, NetworkObject bonk_instigator = null, Vector3? pos = null)
     {
-        float bonk_amount = BonkAmount(impulse, otherPhysicsObject?.physicsObjectProperties);
+        float bonk_amount = BonkAmount(impulse, otherPhysicsObject?.currentProperties);
 
         if (IfGetBonked(bonk_amount))
         {
@@ -195,6 +271,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
                         OnBonkednessChanged(previousBuffer);
                         break;
                     }
+                case nameof(SpellEffectState):
+                    UpdateDerivedPhysics();
+                    break;
             }
         }
 
@@ -217,7 +296,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         // currently only run if sticky.
         // can add more.
-        return physicsObjectProperties.stickiness > 0;
+        return currentProperties.stickiness > 0;
     }
     float halo_radius()
     {
@@ -325,9 +404,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
                 other_velocity = other_rb.linearVelocity;
             }
 
-            other_mass = other_po.physicsObjectProperties.mass;
-            if (other_po.physicsObjectProperties.physicsobjectmaterial != null)
-                other_stickiness = other_po.physicsObjectProperties.physicsobjectmaterial.stickiness;
+            other_mass = other_po.currentProperties.mass;
+            //if (other_po.physicsObjectProperties.physicsobjectmaterial != null)
+            other_stickiness = other_po.currentProperties.stickiness;
         }
 
         // QUESTION: should we be including the other's stickiness? They'll run their
@@ -336,13 +415,13 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // to and then only let one of them run the calc.
 
         // Here we combine stickiness.
-        float shared_stickiness_factor = Mathf.Clamp01(physicsObjectProperties.stickiness + other_stickiness);
+        float shared_stickiness_factor = Mathf.Clamp01(currentProperties.stickiness + other_stickiness);
         
 
-        float total_mass = physicsObjectProperties.mass + other_mass;
+        float total_mass = currentProperties.mass + other_mass;
 
         // Here's some standard momentum sharing physics:
-        Vector3 my_momentum = rb.linearVelocity * physicsObjectProperties.mass;
+        Vector3 my_momentum = rb.linearVelocity * currentProperties.mass;
         Vector3 other_momentum = other_velocity * other_mass;
         Vector3 total_momentum = my_momentum + other_momentum;
 
@@ -350,9 +429,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // we then distribute out the momenta back to the two objects based on mass
         // and stickiness.
         Vector3 my_new_momentum = my_momentum * (1 - shared_stickiness_factor) + 
-            total_momentum * shared_stickiness_factor * physicsObjectProperties.mass / total_mass;
+            total_momentum * shared_stickiness_factor * currentProperties.mass / total_mass;
 
-        Vector3 velocity_diff = (my_new_momentum / physicsObjectProperties.mass) - rb.linearVelocity;
+        Vector3 velocity_diff = (my_new_momentum / currentProperties.mass) - rb.linearVelocity;
         ApplyForceToSelfAndSubObjects(velocity_diff, ForceMode.VelocityChange);
 
         if (other_po != null)
@@ -408,7 +487,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             return;
         }
 
-        if (physicsObjectProperties.elasticity == 0)
+        if (currentProperties.elasticity == 0)
             return;
 
         // unfortunately, can't just use the impulse
@@ -433,16 +512,16 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (velAlongNormal < 0)
             return;
 
-        float invMass = 1f / physicsObjectProperties.mass;
+        float invMass = 1f / currentProperties.mass;
         float other_invMass;
         
         PhysicsObject other_po = col.gameObject.GetComponent<PhysicsObject>();
         if (other_po != null)
-            other_invMass = 1f / other_po.physicsObjectProperties.mass;
+            other_invMass = 1f / other_po.currentProperties.mass;
         else
             other_invMass = 0;
 
-        float j = physicsObjectProperties.elasticity * velAlongNormal / (invMass + other_invMass);
+        float j = currentProperties.elasticity * velAlongNormal / (invMass + other_invMass);
 
         //Vector3 bounce_impulse = col.impulse * physicsObjectProperties.elasticity * 5;
         Vector3 bounce_impulse = j * normal;
@@ -478,15 +557,15 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // But then 
         return bonk_amount > bonk_threshold;
     }
-    float BonkAmount(float collision_impulse, PhysicsObjectProperties? other_properties)
+    float BonkAmount(float collision_impulse, CurrentPhysicsProperties? other_properties)
     {
         // Depends on size and brittleness.
         // - higher size means more effective health
         // - higher brittleness means lower effective health.
-        float mass = physicsObjectProperties.mass > 0 ? physicsObjectProperties.mass : 1.0f;
+        float mass = currentProperties.mass > 0 ? currentProperties.mass : 1.0f;
 
         // bonk is proportional to the hardness of both objects.
-        float hardness_factor = physicsObjectProperties.hardness > 0 ? physicsObjectProperties.hardness : PhysicsObjectMaterial.default_hardness;
+        float hardness_factor = currentProperties.hardness > 0 ? currentProperties.hardness : PhysicsObjectMaterial.default_hardness;
         if(other_properties != null)
             hardness_factor *= (other_properties?.hardness > 0 ? other_properties?.hardness : PhysicsObjectMaterial.default_hardness) ?? PhysicsObjectMaterial.default_hardness;
 
@@ -495,7 +574,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         float wall_or_floor_penalty = (other_properties == null)? 0.1f: 1.0f;
 
         return 150f * collision_impulse * hardness_factor * wall_or_floor_penalty *
-            physicsObjectProperties.brittleness /
+            currentProperties.brittleness /
             mass;
     }
 
@@ -594,4 +673,33 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             pso.rb.AddForce(force, forceMode);
     }
     #endregion
+}
+
+public struct SpellEffectStates : INetworkStruct
+{
+    // twoway -125 - 125
+    public sbyte Temperature;
+    public sbyte Scale;
+
+    // oneway
+    public byte Stone;
+    public byte Damp;
+    public byte Charge;
+    public byte Feather;
+    public byte Elastic;
+    public byte Phase;
+    public byte Adhesion;
+}
+
+[System.Serializable]
+public struct CurrentPhysicsProperties
+{
+    public float size;
+    public float density;
+    public float mass;
+    public float hardness;
+    public float elasticity;
+    public float brittleness;
+    public float stickiness;
+    public float friction;
 }

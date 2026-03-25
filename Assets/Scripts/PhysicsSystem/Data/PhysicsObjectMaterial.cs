@@ -25,9 +25,10 @@ public class PhysicsObjectMaterial : ScriptableObject
     public const float default_elasticity = 0.0f;
     public float brittleness; // how easily it is destroyed on collision.
     public const float default_brittleness = 0.1f;
-    [Range(0,1)]public float stickiness; // defines collision friction. (dynamic friction)
+    [Range(0,1)]public float stickiness; // defines stickeyness
     public const float default_stickiness = 0.0f;
-
+    [Range(0, 1)] public float friction; // defines collision friction. (dynamic friction)
+    public const float default_friction = 0.0f;
     #endregion
 
 
