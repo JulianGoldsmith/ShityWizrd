@@ -26,6 +26,8 @@ public struct PhysicsObjectProperties : INetworkStruct
     #region Base Properties
     [Promotable("Material", DataTypeTag.Material)]
     public PHYSICS_OBJECT_MATERIAL material_label;
+
+    
     //private PhysicsObjectMaterial _physicsobjectmaterial;
     public PhysicsObjectMaterial physicsobjectmaterial
     {
@@ -78,6 +80,8 @@ public struct PhysicsObjectProperties : INetworkStruct
     [Promotable("Size", DataTypeTag.Radius)]
     public float size;
 
+    [Promotable("Base Gravity", DataTypeTag.Generic)]
+    public float base_gravity_multiplier;
     #endregion
 
 

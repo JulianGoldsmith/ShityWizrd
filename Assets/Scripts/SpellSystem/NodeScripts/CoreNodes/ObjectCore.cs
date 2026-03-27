@@ -16,6 +16,8 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
     // Should there be a generic objectcore networkprefabref,
     // then we replace its components at run time? 
     // or a unique networkprefabref per thing that can be spawned?
+
+    //This can be an rb core or a transform core
     public NetworkPrefabRef corePrefabRef;
     public NetworkPrefabRef prefabRefToBuffer { get { return corePrefabRef; } }
 

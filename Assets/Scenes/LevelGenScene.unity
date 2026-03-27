@@ -580,6 +580,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 2854242619
@@ -1197,11 +1201,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
       propertyPath: availableCoreNodes.Array.size
-      value: 8
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
       propertyPath: availableValueNodes.Array.size
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: availableCasterNodes.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
       propertyPath: availableEffectNodes.Array.size
@@ -1212,12 +1220,44 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCoreNodes.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: a6063786b9085c84d95466b1bc97b07e, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCoreNodes.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 4c8b44bdf0260be46a9b595c18bd34fe, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCoreNodes.Array.data[2]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7e485827a845e4c4691b5da69a70c459, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCoreNodes.Array.data[3]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7e485827a845e4c4691b5da69a70c459, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCoreNodes.Array.data[4]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7e485827a845e4c4691b5da69a70c459, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCoreNodes.Array.data[5]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7e485827a845e4c4691b5da69a70c459, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCoreNodes.Array.data[6]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7e485827a845e4c4691b5da69a70c459, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
       propertyPath: 'availableCoreNodes.Array.data[7]'
       value: 
       objectReference: {fileID: 11400000, guid: 7e485827a845e4c4691b5da69a70c459, type: 2}
     - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
       propertyPath: availableTriggerNodes.Array.size
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: availableSubgraphNodes.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
       propertyPath: 'availableValueNodes.Array.data[7]'
@@ -1227,6 +1267,18 @@ PrefabInstance:
       propertyPath: availableBehaviourNodes.Array.size
       value: 4
       objectReference: {fileID: 0}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCasterNodes.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 48c81d1ec3ef86c409edeaf244e92f6a, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCasterNodes.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 48c81d1ec3ef86c409edeaf244e92f6a, type: 2}
+    - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
+      propertyPath: 'availableCasterNodes.Array.data[2]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 48c81d1ec3ef86c409edeaf244e92f6a, type: 2}
     - target: {fileID: 8922872533476247003, guid: 4e1c4798adab5a5408f90d3c44395762, type: 3}
       propertyPath: 'availableCasterNodes.Array.data[3]'
       value: 
@@ -1788,6 +1840,10 @@ PrefabInstance:
       propertyPath: _physicsObjectProperties.material_label
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 2930332939
@@ -1939,6 +1995,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 555599166
@@ -2023,6 +2083,10 @@ PrefabInstance:
     - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: _physicsObjectProperties.material_label
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
@@ -2394,6 +2458,10 @@ PrefabInstance:
       propertyPath: _physicsObjectProperties.material_label
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3298483246
@@ -2727,6 +2795,10 @@ PrefabInstance:
     - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: _physicsObjectProperties.material_label
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
@@ -3108,6 +3180,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: _physicsObjectProperties.material_label
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -3627,6 +3703,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 2652855608
@@ -5997,6 +6077,10 @@ PrefabInstance:
       propertyPath: _physicsObjectProperties.material_label
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3128079286
@@ -6508,6 +6592,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: _physicsObjectProperties.base_gravity_multiplier
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 644403455
@@ -7579,7 +7667,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       propertyPath: sizeMult
-      value: 2
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 3975071390077692224, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       propertyPath: xpbdSolver
@@ -7808,6 +7896,10 @@ PrefabInstance:
     - target: {fileID: 6942250765550435529, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       propertyPath: m_Name
       value: BigArmGoober
+      objectReference: {fileID: 0}
+    - target: {fileID: 6942250765550435529, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6950641976533850003, guid: f5cdbe36feee75044b6b89b5fcf35fcf, type: 3}
       propertyPath: SortKey

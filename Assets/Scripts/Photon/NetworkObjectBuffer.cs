@@ -127,13 +127,19 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
         Debug.Log($"[Reawaken] instance={instance.Id} sim={instance.IsInSimulation}");
 
-        NetworkRigidbody3D rb = instance.GetComponent<NetworkRigidbody3D>();
-        if (rb != null)
+        if (instance.TryGetComponent<NetworkRigidbody3D>(out var rb))
         {
             rb.Teleport(position, rotation);
             if (prefab_partial_buffer_infos.TryGetValue(prefabref, out partial_buffer_info buffer_info))
                 rb.RBIsKinematic = GetIsKinematic(buffer_info.buffer_head_index);
         }
+        // 2. Handle Transform Cores (NetworkTransform)
+        else if (instance.TryGetComponent<NetworkTransform>(out var nt))
+        {
+            // THIS IS THE FIX: Tell Fusion to snap it instantly, bypassing interpolation!
+            nt.Teleport(position, rotation);
+        }
+        // 3. Fallback
         else
         {
             instance.transform.SetPositionAndRotation(position, rotation);
@@ -202,6 +208,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
     }
     public void Initialise(SpellGraph graph)
     {
+        ClearBuffer();
         if (graph != null)
             LoadFromSpellGraph(graph);
         Initialise();
@@ -283,6 +290,8 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     void ClearBuffer()
     {
+        _locallyClaimed.Clear();
+
         if (HasStateAuthority == false)
         {
             System.Array.Clear(_localBuffer, 0, _localBuffer.Length);
@@ -291,7 +300,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
         for (int i = 0; i < _bufferSize; i++)
         {
-            if (_buffer[i] != null)
+            if (_buffer[i] != null && _buffer[i].IsValid)
             {
                 Runner.Despawn(_buffer[i]);
             }

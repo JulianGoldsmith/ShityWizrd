@@ -50,27 +50,28 @@ public class PushPullNode : EffectNode
 
 
 
-            if (target == null || !target.TryGetComponent<Rigidbody>(out Rigidbody rb))
-            {
-                continue;
-            }
+            if (target == null) continue;
 
             Vector3 rawDirection = GetRawDirection(info, target);
             float magnitude = GetForceMagnitude(info, rawDirection);
             //Debug.Log($"PUSHPULL node added {magnitude} force to {target} in direction {rawDirection.normalized}");
             if (rawDirection.sqrMagnitude > 0.001f)
             {
-                rb.AddForce(rawDirection.normalized * magnitude, forceMode);
-                //Debug.Log($"PUSHPULL node added force to {rb.name}");
+                if (target.TryGetComponent<PhysicsObject>(out PhysicsObject PO))
+                {
+                    PO.ApplyForce(rawDirection.normalized * magnitude, forceMode);
+                    PO.BonkFromImpulse(magnitude, null); // (Add your instigator here later)
+                }
+                else if (target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject PSO))
+                {
+                    if (PSO.rb != null)
+                    {
+                        PSO.rb.AddForce(rawDirection.normalized * magnitude, forceMode);
+                    }
 
-            }
-            if(target.TryGetComponent<PhysicsObject>(out PhysicsObject PO))
-            {
-                PO.BonkFromImpulse(magnitude, null); //need to put causeative object here!
-            }
-            else if(target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject PSO))
-            {
-                PSO.parent_physics_object.BonkFromImpulse(magnitude, null); //NEED TO PUT INSTIGATOR HERE!! 
+                    // But report the damage/stagger to the parent brain
+                    PSO.parent_physics_object.BonkFromImpulse(magnitude, null); // NEED TO PUT INSTIGATOR HERE!!
+                }
             }
         }
     }

@@ -27,12 +27,19 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
      *  Relevant for spell-objects (e.g. tangible projectiles), 
      *      players, enemies, world-objects.
      */
+
+    [Header("Physics Settings")]
+    public float defaultGravityScale = 1f;
+
+    private IMovementHandler _movementHandler;
+
     private ChangeDetector _changeDetector;
 
     [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))]
     public PhysicsObjectProperties physicsObjectProperties { get; set; }
     public CurrentPhysicsProperties currentProperties;
     public Rigidbody rb;
+    public SimulatedPhysicsObject tPO;
     public PhysicsMaterial physicsMaterial;
     [SerializeField] protected List<PhysicsSubObject> physicsSubObjects = new List<PhysicsSubObject>();
     protected Tick? tick_spawned = null;
@@ -59,6 +66,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         // When it spawns, ensure the properties are mapped.
         base.Spawned();
+
+        InitilizeCoreInterfaces();
+
         tick_spawned = Runner.Tick;
         InitialisePhysicsObject();
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
@@ -68,10 +78,22 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
 
     #region Initialisation
+
+    public void InitilizeCoreInterfaces()
+    {
+        _movementHandler = GetComponent<IMovementHandler>();
+    }
+
+    private void Awake()
+    {
+        
+    }
+
     // Assign parameter values to Rigidbody and Unity PhysicsMaterials
     public void InitialisePhysicsObject()
     {
         UpdateRigidbody(GetComponent<Rigidbody>());
+        _movementHandler = GetComponent<IMovementHandler>();
         Collider col = GetComponent<Collider>();
         if (col != null)
             UpdatePhysicsMaterial(col.material);
@@ -112,7 +134,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     public void UpdateDerivedPhysics()
     {
-        if (rb == null || physicsMaterial == null) return;
+        
 
         // 1. SIZE (Volume)
         float scaleModifier = 1f + (SpellEffectState.Scale / 125f);
@@ -129,7 +151,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         // Mass = Density * Volume (Size^3 roughly)
         currentProperties.mass = Mathf.Max(0.01f, currentProperties.density * Mathf.Pow(currentProperties.size, 1.5f));
-        rb.mass = currentProperties.mass;
+        
 
         // 3. ELASTICITY
         float coldPenalty = SpellEffectState.Temperature < 0 ? (Mathf.Abs(SpellEffectState.Temperature) / 125f * 0.5f) : 0f;
@@ -137,8 +159,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             + (SpellEffectState.Elastic / 255f * 1.5f)
             - (SpellEffectState.Stone / 255f * 0.8f)
             - coldPenalty;
-
-        physicsMaterial.bounciness = Mathf.Clamp01(currentProperties.elasticity);
+       
 
         // --- 4a. STICKINESS (Your Custom Momentum Engine) ---
         currentProperties.stickiness = physicsObjectProperties.stickiness
@@ -159,8 +180,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             - icePenalty;                               // Ice removes sliding resistance
 
         // Apply strictly to the Unity Physics Material for sliding
-        physicsMaterial.staticFriction = Mathf.Max(0f, currentProperties.friction);
-        physicsMaterial.dynamicFriction = Mathf.Max(0f, currentProperties.friction);
+       
 
         // 5. HARDNESS & BRITTLENESS
         float heatBonus = SpellEffectState.Temperature > 0 ? (SpellEffectState.Temperature / 125f * 0.5f) : 0f;
@@ -178,6 +198,17 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // Ensure we don't hit zero or negatives
         currentProperties.hardness = Mathf.Max(0.01f, currentProperties.hardness);
         currentProperties.brittleness = Mathf.Max(0.01f, currentProperties.brittleness);
+
+        currentProperties.gravityMultiplier = physicsObjectProperties.base_gravity_multiplier
+                                          + (SpellEffectState.Gravity / 25f);
+
+        if (rb == null || physicsMaterial == null) return;
+
+        physicsMaterial.bounciness = Mathf.Clamp01(currentProperties.elasticity);
+        physicsMaterial.staticFriction = Mathf.Max(0f, currentProperties.friction);
+        physicsMaterial.dynamicFriction = Mathf.Max(0f, currentProperties.friction);
+        rb.mass = currentProperties.mass;
+        rb.useGravity = false;
     }
 
     public void UpdateVisuals()
@@ -216,8 +247,26 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     #region Collisions
     // additional things to happen on collision.
     // [placeholder]
+
+    public event System.Action<UniversalCollisionData> OnPhysicsImpact;
+
+ 
+
     public void OnCollisionEnter(Collision collision)
     {
+        /* if (collision.impulse.magnitude > 0.01f)
+         {
+             var impactData = new UniversalCollisionData
+             {
+                 HitObject = collision.gameObject,
+                 Point = collision.GetContact(0).point,
+                 Normal = collision.GetContact(0).normal,
+                 ImpulseMagnitude = collision.impulse.magnitude
+             };
+
+             // Pass it to the new universal system!
+             HandleUniversalImpact(impactData);
+         }*/
         if (!HasStateAuthority)
             return;
 
@@ -228,7 +277,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             return;
 
         PhysicsObject other = collision.gameObject.GetComponent<PhysicsObject>();
-        
+
         if (other == null || other.Object == null || other.Object.IsValid == false)
             other = null;
 
@@ -238,7 +287,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (IfGetBonked(bonk_amount))
         {
             NetworkObject instigatorOfBonk = null;
-            if(collision.gameObject.TryGetComponent<PhysicsObject>(out PhysicsObject otherPO))
+            if (collision.gameObject.TryGetComponent<PhysicsObject>(out PhysicsObject otherPO))
             {
                 instigatorOfBonk = otherPO.currentThreatCause;
             }
@@ -262,6 +311,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public Vector3 velocity_before_physics_update;
     public override void FixedUpdateNetwork()
     {
+        ApplyForce(Physics.gravity * currentProperties.gravityMultiplier, ForceMode.Acceleration);
         foreach (var propertyname in _changeDetector.DetectChanges(this, out var previousBuffer, out var currentBuffer))
         {
             switch (propertyname)
@@ -578,7 +628,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             mass;
     }
 
-    protected virtual void OnBonk(float bonk_amount, NetworkObject bonk_instigator = null, Vector3? pos = null)
+    public virtual void OnBonk(float bonk_amount, NetworkObject bonk_instigator = null, Vector3? pos = null)
     {
         current_bonkedness -= bonk_amount;
         //Debug.Log($"new bonkedness: {current_bonkedness} {bonk_amount}");
@@ -631,6 +681,11 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (HasStateAuthority)
             Runner.Despawn(Object);
     }
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        base.Despawned(runner, hasState);
+    }
+
     #endregion
 
     #region PhysicsSubObjects
@@ -664,8 +719,14 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     }
     public void ApplyForce(Vector3 force, ForceMode forceMode)
     {
-        if (rb != null)
+        if (_movementHandler != null)
+        {
+            _movementHandler.ApplyForce(force, forceMode);
+        }
+        else if (rb != null)
+        {
             rb.AddForce(force, forceMode);
+        }
     }
     void ApplyForceToSubObject(PhysicsSubObject pso, Vector3 force, ForceMode forceMode)
     {
@@ -680,6 +741,7 @@ public struct SpellEffectStates : INetworkStruct
     // twoway -125 - 125
     public sbyte Temperature;
     public sbyte Scale;
+    public sbyte Gravity;
 
     // oneway
     public byte Stone;
@@ -689,6 +751,7 @@ public struct SpellEffectStates : INetworkStruct
     public byte Elastic;
     public byte Phase;
     public byte Adhesion;
+   
 }
 
 [System.Serializable]
@@ -702,4 +765,5 @@ public struct CurrentPhysicsProperties
     public float brittleness;
     public float stickiness;
     public float friction;
+    public float gravityMultiplier;
 }

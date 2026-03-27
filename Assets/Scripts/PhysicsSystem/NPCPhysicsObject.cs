@@ -29,7 +29,7 @@ public class NPCPhysicsObject : PhysicsObject
         bonkController.GetUnBonked();
     }
 
-    protected override void OnBonk(float bonk_ammount, NetworkObject bonk_instigator = null, Vector3? pos = null)
+    public override void OnBonk(float bonk_ammount, NetworkObject bonk_instigator = null, Vector3? pos = null)
     {
         base.OnBonk(bonk_ammount, bonk_instigator);
         if(this.TryGetComponent<NPCAggroController>(out NPCAggroController npcac))

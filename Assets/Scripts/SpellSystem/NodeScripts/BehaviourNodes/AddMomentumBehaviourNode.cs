@@ -24,11 +24,21 @@ public class AddMomentumSBMono : SpellBehaviour
         triggerInfo = _triggerInfo;
         velocity = _triggerInfo.TriggerVector * _triggerInfo.State.CastChargeLevel;
 
-        if (rb == null) rb = GetComponent<Rigidbody>();
+        if (TryGetComponent<PhysicsObject>(out var po))
+        {
+            float calcMass = Mathf.Max(0.01f, po.currentProperties.mass);
+
+            // Apply universal force!
+            po.ApplyForce(velocity / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
+        }
+
+        /*if (rb == null) rb = GetComponent<Rigidbody>();
         mass = rb != null ? rb.mass : 1f;
 
         if (rb != null)
         {
+
+
             rb.AddForce(velocity/Mathf.Sqrt(mass), ForceMode.VelocityChange); //ignores mass (ie adds momentum)
             // just applies velocity, not momentum since mass is ignored.
             // This means that you can fling any-weight object at the same initial velocity.
@@ -38,6 +48,6 @@ public class AddMomentumSBMono : SpellBehaviour
             // this rune, but currently not the case.
             // Could try dividing by mass to get back to a momentum;
             // or dividing by sqrt(mass) or similar to make mass not as impactful.
-        }
+        }*/
     }
 }

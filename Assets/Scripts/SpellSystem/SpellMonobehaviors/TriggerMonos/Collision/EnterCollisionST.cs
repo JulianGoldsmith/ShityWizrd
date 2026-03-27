@@ -1,3 +1,4 @@
+using Fusion;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -5,6 +6,7 @@ using UnityEngine;
 
 public class EnterCollisionST : SpellTrigger
 {
+    PhysicsObject po;
     Rigidbody rb;
     Collider col;
     private void Start()
@@ -14,6 +16,8 @@ public class EnterCollisionST : SpellTrigger
             var col = this.AddComponent<SphereCollider>();
             col.isTrigger = false;
         }
+        this.TryGetComponent<PhysicsObject>(out PhysicsObject p);
+        po = p;
         //rb = SpellSystemHelpers.AddDefaultSpellRigidBodyToGameObject(this.gameObject);
     }
 
@@ -29,10 +33,30 @@ public class EnterCollisionST : SpellTrigger
 
     private void OnTriggerEnter(Collider other)
     {
+        Vector3 hitPoint = other.ClosestPoint(transform.position);
+
+        Vector3 hitNormal = (transform.position - other.transform.position).normalized;
+
+        if (hitNormal == Vector3.zero) hitNormal = Vector3.up;
+
+        if (other.TryGetComponent<PhysicsObject>(out var targetPO))
+        {
+            float impactSpeed = 10f; // Default
+            if (TryGetComponent<IMovementHandler>(out var mover))
+            {
+                impactSpeed = mover.CurrentVelocity.magnitude;
+            }
+            else if (TryGetComponent<Rigidbody>(out var rb))
+                impactSpeed = rb.linearVelocity.magnitude;
+
+            targetPO.OnBonk(impactSpeed * po.currentProperties.mass, GetComponent<NetworkObject>(), hitPoint);
+        }
+
+        // 4. Continue with your existing Graph logic
         HandleCollision(
             other.gameObject,
-            transform.position,
-            Vector3.up // need to fix this to some how find the normal at this point.
+            hitPoint,
+            hitNormal
         );
     }
 

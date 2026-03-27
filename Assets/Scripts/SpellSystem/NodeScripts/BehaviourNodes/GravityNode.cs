@@ -3,46 +3,40 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "GravityNode", menuName = "SpellNodes/Behaviour/GravityNode")]
 public class GravityNode : BehaviourNode
 {
-    [Promotable("Gravity", DataTypeTag.Force)]
-    public float gravityAcceleration = 98.1f;
+    [Promotable("Gravity Added", DataTypeTag.Generic)]
+    public sbyte gravityAdded = 25;
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
         var gravity = spellCore.AddComponent<GravitySB>();
-        gravity.Init(triggerInfo, gravityAcceleration);
+        gravity.Init(triggerInfo, gravityAdded);
     }
 }
 
 public class GravitySB : SpellBehaviour
 {
-    public float gravityAcceleration;
+    public sbyte gravityAdded;
     public float terminalSpeed = 80f;
-    private Rigidbody rb;
+    private PhysicsObject po;
 
 
-    public void Init(SpellTriggerInfo _triggerInfo, float _gravityAcceleration)
+    public void Init(SpellTriggerInfo _triggerInfo, sbyte _gravityAdded)
     {
         triggerInfo = _triggerInfo;
-        rb = GetComponent<Rigidbody>();
-        if (rb == null)
-        {
-            rb = SpellSystemHelpers.AddDefaultSpellRigidBodyToGameObject(this.gameObject);
-        }
-        gravityAcceleration = _gravityAcceleration;
-    }
+        gravityAdded = _gravityAdded;
 
-    void FixedUpdate()
-    {
-        rb.AddForce(Vector3.down * gravityAcceleration, ForceMode.Acceleration);
+        po = GetComponent<PhysicsObject>();
 
-        if (terminalSpeed > 0f)
+        if (po != null)
         {
-            var v = rb.linearVelocity;
-            if (v.y < -terminalSpeed)
-            {
-                v.y = -terminalSpeed;
-                rb.linearVelocity = v;
-            }
+            int newGravity = Mathf.Clamp(po.SpellEffectState.Gravity + gravityAdded, -125, 125);
+
+            var state = po.SpellEffectState;
+            state.Gravity = (sbyte)newGravity;
+            po.SpellEffectState = state;
+
+            po.UpdateDerivedPhysics();
         }
+
     }
 }
 

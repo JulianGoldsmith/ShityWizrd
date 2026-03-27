@@ -46,6 +46,8 @@ public abstract class ItemAction : ScriptableObject
         var netObj = Item.activeCaster.GetComponent<NetworkObject>();
         SpellState newCast = new SpellState(Item.activeCaster, Item, graph, null, netObj);
 
+        newCast.CastPosition = newCast.Controller.transform.position;
+
         newCast.ComboIndex = comboIndex;
         newCast.isHeld = true;
         Item.activeCast = newCast;
