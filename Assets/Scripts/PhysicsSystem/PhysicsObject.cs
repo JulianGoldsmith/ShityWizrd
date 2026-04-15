@@ -678,8 +678,12 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     #region Despawning
     protected virtual void DespawnObject()
     {
+        if(TryGetComponent<CoreLifecycleManager>(out CoreLifecycleManager CLM)){
+            CLM.DeactivateCore();
+        }
         if (HasStateAuthority)
             Runner.Despawn(Object);
+        
     }
     public override void Despawned(NetworkRunner runner, bool hasState)
     {

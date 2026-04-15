@@ -40,19 +40,40 @@ public abstract class ItemAction : ScriptableObject
         if (Item == null || Item.primaryActionSpell == null) return;
 
         SpellGraph graph = Item.primaryActionSpell;
-
         graph.CompileSpell();
 
-        var netObj = Item.activeCaster.GetComponent<NetworkObject>();
-        SpellState newCast = new SpellState(Item.activeCaster, Item, graph, null, netObj);
+        var controller = Item.activeCaster;
+        var netObj = controller.GetComponent<NetworkObject>();
+
+        ActiveCastID newCastID = controller.GenerateNewCastID();
+
+        SpellState newCast = new SpellState(newCastID,controller, Item, graph, null, netObj);
+
+        ActiveSpell newActiveSpell = new ActiveSpell(newCastID, graph, newCast);
+
+        newActiveSpell.AddToken();
+
+        SpellStateManager.instance.RegisterNewCast(newCastID, newActiveSpell);
 
         newCast.CastPosition = newCast.Controller.transform.position;
-
         newCast.ComboIndex = comboIndex;
         newCast.isHeld = true;
         Item.activeCast = newCast;
 
     }
+
+    protected virtual void RemoveCastingToken(SpellState state)
+    {
+        if (state == null) return;
+
+        ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(state.ActiveCastID);
+        if (activeSpell != null)
+        {
+            activeSpell.MarkInitialExecutionDone();
+            activeSpell.RemoveToken();
+        }
+    }
+
     protected virtual void RemoveSpellState()
     {
         Item.activeCast = null;

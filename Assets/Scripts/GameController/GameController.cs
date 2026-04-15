@@ -2,6 +2,8 @@ using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Linq;
+using TMPro;
+using Unity.Collections;
 
 public class GameController : MonoBehaviour
 {
@@ -26,6 +28,11 @@ public class GameController : MonoBehaviour
     public LevelGenerator levelGenerator;
     public LevelNetworkController levelNetworkController;
 
+    public TMP_Text textDisplay;
+
+    public SpellStateManager spellStateManager;
+
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -44,7 +51,10 @@ public class GameController : MonoBehaviour
         {
             levelNetworkController = GetComponent<LevelNetworkController>(); ;
         }
-        
+        if(spellStateManager == null)
+        {
+            spellStateManager = GetComponent<SpellStateManager>();
+        }
     }
 
     void Start()
@@ -71,6 +81,24 @@ public class GameController : MonoBehaviour
                 EnableGameplayInput();
             }
         }
+
+        string blueprintSpells = "";
+        if(spellStateManager.active_spellblueprints.Count < 10)
+        {
+            blueprintSpells = $"BluePrintSpells = {spellStateManager.active_spellblueprints.Count}";
+            foreach (var kvp in spellStateManager.active_spellblueprints)
+            {
+                blueprintSpells += $"\n SpellGraphID: {kvp.Key.ToString()}";
+            }
+        }
+        else
+        {
+            blueprintSpells = $"BluePrintSpells = {spellStateManager.active_spellblueprints.Count}";
+        }
+
+        if (textDisplay != null)
+            textDisplay.text = $"ActiveSpells = {spellStateManager.activeSpells.Count} \n " +
+                blueprintSpells;
     }
 
     public void EnableGameplayInput()

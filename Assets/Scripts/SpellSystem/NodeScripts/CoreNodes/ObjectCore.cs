@@ -36,6 +36,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
     {
         if (!CanSpawn(triggerInfo.State))
             return;
+        triggerInfo.State.SpawnedCoresCounter++;
 
         Vector3 pos = SpellSystemHelpers.GetSpellPosition(
             triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
@@ -51,30 +52,45 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         // Now we use the NetworkObjectBuffer to grab pre-spawned objects where possible.
         // falls back to just spawn as before when not possible.
         NetworkObject spellCore = null;
-        if (triggerInfo != null 
-            && triggerInfo.State != null 
-            && triggerInfo.State.CastItem != null)
+        if (triggerInfo != null && triggerInfo.State != null && triggerInfo.State.CastItem != null)
         {
-            Debug.Log("Trying to buffer spawn");
+            Debug.Log("Trying to buffer spawn from Item");
             NetworkObjectBuffer buffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
-            spellCore = buffer.Get(corePrefabRef, pos, rot);
+            if (buffer != null)
+            {
+                spellCore = buffer.Get(corePrefabRef, pos, rot);
+            }
         }
-        else if(triggerInfo != null
-            && triggerInfo.State != null
-            && triggerInfo.State.Controller != null) //added a new check for a buffer on the controller who made the object - ie an NPC
+        else if (triggerInfo != null && triggerInfo.State != null && triggerInfo.State.Controller != null) 
         {
-            Debug.Log("Trying to buffer spawn");
+            Debug.Log("Trying to buffer spawn from Controller (NPC)");
             NetworkObjectBuffer buffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();
-            spellCore = buffer.Get(corePrefabRef, pos, rot);
+            if (buffer != null)
+            {
+                spellCore = buffer.Get(corePrefabRef, pos, rot);
+            }
         }
 
         if (spellCore == null)
         {
-            // Fallback if we couldn't buffer-spawn it.
-            // -> just do it manually.
             Debug.LogError("Couldn't buffer spawn so falling back.");
             spellCore = BasicSpawner.Spawn(corePrefabRef, pos, rot);
         }
+
+
+        if (spellCore != null)
+        {
+            var lifecycleManager = spellCore.GetComponent<CoreLifecycleManager>();
+            if (lifecycleManager != null)
+            {
+                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom);
+            }
+
+            // We leave this here for now so your current game doesn't break. 
+            // We will phase this out in Phase 4 when we convert to stateless math!
+            //this.AttatchBehavioursAndTriggers(spellCore.gameObject, triggerInfo);
+        }
+
         InitialisePhysicsObjectOnSpawn(spellCore, triggerInfo);
     }
 

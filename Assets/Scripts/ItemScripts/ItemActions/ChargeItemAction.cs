@@ -48,6 +48,8 @@ public class ChargeItemAction : ItemAction
         Item.activeCaster.SetCoolDown(cooldown);
         Item.activeCaster.StartComboTimer(comboWindow);
 
+        
+
     }
 
     public override void Tick( int comboIndex, float deltaTime)
@@ -134,6 +136,9 @@ public class ChargeItemAction : ItemAction
 
         // Execute
         graph.ExecuteComboIndex(comboIndex, state, controller);
+
+        RemoveCastingToken(state);
+
         if (!Item.HasStateAuthority && Item.Runner.IsResimulation)
             Debug.Log("SpellExecutedOnResim");
 

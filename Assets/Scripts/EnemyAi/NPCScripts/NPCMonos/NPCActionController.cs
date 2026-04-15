@@ -321,8 +321,8 @@ public class NPCActionController : CastActionController
 
         // NPC doesn't necessarily have an EquipableItem here, so pass null for item.
         var netObj = GetComponent<NetworkObject>();
-
-        SpellState newCast = new SpellState(this, null, graph, null, netObj);
+        ActiveCastID newCastID = GenerateNewCastID();
+        SpellState newCast = new SpellState(newCastID,this, null, graph, null, netObj);
         //newCast.ComboIndex = combo;
         activeCasts.Add(newCast);
         isCasting = true;

@@ -14,7 +14,7 @@ public class Test_ProxyCounter : NetworkBehaviour
     {
         // Visualise the Networked Variable directly
         if (textDisplay != null)
-            textDisplay.text = $"Tick: {Runner.Tick}\nNetCount: {NetCount}";
+            textDisplay.text = $"Tick: {Runner.Tick}\nNetCount: {NetCount} \n ";
     }
 
     public void ModifyNetworkState()
@@ -30,5 +30,6 @@ public class Test_ProxyCounter : NetworkBehaviour
     {
         base.Spawned();
         Runner.SetIsSimulated(Object, true);
+ 
     }
 }

@@ -30,8 +30,7 @@ public abstract class CastActionController : NetworkBehaviour
 
     private Dictionary<string, List<Action>> _pendingAnimationActions = new Dictionary<string, List<Action>>();
     private GameObject _activeHitboxInstance;
-
-
+    [Networked] public int TotalSpellCasts { get; set; }
 
     public override void FixedUpdateNetwork()
     {
@@ -62,6 +61,12 @@ public abstract class CastActionController : NetworkBehaviour
 
         UpdateActiveCasts();   // again this should be called from the item not here? 
         //TickItemActions(dt);   // this should be called from the item -- not here? 
+    }
+
+    public ActiveCastID GenerateNewCastID()
+    {
+        TotalSpellCasts++;
+        return new ActiveCastID(this.Object.Id, TotalSpellCasts);
     }
 
     public virtual void StartCast(bool isAlreadyReleased)
@@ -96,7 +101,8 @@ public abstract class CastActionController : NetworkBehaviour
             primaryComboCounter = 0;
 
         var netObj = GetComponent<NetworkObject>();
-        SpellState newCast = new SpellState(this, item, graph, null, netObj);
+        ActiveCastID newCastID = GenerateNewCastID();
+        SpellState newCast = new SpellState(newCastID,this, item, graph, null, netObj);
 
         activeCasts.Add(newCast);
         isCasting = true;

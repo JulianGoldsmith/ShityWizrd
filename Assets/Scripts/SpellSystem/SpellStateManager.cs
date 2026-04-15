@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
+using TMPro;
+
+
 public class SpellStateManager : NetworkBehaviour
 {
     // Singleton instance that keeps track of unique spell instances
@@ -10,15 +13,23 @@ public class SpellStateManager : NetworkBehaviour
     // This allows clients to 're-capture' spellstate information,
     // attach on relevant monobeaviours, etc, even when there
     // is a break in the chain due to networked instantiation.
+    public int activeSpellsCount;
 
     public static SpellStateManager instance;
     private void Awake()
     {
         instance = this;
         //curr_spell_state_id = new Dictionary<NetworkBehaviourId, int>();
-        active_spellgraphs = new Dictionary<SpellGraphId, SpellGraph>();
+        active_spellblueprints = new Dictionary<SpellGraphId, SpellGraph>();
         active_spellgraph_instances = new Dictionary<SpellGraphId, int>();
         timestamp = Time.time;
+        
+    }
+
+    public override void Spawned()
+    {
+        base.Spawned();
+        Runner.SetIsSimulated(this.Object, true);
     }
 
     float timestamp;
@@ -34,11 +45,62 @@ public class SpellStateManager : NetworkBehaviour
         }
     }
 
+    public override void FixedUpdateNetwork()
+    {
+
+
+        // Token Garbage Collection (Host Only) ---
+        if (Object.HasStateAuthority) {
+            List<ActiveCastID> spellsToTrash = new List<ActiveCastID>();
+
+            foreach (var kvp in activeSpells)
+            {
+                if (kvp.Value.IsSafeToDelete())
+                {
+                    spellsToTrash.Add(kvp.Key);
+                }
+            }
+
+            foreach (var id in spellsToTrash)
+            {
+                activeSpells.Remove(id);
+                RPC_DeleteActiveSpell(id.CasterId, id.CastNumber);
+            }
+        } 
+
+        activeSpellsCount = activeSpells.Count;
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_DeleteActiveSpell(NetworkId casterId, int castNum)
+    {
+        ActiveCastID id = new ActiveCastID(casterId, castNum);
+        if (activeSpells.ContainsKey(id))
+        {
+            activeSpells.Remove(id);
+        }
+    }
+
+    public Dictionary<ActiveCastID, ActiveSpell> activeSpells = new Dictionary<ActiveCastID, ActiveSpell>();
+
+    public void RegisterNewCast(ActiveCastID castId, ActiveSpell newCast)
+    {
+        activeSpells[castId] = newCast;
+    }
+
+    public ActiveSpell GetActiveSpell(ActiveCastID castId)
+    {
+        if (activeSpells.TryGetValue(castId, out ActiveSpell activeSpell))
+        {
+            return activeSpell;
+        }
+        return null;
+    }
 
     #region Spell Graphs
     // Track all spellgraphs in the scene so that clients 
     // can look up the spellnodes of a spawned spell object.
-    Dictionary<SpellGraphId, SpellGraph> active_spellgraphs = new Dictionary<SpellGraphId, SpellGraph>();
+    public Dictionary<SpellGraphId, SpellGraph> active_spellblueprints = new Dictionary<SpellGraphId, SpellGraph>();
     // A dictionary to track how many active instances of a spellgraph there are.
     // When it hits zero, we clean it up from active_spellgraphs so that we
     // don't create an arbitrarily large dict as people change their spells.
@@ -49,11 +111,11 @@ public class SpellStateManager : NetworkBehaviour
     //  - Summoned objects decrement when they despawn.
     // This ensures that active_spellgraphs contains all spellgraphs that are
     //  either currently-equipped or have an active object/node somewhere in the scene.
-    Dictionary<SpellGraphId, int> active_spellgraph_instances = new Dictionary<SpellGraphId, int>();
+    public Dictionary<SpellGraphId, int> active_spellgraph_instances = new Dictionary<SpellGraphId, int>();
     public static int _my_next_spellgraph_id = 0;
     public SpellGraph GetSpellGraph(SpellGraphId sgid)
     {
-        if (active_spellgraphs.TryGetValue(sgid, out SpellGraph value))
+        if (active_spellblueprints.TryGetValue(sgid, out SpellGraph value))
             return value;
         return null;
     }
@@ -90,7 +152,7 @@ public class SpellStateManager : NetworkBehaviour
 
         for(int i = 0; i < spellgraphs_to_cleanup.Count; i++)
         {
-            active_spellgraphs.Remove(spellgraphs_to_cleanup[i]);
+            active_spellblueprints.Remove(spellgraphs_to_cleanup[i]);
             active_spellgraph_instances.Remove(spellgraphs_to_cleanup[i]);
         }
     }
@@ -101,7 +163,7 @@ public class SpellStateManager : NetworkBehaviour
     {
         // e.g. a new spellgraph has been created and equipped
         // so store it in the global dict.
-        active_spellgraphs.Add(sgid, graph);
+        active_spellblueprints.Add(sgid, graph);
         active_spellgraph_instances.Add(sgid, 1);
     }
     public void OnUnequipSpellGraph(SpellGraphId sgid)
@@ -167,7 +229,7 @@ public class SpellStateManager : NetworkBehaviour
     //// The unique identifier of a spellstate is networked and attached
     //// to any summoned object.
     //Dictionary<SpellStateID, SpellState> local_spell_states = new Dictionary<SpellStateID, SpellState>();
-    
+
 
 
     //public void AddSpellState(SpellState state)
@@ -182,6 +244,9 @@ public class SpellStateManager : NetworkBehaviour
     //    return state;
     //}
     //#endregion
+
+   
+
 }
 
 public struct SpellGraphId : INetworkStruct
@@ -225,3 +290,4 @@ public struct SpellGraphId : INetworkStruct
     public static bool operator !=(SpellGraphId lhs, SpellGraphId rhs)
         => !lhs.Equals(rhs);
 }
+

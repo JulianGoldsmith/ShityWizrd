@@ -11,6 +11,8 @@ public class SpellState
     public int ComboIndex { get; set; } = 0;
     public NetworkObject Caster { get; set; }
 
+    public ActiveCastID ActiveCastID { get; set; }
+
     public SpellGraphId SpellGraphIdFrom { get; private set; }
 
     public SpellGraph Spell { get; private set; }
@@ -33,8 +35,9 @@ public class SpellState
 
     public CasterNode OriginalCasterNode { get; set; }  //Node responsible for casting the spell. 
 
-    public SpellState(CastActionController controller, EquipableItem item, SpellGraph spell, CasterNode originalCasterNode, NetworkObject caster)
+    public SpellState(ActiveCastID SpellID, CastActionController controller, EquipableItem item, SpellGraph spell, CasterNode originalCasterNode, NetworkObject caster)
     {
+        this.ActiveCastID = SpellID;
         this.Controller = controller;
         this.CastItem = item;
         this.SpellGraphIdFrom = spell.spellGraphId;

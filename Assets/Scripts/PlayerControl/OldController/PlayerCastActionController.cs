@@ -20,6 +20,7 @@ public class PlayerCastActionController : CastActionController
     [Networked] int primary_attack_released { get; set; }
     [Networked] Quaternion lookDirection { get; set; }
     private ChangeDetector _changes;
+    
 
     public override void Spawned()
     {
