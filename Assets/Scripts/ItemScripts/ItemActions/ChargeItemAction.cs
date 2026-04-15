@@ -114,7 +114,9 @@ public class ChargeItemAction : ItemAction
         // Fire Logic
         SpellGraph graph = Item.primaryActionSpell;
 
-        Vector3 spawnPosition = Item.projectileSpawnPoint.position;
+        EyePosAndLookDir eyeInfo = controller.GetEyePosAndLookDir();
+
+        Vector3 spawnPosition = eyeInfo.EyePosition + (eyeInfo.Forward * 0.5f);
         Quaternion spawnRotation = Quaternion.LookRotation(controller.GetForward());
 
         var triggerInfo = new SpellTriggerInfo(
