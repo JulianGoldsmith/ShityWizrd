@@ -16,6 +16,11 @@ public class CoreBehaviourNode : BehaviourNode
     public SpellPosition TriggerSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
 
+    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
         spellCore.transform.position = SpellSystemHelpers.GetSpellPosition(

@@ -10,6 +10,11 @@ public class HomingMovementNode : BehaviourNode
     public float search_range = 5.0f;
     public float min_speed = 1.0f;
 
+    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    {
+        throw new NotImplementedException();
+    }
+
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
         var homingMovement = spellCore.AddComponent<HomingMovementSB>();

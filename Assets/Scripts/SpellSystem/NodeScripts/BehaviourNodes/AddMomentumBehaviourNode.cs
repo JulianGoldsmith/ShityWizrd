@@ -3,12 +3,54 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "AddMomentumBehaviourNode", menuName = "SpellNodes/Behaviour/AddMomentumBehaviourNode")]
 public class AddMomentumBehaviourNode : BehaviourNode
 {
+    [Promotable("Force Multiplier", DataTypeTag.Force)]
+    public float forceMultiplier = 1f;
+    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    {
+        float bakedForce = GetFinalValue(nameof(forceMultiplier), forceMultiplier);
+
+        return new AddMomentumBehaviour()
+        {
+            ForceMultiplier = bakedForce
+        };
+    }
+
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        var momentumMono = spellCore.AddComponent<AddMomentumSBMono>();
-        momentumMono.Init(triggerInfo);
+        //var momentumMono = spellCore.AddComponent<AddMomentumSBMono>();
+        //momentumMono.Init(triggerInfo);
     }
 }
+
+public class AddMomentumBehaviour : IBehaviour
+{
+    public float ForceMultiplier;
+
+    public void InitTick(SpellCreatedCore core)
+    {
+        float charge = core.Context.CastChargeLevel;
+        Vector3 direction = core.Context.TriggerVector.normalized;
+
+        if (core.TryGetComponent<PhysicsObject>(out var po))
+        {
+            float calcMass = Mathf.Max(0.01f, po.currentProperties.mass);
+
+            po.ApplyForce((charge* direction * ForceMultiplier) / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
+        }
+    }
+
+    public void Tick(SpellCreatedCore core, float deltaTime)
+    {
+        /*if (core.TryGetComponent<PhysicsObject>(out var po))
+        {
+            float calcMass = Mathf.Max(0.01f, po.currentProperties.mass);
+
+            po.ApplyForce((Vector3.up * 100) / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
+        }*/
+        // Momentum is a one-shot application. We don't do anything every tick!
+    }
+}
+
 
 public class AddMomentumSBMono : SpellBehaviour
 {

@@ -5,6 +5,12 @@ public class GravityNode : BehaviourNode
 {
     [Promotable("Gravity Added", DataTypeTag.Generic)]
     public sbyte gravityAdded = 25;
+
+    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
         var gravity = spellCore.AddComponent<GravitySB>();

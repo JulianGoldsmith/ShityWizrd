@@ -10,6 +10,8 @@ public abstract class BehaviourNode : SpellNode
     public VFXContext vfx_context;
     public ModifierType default_vfx_modifier_type;
 
+    public abstract IBehaviour CompileBehaviour(SpellCompilationContext sCC);
+
     public abstract void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo);
 
     public override List<SocketDefinition> GetSockets()

@@ -8,6 +8,11 @@ public class ScaleNode : EffectNode
     [Tooltip("Amount to add/subtract. 125 = Max Size, -125 = Min Size")]
     public int scaleChangeAmount = 10;
 
+    public override IEffect CompileEffect()
+    {
+        throw new System.NotImplementedException();
+    }
+
     // Assuming your graph passes the hit target to this method
     public override void Execute(List<SpellTriggerInfo> triggerInfos)
     {

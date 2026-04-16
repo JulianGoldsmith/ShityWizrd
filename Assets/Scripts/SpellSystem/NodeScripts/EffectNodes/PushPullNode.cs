@@ -139,5 +139,10 @@ public class PushPullNode : EffectNode
             scaling = force_scaling_by_distance.Evaluate(dir.magnitude);
         return dir.normalized * scaling;
     }
+
+    public override IEffect CompileEffect()
+    {
+        throw new System.NotImplementedException();
+    }
 }
 

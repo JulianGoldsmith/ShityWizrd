@@ -80,10 +80,23 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 
         if (spellCore != null)
         {
-            var lifecycleManager = spellCore.GetComponent<CoreLifecycleManager>();
+            var lifecycleManager = spellCore.GetComponent<SpellCreatedCore>();
             if (lifecycleManager != null)
             {
-                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom);
+                CoreContext context = new CoreContext()
+                {
+                    SpawnPosition = pos,
+                    CastChargeLevel = triggerInfo.State.CastChargeLevel,
+                    TriggerVector = triggerInfo.TriggerVector, // AddMomentum needs this!
+                    AliveTime = 0f
+                };
+                if (triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<NetworkObject>(out var netObj))
+                {
+                    context.OriginalCaster = netObj.Id;
+                }
+
+                CoreExecutionPlan plan = new CoreExecutionPlan();
+                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, this.CompiledPlan, context);
             }
 
             // We leave this here for now so your current game doesn't break. 

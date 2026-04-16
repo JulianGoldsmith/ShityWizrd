@@ -39,7 +39,7 @@ public class SpellCreatedObject : NetworkBehaviour
         }
 
         Runner.SetIsSimulated(Object, true);
-
+        gameObject.SetActive(true);
         // Communicate the details if we're the host.
         corresponding_spell_node = node as SpellNode;
         corresponding_node_instance_guid = node.InstanceGuid;

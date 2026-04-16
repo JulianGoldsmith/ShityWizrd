@@ -190,9 +190,12 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         if ((bestCandidate != null && potentialItemToPickup != bestCandidate) || overrideUpdatePos)
         {
+
             //decide if item or physics grabbable 
             //Debug.Log($"Best candidate found {bestCandidate.gameObject.name}");
             potentialItemToPickup = bestCandidate.gameObject.GetComponent<NetworkObject>();
+            if (potentialItemToPickup == null) return;
+
             if (bestCandidate is EquipableItem equipable)
             {
                 handController.SetHandTarget_ToPickUpPoint(false, equipable.primaryHandle, equipable.heldHandState);

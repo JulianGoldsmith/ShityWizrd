@@ -5,6 +5,12 @@ using UnityEngine;
 public class ApplyAuraNode : EffectNode
 {
     [SerializeField] Aura[] auras;
+
+    public override IEffect CompileEffect()
+    {
+        throw new System.NotImplementedException();
+    }
+
     public override void Execute(List<SpellTriggerInfo> triggerInfo)
     {
         foreach (var info in triggerInfo)

@@ -13,6 +13,45 @@ public abstract class CoreNode : SpellNode
     [HideInInspector]
     public List<TriggerNode> triggerNodes = new List<TriggerNode>();
 
+
+    [System.NonSerialized]
+    public CoreExecutionPlan CompiledPlan;
+
+    public override void Compile()
+    {
+        base.Compile(); // Resolves your promotable values
+        CompileExecutionPlan();
+    }
+
+    private void CompileExecutionPlan()
+    {
+        CompiledPlan = new CoreExecutionPlan();
+        SpellCompilationContext sCC = new SpellCompilationContext();
+        // 1. Compile all Behaviours
+        if (defaultBehaviourNodes != null)
+        {
+            foreach (var b in defaultBehaviourNodes)
+                if (b != null) CompiledPlan.Behaviours.Add(b.CompileBehaviour(sCC));
+        }
+        if (behaviourNodes != null)
+        {
+            foreach (var b in behaviourNodes)
+                if (b != null) CompiledPlan.Behaviours.Add(b.CompileBehaviour(sCC));
+        }
+
+        // 2. Compile all Triggers
+        if (defaultTriggerNodes != null)
+        {
+            foreach (var t in defaultTriggerNodes)
+                if (t != null) CompiledPlan.Triggers.Add(t.CompileTrigger(sCC));
+        }
+        if (triggerNodes != null)
+        {
+            foreach (var t in triggerNodes)
+                if (t != null) CompiledPlan.Triggers.Add(t.CompileTrigger(sCC));
+        }
+    }
+
     public abstract void CreateSpellCore(SpellTriggerInfo triggerInfo);
 
     protected bool CanSpawn(SpellState state)
@@ -185,20 +224,20 @@ public abstract class CoreNode : SpellNode
         newInstance.defaultTriggerNodes = new List<TriggerNode>();
         newInstance.behaviourNodes = new List<BehaviourNode>();
         newInstance.triggerNodes = new List<TriggerNode>();
-        
-        foreach (var behaviour in this.defaultBehaviourNodes)
+
+        if (this.defaultBehaviourNodes != null)
         {
-            if (behaviour != null)
+            foreach (var behaviour in this.defaultBehaviourNodes)
             {
-                newInstance.defaultBehaviourNodes.Add(behaviour.CloneThisNode() as BehaviourNode);
+                if (behaviour != null) newInstance.defaultBehaviourNodes.Add(behaviour.CloneThisNode() as BehaviourNode);
             }
         }
 
-        foreach (var trigger in this.defaultTriggerNodes)
+        if (this.defaultTriggerNodes != null)
         {
-            if (trigger != null)
+            foreach (var trigger in this.defaultTriggerNodes)
             {
-                newInstance.defaultTriggerNodes.Add(trigger.CloneThisNode() as TriggerNode);
+                if (trigger != null) newInstance.defaultTriggerNodes.Add(trigger.CloneThisNode() as TriggerNode);
             }
         }
 

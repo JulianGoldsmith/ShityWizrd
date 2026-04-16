@@ -7,6 +7,11 @@ public class SimpleMovementNode : BehaviourNode
     [Promotable("Motion Speed", DataTypeTag.Speed)]
     public float speed;
 
+    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    {
+        throw new NotImplementedException();
+    }
+
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
         var simpleMovement = spellCore.AddComponent<SimpleMovementSB>();

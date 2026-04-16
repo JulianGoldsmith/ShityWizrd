@@ -8,6 +8,12 @@ public class OverlapSphereNode : TriggerNode
     public float size;
     [Tooltip("If this should only trigger once per overlaped object, rather than every tick")]
     public bool singleTrigger = false;
+
+    public override ITrigger CompileTriggerCondition(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
     public override void SetUp(GameObject spellCore, SpellState state)
     {
         OverlapSphereST sphereChecker = spellCore.AddComponent<OverlapSphereST>();

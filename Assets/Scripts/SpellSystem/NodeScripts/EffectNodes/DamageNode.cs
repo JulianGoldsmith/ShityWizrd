@@ -7,6 +7,11 @@ public class DamageEffectNode : EffectNode
     [Promotable("Damage Amount", DataTypeTag.Damage)]
     public int damageAmount = 10;
 
+    public override IEffect CompileEffect()
+    {
+        throw new System.NotImplementedException();
+    }
+
     public override void Execute(List<SpellTriggerInfo> triggerInfos)
     {
         foreach (var info in triggerInfos)

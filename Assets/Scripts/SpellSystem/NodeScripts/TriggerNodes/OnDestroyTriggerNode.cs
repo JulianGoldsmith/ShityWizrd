@@ -6,6 +6,12 @@ public class OnDestroyTriggerNode : TriggerNode
 {
     public bool on_expire = false; // at end of lifetime
     public bool on_break = true; // specifically when broken (destroyed)
+
+    public override ITrigger CompileTriggerCondition(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
     public override void SetUp(GameObject spellCore, SpellState state)
     {
         OnDestroyTriggerST odtst = spellCore.AddComponent<OnDestroyTriggerST>();

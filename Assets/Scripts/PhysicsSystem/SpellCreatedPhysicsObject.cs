@@ -42,7 +42,7 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         }
 
         Runner.SetIsSimulated(Object, true);
-
+        gameObject.SetActive(true); //-------------------------------------------------------------------------------------------
         //Debug.Log($"{this.Id} initialising spawn as {node.InstanceGuid} {corresponding_node_instance_guid}");
 
         // Communicate the details if we're the host.

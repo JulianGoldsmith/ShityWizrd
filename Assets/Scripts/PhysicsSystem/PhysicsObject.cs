@@ -678,7 +678,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     #region Despawning
     protected virtual void DespawnObject()
     {
-        if(TryGetComponent<CoreLifecycleManager>(out CoreLifecycleManager CLM)){
+        if(TryGetComponent<SpellCreatedCore>(out SpellCreatedCore CLM)){
             CLM.DeactivateCore();
         }
         if (HasStateAuthority)

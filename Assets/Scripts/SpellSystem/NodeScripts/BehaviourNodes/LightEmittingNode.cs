@@ -10,6 +10,12 @@ public class LightEmittingNode : BehaviourNode
     [Promotable("Radius", DataTypeTag.Radius)]
     public float radius = 20f;
     public float lumenPower = 3000f;
+
+    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    {
+        throw new NotImplementedException();
+    }
+
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
         var gravity = spellCore.AddComponent<LightEmiitingSB>();
