@@ -1414,7 +1414,7 @@ public class SpellGraphController : MonoBehaviour
         newGraph.entryPointControllerNode = (EntryPointControlNode)entryPointClone;
 
         EquipableItem item = inventory.activeItem.GetComponent<EquipableItem>();
-        item.primaryActionSpell = newGraph;
+        item.EquipSpellToPrimary(newGraph);
         Debug.Log($"Created new blank spell assigned to '{item.name}'.");
 
         BuildGraphView(newGraph);

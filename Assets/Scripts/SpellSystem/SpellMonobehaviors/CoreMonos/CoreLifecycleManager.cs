@@ -74,12 +74,9 @@ public class CoreLifecycleManager : NetworkBehaviour
             }
             else
             {
-                Debug.LogWarning($"[Proxy Sync] Failed to load. Blueprint {BlueprintID.id} not found on Proxy!");
+                Debug.LogWarning($"[Proxy Sync] Failed to load. Blueprint {BlueprintID.BlueprintNumber} not found on Proxy!");
             }
         }
-
-        // Claim the token for the physical core
-        
     }
 
     private void GoToSleep()

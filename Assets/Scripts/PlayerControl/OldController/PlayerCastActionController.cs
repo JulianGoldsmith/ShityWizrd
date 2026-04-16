@@ -76,7 +76,7 @@ public class PlayerCastActionController : CastActionController
     private void OnInputEvent(bool isPress)
     {
         if (!HasStateAuthority && Runner.IsResimulation)
-            Debug.Log("ReawakenAndPlaceCalledInResim");
+            //Debug.Log("ReawakenAndPlaceCalledInResim");
         if (inventory == null || inventory.activeItem == null)
             return;
 
