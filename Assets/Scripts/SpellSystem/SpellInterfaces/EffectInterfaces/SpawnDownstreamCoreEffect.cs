@@ -18,10 +18,10 @@ public class SpawnDownstreamCoreEffect : IEffect
             }
         }
 
-        if (newObj == null)
+        if (newObj == null && parentCore.Object.HasStateAuthority)
         {
             newObj = parentCore.Runner.Spawn(ChildPrefabRef,hitInfo.TriggerPoint,
-                hitInfo.TriggerRotation, parentCore.Object.InputAuthority);
+            hitInfo.TriggerRotation, parentCore.Object.InputAuthority);
         }
 
         CoreContext childContext = parentCore.Context;

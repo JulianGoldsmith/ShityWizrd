@@ -193,7 +193,11 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             //decide if item or physics grabbable 
             //Debug.Log($"Best candidate found {bestCandidate.gameObject.name}");
-            potentialItemToPickup = bestCandidate.gameObject.GetComponent<NetworkObject>();
+            if(!bestCandidate.gameObject.TryGetComponent<NetworkObject>(out var pITP)) return;
+
+            potentialItemToPickup = pITP;
+
+
             if (potentialItemToPickup == null) return;
 
             if (bestCandidate is EquipableItem equipable)

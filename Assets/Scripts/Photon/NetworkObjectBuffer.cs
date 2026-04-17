@@ -146,9 +146,27 @@ public class NetworkObjectBuffer : NetworkBehaviour
         }
     }
 
-    
+    void Reawaken(NetworkObject instance)
+    {
+        if (instance == null)
+            return;
+        Runner.SetIsSimulated(instance, true);
+        instance.gameObject.SetActive(true);
+        Debug.Log($"[Reawaken] instance={instance.Id} sim={instance.IsInSimulation}");
+    }
 
     public override void FixedUpdateNetwork()
+    {
+        if(!HasStateAuthority && !HasInputAuthority)
+        {
+            Debug.Log("FixedUpdate is running on the proxy");
+        }
+        else
+            Debug.Log("FixedUpdate is running on client or host");
+        
+    }
+
+    public override void Render()
     {
         //if (HasInputAuthority) return;
         ReconcileLocalAndNetworkBuffers();
@@ -158,6 +176,11 @@ public class NetworkObjectBuffer : NetworkBehaviour
         for (int i = 0; i < _bufferSize; i++)
         {
             var networkInstance = _buffer[i];
+
+            //If our local buffer isnt the new recieved networked buffer then the host/ other has removed _localBuffer[i] from the buffer and it needs wakingup
+            if (_localBuffer[i] != _buffer[i]) {
+                Reawaken(_localBuffer[i]);
+            }
 
             // 0) If this instance has been explicitly claimed for prediction on this client,
             //    DO NOT let the buffer system touch it. Gameplay owns it.
@@ -176,8 +199,10 @@ public class NetworkObjectBuffer : NetworkBehaviour
                 networkInstance.gameObject.SetActive(false);
                 Runner.SetIsSimulated(networkInstance, false);
 
-                if (thisNO != null)
+                if (HasStateAuthority && thisNO != null && thisNO.InputAuthority != networkInstance.InputAuthority)
+                {
                     networkInstance.AssignInputAuthority(thisNO.InputAuthority);
+                }
             }
 
             // 3) If networkInstance is null, slot empty - nothing else to do.
@@ -187,11 +212,13 @@ public class NetworkObjectBuffer : NetworkBehaviour
     public override void Spawned()
     {
         Initialise();
+        
     }
 
     public void Initialise()
     {
         thisNO = this.GetComponent<NetworkObject>();
+        Runner.SetIsSimulated(thisNO, true);
 
         if (!VerifyInputArrayLengths())
             throw new System.Exception("[NetworkObjectBuffer] Input prefab arrays of different lengths or null.");

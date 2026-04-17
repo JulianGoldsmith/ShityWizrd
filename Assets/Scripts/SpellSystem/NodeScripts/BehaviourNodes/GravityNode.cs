@@ -8,13 +8,44 @@ public class GravityNode : BehaviourNode
 
     public override IBehaviour CompileBehaviour(SpellCompilationContext context)
     {
-        throw new System.NotImplementedException();
+        float finalGravity = GetFinalValue(nameof(gravityAdded), gravityAdded);
+
+        sbyte bakedGravity = (sbyte)Mathf.Clamp(finalGravity, -125, 125);
+
+        return new GravityBehaviour()
+        {
+            GravityAdded = bakedGravity
+        };
     }
 
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        var gravity = spellCore.AddComponent<GravitySB>();
-        gravity.Init(triggerInfo, gravityAdded);
+        /*var gravity = spellCore.AddComponent<GravitySB>();
+        gravity.Init(triggerInfo, gravityAdded);*/
+    }
+}
+
+public class GravityBehaviour : IBehaviour
+{
+    public sbyte GravityAdded;
+    public void InitTick(SpellCreatedCore core)
+    {
+        if (core.TryGetComponent<PhysicsObject>(out var po))
+        {
+            var state = po.SpellEffectState;
+
+            int newGravity = Mathf.Clamp(state.Gravity + GravityAdded, -125, 125);
+            state.Gravity = (sbyte)newGravity;
+
+            po.SpellEffectState = state;
+
+            po.UpdateDerivedPhysics();
+        }
+    }
+
+    public void Tick(SpellCreatedCore core, float deltaTime)
+    {
+
     }
 }
 

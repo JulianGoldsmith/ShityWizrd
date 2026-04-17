@@ -51,23 +51,26 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 
         // Now we use the NetworkObjectBuffer to grab pre-spawned objects where possible.
         // falls back to just spawn as before when not possible.
+        NetworkObjectBuffer activeBuffer = null;
         NetworkObject spellCore = null;
+
+
         if (triggerInfo != null && triggerInfo.State != null && triggerInfo.State.CastItem != null)
         {
             Debug.Log("Trying to buffer spawn from Item");
-            NetworkObjectBuffer buffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
-            if (buffer != null)
+            activeBuffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
+            if (activeBuffer != null)
             {
-                spellCore = buffer.Get(corePrefabRef, pos, rot);
+                spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
             }
         }
         else if (triggerInfo != null && triggerInfo.State != null && triggerInfo.State.Controller != null) 
         {
             Debug.Log("Trying to buffer spawn from Controller (NPC)");
-            NetworkObjectBuffer buffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();
-            if (buffer != null)
+            activeBuffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();
+            if (activeBuffer != null)
             {
-                spellCore = buffer.Get(corePrefabRef, pos, rot);
+                spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
             }
         }
 
@@ -88,7 +91,8 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
                     SpawnPosition = pos,
                     CastChargeLevel = triggerInfo.State.CastChargeLevel,
                     TriggerVector = triggerInfo.TriggerVector, // AddMomentum needs this!
-                    AliveTime = 0f
+                    AliveTime = 0f,
+                    BufferSourceID = activeBuffer != null ? activeBuffer.Object.Id : default
                 };
                 if (triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<NetworkObject>(out var netObj))
                 {
