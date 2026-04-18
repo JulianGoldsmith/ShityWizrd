@@ -157,12 +157,12 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        if(!HasStateAuthority && !HasInputAuthority)
-        {
-            Debug.Log("FixedUpdate is running on the proxy");
-        }
-        else
-            Debug.Log("FixedUpdate is running on client or host");
+        //if(!HasStateAuthority && !HasInputAuthority)
+        //{
+        //    Debug.Log("FixedUpdate is running on the proxy");
+        //}
+        //else
+        //    Debug.Log("FixedUpdate is running on client or host");
         
     }
 

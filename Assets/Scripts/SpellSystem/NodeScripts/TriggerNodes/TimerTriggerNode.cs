@@ -1,5 +1,6 @@
 using Unity.VisualScripting;
 using UnityEngine;
+using System.Collections.Generic;
 
 [CreateAssetMenu(fileName = "TimerTriggerNode", menuName = "SpellNodes/TriggerNodes/Timer Trigger Node")]
 public class TimerTriggerNode : TriggerNode
@@ -46,16 +47,17 @@ public class TimerTrigger : ITrigger
 
     public TriggerExecutioPlan Plan { get; set; }
 
-
+    
     public void InitTick(SpellCreatedCore core)
     {
 
     }
 
-    public bool Tick(SpellCreatedCore core, float deltaTime, out SpellTriggerInfo hitInfo)
+    public bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> triggerInfo)
     {
-        hitInfo = null;
-
+        triggerInfo =  new List<SpellTriggerInfo>();
+        SpellTriggerInfo hitInfo = null;
+        
         if (core.GetBool(HasFiredBitIndex) == false && core.Context.AliveTime >= DurationInSeconds)
         {
       
@@ -68,9 +70,20 @@ public class TimerTrigger : ITrigger
                     rotation: core.transform.rotation,
                     tiggerVector: core.NetworkVelocity,
                     hitObject: core.gameObject);
+
+            triggerInfo.Add(hitInfo);
+
             return true;
         }
 
         return false;
     }
+
+    public void TickVFX(SpellCreatedCore core)
+    {
+    }
+    public void CleanupVFX(SpellCreatedCore core)
+    {
+    }
+
 }

@@ -21,4 +21,6 @@ public struct ActiveCastID : INetworkStruct, IEquatable<ActiveCastID>
     {
         return HashCode.Combine(CasterId, CastNumber);
     }
+
+    public bool IsValid => CasterId.IsValid;
 }

@@ -1,4 +1,5 @@
 using Fusion;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class SpellCreatedCore : NetworkBehaviour
@@ -8,7 +9,7 @@ public class SpellCreatedCore : NetworkBehaviour
     [Networked] public ActiveCastID ActiveCastID { get; set; }
     [Networked] public SpellGraphId BlueprintID { get; set; }
     [Networked] public NetworkBool IsActiveInBuffer { get; set; }
-
+    [Networked] public NetworkString<_64> NodeInstanceGuid { get; set; }
 
     // current context / active variables
     [Networked] public CoreContext Context { get; set; }
@@ -22,6 +23,8 @@ public class SpellCreatedCore : NetworkBehaviour
     [Networked] public int BoolMemory { get; set; }
 
 
+    public Dictionary<int, GameObject> ActiveVisuals { get; private set; } = new Dictionary<int, GameObject>();
+
 
     private ChangeDetector _changes;
 
@@ -32,6 +35,16 @@ public class SpellCreatedCore : NetworkBehaviour
     public override void Spawned()
     {
         _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
+    }
+
+    public override void Render()
+    {
+        base.Render();
+
+        if (!_isInitialized || _myPlan == null) return;
+
+        foreach (var behaviour in _myPlan.Behaviours) behaviour.TickVFX(this);
+        foreach (var trigger in _myPlan.Triggers) trigger.TickVFX(this);
     }
 
     public override void FixedUpdateNetwork()
@@ -61,13 +74,13 @@ public class SpellCreatedCore : NetworkBehaviour
         {
             ITrigger trigger = _myPlan.Triggers[i];
 
-            // Does the trigger condition pass? (e.g., did we hit a wall?)
-            if (trigger.Tick(this, Runner.DeltaTime, out SpellTriggerInfo hitInfo))
+            // 1. FIX: Expect a List of hits!
+            if (trigger.Tick(this, Runner.DeltaTime, out List<SpellTriggerInfo> hitInfos))
             {
-                // Execute every effect wired to this trigger in the graph!
+                // 2. Execute every effect, passing the WHOLE LIST so the effect can do group math!
                 foreach (IEffect effect in trigger.Plan.EffectsToRun)
                 {
-                    effect.Execute(this, hitInfo);
+                    effect.Execute(this, hitInfos);
                 }
 
                 // Did hitting this trigger destroy the core? 
@@ -81,7 +94,7 @@ public class SpellCreatedCore : NetworkBehaviour
 
     }
 
-    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId , CoreExecutionPlan compliedExecutionPlan, CoreContext initialContext)
+    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, string nodeGuid, CoreExecutionPlan compliedExecutionPlan, CoreContext initialContext)
     {
         // 1. If we were somehow already active (buffer overlap), clean up the old spell first!
         if (IsActiveInBuffer)
@@ -92,6 +105,9 @@ public class SpellCreatedCore : NetworkBehaviour
 
         ActiveCastID = castId;
         BlueprintID = blueprintId;
+
+        NodeInstanceGuid = nodeGuid;
+
         IsActiveInBuffer = true;
         _myPlan = compliedExecutionPlan;
         Context = initialContext;
@@ -156,10 +172,32 @@ public class SpellCreatedCore : NetworkBehaviour
                 Debug.LogWarning($"[Proxy Sync] Failed to load. Blueprint {BlueprintID.BlueprintNumber} not found on Proxy!");
             }
         }
+        if (_myPlan == null)
+        {
+            if (SpellStateManager.instance.active_spellblueprints.TryGetValue(BlueprintID, out SpellGraph blueprint))
+            {
+                SpellNode node = blueprint.entryPointControllerNode.GetNodeInChain(NodeInstanceGuid.ToString());
+                if (node is CoreNode coreNode)
+                {
+                    if (coreNode.CompiledPlan == null) coreNode.Compile();
+                    _myPlan = coreNode.CompiledPlan;
+                }
+            }
+        }
+
+        _isInitialized = true;
     }
 
     private void GoToSleep()
     {
+        if (_myPlan != null)
+        {
+            foreach (var behaviour in _myPlan.Behaviours) behaviour.CleanupVFX(this);
+            foreach (var trigger in _myPlan.Triggers) trigger.CleanupVFX(this);
+        }
+
+        ActiveVisuals.Clear();
+
         ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
         if (activeSpell != null) activeSpell.RemoveToken();
 
@@ -211,4 +249,7 @@ public class SpellCompilationContext
         if (_nextBoolBit >= 32) Debug.LogError("Too many booleans on this core!");
         return _nextBoolBit++;
     }
+
+    private int _nextVfxId = 0;
+    public int ClaimVFXId() => _nextVfxId++;
 }

@@ -30,11 +30,17 @@ public abstract class TriggerNode : SpellNode
                 // We wrap the CoreNode into our new universal Spawner Effect!
                 // NOTE: downstreamCore.CompiledPlan will be populated because 
                 // SpellGraph compiles all nodes!
-                trigger.Plan.EffectsToRun.Add(new SpawnDownstreamCoreEffect()
+                trigger.Plan.EffectsToRun.Add(new ExecuteDownstreamCoreEffect()
+                {
+                    CoreToExecute = downstreamCore
+                });
+
+                /*trigger.Plan.EffectsToRun.Add(new SpawnDownstreamCoreEffect()
                 {
                     ChildPrefabRef = downstreamCore.corePrefabRef,
-                    ChildPlan = downstreamCore.CompiledPlan
-                });
+                    ChildPlan = downstreamCore.CompiledPlan,
+                    ChildNodeGuid = downstreamCore.InstanceGuid
+                });*/
             }
         }
 

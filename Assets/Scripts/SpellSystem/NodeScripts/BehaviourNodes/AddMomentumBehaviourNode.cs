@@ -49,6 +49,14 @@ public class AddMomentumBehaviour : IBehaviour
         }*/
         // Momentum is a one-shot application. We don't do anything every tick!
     }
+
+    public void CleanupVFX(SpellCreatedCore core)
+    {
+    }
+    public void TickVFX(SpellCreatedCore core)
+    {
+    }
+
 }
 
 

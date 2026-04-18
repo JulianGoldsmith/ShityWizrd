@@ -73,9 +73,36 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
                 spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
             }
         }
+        else if (triggerInfo != null && triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<SpellCreatedCore>(out var parentCore))
+        {
+            Debug.Log("Trying to buffer spawn from Parent Core's Networked Context");
+
+            // Read the perfectly networked ID we saved in the Context!
+            if (parentCore.Context.BufferSourceID.IsValid)
+            {
+                if (parentCore.Runner.TryFindObject(parentCore.Context.BufferSourceID, out NetworkObject bufferObj))
+                {
+                    activeBuffer = bufferObj.GetComponent<NetworkObjectBuffer>();
+                    if (activeBuffer != null)
+                    {
+                        spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
+                    }
+                }
+            }
+        }
 
         if (spellCore == null)
         {
+            bool isProxy = triggerInfo != null && triggerInfo.Source != null &&
+                           triggerInfo.Source.TryGetComponent<NetworkObject>(out var sourceNetObj) &&
+                           !sourceNetObj.HasStateAuthority && !sourceNetObj.HasInputAuthority;
+
+            if (isProxy)
+            {
+                Debug.LogWarning("Proxy buffer exhausted! Safely skipping visual prediction to prevent crash.");
+                return;
+            }
+
             Debug.LogError("Couldn't buffer spawn so falling back.");
             spellCore = BasicSpawner.Spawn(corePrefabRef, pos, rot);
         }
@@ -100,7 +127,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
                 }
 
                 CoreExecutionPlan plan = new CoreExecutionPlan();
-                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, this.CompiledPlan, context);
+                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, this.InstanceGuid, this.CompiledPlan, context);
             }
 
             // We leave this here for now so your current game doesn't break. 

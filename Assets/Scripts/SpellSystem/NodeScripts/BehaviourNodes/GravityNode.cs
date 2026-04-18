@@ -47,6 +47,13 @@ public class GravityBehaviour : IBehaviour
     {
 
     }
+
+    public void CleanupVFX(SpellCreatedCore core)
+    {
+    }
+    public void TickVFX(SpellCreatedCore core)
+    {
+    }
 }
 
 public class GravitySB : SpellBehaviour

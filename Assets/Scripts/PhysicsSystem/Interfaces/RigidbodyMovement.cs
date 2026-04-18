@@ -40,6 +40,6 @@ public class RigidbodyMovement : NetworkBehaviour, IMovementHandler
 
     public void ApplyForce(Vector3 force, ForceMode forceMode = ForceMode.Force)
     {
-        throw new System.NotImplementedException();
+        _rb.AddForce(force, forceMode); 
     }
 }
