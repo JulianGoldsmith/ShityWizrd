@@ -27,6 +27,8 @@ public class SpellStateManager : NetworkBehaviour
 
 
     [Networked, Capacity(100)] public NetworkArray<SpellGraphId> ActiveManifest { get; }
+    //[Networked, Capacity(100)] public NetworkArray<NetworkCastData> ActiveCastsData { get; }
+
     private ChangeDetector _manifestChangeDetector;
 
 
@@ -85,20 +87,44 @@ public class SpellStateManager : NetworkBehaviour
             foreach (var id in spellsToTrash)
             {
                 activeSpells.Remove(id);
-                RPC_DeleteActiveSpell(id.CasterId, id.CastNumber);
+
+                if (Runner.TryFindObject(id.CasterId, out NetworkObject casterObj))
+                {
+                    if (casterObj.TryGetComponent<ActiveCastTracker>(out var tracker))
+                    {
+                        tracker.RemoveNetworkedCast(id);
+                    }
+                }
+
+                //RPC_DeleteActiveSpell(id.CasterId, id.CastNumber);
+            }
+        } else
+        {
+            List<ActiveCastID> spellsToTrash = new List<ActiveCastID>();
+
+            foreach (var kvp in activeSpells)
+            {
+                ActiveCastID id = kvp.Key;
+
+                if (Runner.TryFindObject(id.CasterId, out NetworkObject casterObj))
+                {
+                    if (casterObj.TryGetComponent<ActiveCastTracker>(out var tracker))
+                    {
+                        if (!tracker.GetCastData(id).CastID.IsValid)
+                        {
+                            spellsToTrash.Add(id);
+                        }
+                    }
+                }
+            }
+
+            foreach (var id in spellsToTrash)
+            {
+                activeSpells.Remove(id);
             }
         }
-        
+
         SyncLocalDictionaryWithManifest();
-        
-
-            /*foreach (var change in _manifestChangeDetector.DetectChanges(this))
-            {
-                if (change == nameof(ActiveManifest))
-                {
-
-                }
-            }*/
 
         activeSpellsCount = activeSpells.Count;
     }

@@ -2556,6 +2556,7 @@ GameObject:
   - component: {fileID: 4629630018618923149}
   - component: {fileID: 4081331116634787597}
   - component: {fileID: 8400460405807038855}
+  - component: {fileID: 1087551941607753607}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -2838,6 +2839,7 @@ MonoBehaviour:
   - {fileID: 2204065667809111582}
   - {fileID: 4629630018618923149}
   - {fileID: 4081331116634787597}
+  - {fileID: 1087551941607753607}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2497915391348923376
 MonoBehaviour:
@@ -3413,6 +3415,7 @@ MonoBehaviour:
   primaryAttackBuffered: 0
   primaryAttackReleaseBuffered: 0
   _nextActionId: 0
+  _TotalSpellCasts: 0
 --- !u!114 &5532856637667607981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3425,10 +3428,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555192956e27541428a30177a29851ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  defaultGravityScale: 1
   _physicsObjectProperties:
     material_label: 4
     size: 1
+    base_gravity_multiplier: 0
+  currentProperties:
+    size: 0
+    density: 0
+    mass: 0
+    hardness: 0
+    elasticity: 0
+    brittleness: 0
+    stickiness: 0
+    friction: 0
+    gravityMultiplier: 0
   rb: {fileID: 0}
+  tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
@@ -3920,6 +3936,18 @@ MonoBehaviour:
   distanceBiasScale: 1
   distanceBiasScaleRagdoll: 0.5
   iterations: 8
+--- !u!114 &1087551941607753607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 367acdbd166eff745bd45c5ccfd94152, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0

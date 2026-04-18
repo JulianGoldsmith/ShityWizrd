@@ -13,7 +13,8 @@ public abstract class CastActionController : NetworkBehaviour
 {
     //public Animator animator;
     public NetworkedInventoryManager inventory;
-    
+    public ActiveCastTracker CastTracker { get; private set; }
+
     public bool isCasting;
     public bool isUpperBodyAction;
     public float currentAttackCooldown = 0f;
@@ -31,6 +32,12 @@ public abstract class CastActionController : NetworkBehaviour
     private Dictionary<string, List<Action>> _pendingAnimationActions = new Dictionary<string, List<Action>>();
     private GameObject _activeHitboxInstance;
     [Networked] public int TotalSpellCasts { get; set; }
+
+    public override void Spawned()
+    {
+        base.Spawned();
+        CastTracker = GetComponent<ActiveCastTracker>();
+    }
 
     public override void FixedUpdateNetwork()
     {
@@ -69,6 +76,23 @@ public abstract class CastActionController : NetworkBehaviour
         return new ActiveCastID(this.Object.Id, TotalSpellCasts);
     }
 
+    public void RegisterAndTrackCast(SpellState newCast, SpellGraph graph)
+    {
+        if (!activeCasts.Contains(newCast))
+        {
+            activeCasts.Add(newCast);
+        }
+
+        if (CastTracker != null)
+        {
+            CastTracker.RegisterNetworkedCast(newCast.NetCastData);
+        }
+
+        ActiveSpell newActiveSpell = new ActiveSpell(newCast.ActiveCastID, graph, newCast);
+        newActiveSpell.AddToken();
+        SpellStateManager.instance.RegisterNewCast(newCast.ActiveCastID, newActiveSpell);
+    }
+
     public virtual void StartCast(bool isAlreadyReleased)
     {
         if (isCasting) return;
@@ -103,10 +127,13 @@ public abstract class CastActionController : NetworkBehaviour
         var netObj = GetComponent<NetworkObject>();
         ActiveCastID newCastID = GenerateNewCastID();
         SpellState newCast = new SpellState(newCastID,this, item, graph, null, netObj);
-
-        activeCasts.Add(newCast);
-        isCasting = true;
         newCast.isHeld = true;
+
+        RegisterAndTrackCast(newCast, graph);
+
+        //activeCasts.Add(newCast);
+        isCasting = true;
+       
 
 
         graph.ExecuteComboIndex(primaryComboCounter, newCast, this);
