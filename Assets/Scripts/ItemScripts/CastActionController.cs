@@ -262,7 +262,7 @@ public abstract class CastActionController : NetworkBehaviour
             state: state,
             position: hitPoint,
             rotation: hitRotation,
-            tiggerVector: swingMomentum,
+            triggerVector: swingMomentum,
             hitObject: hitObject
         );
 

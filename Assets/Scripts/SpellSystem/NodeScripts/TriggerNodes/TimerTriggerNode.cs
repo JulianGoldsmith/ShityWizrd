@@ -56,7 +56,7 @@ public class TimerTrigger : ITrigger
     public bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> triggerInfo)
     {
         triggerInfo =  new List<SpellTriggerInfo>();
-        SpellTriggerInfo hitInfo = null;
+        SpellTriggerInfo hitInfo = default;
         
         if (core.GetBool(HasFiredBitIndex) == false && core.Context.AliveTime >= DurationInSeconds)
         {
@@ -68,7 +68,7 @@ public class TimerTrigger : ITrigger
                     state: SpellStateManager.instance.GetActiveSpell(core.ActiveCastID).State,
                     position: core.transform.position,
                     rotation: core.transform.rotation,
-                    tiggerVector: core.NetworkVelocity,
+                    triggerVector: core.NetworkVelocity,
                     hitObject: core.gameObject);
 
             triggerInfo.Add(hitInfo);

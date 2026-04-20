@@ -26,7 +26,9 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
     [Networked, Capacity(CAPACITY)]
     private NetworkArray<NetworkObject> _buffer { get; }
-    [Networked] private NetworkArray<int> _bufferHeads { get; } // separate buffer heads for each partial prefab buffer.
+
+    [Networked, Capacity(CAPACITY)]
+    private NetworkArray<int> _bufferHeads { get; } // separate buffer heads for each partial prefab buffer.
 
     private NetworkObject[] _localBuffer = new NetworkObject[CAPACITY];
 
@@ -119,11 +121,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
         if (instance == null)
             return;
 
-        Runner.SetIsSimulated(instance, true);
-        //if(thisNO != null)
-        //    instance.AssignInputAuthority(thisNO.InputAuthority);
-
-        instance.gameObject.SetActive(true);
+        Reawaken(instance);
 
         Debug.Log($"[Reawaken] instance={instance.Id} sim={instance.IsInSimulation}");
 
@@ -180,6 +178,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
             //If our local buffer isnt the new recieved networked buffer then the host/ other has removed _localBuffer[i] from the buffer and it needs wakingup
             if (_localBuffer[i] != _buffer[i]) {
                 Reawaken(_localBuffer[i]);
+                //continue;
             }
 
             // 0) If this instance has been explicitly claimed for prediction on this client,
@@ -290,7 +289,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
                 if (HasStateAuthority)
                     _bufferHeads.Set(prefab_index, next_partial_buffer_start_index);
                 next_partial_buffer_start_index += prefab_counts[prefab_index];
-                prefab_partial_buffer_infos.Add(prefab_ids[i],
+                prefab_partial_buffer_infos.Add(prefab_ids[prefab_index],
                     new partial_buffer_info(
                         prefab_index,
                         i,
@@ -353,7 +352,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
             rb.isKinematic = true;
         }
 
-        Runner.SetIsSimulated(instance, false);
+        Runner.SetIsSimulated(instance, true); ////////========================
         instance.gameObject.SetActive(false);
 
         return instance;

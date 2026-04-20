@@ -44,7 +44,7 @@ public class PushPullNode : EffectNode
     {
         //Debug.Log($"PUSHPULL node Executed");
 
-        foreach (var info in triggerInfos)
+        /*foreach (var info in triggerInfos)
         {
             GameObject target = info.HitObject;
 
@@ -73,7 +73,7 @@ public class PushPullNode : EffectNode
                     PSO.parent_physics_object.BonkFromImpulse(magnitude, null); // NEED TO PUT INSTIGATOR HERE!!
                 }
             }
-        }
+        }*/
     }
 
     private Vector3 GetRawDirection(SpellTriggerInfo info, GameObject target)
@@ -142,7 +142,103 @@ public class PushPullNode : EffectNode
 
     public override IEffect CompileEffect()
     {
-        throw new System.NotImplementedException();
+        float bakedForce = GetFinalValue(nameof(pushPullForce), pushPullForce);
+
+        return new PushPullEffect()
+        {
+            Direction = pushPullDirection,
+            Scaling = forceScaling,
+            ForceMultiplier = bakedForce,
+            ForceMode = forceMode,
+            DistanceCurve = force_scaling_by_distance
+        };
     }
 }
 
+public class PushPullEffect : IEffect
+{
+    public PushPullNode.PUSH_PULL_DIRECTION Direction;
+    public PushPullNode.ForceScaling Scaling;
+    public float ForceMultiplier;
+    public ForceMode ForceMode;
+    public AnimationCurve DistanceCurve;
+
+    public void Execute(SpellCreatedCore core, List<SpellTriggerInfo> hitInfos)
+    {
+        foreach (var info in hitInfos)
+        {
+            // Struct validation check
+            if (!info.IsValid || info.HitObject == null) continue;
+
+            GameObject target = info.HitObject;
+
+            Vector3 rawDirection = GetRawDirection(info, target);
+            float magnitude = GetForceMagnitude(info, rawDirection);
+
+            if (rawDirection.sqrMagnitude > 0.001f)
+            {
+                PhysicsObject instigator = null;
+                if (info.Source != null)
+                {
+                    instigator = info.Source.GetComponent<PhysicsObject>();
+
+                    if (instigator == null && info.Source.TryGetComponent<PhysicsSubObject>(out var pso))
+                    {
+                        instigator = pso.parent_physics_object;
+                    }
+                }
+
+                if (target.TryGetComponent<PhysicsObject>(out PhysicsObject PO))
+                {
+                    PO.ApplyForce(rawDirection.normalized * magnitude, ForceMode);
+                    PO.BonkFromImpulse(magnitude, instigator);
+                }
+                else if (target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject PSO))
+                {
+                    if (PSO.rb != null)
+                    {
+                        PSO.rb.AddForce(rawDirection.normalized * magnitude, ForceMode);
+                    }
+                    PSO.parent_physics_object.BonkFromImpulse(magnitude, instigator);
+                }
+            }
+        }
+    }
+
+    private Vector3 GetRawDirection(SpellTriggerInfo info, GameObject target)
+    {
+        switch (Direction)
+        {
+            case PushPullNode.PUSH_PULL_DIRECTION.PUSH_FROM_SOURCE:
+                return target.transform.position - info.Source.transform.position;
+
+            case PushPullNode.PUSH_PULL_DIRECTION.TO_SOURCE:
+                return info.Source.transform.position - target.transform.position;
+
+            case PushPullNode.PUSH_PULL_DIRECTION.SOURCE_FORWARD:
+                return info.Source.transform.forward;
+
+            case PushPullNode.PUSH_PULL_DIRECTION.TRIGGER_DIRECTION:
+                return info.TriggerVector;
+        }
+        return Vector3.zero;
+    }
+
+    private float GetForceMagnitude(SpellTriggerInfo info, Vector3 rawDirection)
+    {
+        switch (Scaling)
+        {
+            case PushPullNode.ForceScaling.BY_TRIGGER_FORCE:
+                return info.TriggerVector.magnitude * ForceMultiplier;
+
+            case PushPullNode.ForceScaling.BY_DISTANCE:
+                float distance = rawDirection.magnitude;
+                float distanceScale = (DistanceCurve != null) ? DistanceCurve.Evaluate(distance) : 1.0f;
+                return ForceMultiplier * distanceScale;
+
+            case PushPullNode.ForceScaling.STATIC:
+            default:
+                return ForceMultiplier;
+        }
+    }
+}

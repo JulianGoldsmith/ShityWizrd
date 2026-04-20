@@ -83,7 +83,7 @@ public class SpellGraph : ScriptableObject
             state: state,
             position: state.CastPosition,
             rotation: state.CastRotation,
-            tiggerVector: caster.GetForward(),
+            triggerVector: caster.GetForward(),
             hitObject: caster.gameObject
         );
         triggerInfo.State.CastAimTargetPos = caster.GetAimTarget();
@@ -117,7 +117,7 @@ public class SpellGraph : ScriptableObject
             return;
         }
 
-        if (triggerInfo == null || triggerInfo.State == null)
+        if (!triggerInfo.IsValid || triggerInfo.State == null)
         {
             Debug.LogError($"SpellGraph '{name}': ExecuteComboIndex called without a valid SpellTriggerInfo.State.");
             return;

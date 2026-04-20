@@ -760,7 +760,7 @@ public class EquipableItem : InteractableItem
                 state: state,
                 position: hitPoint,
                 rotation: Quaternion.LookRotation(momentum.normalized + Vector3.up * 0.01f), // Safety for zero vector
-                tiggerVector: momentum,
+                triggerVector: momentum,
                 hitObject: target
             );
 

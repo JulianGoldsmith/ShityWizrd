@@ -39,13 +39,13 @@ public class NonPhysicsCore : CoreNode, IHasPrefabRefToBuffer
         Quaternion rot = SpellSystemHelpers.GetSpellRotation(triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
 
         NetworkObject spellCore = null;
-        if (triggerInfo != null && triggerInfo.State != null && triggerInfo.State.CastItem != null)
+        if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.CastItem != null)
         {
             Debug.Log("Trying to buffer spawn");
             NetworkObjectBuffer buffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
             spellCore = buffer.Get(corePrefabRef, pos, rot);
         }
-        else if (triggerInfo != null && triggerInfo.State != null && triggerInfo.State.Controller != null) //added a new check for a buffer on the controller who made the object - ie an NPC
+        else if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.Controller != null) //added a new check for a buffer on the controller who made the object - ie an NPC
         {
             Debug.Log("Trying to buffer spawn");
             NetworkObjectBuffer buffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();

@@ -10,8 +10,13 @@ public class SpellCreatedPhysicsObject : PhysicsObject
     //SpellState original_spell_state;
     [Networked, OnChangedRender(nameof(OnCorrespondingSpellUpdated))]
     public SpellGraphId corresponding_spellgraph_id { get; set; }
+
+    private SpellGraphId _locallyInitializedGraphId;
+
     [Networked, OnChangedRender(nameof(OnCorrespondingSpellUpdated))] 
     public NetworkString<_64> corresponding_node_instance_guid { get; set; }
+
+    private NetworkString<_64> _locallyInitializedNodeGuid;
     // note that the guids are 36 characters long but have four dashes ('-')
     // at regular index, so could be converted to a 32-length string and _32 used.
     // the dashes would need to then be added back in. currently just using 64-length
@@ -54,6 +59,9 @@ public class SpellCreatedPhysicsObject : PhysicsObject
             creator = state.Caster;
         }
 
+        _locallyInitializedGraphId = corresponding_spellgraph_id;
+        _locallyInitializedNodeGuid = corresponding_node_instance_guid;
+
         SubscribeToSpellStateManager();
 
         // This is called by anyone that spawns the object.
@@ -63,7 +71,7 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         AssignProperties(node);
         InitialisePhysicsObject();
 
-        if (triggerInfo != null)
+        if (triggerInfo.IsValid)
         {
             node.AttatchBehavioursAndTriggers(gameObject, triggerInfo);
             InitialiseAfterBehavioursAndTriggers(node, triggerInfo.State);
@@ -80,7 +88,7 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         // We use the values networked to use to dummy spawn, e.g.
         // attach behaviours and triggers.
         // We may not have all info.
-        InitialiseOnSpawned((ObjectCore)corresponding_spell_node, null, null);
+        InitialiseOnSpawned((ObjectCore)corresponding_spell_node, default, null);
     }
 
     public void AssignProperties(ObjectCore createdby)
@@ -111,6 +119,12 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         //if(corresponding_spell_node != null)
         //    Debug.Log($"{this.Id} corresponding is not null and {corresponding_spell_node.InstanceGuid} ==? {corresponding_node_instance_guid}");
 
+        if (corresponding_spellgraph_id.Equals(_locallyInitializedGraphId) &&
+            corresponding_node_instance_guid == _locallyInitializedNodeGuid)
+        {
+            return; 
+        }
+
         if (corresponding_spell_node != null && corresponding_node_instance_guid == corresponding_spell_node.InstanceGuid)
             return;
 
@@ -126,6 +140,8 @@ public class SpellCreatedPhysicsObject : PhysicsObject
 
         if (corresponding_spell_node != null)
         {
+            _locallyInitializedGraphId = corresponding_spellgraph_id;
+            _locallyInitializedNodeGuid = corresponding_node_instance_guid;
             InitialiseOnSpawnedClientside();
         }
     }

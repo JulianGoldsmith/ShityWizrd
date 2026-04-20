@@ -84,7 +84,7 @@ public abstract class CoreNode : SpellNode
         // need to find a way to pass triggerinfo across network.
         foreach (BehaviourNode behaviourNode in defaultBehaviourNodes)
         {
-            behaviourNode.SetUp(spellCore, null);
+            behaviourNode.SetUp(spellCore, default);
         }
         foreach (TriggerNode triggerNode in defaultTriggerNodes)
         {
@@ -92,7 +92,7 @@ public abstract class CoreNode : SpellNode
         }
         foreach (BehaviourNode behaviourNode in behaviourNodes)
         {
-            behaviourNode.SetUp(spellCore, null);
+            behaviourNode.SetUp(spellCore, default);
         }
         foreach (TriggerNode triggerNode in triggerNodes)
         {

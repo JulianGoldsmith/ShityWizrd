@@ -118,7 +118,7 @@ public class ChargeItemAction : ItemAction
 
         EyePosAndLookDir eyeInfo = controller.GetEyePosAndLookDir();
 
-        Vector3 spawnPosition = eyeInfo.EyePosition + (eyeInfo.Forward * 0.5f);
+        Vector3 spawnPosition = eyeInfo.EyePosition + (eyeInfo.Forward * 1f);
         Quaternion spawnRotation = Quaternion.LookRotation(controller.GetForward());
 
         var triggerInfo = new SpellTriggerInfo(

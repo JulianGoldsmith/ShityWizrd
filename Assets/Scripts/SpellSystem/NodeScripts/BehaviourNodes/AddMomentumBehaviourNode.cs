@@ -68,7 +68,7 @@ public class AddMomentumSBMono : SpellBehaviour
 
     public void Init(SpellTriggerInfo _triggerInfo)
     {
-        if (_triggerInfo == null)
+        if (!triggerInfo.IsValid)
             return;
 
         triggerInfo = _triggerInfo;

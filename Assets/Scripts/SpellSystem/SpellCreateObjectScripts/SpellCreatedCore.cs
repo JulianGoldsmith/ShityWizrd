@@ -11,18 +11,24 @@ public class SpellCreatedCore : NetworkBehaviour
     [Networked] public NetworkBool IsActiveInBuffer { get; set; }
     [Networked] public NetworkString<_64> NodeInstanceGuid { get; set; }
 
+
+
     // current context / active variables
     [Networked] public CoreContext Context { get; set; }
     [Networked] public Vector3 NetworkVelocity { get; set; }
+
+
 
     //networked varibale sketchpad - added to by behaviours and triggers for roll back friendly data
     [Networked, Capacity(16)] public NetworkArray<int> IntMemory { get; }
     [Networked, Capacity(16)] public NetworkArray<float> FloatMemory { get; }
     [Networked, Capacity(8)] public NetworkArray<Vector3> VectorMemory { get; }
-
     [Networked] public int BoolMemory { get; set; }
 
 
+
+
+    public List<PendingContact> TickContacts = new List<PendingContact>();
     public Dictionary<int, GameObject> ActiveVisuals { get; private set; } = new Dictionary<int, GameObject>();
 
 
@@ -92,6 +98,8 @@ public class SpellCreatedCore : NetworkBehaviour
             }
         }
 
+        TickContacts.Clear();
+
     }
 
     public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, string nodeGuid, CoreExecutionPlan compliedExecutionPlan, CoreContext initialContext)
@@ -136,10 +144,37 @@ public class SpellCreatedCore : NetworkBehaviour
 
     }
 
+    #region CollisionHandleing
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!_isInitialized || _myPlan == null) return;
+        TickContacts.Add(new PendingContact
+        {
+            Target = collision.gameObject,
+            Point = collision.contacts[0].point,
+            Normal = collision.contacts[0].normal
+        });
+    }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!_isInitialized || _myPlan == null) return;
 
+        Vector3 hitPoint = other.ClosestPoint(transform.position);
+        Vector3 hitNormal = (transform.position - other.transform.position).normalized;
+        if (hitNormal == Vector3.zero) hitNormal = Vector3.up;
 
+        TickContacts.Add(new PendingContact
+        {
+            Target = other.gameObject,
+            Point = hitPoint,
+            Normal = hitNormal
+        });
+    }
 
+    #endregion
+
+    #region Wake / Sleep
     // Call this when the fireball hits a wall, runs out of lifetime, or is destroyed
     public void DeactivateCore()
     {
@@ -157,15 +192,31 @@ public class SpellCreatedCore : NetworkBehaviour
 
         if (activeSpell == null)
         {
-            // We are a proxy! We didn't get the input, so we build it right now.
+
             if (SpellStateManager.instance.active_spellblueprints.TryGetValue(BlueprintID, out SpellGraph blueprint))
             {
-                SpellState dummyProxyState = new SpellState(ActiveCastID, null, null, blueprint, null, null);
-                activeSpell = new ActiveSpell(ActiveCastID, blueprint, dummyProxyState);
+                if (Runner.TryFindObject(ActiveCastID.CasterId, out NetworkObject casterObj))
+                {
+                    if (casterObj.TryGetComponent<ActiveCastTracker>(out var tracker))
+                    {
+                        NetworkCastData syncedData = tracker.GetCastData(ActiveCastID);
 
-                SpellStateManager.instance.RegisterNewCast(ActiveCastID, activeSpell);
-                Debug.Log($"[Proxy Sync] Lazy-loaded Cast {ActiveCastID.CastNumber} from physical core!");
-                if (activeSpell != null) activeSpell.AddToken();
+                        if (syncedData.CastID.IsValid)
+                        {
+                            SpellState dummyProxyState = new SpellState(Runner, syncedData, blueprint);
+
+                            activeSpell = new ActiveSpell(ActiveCastID, blueprint, dummyProxyState);
+                            SpellStateManager.instance.RegisterNewCast(ActiveCastID, activeSpell);
+
+                            Debug.Log($"[Proxy Sync] Flawlessly Rehydrated Cast {ActiveCastID.CastNumber} from Player {casterObj.name}!");
+                            if (activeSpell != null) activeSpell.AddToken();
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"[Proxy Sync] Tracker had no data for Cast {ActiveCastID.CastNumber}. Was it already garbage collected?");
+                        }
+                    }
+                }
             }
             else
             {
@@ -205,8 +256,10 @@ public class SpellCreatedCore : NetworkBehaviour
         BlueprintID = default;
     }
 
+    #endregion
+
     #region sketchpad memory
- 
+
     public bool GetBool(int bitIndex)
     {
         return (BoolMemory & (1 << bitIndex)) != 0;
@@ -252,4 +305,11 @@ public class SpellCompilationContext
 
     private int _nextVfxId = 0;
     public int ClaimVFXId() => _nextVfxId++;
+}
+
+public struct PendingContact
+{
+    public GameObject Target;
+    public Vector3 Point;
+    public Vector3 Normal;
 }

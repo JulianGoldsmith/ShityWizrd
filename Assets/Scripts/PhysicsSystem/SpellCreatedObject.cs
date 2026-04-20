@@ -53,7 +53,7 @@ public class SpellCreatedObject : NetworkBehaviour
         node.ApplyPromotableValuesGeneric<SpellCreatedObject>(this);
         AssignProperties(node);
 
-        if (triggerInfo != null)
+        if (triggerInfo.IsValid)
         {
             node.AttatchBehavioursAndTriggers(gameObject, triggerInfo);
             InitialiseAfterBehavioursAndTriggers(node, triggerInfo.State);
@@ -70,7 +70,7 @@ public class SpellCreatedObject : NetworkBehaviour
         // We use the values networked to use to dummy spawn, e.g.
         // attach behaviours and triggers.
         // We may not have all info.
-        InitialiseOnSpawned((ObjectCore)corresponding_spell_node, null, null);
+        InitialiseOnSpawned((ObjectCore)corresponding_spell_node, default, null);
     }
 
     public void AssignProperties(ObjectCore createdby)

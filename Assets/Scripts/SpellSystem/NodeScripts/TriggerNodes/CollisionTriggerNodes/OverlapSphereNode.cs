@@ -136,7 +136,7 @@ public class OverlapSphereTrigger : ITrigger
                     state: activeState,
                     position: hitPos,
                     rotation: hitRot,
-                    tiggerVector: hitNormal,
+                    triggerVector: hitNormal,
                     hitObject: targetObj
                 ));
             }

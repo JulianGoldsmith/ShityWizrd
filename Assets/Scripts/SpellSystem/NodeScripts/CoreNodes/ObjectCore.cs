@@ -55,7 +55,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         NetworkObject spellCore = null;
 
 
-        if (triggerInfo != null && triggerInfo.State != null && triggerInfo.State.CastItem != null)
+        if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.CastItem != null)
         {
             Debug.Log("Trying to buffer spawn from Item");
             activeBuffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
@@ -64,7 +64,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
                 spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
             }
         }
-        else if (triggerInfo != null && triggerInfo.State != null && triggerInfo.State.Controller != null) 
+        else if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.Controller != null) 
         {
             Debug.Log("Trying to buffer spawn from Controller (NPC)");
             activeBuffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();
@@ -73,7 +73,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
                 spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
             }
         }
-        else if (triggerInfo != null && triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<SpellCreatedCore>(out var parentCore))
+        else if (triggerInfo.IsValid && triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<SpellCreatedCore>(out var parentCore))
         {
             Debug.Log("Trying to buffer spawn from Parent Core's Networked Context");
 
@@ -93,7 +93,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 
         if (spellCore == null)
         {
-            bool isProxy = triggerInfo != null && triggerInfo.Source != null &&
+            bool isProxy = triggerInfo.IsValid && triggerInfo.Source != null &&
                            triggerInfo.Source.TryGetComponent<NetworkObject>(out var sourceNetObj) &&
                            !sourceNetObj.HasStateAuthority && !sourceNetObj.HasInputAuthority;
 
