@@ -189,6 +189,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7271055669689899539}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5237277130293081661}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -540981540385064245}
   m_SourcePrefab: {fileID: 100100000, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
 --- !u!4 &7188558200159187996 stripped
 Transform:
@@ -294,6 +300,8 @@ MonoBehaviour:
   - {fileID: 8227163547344562370}
   - {fileID: 3092619641854919899}
   - {fileID: 7271055669689899539}
+  - {fileID: 5237277130293081661}
+  - {fileID: -540981540385064245}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &-5027240436109435661
 MonoBehaviour:
@@ -373,5 +381,40 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _IsActiveInBuffer:
     _value: 0
+  _NodeInstanceGuid:
+    _length: 0
+    _data:
+      Data: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   _NetworkVelocity: {x: 0, y: 0, z: 0}
-  _TriggerVector: {x: 0, y: 0, z: 0}
+  _IntMemory: 
+  _FloatMemory: []
+  _VectorMemory: []
+  _BoolMemory: 0
+--- !u!114 &5237277130293081661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7532608151074762406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62cabda8b18e61a4b8a28b98591eae75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _FloatMemory: []
+  _IntMemory: 
+  _UsedFloatBitmask: 0
+  _UsedIntBitmask: 0
+--- !u!114 &-540981540385064245
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7532608151074762406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02ff5681e3dd7ec4398ec076acedcdfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

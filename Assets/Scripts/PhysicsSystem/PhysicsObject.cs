@@ -37,6 +37,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))]
     public PhysicsObjectProperties physicsObjectProperties { get; set; }
+
     public CurrentPhysicsProperties currentProperties;
     public Rigidbody rb;
     public SimulatedPhysicsObject tPO;
@@ -130,6 +131,64 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         //physicsMaterial.bounceCombine = PhysicsMaterialCombine.Minimum;
 
         return physicsMaterial;
+    }
+
+    public void ApplyStatusEffectModifiers(StatusEffectPropertyModifiers mods)
+    {
+        // STEP 1: Establish the Baseline
+        // (If mods.MaterialOverride > 0, you would fetch that POM here. 
+        // For now, we just grab the object's base stats).
+        float baseSize = physicsObjectProperties.size;
+        float baseDensity = physicsObjectProperties.density;
+        float baseFriction = physicsObjectProperties.friction;
+        float baseElasticity = physicsObjectProperties.elasticity;
+        float baseBrittleness = physicsObjectProperties.brittleness;
+        float baseStickiness = physicsObjectProperties.stickiness;
+        float baseHardness = physicsObjectProperties.hardness;
+        float baseGravity = physicsObjectProperties.base_gravity_multiplier;
+
+        // STEP 2: The Chemistry (Simple 1-fits-all tests for now)
+        if (mods.TemperatureDelta <= -50f)
+        {
+            // Generic Freeze Reaction: Slippery, no bounce, shatters easily
+            baseFriction *= 0.1f;
+            baseElasticity = 0f;
+            baseBrittleness += 0.5f;
+        }
+        else if (mods.TemperatureDelta >= 100f)
+        {
+            // Generic Heat Reaction: Melts, gets sticky and soft
+            baseStickiness += 0.5f;
+            baseHardness *= 0.5f;
+        }
+
+        // STEP 3: The Magic (Explicit Modifiers overwrite the chemistry)
+        currentProperties.size = baseSize * mods.ScaleMultiplier;
+        currentProperties.density = baseDensity * mods.DensityMultiplier;
+        currentProperties.gravityMultiplier = baseGravity * mods.GravityMultiplier;
+
+        // Clamp values that shouldn't mathematically exceed 0-1 bounds
+        currentProperties.friction = Mathf.Clamp01(baseFriction * mods.FrictionMultiplier);
+        currentProperties.elasticity = Mathf.Clamp01(baseElasticity + mods.ElasticityAdditive);
+        currentProperties.brittleness = Mathf.Clamp01(baseBrittleness + mods.BrittlenessAdditive);
+        currentProperties.stickiness = Mathf.Clamp01(baseStickiness + mods.StickinessAdditive);
+        currentProperties.hardness = Mathf.Max(0, baseHardness + mods.HardnessAdditive);
+
+        // Derived mass based on your original struct logic
+        currentProperties.mass = currentProperties.density * currentProperties.size;
+
+        // STEP 4: Apply to the Unity/Fusion Engine
+        // Update the visual/collider size (Assuming a uniform scale)
+        transform.localScale = Vector3.one * currentProperties.size;
+
+        // Update the Rigidbody if you have one attached natively
+        if (rb == null || physicsMaterial == null) return;
+
+        physicsMaterial.bounciness = Mathf.Clamp01(currentProperties.elasticity);
+        physicsMaterial.staticFriction = Mathf.Max(0f, currentProperties.friction);
+        physicsMaterial.dynamicFriction = Mathf.Max(0f, currentProperties.friction);
+        rb.mass = currentProperties.mass;
+        rb.useGravity = false;
     }
 
     public void UpdateDerivedPhysics()

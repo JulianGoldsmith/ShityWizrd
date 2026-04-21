@@ -22,7 +22,12 @@ public class XpbdConstraintSolver : MonoBehaviour
         if (joints.Count == 0 || deltaTime <= 0f)
             return;
 
-        
+        foreach (var j in joints) //get size
+        {
+            j.tmpSizeMult = 1;
+            if (j.po != null)
+            j.tmpSizeMult = j.po.currentProperties.size;
+        }
 
         var bodySnapshots = StoreRBSnapshot();
 
@@ -34,9 +39,10 @@ public class XpbdConstraintSolver : MonoBehaviour
         {
             foreach (var j in joints)
             {
+
                 if (j == null || !j.jointActive || !j.enableDistanceConstraint)
                     continue;
-                float sizeMult = _sizeMult / j.bakedScale;
+                float sizeMult = _sizeMult * j.tmpSizeMult / j.bakedScale;
                 SolveDistanceConstraintXPBD(j, deltaTime, sizeMult);
             }
 
@@ -791,6 +797,8 @@ public class XpbdJoint
 
     public bool jointActive = true;
 
+    public PhysicsObject po;
+    public float tmpSizeMult;
     // /////// position constraint
 
 
@@ -921,7 +929,7 @@ public class XpbdJoint
         // Debug.Log($"baked Ragdoll joint for {this.child.name}");
 
         bakedScale = parent.transform.lossyScale.y;
-
+        po = parent.GetComponent<PhysicsObject>();
     }
     public void DrawAngularLimitGizmos()
     {

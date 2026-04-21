@@ -58,7 +58,7 @@ public abstract class ItemAction : ScriptableObject
         SpellStateManager.instance.RegisterNewCast(newCastID, newActiveSpell);*/
         controller.RegisterAndTrackCast(newCast, graph);
 
-        Item.activeCast = newCast;
+        Item.CurrentCastID = newCastID;
 
     }
 
@@ -76,7 +76,7 @@ public abstract class ItemAction : ScriptableObject
 
     protected virtual void RemoveSpellState()
     {
-        Item.activeCast = null;
+        Item.ClearSpellState();
     }
 
 

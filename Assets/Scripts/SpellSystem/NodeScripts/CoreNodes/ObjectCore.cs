@@ -34,9 +34,9 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 
     public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
-        if (!CanSpawn(triggerInfo.State))
-            return;
-        triggerInfo.State.SpawnedCoresCounter++;
+        /*if (!CanSpawn(triggerInfo.State))
+            return;*/
+        //triggerInfo.State.SpawnedCoresCounter++;
 
         Vector3 pos = SpellSystemHelpers.GetSpellPosition(
             triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);

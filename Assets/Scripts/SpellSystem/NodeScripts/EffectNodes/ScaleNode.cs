@@ -37,23 +37,7 @@ public class ScaleNode : EffectNode
         }*/
     }
 
-    private void ApplyScaleChange(PhysicsObject po)
-    {
-        SpellEffectStates currentState = po.SpellEffectState;
-
-        float percentMultiplier = (100f + scaleChangeAmount) / 100f;
-
-        float currentVisualSize = 1f + (currentState.Scale / 125f);
-
-        float newVisualSize = currentVisualSize * percentMultiplier;
-
-        float calculatedScale = (newVisualSize - 1f) * 125f;
-
-        currentState.Scale = (sbyte)Mathf.Clamp(Mathf.RoundToInt(calculatedScale), -125, 125);
-
-        po.SpellEffectState = currentState;
-    }
-
+    
 }
 
 public class ScaleEffect : IEffect
@@ -75,10 +59,9 @@ public class ScaleEffect : IEffect
             }
             else if (target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject PSO))
             {
-                // THE FIX: We pass the parent brain so hitting a sub-collider scales the whole object!
                 if (PSO.parent_physics_object != null)
                 {
-                    ApplyScaleChange(PSO.parent_physics_object);
+                    //ApplyScaleChange(PSO.parent_physics_object);
                 }
             }
         }

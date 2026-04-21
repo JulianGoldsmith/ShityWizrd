@@ -96,10 +96,12 @@ public class ArmatureRetargeter : MonoBehaviour
         if (rootBone.physicsProxy != null && !disableRetargetingToProxys)
         {
             rootBone.targetBone.SetPositionAndRotation(rootBone.physicsProxy.position, rootBone.physicsProxy.rotation);
+            rootBone.targetBone.localScale = rootBone.physicsProxy.localScale;
         }
         else if (rootBone.sourceBone != null)
         {
             rootBone.targetBone.SetPositionAndRotation(rootBone.sourceBone.position, rootBone.sourceBone.rotation);
+            rootBone.targetBone.localScale = rootBone.sourceBone.localScale;
         }
 
         for (int i = 1; i < retargetedBones.Count; i++)
@@ -121,11 +123,15 @@ public class ArmatureRetargeter : MonoBehaviour
                     Vector3 targetPos = Vector3.Lerp(sourcePos, proxyPos, lerpTProxy);
                     Quaternion targetRot = Quaternion.Slerp(sourceRot, proxyRot, lerpTProxy);
 
+                    Vector3 targetScale = Vector3.Lerp(bone.sourceBone.localScale, bone.physicsProxy.localScale, lerpTProxy);
+
                     bone.targetBone.SetPositionAndRotation(targetPos, targetRot);
+                    bone.targetBone.localScale = targetScale;
                 }
                 else
                 {
                     bone.targetBone.SetLocalPositionAndRotation(bone.sourceBone.localPosition, bone.sourceBone.localRotation);
+                    bone.targetBone.localScale = bone.sourceBone.localScale;
                 }
             }
             else
@@ -133,10 +139,12 @@ public class ArmatureRetargeter : MonoBehaviour
                 if (bone.physicsProxy != null && !disableRetargetingToProxys)
                 {
                     bone.targetBone.SetPositionAndRotation(bone.physicsProxy.position, bone.physicsProxy.rotation);
+                    bone.targetBone.localScale = bone.physicsProxy.localScale;
                 }
                 else
                 {
                     bone.targetBone.SetLocalPositionAndRotation(bone.sourceBone.localPosition, bone.sourceBone.localRotation);
+                    bone.targetBone.localScale = bone.sourceBone.localScale;
                 }
             }
 

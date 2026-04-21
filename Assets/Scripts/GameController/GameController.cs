@@ -23,8 +23,6 @@ public class GameController : MonoBehaviour
 
     public BasicSpawner networkingController;
 
-   
-
     public LevelGenerator levelGenerator;
     public LevelNetworkController levelNetworkController;
 
@@ -55,6 +53,7 @@ public class GameController : MonoBehaviour
         {
             spellStateManager = GetComponent<SpellStateManager>();
         }
+        StatusEffectRegistry.Initialize();
     }
 
     void Start()

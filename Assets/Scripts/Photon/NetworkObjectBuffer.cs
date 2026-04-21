@@ -17,7 +17,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 {
     // CONSTANTS
 
-    public const int CAPACITY = 8;
+    public const int CAPACITY = 16;
 
     public NetworkPrefabRef[] prefab_ids;
     public int[] prefab_counts; //to distribute the capacity between partial prefab buffers

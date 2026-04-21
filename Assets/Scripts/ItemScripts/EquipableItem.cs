@@ -67,7 +67,18 @@ public class EquipableItem : InteractableItem
 
     int my_player_id { get { return Runner.LocalPlayer.PlayerId; } }
 
-    public SpellState activeCast;
+    //public SpellState activeCast;
+    [Networked] public ActiveCastID CurrentCastID { get; set; }
+    public SpellState activeCast{ get {
+            if (CurrentCastID.IsValid && SpellStateManager.instance != null)
+            {
+                ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(CurrentCastID);
+                return activeSpell?.State;
+            }
+            return null;
+        }
+    }
+
     public CastActionController activeCaster;
     public HybridCharacterController activeHolder;
 
@@ -721,7 +732,7 @@ public class EquipableItem : InteractableItem
 
     public void ClearSpellState()
     {
-        activeCast = null;
+        CurrentCastID = default;
     }
 
     public Transform GetHandle(bool isLeft)

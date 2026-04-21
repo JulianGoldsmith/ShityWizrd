@@ -1564,6 +1564,9 @@ GameObject:
   - component: {fileID: 2068868632083783361}
   - component: {fileID: 9006994916705668202}
   - component: {fileID: 3589012360123282290}
+  - component: {fileID: 6688537883557615760}
+  - component: {fileID: 3738573248299957918}
+  - component: {fileID: 8106832246569366305}
   m_Layer: 19
   m_Name: Head
   m_TagString: Untagged
@@ -1655,6 +1658,9 @@ MonoBehaviour:
   - {fileID: 2068868632083783361}
   - {fileID: 9006994916705668202}
   - {fileID: 3589012360123282290}
+  - {fileID: 6688537883557615760}
+  - {fileID: 3738573248299957918}
+  - {fileID: 8106832246569366305}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2068868632083783361
 MonoBehaviour:
@@ -1669,7 +1675,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  SyncScale: 0
+  SyncScale: 1
   SyncParent: 0
   _interpolationTarget: {fileID: 2956857968817969471}
   UsePreciseRotation: 0
@@ -1720,6 +1726,78 @@ MonoBehaviour:
   - {x: 0, y: 0, z: 0}
   _localPendingDrop: 0
   isCharacterObject: 1
+--- !u!114 &6688537883557615760
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1120674298739478926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62cabda8b18e61a4b8a28b98591eae75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _FloatMemory: []
+  _IntMemory: 
+  _UsedFloatBitmask: 0
+  _UsedIntBitmask: 0
+--- !u!114 &3738573248299957918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1120674298739478926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultGravityScale: 0
+  _physicsObjectProperties:
+    material_label: 0
+    size: 1
+    base_gravity_multiplier: 1
+  currentProperties:
+    size: 0
+    density: 0
+    mass: 0
+    hardness: 0
+    elasticity: 0
+    brittleness: 0
+    stickiness: 0
+    friction: 0
+    gravityMultiplier: 0
+  rb: {fileID: 0}
+  tPO: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  physicsSubObjects: []
+  _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &8106832246569366305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1120674298739478926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02ff5681e3dd7ec4398ec076acedcdfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  debugEffectNames: 1
+  activeEffectNames: []
 --- !u!1 &1162211359479184167
 GameObject:
   m_ObjectHideFlags: 0
@@ -2373,6 +2451,9 @@ GameObject:
   - component: {fileID: 3767396676275894626}
   - component: {fileID: 4472235385393413164}
   - component: {fileID: 5719359442221409797}
+  - component: {fileID: 6131588276227478974}
+  - component: {fileID: 216459618862961754}
+  - component: {fileID: 706942683793237186}
   m_Layer: 19
   m_Name: Torso
   m_TagString: Untagged
@@ -2466,6 +2547,9 @@ MonoBehaviour:
   - {fileID: 3767396676275894626}
   - {fileID: 4472235385393413164}
   - {fileID: 5719359442221409797}
+  - {fileID: 6131588276227478974}
+  - {fileID: 216459618862961754}
+  - {fileID: 706942683793237186}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3767396676275894626
 MonoBehaviour:
@@ -2480,7 +2564,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  SyncScale: 0
+  SyncScale: 1
   SyncParent: 0
   _interpolationTarget: {fileID: 6193254851925009911}
   UsePreciseRotation: 0
@@ -2531,6 +2615,78 @@ MonoBehaviour:
   - {x: 0, y: 0, z: 0}
   _localPendingDrop: 0
   isCharacterObject: 1
+--- !u!114 &6131588276227478974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1469383134852111960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62cabda8b18e61a4b8a28b98591eae75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _FloatMemory: []
+  _IntMemory: 
+  _UsedFloatBitmask: 0
+  _UsedIntBitmask: 0
+--- !u!114 &216459618862961754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1469383134852111960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultGravityScale: 0
+  _physicsObjectProperties:
+    material_label: 0
+    size: 1
+    base_gravity_multiplier: 1
+  currentProperties:
+    size: 0
+    density: 0
+    mass: 0
+    hardness: 0
+    elasticity: 0
+    brittleness: 0
+    stickiness: 0
+    friction: 0
+    gravityMultiplier: 0
+  rb: {fileID: 0}
+  tPO: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  physicsSubObjects: []
+  _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &706942683793237186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1469383134852111960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02ff5681e3dd7ec4398ec076acedcdfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  debugEffectNames: 1
+  activeEffectNames: []
 --- !u!1 &1481138972719167153
 GameObject:
   m_ObjectHideFlags: 0
@@ -3432,7 +3588,7 @@ MonoBehaviour:
   _physicsObjectProperties:
     material_label: 4
     size: 1
-    base_gravity_multiplier: 0
+    base_gravity_multiplier: 1
   currentProperties:
     size: 0
     density: 0
@@ -3549,6 +3705,8 @@ MonoBehaviour:
     childAnchorLocal: {x: -1.5571557e-15, y: 4.0450182e-10, z: -0.0000000055732756}
     targetTransform: {fileID: 3209749074331946496}
     jointActive: 1
+    po: {fileID: 6633720660449960508}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3588,6 +3746,8 @@ MonoBehaviour:
     childAnchorLocal: {x: -1.3340769e-20, y: -1.7486013e-14, z: 0.00000023469329}
     targetTransform: {fileID: 7324967554987265396}
     jointActive: 1
+    po: {fileID: 216459618862961754}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3612,7 +3772,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 0.99999994
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3628,6 +3788,8 @@ MonoBehaviour:
     childAnchorLocal: {x: 0, y: 0, z: 0}
     targetTransform: {fileID: 6483363119476739225}
     jointActive: 1
+    po: {fileID: 216459618862961754}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3652,7 +3814,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 0.99999994
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3667,6 +3829,8 @@ MonoBehaviour:
     childAnchorLocal: {x: 0, y: 0, z: 0}
     targetTransform: {fileID: 3078145457548247495}
     jointActive: 1
+    po: {fileID: 216459618862961754}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3691,7 +3855,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 0.99999994
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3706,6 +3870,8 @@ MonoBehaviour:
     childAnchorLocal: {x: 0, y: 0, z: 0}
     targetTransform: {fileID: 7745241035038913821}
     jointActive: 1
+    po: {fileID: 0}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3730,7 +3896,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 1.0000002
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3745,6 +3911,8 @@ MonoBehaviour:
     childAnchorLocal: {x: 0, y: 0, z: 0}
     targetTransform: {fileID: 3078145457548247495}
     jointActive: 1
+    po: {fileID: 0}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3769,7 +3937,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 1.0000002
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3784,6 +3952,8 @@ MonoBehaviour:
     childAnchorLocal: {x: 0, y: 0, z: 0}
     targetTransform: {fileID: 5552205477597068301}
     jointActive: 1
+    po: {fileID: 216459618862961754}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3808,7 +3978,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 0.99999994
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3823,6 +3993,8 @@ MonoBehaviour:
     childAnchorLocal: {x: 0, y: 0, z: 0}
     targetTransform: {fileID: 7489038466603675551}
     jointActive: 1
+    po: {fileID: 216459618862961754}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3847,7 +4019,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 0.99999994
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3862,6 +4034,8 @@ MonoBehaviour:
     childAnchorLocal: {x: 0, y: 0, z: 0}
     targetTransform: {fileID: 2260425764659783714}
     jointActive: 1
+    po: {fileID: 0}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3886,7 +4060,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 1.0000004
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3901,6 +4075,8 @@ MonoBehaviour:
     childAnchorLocal: {x: 0, y: 0, z: 0}
     targetTransform: {fileID: 417777860803243168}
     jointActive: 1
+    po: {fileID: 0}
+    tmpSizeMult: 0
     enableDistanceConstraint: 1
     restLength: 0
     distanceStiffness: 0.5
@@ -3925,7 +4101,7 @@ MonoBehaviour:
     drawAngularLimitGizmos: 1
     angularLimitGizmoSize: 0.25
     anchorParentInfluence: 0.5
-    bakedScale: 1
+    bakedScale: 1.0000001
     frameLambdaDistance: 0
     lastDistanceDir: {x: 0, y: 0, z: 0}
     lambdaDistance: 0
@@ -3948,6 +4124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 367acdbd166eff745bd45c5ccfd94152, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  CurrentActiveCasts: 0
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0
@@ -4546,6 +4723,9 @@ GameObject:
   - component: {fileID: 4190250984183214555}
   - component: {fileID: 4977828368577218602}
   - component: {fileID: 8986160937471608004}
+  - component: {fileID: 1379092314146761437}
+  - component: {fileID: 6633720660449960508}
+  - component: {fileID: 4489969598392922137}
   m_Layer: 19
   m_Name: Hips
   m_TagString: Untagged
@@ -4610,7 +4790,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _stateAuthorityChangeErrorCorrectionDelta: 0.5
-  SyncScale: 0
+  SyncScale: 1
   SyncParent: 0
   _interpolationTarget: {fileID: 5162603037753169754}
   UsePreciseRotation: 0
@@ -4640,6 +4820,9 @@ MonoBehaviour:
   - {fileID: 8889215472284349853}
   - {fileID: 4190250984183214555}
   - {fileID: 8986160937471608004}
+  - {fileID: 1379092314146761437}
+  - {fileID: 6633720660449960508}
+  - {fileID: 4489969598392922137}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4190250984183214555
 MonoBehaviour:
@@ -4705,6 +4888,78 @@ MonoBehaviour:
   - {x: 0, y: 0, z: 0}
   _localPendingDrop: 0
   isCharacterObject: 1
+--- !u!114 &1379092314146761437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755946207224043466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62cabda8b18e61a4b8a28b98591eae75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _FloatMemory: []
+  _IntMemory: 
+  _UsedFloatBitmask: 0
+  _UsedIntBitmask: 0
+--- !u!114 &6633720660449960508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755946207224043466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultGravityScale: 1
+  _physicsObjectProperties:
+    material_label: 0
+    size: 1
+    base_gravity_multiplier: 1
+  currentProperties:
+    size: 0
+    density: 0
+    mass: 0
+    hardness: 0
+    elasticity: 0
+    brittleness: 0
+    stickiness: 0
+    friction: 0
+    gravityMultiplier: 0
+  rb: {fileID: 0}
+  tPO: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  physicsSubObjects: []
+  _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &4489969598392922137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755946207224043466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02ff5681e3dd7ec4398ec076acedcdfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  debugEffectNames: 1
+  activeEffectNames: []
 --- !u!1 &1796409561661315163
 GameObject:
   m_ObjectHideFlags: 0
