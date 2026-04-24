@@ -1633,7 +1633,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
@@ -1758,7 +1758,7 @@ MonoBehaviour:
   _physicsObjectProperties:
     material_label: 0
     size: 1
-    base_gravity_multiplier: 1
+    base_gravity_multiplier: 0
   currentProperties:
     size: 0
     density: 0
@@ -2499,7 +2499,7 @@ Rigidbody:
     m_Bits: 524288
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
@@ -2647,7 +2647,7 @@ MonoBehaviour:
   _physicsObjectProperties:
     material_label: 0
     size: 1
-    base_gravity_multiplier: 1
+    base_gravity_multiplier: 0
   currentProperties:
     size: 0
     density: 0
@@ -2713,6 +2713,7 @@ GameObject:
   - component: {fileID: 4081331116634787597}
   - component: {fileID: 8400460405807038855}
   - component: {fileID: 1087551941607753607}
+  - component: {fileID: 3635803465142382114}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -2777,7 +2778,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 130879
   _IsGrounded: 0
-  rideHeight: 0.78
+  rideHeight: 0.68
   rideSpringStrength: 100
   rideSpringDamper: 10
   suspensionCastRadius: 0.125
@@ -2785,8 +2786,8 @@ MonoBehaviour:
   maxSprintSpeed: 5
   acceleration: 10
   braking: 10
-  jumpForce: 8
-  turnStrength: 300
+  jumpForce: 20
+  turnStrength: 100
   turnDamping: 15
   turnBufferCurve:
     serializedVersion: 2
@@ -2921,6 +2922,11 @@ MonoBehaviour:
   rendererYawSpeed: 0
   rendererAngularVel: {x: 0, y: 0, z: 0}
   lastRendererPos: {x: 0, y: 0, z: 0}
+  smoothRendererVelocity: {x: 0, y: 0, z: 0}
+  smoothRendererAccel: {x: 0, y: 0, z: 0}
+  smoothRendererYawSpeed: 0
+  smoothRendererAngularVel: {x: 0, y: 0, z: 0}
+  smoothLastRendererPos: {x: 0, y: 0, z: 0}
   lastFixedPos: {x: 0, y: 0, z: 0}
   calculatedFixedVel: {x: 0, y: 0, z: 0}
   lastFixedVel: {x: 0, y: 0, z: 0}
@@ -2939,6 +2945,8 @@ MonoBehaviour:
   handController: {fileID: 9045712812768551006}
   bonkController: {fileID: 0}
   xpbdSolver: {fileID: 8400460405807038855}
+  _AuthInputTick: 0
+  inputSmoothingFactor: 0.1
 --- !u!114 &2693293064502896331
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2996,6 +3004,7 @@ MonoBehaviour:
   - {fileID: 4629630018618923149}
   - {fileID: 4081331116634787597}
   - {fileID: 1087551941607753607}
+  - {fileID: 3635803465142382114}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2497915391348923376
 MonoBehaviour:
@@ -4125,6 +4134,46 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CurrentActiveCasts: 0
+--- !u!114 &3635803465142382114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df0cdf78c18a34a45aa75fd70c1ca4db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Profile: {fileID: 11400000, guid: 85b558b7d395e1d43aa047e6ee428827, type: 2}
+  UnityAnimator: {fileID: 5367763451751236983}
+  AimConstraints:
+  - IsActive: 1
+    Weight: 0.7
+    ConstrainedBone: {fileID: 3209749074331946496}
+    Target: {fileID: 7768991424758246671}
+    AimAxis: 2
+    UpAxis: 1
+    WorldUpAxis: 1
+    MaxAngleLimit: 110
+  - IsActive: 1
+    Weight: 1
+    ConstrainedBone: {fileID: 7324967554987265396}
+    Target: {fileID: 7768991424758246671}
+    AimAxis: 2
+    UpAxis: 1
+    WorldUpAxis: 1
+    MaxAngleLimit: 110
+  _floatParams: []
+  _boolParams: 
+  _floatVisualParams: []
+  _boolVisualParams: 
+  _TriggerTicks: 
+  RootMotionBone: {fileID: 4033882599428079034}
+  RootBoneBindPose: {x: -0, y: 59.046883, z: 1.5262663}
+  RootMotionScale: {x: 0.01, y: 0.01, z: 0.01}
+  BindPoseClip: {fileID: 0}
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0
@@ -10106,368 +10155,368 @@ MonoBehaviour:
     targetBone: {fileID: 1704152662975029162}
     physicsProxy: {fileID: 8932821910823328615}
     enabled: 1
-    ragDollBone: 0
+    ragDollBone: 1
     injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3209749074331946496}
     targetBone: {fileID: 7309829056844672263}
     physicsProxy: {fileID: 6263512342164043977}
     enabled: 1
-    ragDollBone: 0
+    ragDollBone: 1
     injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 6483363119476739225}
     targetBone: {fileID: 4001537454062511358}
     physicsProxy: {fileID: 3925854531007602781}
     enabled: 1
     ragDollBone: 1
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 7745241035038913821}
     targetBone: {fileID: 4615607451368735918}
     physicsProxy: {fileID: 5489646621971863175}
     enabled: 1
     ragDollBone: 1
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 6629829962611427513}
     targetBone: {fileID: 9136475227352707852}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1177138338448227430}
     targetBone: {fileID: 2644697474741831198}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5662624567552572082}
     targetBone: {fileID: 6958340340810808150}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 4349860934227077418}
     targetBone: {fileID: 1890897700377370538}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5634136709222540521}
     targetBone: {fileID: 6396812828573870621}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 8143064752267988250}
     targetBone: {fileID: 4293676011855866040}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 7055146415334732722}
     targetBone: {fileID: 8615033907554780368}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 4599106408836924034}
     targetBone: {fileID: 1075983662597547385}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5454613610110571339}
     targetBone: {fileID: 1797124317740478081}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3161714399313598658}
     targetBone: {fileID: 4017984400052246745}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1463664519462413411}
     targetBone: {fileID: 1582405922640571834}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 4577777162040981244}
     targetBone: {fileID: 859483252156766540}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1829242758903233950}
     targetBone: {fileID: 8486823831005908802}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 7350846695933343820}
     targetBone: {fileID: 8865505288834501994}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1792262859461904732}
     targetBone: {fileID: 5072021169133247834}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 760280069534234133}
     targetBone: {fileID: 9308196892087442}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 2594371271329038695}
     targetBone: {fileID: 4092850858530000292}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5656796250052561529}
     targetBone: {fileID: 1659753844707419771}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 915311530579747793}
     targetBone: {fileID: 7242768659769734509}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 2996905840586511347}
     targetBone: {fileID: 7294744757935087906}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1265001926851396869}
     targetBone: {fileID: 1188558223691770996}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 984277335706400280}
     targetBone: {fileID: 2080040319892025733}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3345430442844251936}
     targetBone: {fileID: 8827616889234559814}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3900796734347195253}
     targetBone: {fileID: 2481943078156345279}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3685323695040345173}
     targetBone: {fileID: 4986521353687077822}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 215064437117912289}
     targetBone: {fileID: 5782718946326169451}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3078145457548247495}
     targetBone: {fileID: 7959212885889205577}
     physicsProxy: {fileID: 5734009703030963548}
     enabled: 1
     ragDollBone: 1
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5658626983444230188}
     targetBone: {fileID: 5447923241458529381}
     physicsProxy: {fileID: 1184409937665267102}
     enabled: 1
     ragDollBone: 1
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 7818559016425190636}
     targetBone: {fileID: 2848698466679672161}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1206263408057336002}
     targetBone: {fileID: 7107139467791443904}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1337651848493256836}
     targetBone: {fileID: 5625087582440496511}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 4795818433414419025}
     targetBone: {fileID: 8110065644160286391}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 812826436035840821}
     targetBone: {fileID: 8167678949087216736}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1513526352758550148}
     targetBone: {fileID: 7803882341453764809}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5840130959624568065}
     targetBone: {fileID: 2424884317583352413}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 8470622704102707005}
     targetBone: {fileID: 5015762227949877647}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 2102662324683625409}
     targetBone: {fileID: 3710467867900606332}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 4777135901842299673}
     targetBone: {fileID: 3084070825524677793}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 6639368595835684225}
     targetBone: {fileID: 3884646047279789223}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 7401521597862083191}
     targetBone: {fileID: 3532486838708599067}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1960744041166083970}
     targetBone: {fileID: 6086380454287326834}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 7106068220481068979}
     targetBone: {fileID: 4363227090507250854}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5034417929193688481}
     targetBone: {fileID: 1179469243612733734}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 575009272192130361}
     targetBone: {fileID: 5616176544277897798}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 6381413001803506669}
     targetBone: {fileID: 4507530010296840620}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 4279486820538292188}
     targetBone: {fileID: 56604676070191747}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 8024503572137713979}
     targetBone: {fileID: 6740353076033287281}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3081062952654719220}
     targetBone: {fileID: 3762779401431119463}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1356618359061617139}
     targetBone: {fileID: 232048795303800680}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1060220539312161618}
     targetBone: {fileID: 8602568930713341942}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5753083517641463937}
     targetBone: {fileID: 2607447105169898655}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3375672880938131795}
     targetBone: {fileID: 4833869393133020963}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 83857498172875964}
     targetBone: {fileID: 4140306691913060786}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 1477222816062131579}
     targetBone: {fileID: 2678066498386614620}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 7324967554987265396}
     targetBone: {fileID: 8324483536040155454}
     physicsProxy: {fileID: 2156635370974465567}
     enabled: 1
-    ragDollBone: 0
+    ragDollBone: 1
     injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 8963367009691476758}
     targetBone: {fileID: 7985482414438930964}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5565795769895203425}
     targetBone: {fileID: 3004573909745273173}
     physicsProxy: {fileID: 0}
     enabled: 1
     ragDollBone: 0
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5552205477597068301}
     targetBone: {fileID: 3219053678088378402}
     physicsProxy: {fileID: 5308107689679290086}
@@ -10544,6 +10593,7 @@ MonoBehaviour:
   animatedHipRotation: {x: 0, y: 0, z: 0, w: 1}
   disableRetargetingToProxys: 0
   lerpTProxy: 0
+  overRideAndInjectAnimatedHipsRootMotionToAll: 1
 --- !u!1 &6669323669368435901
 GameObject:
   m_ObjectHideFlags: 0
@@ -10831,7 +10881,7 @@ SkinnedMeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6836260641128543008}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -12646,13 +12696,13 @@ Animator:
   m_GameObject: {fileID: 8452634555453863629}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 3db26e6b0d9a68f48b157030b774f760, type: 3}
-  m_Controller: {fileID: 9100000, guid: 1dabdc96ef876aa409a6cfd1e8a891e6, type: 2}
+  m_Controller: {fileID: 0}
   m_CullingMode: 0
-  m_UpdateMode: 1
+  m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_AnimatePhysics: 1
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -12665,7 +12715,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8452634555453863629}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fff0960ef4ea6e04eac66b4a7fd2189d, type: 3}
   m_Name: 
@@ -12770,12 +12820,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8452634555453863629}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e22bfd39b0149d4fa73cb854e5f90fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableFootIK: 1
+  enableFootIK: 0
   footOffset: 0.09
   groundLayer:
     serializedVersion: 2

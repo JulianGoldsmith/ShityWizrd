@@ -18,6 +18,7 @@ public class ArmatureRetargeter : MonoBehaviour
 
     public float lerpTProxy = 0; // value of lerp from "target" to "prxy"
 
+    public bool overRideAndInjectAnimatedHipsRootMotionToAll = false;
 
     [System.Serializable]
     public class RetargetedBone
@@ -92,6 +93,8 @@ public class ArmatureRetargeter : MonoBehaviour
             return;
         }
 
+        
+
         var rootBone = retargetedBones[0];
         if (rootBone.physicsProxy != null && !disableRetargetingToProxys)
         {
@@ -110,6 +113,8 @@ public class ArmatureRetargeter : MonoBehaviour
             var bone = retargetedBones[i];
 
             if (!bone.enabled) continue;
+
+            bool hasActiveProxy = bone.physicsProxy != null && !disableRetargetingToProxys;
 
             if (bone.ragDollBone)
             {
@@ -166,7 +171,7 @@ public class ArmatureRetargeter : MonoBehaviour
             //    bone.targetBone.SetLocalPositionAndRotation(targetPos, targetRot);
             //}
 
-            if (bone.injectAnimatedHipsRootMotion)
+            if ((bone.injectAnimatedHipsRootMotion || overRideAndInjectAnimatedHipsRootMotionToAll ) && hasActiveProxy)
             {
                 bone.targetBone.position += animatedHipRootMotion;
             }

@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 public static class StatusEffectRegistry
 {
@@ -29,3 +32,4 @@ public static class StatusEffectRegistry
         return null;
     }
 }
+

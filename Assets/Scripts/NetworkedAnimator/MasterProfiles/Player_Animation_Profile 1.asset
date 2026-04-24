@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd49135304edbbe4493bf61c9c526161, type: 3}
+  m_Name: Player_Animation_Profile 1
+  m_EditorClassIdentifier: 
+  DefaultEntryStateID: 0
+  AllStates:
+  - rid: 2425487956025540725
+  AnyStateTransitions: []
+  FloatParameters:
+  - Name: Speed
+    DefaultValue: 0
+  BoolParameters:
+  - Name: IsGrounded
+    DefaultValue: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 2425487956025540725
+      type: {class: BlendState1D, ns: , asm: Assembly-CSharp}
+      data:
+        StateName: Locomotion
+        StateID: 0
+        ExtractRootMotion: 0
+        OutboundTransitions: []
+        _parameterName: Speed
+        MinValue: 0
+        MaxValue: 5
+        MinClip: {fileID: -203655887218126122, guid: 1db810396b6675345a45b61aa2c7ce37, type: 3}
+        MaxClip: {fileID: 6744220789736127422, guid: 2c374e9258dc5b445924275c50fc75cc, type: 3}

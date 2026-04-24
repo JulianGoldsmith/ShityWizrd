@@ -24,7 +24,15 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     private float lastPingUpdateTime = 0f;
     private int displayedPing = 0;
 
+    [Header("Extrapolation Decay Settings")]
+    [Tooltip("How many ticks into the unconfirmed future before we start braking?")]
+    public int graceTicks = 3;
 
+    [Tooltip("The tick where the multiplier hits absolute zero.")]
+    public int maxDecayTicks = 15;
+
+    [Tooltip("X-axis: 0 to 1 (Progress). Y-axis: 1 to 0 (Multiplier).")]
+    public AnimationCurve decayCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
 
     public static NetworkObject Spawn(NetworkPrefabRef prefab, Vector3 pos, Quaternion rot, NetworkRunner.OnBeforeSpawned onBeforeSpawned = null)
     {
@@ -207,5 +215,57 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Decays a float based on how far the NetworkObject is predicting into the unconfirmed future.
+    /// </summary>
+    /// <summary>
+    /// Decays a float based on how far the NetworkObject is predicting into the unconfirmed future.
+    /// </summary>
+    public float ApplyProxyDecay(NetworkObject netObj, float rawValue)
+    {
+        // 1. Only proxies decay!
+        if (!netObj.IsProxy) return rawValue;
+
+        var runner = netObj.Runner;
+
+        // 2. Calculate the Delta (THE FIX: Check if Tick > 0 instead of .IsValid)
+        int lastConfirmedTick = runner.LatestServerTick > 0 ? runner.LatestServerTick : runner.Tick;
+        int deltaTicks = runner.Tick - lastConfirmedTick;
+
+        // 3. Grace Period
+        if (deltaTicks <= graceTicks) return rawValue;
+
+        // 4. Dead Zone
+        if (deltaTicks >= maxDecayTicks) return 0f;
+
+        // 5. Braking Zone
+        float decayProgress = (float)(deltaTicks - graceTicks) / (maxDecayTicks - graceTicks);
+        float multiplier = decayCurve.Evaluate(decayProgress);
+
+        return rawValue * multiplier;
+    }
+
+    /// <summary>
+    /// Decays a Vector2 based on how far the NetworkObject is predicting into the unconfirmed future.
+    /// </summary>
+    public Vector2 ApplyProxyDecay(NetworkObject netObj, Vector2 rawVector)
+    {
+        if (!netObj.IsProxy) return rawVector;
+
+        var runner = netObj.Runner;
+
+        // THE FIX: Check if Tick > 0 instead of .IsValid
+        int lastConfirmedTick = runner.LatestServerTick > 0 ? runner.LatestServerTick : runner.Tick;
+        int deltaTicks = runner.Tick - lastConfirmedTick;
+
+        if (deltaTicks <= graceTicks) return rawVector;
+        if (deltaTicks >= maxDecayTicks) return Vector2.zero;
+
+        float decayProgress = (float)(deltaTicks - graceTicks) / (maxDecayTicks - graceTicks);
+        float multiplier = decayCurve.Evaluate(decayProgress);
+
+        return rawVector * multiplier;
     }
 }

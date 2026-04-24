@@ -13,7 +13,8 @@ public enum BONKEDSTATE
     BONKED,
 }
 
-public class HybridCharacterController : NetworkBehaviour
+[DefaultExecutionOrder(-5)]
+public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimVarDirection, IAnimVarGrounded, IAnimEventListener
 {
     [Header("Components")]
     public Rigidbody hipsRb;
@@ -93,13 +94,28 @@ public class HybridCharacterController : NetworkBehaviour
     [HideInInspector] public Vector3 lastRendererPos;
     [HideInInspector] Quaternion lastRendererRot;
 
+    [HideInInspector] public Vector3 smoothRendererVelocity;
+    [HideInInspector] public Vector3 smoothRendererAccel;
+    [HideInInspector] public float smoothRendererYawSpeed;
+    [HideInInspector] public Vector3 smoothRendererAngularVel;
+    [HideInInspector] public Vector3 smoothLastRendererPos;
+    [HideInInspector] Quaternion smoothLastRendererRot;
+
     [HideInInspector] public Vector3 lastFixedPos;
     [HideInInspector] public Vector3 calculatedFixedVel;
     [HideInInspector] public Vector3 lastFixedVel;
     [HideInInspector] public Vector3 calculatedFixedAccel;
     [HideInInspector] public float lastRenderDt;
 
+    private bool _hasSimSample;
+    [HideInInspector] Vector3 lastSimRendererPos;
+    [HideInInspector] Vector3 currentSimRendererPos;
+    [HideInInspector] Vector3 lastSimRendererVelocity;
+    [HideInInspector] Vector3 renderedVelocity;
+    [HideInInspector] Vector3 simRendererAcceleration;
+
     private ChangeDetector _changeDetector;
+
     [Networked] public bool isHost { get; set; }
     [HideInInspector] public bool cashIsHost = false;
     public Material hostMat, clientMat;
@@ -134,7 +150,12 @@ public class HybridCharacterController : NetworkBehaviour
 
     public XpbdConstraintSolver xpbdSolver;
 
-
+    [Header("Proxy Extrapolation")]
+    [Networked] public int AuthInputTick { get; set; }
+    private int _lastInputTick;
+    private Vector2 _previousSmoothedInput;
+    private Vector2 _lastReceivedAuthoritativeInput;
+    public float inputSmoothingFactor = 0.1f; // Your suggested 0.1 per tick
     public override void Spawned()
     {
         _lastVisibleJump = _jumpCount;
@@ -256,6 +277,7 @@ public class HybridCharacterController : NetworkBehaviour
             {
                 ApplyJump(); //animation is applied in Render -> Update Animations()
                 _jumpCount++;
+
             }
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
@@ -280,29 +302,33 @@ public class HybridCharacterController : NetworkBehaviour
                 //GetUnBonked(); //animation is applied in Render -> Update Animations()
             }
             _lastButtonsInput = data.buttons;
+
+            AuthInputTick = Runner.Tick;
         }
 
 
        
         if (bonkController.BonkedState != BONKEDSTATE.BONKED)
         {
-            UpdateAnimatorPos(true);
-
             ApplyUprightTorque();
 
             ApplyLookRotation();
+
+            CalculateObservedAccelerationAndVelocity();
+
+            UpdateAnimator(true);
 
             UpdateHips();
             
             ApplyHipsMovement();
 
             UpdateSpineIK();
+
+            
         }
+
         if(!bonkController.bonkChangedThisUpdate)
             UpdateTorsoAndHead();
-
-      
-
 
         if (Runner.DeltaTime > 1e-6f)
         {
@@ -314,8 +340,8 @@ public class HybridCharacterController : NetworkBehaviour
         }
         previousVelocity = hipsRb.linearVelocity;
 
-
         UpdateJointSolver();
+
         CalculateVelocityAndAcceleration();
     }
 
@@ -323,15 +349,64 @@ public class HybridCharacterController : NetworkBehaviour
     {
         //transform.position = hipsRb.transform.position;
         //transform.rotation = hipsRb.transform.rotation;
-        if (disableCC > 0)
-        {
+        if (disableCC > 0){ return; }
 
-            return;
-        }
         UpdateCameraAnchor();
         CasheMovement();
-        UpdateAnimator();
 
+        UpdateAnimator(false);
+
+        if (armatureRetargeter != null)
+        {
+            armatureRetargeter.SetRagdollBlend(armatureRetargetingLerp);
+        }
+    }
+
+    private int _lastSimSampleTick;
+    //Because of networking / input decay etc.. the player observerd velocity between Last simulation ticks is different to the actual velocity.
+    private void CalculateObservedAccelerationAndVelocity()
+    {
+        if (!Runner.IsLastTick) return;
+
+        currentSimRendererPos = smoothedNetworkedRenderRoot.position;
+        int currentTick = Runner.Tick;
+
+        if (!_hasSimSample)
+        {
+            _hasSimSample = true;
+            renderedVelocity = Vector3.zero;
+            simRendererAcceleration = Vector3.zero;
+            lastSimRendererVelocity = Vector3.zero;
+
+            lastSimRendererPos = currentSimRendererPos;
+            _lastSimSampleTick = currentTick;
+            return;
+        }
+
+        // 2. How many ticks actually passed between this batch and the last batch?
+        // (This fixes the frame-drop math explosions)
+        int ticksAdvanced = currentTick - _lastSimSampleTick;
+        if (ticksAdvanced <= 0) return;
+
+        float timeElapsed = ticksAdvanced * Runner.DeltaTime;
+
+        // 3. Calculate the batch velocity. 
+        // This will bounce between ~1.4 (packet arrived) and ~0.6 (decaying).
+        Vector3 batchVelocity = (currentSimRendererPos - lastSimRendererPos) / timeElapsed;
+
+        if (batchVelocity.magnitude < 0.05f)
+            batchVelocity = Vector3.zero;
+
+        simRendererAcceleration = (batchVelocity - lastSimRendererVelocity) / timeElapsed;
+
+        // 4. THE MAGIC: Extract the true average trajectory.
+        // By heavily smoothing the bouncing batch velocities, we get the exact
+        // true speed the character is sliding across the screen (1.0m/s).
+        renderedVelocity = Vector3.Lerp(renderedVelocity, batchVelocity, 0.15f);
+
+        lastSimRendererVelocity = batchVelocity;
+        lastSimRendererPos = currentSimRendererPos;
+        _lastSimSampleTick = currentTick;
     }
 
     private void CalculateVelocityAndAcceleration()
@@ -376,77 +451,84 @@ public class HybridCharacterController : NetworkBehaviour
     }
 
 
-    void UpdateAnimator()
+    void UpdateAnimator(bool isSim)
     {
-        if (!targetAnimator) return;
+        var netAnimator = GetComponent<NetworkAnimator>();
+        if (netAnimator == null) return;
+        
 
-        var targetPos = rendererPos + hipsOffset;
-        var targetRot = rendererRot;
+        Vector3 flatVel = isSim ? hipsRb.linearVelocity : renderedVelocity;
+        flatVel.y = 0f;
+        if (flatVel.magnitude < 0.05f)
+            flatVel = Vector3.zero;
 
-        if (!IsFinite(targetPos))
+        Quaternion rot = isSim ? hipsRb.transform.rotation : networkedRenderRoot.transform.rotation;
+
+        Vector3 flatForward = Vector3.ProjectOnPlane(rot * Vector3.forward, Vector3.up).normalized;
+        Vector3 flatRight = Vector3.Cross(Vector3.up, flatForward);
+
+        float forwardSpeed = Vector3.Dot(flatVel, flatForward);
+        float rightSpeed = Vector3.Dot(flatVel, flatRight);
+
+        float targetForward = forwardSpeed / (maxWalkSpeed * 2f);
+        float targetRight = rightSpeed / (maxWalkSpeed * 2f);
+
+        //if (Object.IsProxy)
+        //Debug.Log($"rendererVelocity x {rightSpeed} y {forwardSpeed} pos {networkedRenderRoot.position}");
+        if (isSim)
         {
-            Debug.Log($"<color=red> CRITIAL target RENDERER POS is INFINATE IN UPDATE ANIMATOR? ");
-            targetPos = hipsRb.transform.position;
+            netAnimator.SetSimFloat("VelocityY", targetForward);
+            netAnimator.SetSimFloat("VelocityX", targetRight);
+
+            netAnimator.SetSimBool("IsGrounded", IsGrounded);
+            netAnimator.SetSimFloat("VerticalVelocity", hipsRb.linearVelocity.y);
+
+            netAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRot);
+
+            //armatureRetargeter.animatedHipRootMotion = rmDeltaPos / Runner.DeltaTime;
         }
-        if (!IsFinite(targetRot))
+        else
         {
-            Debug.Log($"<color=red> CRITIAL target RENDERER ROT is INFINATE IN UPDATE ANIMATOR? ");
-            targetRot = hipsRb.transform.rotation;
+            netAnimator.SetRenderFloat("VelocityY", targetForward, 0.05f, Time.deltaTime);
+            netAnimator.SetRenderFloat("VelocityX", targetRight, 0.05f, Time.deltaTime);
+
+            netAnimator.SetRenderBool("IsGrounded", IsGrounded);
+            netAnimator.SetRenderFloat("VerticalVelocity", renderedVelocity.y, 0.05f, Time.deltaTime);
+
+            netAnimator.UpdateVisualAnimator(out Vector3 visualRmOffset, out Quaternion visualRmRot);
+
+            if (armatureRetargeter != null)
+            {
+                armatureRetargeter.animatedHipRootMotion = visualRmOffset;
+            }
         }
 
-        //update Armature Positions - updates to the render target for smoothing
-        UpdateAnimatorPos(false);
 
-        Vector3 localVel = networkedRenderRoot.transform.InverseTransformDirection(rendererVelocity);
+        UpdateAnimatorPos(isSim);
 
-        if (!IsFinite(localVel)) localVel = Vector3.zero;
-        if (float.IsNaN(rendererYawSpeed) || float.IsInfinity(rendererYawSpeed)) rendererYawSpeed = 0;
-
-        targetAnimator.SetFloat("forwardSpeed", localVel.z / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
-        targetAnimator.SetFloat("rightSpeed", localVel.x / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
-        targetAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
-
-        //animationController.UpdateSpineIkTarget(lookRot);
-        //finalAnimator.SetFloat("forwardSpeed", localVel.z / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
-        //finalAnimator.SetFloat("rightSpeed", localVel.x / (maxWalkSpeed * 2), 0.1f, Time.deltaTime);
-        //finalAnimator.SetFloat("RotationSpeed", rendererYawSpeed, 0.1f, Time.deltaTime);
-
-        //Jumping 
-        targetAnimator.SetBool("IsGrounded", IsGrounded);
-        //finalAnimator.SetBool("IsGrounded", IsGrounded);
-        if (_jumpCount > _lastVisibleJump)
-        {
-            targetAnimator.SetTrigger("Jump");
-            //finalAnimator.SetTrigger("Jump");
-            _lastVisibleJump = _jumpCount;
-        }
-
-        if (retargeter != null)
+        /*if (retargeter != null)
         {
             retargeter.animatedHipRootMotion = (new Vector3(armatureHipsRoot.transform.localPosition.x,
                 armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z) - armatureHipsStartOffset) * 0.01f;
             retargeter.animatedHipRotation = armatureHipsRoot.transform.localRotation;
-        }
+        }*/
 
-        armatureRetargeter.SetRagdollBlend(armatureRetargetingLerp);
-        
+        //armatureRetargeter.SetRagdollBlend(armatureRetargetingLerp);
     }
 
-    void UpdateAnimatorPos(bool inFixedUpdate)
+    void UpdateAnimatorPos(bool isSim)
     {
         Vector3 targetPos;
         Quaternion targetRot;
-        if (!inFixedUpdate)
+        if (!isSim)
         {
-            targetPos = rendererPos + hipsOffset;
-            targetRot = rendererRot;
+            targetPos = smoothedNetworkedRenderRoot.position + hipsOffset;
+            targetRot = smoothedNetworkedRenderRoot.rotation;
         }
         else
         {
-
             targetPos = hipsRb.transform.position + hipsOffset;
             targetRot = hipsRb.transform.rotation;
-            //hipsRootMotionYDetla = armatureHipsRoot.localPosition.z / 100f; // i think this will use z as up from blender
         }
 
 
@@ -459,11 +541,13 @@ public class HybridCharacterController : NetworkBehaviour
             Debug.Log($"<color=red> CRITIAL target RENDERER ROT is INFINATE IN UPDATE ANIMATOR? ");
         }
 
-        targetAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + hipsOffset; 
-        targetAnimator.gameObject.transform.rotation = smoothedNetworkedRenderRoot.transform.rotation;
-        finalAnimator.gameObject.transform.position = smoothedNetworkedRenderRoot.transform.position + ((new Vector3(armatureHipsRoot.transform.localPosition.x,
-                armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z)) /100); 
-        finalAnimator.gameObject.transform.rotation = smoothedNetworkedRenderRoot.transform.rotation;
+        targetAnimator.gameObject.transform.position = targetPos; 
+        targetAnimator.gameObject.transform.rotation = targetRot;
+
+        finalAnimator.gameObject.transform.position = targetPos;
+            //+ ((new Vector3(armatureHipsRoot.transform.localPosition.x,
+            //armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z)) /100); 
+        finalAnimator.gameObject.transform.rotation = targetRot;
     }
 
     public void UpdateSpineIK()
@@ -501,11 +585,26 @@ public class HybridCharacterController : NetworkBehaviour
         float dtRender = Mathf.Max(Time.deltaTime, 1e-6f);
 
         // Approximate render-space velocity (good enough for PD damping)
+
+
         var p = networkedRenderRoot.position;
+        var sp = smoothedNetworkedRenderRoot.position;
         var lastRendereVel = rendererVelocity;
-        rendererVelocity = (p - lastRendererPos) / (Time.deltaTime);
+        var smoothLastRendereVel = smoothRendererVelocity;
+
+        Vector3 rawVel = (p - lastRendererPos) / dtRender;
+        float smoothing = 1f - Mathf.Exp(-12f * dtRender);
+        rendererVelocity = Vector3.Lerp(rendererVelocity, rawVel, smoothing);
+
+        if (rendererVelocity.magnitude < 0.1f)
+            rendererVelocity = Vector3.zero;
+
+        //rendererVelocity = (p - lastRendererPos) / (Time.deltaTime);
+        smoothRendererVelocity = (sp - smoothLastRendererPos) /(Time.deltaTime);
         rendererAccel = (rendererVelocity - lastRendereVel) / Time.deltaTime;
+        smoothRendererAccel = (smoothRendererVelocity - smoothLastRendereVel) / Time.deltaTime;
         lastRendererPos = p;
+        smoothLastRendererPos = sp;
 
         //if (!IsFinite(lastRendererRot)) lastRendererRot = rendererRot;
 
@@ -536,6 +635,7 @@ public class HybridCharacterController : NetworkBehaviour
         lastRendererRot = rendererRot;
     }
 
+    private int _lastReceivedLocalTick;
     public void DetectVariablesChangedOnNetwork()
     {
         foreach (var change in _changeDetector.DetectChanges(this))
@@ -544,6 +644,10 @@ public class HybridCharacterController : NetworkBehaviour
             {
                 case nameof(isHost):
                     modelRenderer.material = isHost ? hostMat : clientMat;
+                    break;
+                case nameof(AuthInputTick):
+
+                    _lastReceivedLocalTick = Runner.Tick;
                     break;
             }
         }
@@ -623,10 +727,15 @@ public class HybridCharacterController : NetworkBehaviour
 
     public void ApplyJump()
     {
-        if (IsGrounded)
-            hipsRb.AddForce(jumpForce * Vector3.up, ForceMode.VelocityChange);
+        if (!IsGrounded) return;
 
-        //Debug.Log("Jumped");
+        hipsRb.AddForce(jumpForce * Vector3.up, ForceMode.VelocityChange);
+
+        var netAnimator = GetComponent<NetworkAnimator>();
+        if (netAnimator != null)
+        {
+            netAnimator.SetTrigger("Jump");
+        }
     }
     void ApplyUprightTorque()
     {
@@ -659,18 +768,18 @@ public class HybridCharacterController : NetworkBehaviour
 
         Vector3 castOrigin = hipsRb.worldCenterOfMass;
 
-        float distanceToCast = rideHeight + suspensionCastRadius + groundCheckExtraDistance;
+        float distanceToCast = ((rideHeight * hipsRb.transform.localScale.z) + suspensionCastRadius + groundCheckExtraDistance);
 
         //Debug.DrawRay(castOrigin, Vector3.down* distanceToCast, Color.red);
 
-        IsGrounded = Physics.SphereCast(castOrigin, suspensionCastRadius, Vector3.down, out RaycastHit hitInfo, distanceToCast, groundLayer);
-        Debug.DrawRay(castOrigin, Vector3.down * distanceToCast, Color.aliceBlue);
+        IsGrounded = Physics.SphereCast(castOrigin, suspensionCastRadius, Vector3.down, out RaycastHit hitInfo, distanceToCast* hipsRb.transform.localScale.z, groundLayer);
+        Debug.DrawRay(castOrigin, Vector3.down * distanceToCast * hipsRb.transform.localScale.z, Color.aliceBlue);
 
         if (IsGrounded)
         {
             float currentDistance = hitInfo.distance;
 
-            float heightError = (rideHeight) - currentDistance;
+            float heightError = (rideHeight * hipsRb.transform.localScale.z) - currentDistance;
 
             float springForce = heightError * rideSpringStrength;
 
@@ -707,10 +816,42 @@ public class HybridCharacterController : NetworkBehaviour
     private void ApplyHipsMovement()
     {
 
+        Vector2 rawInput = moveInput;
+        rawInput.Normalize();
+
+        if (Object.IsProxy)
+        {
+            // deltaTicks is now the exact distance between the current simulation tick
+            // and the exact tick the owning player actually pressed the button.
+            int deltaTicks = Runner.Tick - _lastReceivedLocalTick;
+
+            // Apply decay
+            if (deltaTicks > BasicSpawner.Instance.graceTicks)
+            {
+                if (deltaTicks >= BasicSpawner.Instance.maxDecayTicks)
+                {
+                    rawInput = Vector2.zero;
+                }
+                else
+                {
+                    float decayProgress = (float)(deltaTicks - BasicSpawner.Instance.graceTicks) /
+                                          (BasicSpawner.Instance.maxDecayTicks - BasicSpawner.Instance.graceTicks);
+                    float multiplier = BasicSpawner.Instance.decayCurve.Evaluate(decayProgress);
+                    rawInput *= multiplier;
+                }
+            }
+
+            // --- 2. TEMPORAL SMOOTHING ---
+            /*rawInput = Vector2.Lerp(_previousSmoothedInput, rawInput, inputSmoothingFactor);
+            _previousSmoothedInput = rawInput;*/
+        }
+
+        
+
         //Debug.Log($"Apply movement - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority}");
-        Vector2 _moveInput = moveInput;
+        //Vector2 _moveInput = moveInput;
         Quaternion _lookRot = lookRot;
-        _moveInput.Normalize();
+        //_moveInput.Normalize();
 
         Vector3 camForward = _lookRot * Vector3.forward;
         camForward.y = 0;
@@ -719,15 +860,12 @@ public class HybridCharacterController : NetworkBehaviour
         Vector3 camRight = _lookRot * Vector3.right;
         camRight.y = 0;
         camRight.Normalize();
-
-        Vector3 moveDirection = (camForward * _moveInput.y + camRight * _moveInput.x);
+        //moveInput = BasicSpawner.Instance.ApplyProxyDecay(Object, moveInput);
+        Vector3 moveDirection = (camForward * rawInput.y + camRight * rawInput.x);
         Vector3 targetVelocity = moveDirection * (sprint ? maxSprintSpeed : maxWalkSpeed);
 
         //this may seem a bit hackey but it seems to solve the overshoot caused by "constant" input prediction (ie predicing continue run)
-        if (IsProxy && Runner.IsResimulation)
-        {
-            targetVelocity = targetVelocity / 2;
-        }
+        
 
         Vector3 currentVelocity = hipsRb.linearVelocity;
         if (!IsFinite(currentVelocity))
@@ -738,7 +876,7 @@ public class HybridCharacterController : NetworkBehaviour
 
         Vector3 velocityError = targetVelocity - currentVelocity;
 
-        float forceMagnitude = _moveInput.sqrMagnitude > 0.01f ? acceleration : IsGrounded?braking: braking/20f;
+        float forceMagnitude = rawInput.sqrMagnitude > 0.01f ? acceleration : IsGrounded?braking: braking/20f;
         Vector3 correctiveForce = velocityError * forceMagnitude;
 
         if (!IsFinite(correctiveForce))
@@ -843,6 +981,21 @@ public class HybridCharacterController : NetworkBehaviour
 
         return new EyePosAndLookDir(eyePos, fwd, up);
     }
+
+    public float GetCurrentSpeed()
+    {
+        Vector3 flatVel = hipsRb.linearVelocity;
+        flatVel.y = 0f; // Ignore vertical falling/jumping
+        return flatVel.magnitude;
+    } // Or moveInput.magnitude depending on your blend preference
+    public Vector2 GetCurrentDirection() => moveInput;
+    public bool AnimIsGrounded() => IsGrounded;
+
+    public void OnDeterministicAnimEvent(string eventID, bool isResimulation)
+    {
+        // We will fill this in later when we do the spellcasting/hitboxes!
+    }
+
 
 
     public void TeleportTo(Vector3 position, Quaternion rotation)

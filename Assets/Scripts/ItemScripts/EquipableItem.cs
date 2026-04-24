@@ -65,6 +65,9 @@ public class EquipableItem : InteractableItem
 
     public Vector3 throwDir = Vector3.zero;
 
+    [Header("Visual Interpolation")]
+    private Vector3 _cashedVisualPos;
+
     int my_player_id { get { return Runner.LocalPlayer.PlayerId; } }
 
     //public SpellState activeCast;
@@ -148,40 +151,54 @@ public class EquipableItem : InteractableItem
 
     public override void Render()
     {
-        //if(HoldingPlayer!=null)
-        //    Debug.Log($"Holding player in render is {HoldingPlayer.name}");
-        //else
-        //{
-        //    Debug.Log($"Holding player in render is NULL");
-
-        //}
         if (visualModel == null || HoldingPlayer == null) return;
         if (!HoldingPlayer.TryGetComponent(out HybridCharacterController hcc)) return;
 
-        //if (HoldingPlayer.InputAuthority != Runner.LocalPlayer) return;
-
         bool local = IsLocalPlayerHoldingThisItem();
-
         var dataToUse = local ? localItemActionData : ItemActionData;
 
-        EyePosAndLookDir eye = local ? hcc.GetEyePosAndLookDir(): hcc.GetEyePosAndLookDir();
+        // 1. GET THE PERFECTLY SMOOTH VISUAL TARGET
+        Vector3 eyePos;
+        Quaternion eyeRot;
+
+        if (local)
+        {
+            // The local player's camera is the ONLY perfectly smooth reference point
+            Transform camTransform = hcc.camController.cameraTransform;
+            eyePos = camTransform.position;
+            eyeRot = camTransform.rotation;
+        }
+        else
+        {
+            // Proxies must use the specifically smoothed visual root
+            eyePos = hcc.smoothedNetworkedRenderRoot.position + hcc.camController.localEyeOffset + hcc.camController.GetEyePosBasedOnPitch(hcc.lookRot);
+            eyeRot = hcc.lookRot;
+        }
+
+        EyePosAndLookDir eye = new EyePosAndLookDir(eyePos, eyeRot * Vector3.forward, eyeRot * Vector3.up);
 
         if (!GetTargetPose(dataToUse, eye, Time.deltaTime, out Vector3 targetPos, out Quaternion targetRot))
             return;
 
-        Vector3 ownerVel = hcc.rendererVelocity;
-        Vector3 ownerAccel = local ? hcc.rendererAccel : Vector3.zero;
+        // 2. CALCULATE CONTINUOUS VISUAL VELOCITY
+        // Just like the HandsController, we MUST calculate velocity in Render time 
+        // to keep the PD spring mathematically stable at monitor refresh rates.
+        Vector3 currentVisualPos = local ? hcc.camController.cameraTransform.position : hcc.smoothedNetworkedRenderRoot.position;
 
-        //Vector3 ownerVel = hcc.calculatedFixedVel;
-        //Vector3 ownerAccel = hcc.calculatedFixedAccel;
+        float dtRender = Mathf.Max(Time.deltaTime, 1e-6f);
+        Vector3 ownerVel = (currentVisualPos - _cashedVisualPos) / dtRender;
+        _cashedVisualPos = currentVisualPos;
+
+        // Safety: If the network teleports the player, prevent the velocity from exploding
+        if (ownerVel.sqrMagnitude > 1000f) ownerVel = Vector3.zero;
 
         if (pdSettings != null)
         {
             pdSettings.CalculateStep(
                 visualModel.position, visualModel.rotation,
                 targetPos, targetRot,
-                ownerVel, ownerAccel, 
-                Time.deltaTime,
+                ownerVel, Vector3.zero, // Zero out acceleration; velocity delta handles the sway naturally
+                dtRender,
                 ref visualLinVel, ref visualAngleVel,
                 out Vector3 newPos, out Quaternion newRot
             );
