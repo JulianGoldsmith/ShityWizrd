@@ -1,0 +1,203 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd49135304edbbe4493bf61c9c526161, type: 3}
+  m_Name: Goober_Animation_Profile
+  m_EditorClassIdentifier: 
+  DefaultEntryStateID: 0
+  AllStates:
+  - rid: 2425487956025540736
+  - rid: 2425487985908121745
+  - rid: 2425487985908121746
+  - rid: 2425487985908121747
+  AnyStateTransitions: []
+  FloatParameters:
+  - Name: VelocityX
+    DefaultValue: 0
+  - Name: VelocityY
+    DefaultValue: 0
+  - Name: VerticalVelocity
+    DefaultValue: 0
+  BoolParameters:
+  - Name: IsGrounded
+    DefaultValue: 0
+  TriggerParameters:
+  - Name: Jump
+  references:
+    version: 2
+    RefIds:
+    - rid: 2425487956025540736
+      type: {class: BlendState2D, ns: , asm: Assembly-CSharp}
+      data:
+        StateName: Locomotion
+        StateID: 0
+        ExtractRootMotion: 1
+        OutboundTransitions:
+        - TargetStateID: 1
+          BlendDurationSeconds: 0.05
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121757
+        - TargetStateID: 2
+          BlendDurationSeconds: 0.1
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121758
+          - rid: 2425487985908121759
+        _parameterX: VelocityX
+        _parameterY: VelocityY
+        Motions:
+        - Clip: {fileID: 3557609132625373852, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Position: {x: 0, y: 0}
+          TimeScale: 0.5
+        - Clip: {fileID: -3514166448700413086, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Position: {x: 0, y: 1}
+          TimeScale: 0.5
+        - Clip: {fileID: -8850376321139207903, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Position: {x: -1, y: 0}
+          TimeScale: 0.5
+        - Clip: {fileID: 8526583166382282649, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Position: {x: 1, y: 0}
+          TimeScale: 0.5
+        - Clip: {fileID: 2371440268319596872, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Position: {x: 0, y: -1}
+          TimeScale: 0.5
+    - rid: 2425487985908121745
+      type: {class: BlendTree1DState, ns: , asm: Assembly-CSharp}
+      data:
+        StateName: Jump
+        StateID: 1
+        ExtractRootMotion: 1
+        OutboundTransitions:
+        - TargetStateID: 2
+          BlendDurationSeconds: 0.1
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121760
+        - TargetStateID: 3
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121761
+          - rid: 2425487985908121835
+        _parameterName: VelocityY
+        Motions:
+        - Clip: {fileID: -203655887218126122, guid: 7f7be6aa9c2d91f4087d612f0da32f4a, type: 3}
+          Threshold: 0
+          TimeScale: 1
+        - Clip: {fileID: -203655887218126122, guid: 94b7dabedef3bb648bb24eb332009c65, type: 3}
+          Threshold: 1
+          TimeScale: 1
+    - rid: 2425487985908121746
+      type: {class: BlendTree1DState, ns: , asm: Assembly-CSharp}
+      data:
+        StateName: Falling
+        StateID: 2
+        ExtractRootMotion: 1
+        OutboundTransitions:
+        - TargetStateID: 3
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121764
+        _parameterName: VelocityY
+        Motions:
+        - Clip: {fileID: 3557609132625373852, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Threshold: 0
+          TimeScale: 0.2
+        - Clip: {fileID: 4061839508520268033, guid: 94b7dabedef3bb648bb24eb332009c65, type: 3}
+          Threshold: 1
+          TimeScale: 0.2
+    - rid: 2425487985908121747
+      type: {class: BlendTree1DState, ns: , asm: Assembly-CSharp}
+      data:
+        StateName: Landing
+        StateID: 3
+        ExtractRootMotion: 1
+        OutboundTransitions:
+        - TargetStateID: 0
+          BlendDurationSeconds: 0.1
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121766
+        - TargetStateID: 0
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121836
+        - TargetStateID: 0
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121836
+        - TargetStateID: 0
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121836
+        - TargetStateID: 0
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425487985908121836
+        _parameterName: VelocityY
+        Motions:
+        - Clip: {fileID: -2061910772549006292, guid: 7f7be6aa9c2d91f4087d612f0da32f4a, type: 3}
+          Threshold: 0
+          TimeScale: 0.1
+        - Clip: {fileID: -2061910772549006292, guid: 94b7dabedef3bb648bb24eb332009c65, type: 3}
+          Threshold: 1
+          TimeScale: 0.1
+    - rid: 2425487985908121757
+      type: {class: TriggerCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: Jump
+    - rid: 2425487985908121758
+      type: {class: BoolCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: IsGrounded
+        ExpectedValue: 0
+    - rid: 2425487985908121759
+      type: {class: FloatCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: VerticalVelocity
+        Operator: 1
+        Threshold: -0.1
+    - rid: 2425487985908121760
+      type: {class: FloatCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: VerticalVelocity
+        Operator: 1
+        Threshold: 0
+    - rid: 2425487985908121761
+      type: {class: BoolCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: IsGrounded
+        ExpectedValue: 1
+    - rid: 2425487985908121764
+      type: {class: BoolCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: IsGrounded
+        ExpectedValue: 1
+    - rid: 2425487985908121766
+      type: {class: StateTimeCondition, ns: , asm: Assembly-CSharp}
+      data:
+        MinimumSecondsInState: 1
+    - rid: 2425487985908121835
+      type: {class: StateTimeCondition, ns: , asm: Assembly-CSharp}
+      data:
+        MinimumSecondsInState: 0.2
+    - rid: 2425487985908121836
+      type: {class: FloatCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: VelocityY
+        Operator: 0
+        Threshold: 0.01

@@ -100,6 +100,11 @@ public class ArmatureRetargeter : MonoBehaviour
         {
             rootBone.targetBone.SetPositionAndRotation(rootBone.physicsProxy.position, rootBone.physicsProxy.rotation);
             rootBone.targetBone.localScale = rootBone.physicsProxy.localScale;
+
+            if ((rootBone.injectAnimatedHipsRootMotion || overRideAndInjectAnimatedHipsRootMotionToAll))
+            {
+                rootBone.targetBone.position += animatedHipRootMotion;
+            }
         }
         else if (rootBone.sourceBone != null)
         {
@@ -150,6 +155,7 @@ public class ArmatureRetargeter : MonoBehaviour
                 {
                     bone.targetBone.SetLocalPositionAndRotation(bone.sourceBone.localPosition, bone.sourceBone.localRotation);
                     bone.targetBone.localScale = bone.sourceBone.localScale;
+                    //Debug.Log($"bone is at local {bone.sourceBone.name} local pos {bone.sourceBone.localPosition}");
                 }
             }
 

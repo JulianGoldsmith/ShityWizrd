@@ -5,7 +5,7 @@ using UnityEngine.Animations.Rigging;
 
 public enum TargetingMode { ARMATURE, HOLD, PICKUP, DRAGG };
 public enum ActiveMeshState { FULLBODY, NORIGHTARM, NOLEFTARM, NOARMS }
-[DefaultExecutionOrder(20)]
+[DefaultExecutionOrder(200)]
 public class NetworkedHandsController : NetworkBehaviour, IAfterRender
 {
     [System.Serializable]
@@ -198,18 +198,11 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
 
         SwitchToLocalOrNetHands(leftHand, LeftHandMode, HasInputAuthority, HasStateAuthority);
         SwitchToLocalOrNetHands(rightHand, RightHandMode, HasInputAuthority, HasStateAuthority);
+    }
 
+    public void AfterRender()
+    {
         RenderHands();
-        if (HasInputAuthority && RightHandMode == TargetingMode.HOLD)
-        {
-            if (inventoryManager.currentItemInHand != null &&
-                inventoryManager.currentItemInHand.TryGetComponent(out EquipableItem eq))
-            {
-                Transform handle = eq.GetHandle(false); // right hand
-                float dist = Vector3.Distance(handle.position, rightHand.transformLocal.transform.position);
-                //Debug.Log($"[HOLD DEBUG] Hand vs handle distance: {dist:F4}");
-            }
-        }
     }
 
     public void RenderHands()
@@ -233,10 +226,7 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
             leftHand.transformLocal.transform.rotation = newRotLLocal;
         }
     }
-    public void AfterRender()
-    {
-        
-    }
+   
  
     private void CalculateHandTarget(NetHand hand, bool localHand)
     {

@@ -156,8 +156,8 @@ public class CharacterBonkController : NetworkBehaviour
                 joint.AddForcesAndApplyPhycis(HasStateAuthority);
             }
         }
-       
-        //ragdollProxysRoot.SetActive(true);
+        if (ragdollProxysRoot != null)
+            ragdollProxysRoot.SetActive(true);
     }
 
     public void DeactivateRagDoll()
@@ -184,7 +184,8 @@ public class CharacterBonkController : NetworkBehaviour
                 joint.SleepBone(HasStateAuthority);
             }
         }
-        //ragdollProxysRoot.SetActive(false);
+        if(ragdollProxysRoot != null)
+            ragdollProxysRoot.SetActive(false);
     }
 
     public void SwitchToRagdoll()

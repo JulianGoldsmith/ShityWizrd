@@ -9,6 +9,7 @@ public class NPCMovementController : MonoBehaviour
 
     public Vector3 previousFramePos;
 
+
     private void Awake()
     {
         if (controller == null)
@@ -46,7 +47,7 @@ public class NPCMovementController : MonoBehaviour
 
     public void RotateTowardsPoint(Vector3 point)
     {
-        var dir = point - (controller.coreRB.position - Vector3.up * controller.animStateController.RootMotionRaw.y);
+        var dir = point - (controller.coreRB.position - Vector3.up );
         dir.y = 0;
         if (dir != Vector3.zero)
         {

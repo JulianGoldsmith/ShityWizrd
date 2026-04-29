@@ -977,7 +977,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 7721595177691644251}
   m_Father: {fileID: 8133762177011165411}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5461975882597787667
@@ -3018,25 +3019,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20f6bae2c43360e45bae960bfcb9671f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraAnchor: {fileID: 5162603037753169754}
-  cameraTransform: {fileID: 0}
+  followTarget: {fileID: 5162603037753169754}
   localEyeOffset: {x: 0, y: 0.85, z: 0}
+  positionSmoothTime: 0.07
   lookInput: {x: 0, y: 0}
   mouseSensitivity: 0.12
-  lookSmoothing: 0.1
+  lookSmoothing: 0.05
   minPitch: -89
   maxPitch: 89
-  useRbMoveRotation: 1
-  maxYawDegreesPerSec: 720
   pitchOffset: {x: -0.5, y: 0.3, z: 0}
   targetYaw: 0
   targetPitch: 0
   finalYaw: 0
-  yawVel: 0
   finalPitch: 0
-  pitchVel: 0
   camActive: 1
   isLocalAuthority: 0
+  cameraTransform: {fileID: 0}
 --- !u!114 &7916620409411212291
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4172,6 +4170,7 @@ MonoBehaviour:
   _TriggerTicks: 
   RootMotionBone: {fileID: 4033882599428079034}
   RootBoneBindPose: {x: -0, y: 59.046883, z: 1.5262663}
+  RootBoneBindRot: {x: 0, y: 0, z: 0, w: 1}
   RootMotionScale: {x: 0.01, y: 0.01, z: 0.01}
   BindPoseClip: {fileID: 0}
 --- !u!1 &1509911169854208335
@@ -8382,7 +8381,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7957453248147669982
 Transform:
   m_ObjectHideFlags: 0
@@ -8536,12 +8535,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5059171306718611043}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -14.6, z: 33.8}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0.00000003575918, y: 2.842171e-14, z: -3.552714e-15, w: 1}
+  m_LocalPosition: {x: 0, y: 1.1777838, z: 0.3412189}
+  m_LocalScale: {x: 0.01, y: 0.009999999, z: 0.009999998}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7324967554987265396}
+  m_Father: {fileID: 8932821910823328615}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!108 &2970201059198792122
 Light:
@@ -10155,13 +10154,13 @@ MonoBehaviour:
     targetBone: {fileID: 1704152662975029162}
     physicsProxy: {fileID: 8932821910823328615}
     enabled: 1
-    ragDollBone: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 3209749074331946496}
     targetBone: {fileID: 7309829056844672263}
     physicsProxy: {fileID: 6263512342164043977}
     enabled: 1
-    ragDollBone: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 6483363119476739225}
     targetBone: {fileID: 4001537454062511358}
@@ -10503,7 +10502,7 @@ MonoBehaviour:
     targetBone: {fileID: 8324483536040155454}
     physicsProxy: {fileID: 2156635370974465567}
     enabled: 1
-    ragDollBone: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 8963367009691476758}
     targetBone: {fileID: 7985482414438930964}
@@ -10522,13 +10521,13 @@ MonoBehaviour:
     physicsProxy: {fileID: 5308107689679290086}
     enabled: 1
     ragDollBone: 1
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 417777860803243168}
     targetBone: {fileID: 6439841675952600227}
     physicsProxy: {fileID: 1404969187671898102}
     enabled: 1
     ragDollBone: 1
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 5972085201689541385}
     targetBone: {fileID: 7457625431593427633}
     physicsProxy: {fileID: 0}
@@ -10558,13 +10557,13 @@ MonoBehaviour:
     physicsProxy: {fileID: 1250905190376444135}
     enabled: 1
     ragDollBone: 1
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 2260425764659783714}
     targetBone: {fileID: 8211138340543276913}
     physicsProxy: {fileID: 3769330456312808463}
     enabled: 1
     ragDollBone: 1
-    injectAnimatedHipsRootMotion: 0
+    injectAnimatedHipsRootMotion: 1
   - sourceBone: {fileID: 8465289007102474229}
     targetBone: {fileID: 6312159132922837348}
     physicsProxy: {fileID: 0}
@@ -10881,7 +10880,7 @@ SkinnedMeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6836260641128543008}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -11987,7 +11986,6 @@ Transform:
   m_LocalScale: {x: 1, y: 0.99999994, z: 0.99999994}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7721595177691644251}
   - {fileID: 8963367009691476758}
   m_Father: {fileID: 3209749074331946496}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

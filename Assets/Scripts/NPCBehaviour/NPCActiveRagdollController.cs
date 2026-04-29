@@ -1,11 +1,8 @@
 ﻿using Fusion;
 using Fusion.Addons.Physics;
 using System.Collections.Generic;
-using Unity.Behavior;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem; 
-using static HybridCharacterController;
+
 
 public class NPCActiveRagdollController : NetworkBehaviour
 {
@@ -14,6 +11,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     [Header("RagDoll Strength"), Range(0,2f)]
     [Networked] public float ragDollStrength { get; set; } = 1;
+    [Networked] public NetworkBool IsGrounded { get; set; }
 
     [Header("Size")]
     public float sizeMult = 1;
@@ -23,7 +21,6 @@ public class NPCActiveRagdollController : NetworkBehaviour
     public float extraGroundCheckDistance = 1.0f;
     public LayerMask groundLayer;
     public float suspensionCastRadius = 0.25f;
-    [Networked] public NetworkBool IsGrounded { get; set; }
 
     public float rideSpringStrength = 100f;
     public float rideSpringDampingRatio = 1.0f;
@@ -50,30 +47,49 @@ public class NPCActiveRagdollController : NetworkBehaviour
     public List<NetworkRigidbody3D> rbComponents = new List<NetworkRigidbody3D>();
 
     [Header("Animation")]
-    public Animator targetAnimator;
-    public AnimationStateController animStateController;
+    public NetworkAnimator networkAnimator;
     public Vector3 hipsOffset;
 
-  
     public float rootMotionForceStrength = 5.0f;
     public bool useRootMotionXZ = true, useRootMotionY = true;
 
+    public float _currentAbsoluteRM_Y;
+    public Quaternion _currentAbsoluteRM_Rot;
+
     // --- BT INTERFACE ---
-    [Networked] public bool NetworkedWantsToSprint { get; set; }
-    [Networked] public bool NetworkedWantsToJump { get; set; }
+
 
     [HideInInspector][Networked] public NetworkButtons _lastButtonsInput { get; set; }
 
-    [HideInInspector][Networked] public Vector3 NetworkedLookVector { get; set; }
-    [HideInInspector][Networked] public Vector3 NetworkedMoveVector { get; set; }
+    private Vector3 _desiredMoveVelocity;
+    private Vector3 _desiredLookDirection;
+    private bool _wantsToJump;
 
-    [Header("Behaviour Graph")]
-    [SerializeField] public BehaviorGraphAgent agent;
-    public string homeLocationVaraibleName;
 
     public XpbdConstraintSolver xpbdSolver;
 
     public CharacterBonkController characterBonkController;
+
+
+    public void SetMovementTarget(Vector3 velocity) => _desiredMoveVelocity = velocity;
+
+    public void SetLookDirection(Vector3 worldDirection)
+    {
+        worldDirection.y = 0;
+        _desiredLookDirection = worldDirection.normalized;
+    }
+
+    public void TriggerJump()
+    {
+        _wantsToJump = true;
+        if (networkAnimator != null)
+        {
+            networkAnimator.SetTrigger("Jump");
+        }
+    }
+
+    // Optional: Let behaviours tweak the physical stiffness (e.g., getting frozen)
+    public void SetTargetRagdollStrength(float strength) => ragDollStrength = strength;
 
     public override void Spawned()
     {
@@ -88,25 +104,17 @@ public class NPCActiveRagdollController : NetworkBehaviour
         {
             Runner.SetIsSimulated(nrb.Object, true);
         }
-        animStateController = GetComponent<AnimationStateController>();
-
-
-        if (animStateController != null && targetAnimator != null)
-        {
-            animStateController.SimulateAnimation();
-        }
-
-        agent = this.GetComponent<BehaviorGraphAgent>();
+       
         characterBonkController = this.GetComponent<CharacterBonkController>();
     }
 
     public override void FixedUpdateNetwork()
     {
-       
 
-        animStateController.SimulateAnimation();
 
-       // ragDollStrength = this.GetComponent<NPCPhysicsObject>().current_bonkedness/100;
+        // ragDollStrength = this.GetComponent<NPCPhysicsObject>().current_bonkedness/100;
+         //SetMovementTarget(transform.forward * maxWalkSpeed);
+         //SetLookDirection(transform.right);
 
         if (characterBonkController.BonkedState == BONKEDSTATE.ALIVE)
         {
@@ -116,17 +124,59 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
             ApplyCoreSuspention();
         }
+
+
+        UpdateAnimatorParameters();
+
+        if (networkAnimator != null)
+        {
+            
+            networkAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRot, out Vector3 absRmPos, out Quaternion absRmRot);
+           
+            if (useRootMotionXZ && rmDeltaPos.sqrMagnitude > 0.0001f)
+            {
+                // Convert Delta to Velocity, and scale it by the NPC's size!
+                Vector3 rmVelocity = (rmDeltaPos * sizeMult) / Runner.DeltaTime;
+
+                // OVERRIDE the AI's desired movement with the animation's movement
+                //_desiredMoveVelocity = new Vector3(rmVelocity.x, _desiredMoveVelocity.y, rmVelocity.z);
+            }
+
+            // --- 2. Y-AXIS RIDE HEIGHT ROOT MOTION ---
+            if (useRootMotionY) _currentAbsoluteRM_Y = absRmPos.y;
+            else _currentAbsoluteRM_Y = 0f;
+
+            _currentAbsoluteRM_Rot = absRmRot;
+        }
+        else
+        {
+            _currentAbsoluteRM_Y = 0f;
+            _currentAbsoluteRM_Rot = Quaternion.identity;
+        }
+
+
+        UpdatePDDrives();
+
         
         //ApplyRootMotionForce();
 
-        UpdatePDDrives();
+        
 
       
     }
 
     public override void Render()
     {
-        UpdateAnimators();
+        if (networkAnimator != null)
+        {
+            networkAnimator.UpdateVisualAnimator(out Vector3 visualPos, out Quaternion visualRot, true);
+        }
+
+        if (smoothedNetworkRoot != null && coreRB != null)
+        {
+            var targetPos = smoothedNetworkRoot.position + hipsOffset;
+            var targetRot = smoothedNetworkRoot.rotation;
+        }
     }
 
     private void ApplyRootMotionForce(Vector3 rootMotionVelocity)
@@ -144,16 +194,17 @@ public class NPCActiveRagdollController : NetworkBehaviour
     private void ApplyCoreSuspention()
     {
         //get the y (differecne between armeture and root from the animator (this is already scaled in the animator)
-        float rootMotionVerticalDelta = animStateController.RootMotionRaw.y * sizeMult; //this is our ride height now
+        float rootMotionVerticalDelta = _currentAbsoluteRM_Y * sizeMult; //this is our ride height now
+
+        //float targetHeight = extraRideHeight + sizeMult + rootMotionVerticalDelta;
 
         float extraHeightToCastFrom = 0.1f * sizeMult;
 
+        //float distanceToCast =  extraHeightToCastFrom + (suspensionCastRadius * sizeMult) + (extraGroundCheckDistance * sizeMult);
         float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + (suspensionCastRadius*sizeMult) + (extraGroundCheckDistance*sizeMult)+ extraRideHeight;
 
         if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), (suspensionCastRadius * sizeMult), Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
         {
-            
-
             IsGrounded = true;
 
             float targetHeight = useRootMotionY? rootMotionVerticalDelta + extraRideHeight : extraRideHeight;
@@ -194,54 +245,14 @@ public class NPCActiveRagdollController : NetworkBehaviour
     private void ApplyUprightStabilization()
     {
 
-
-        //Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
-        //if (flatLook.sqrMagnitude < 1e-6f)
-        //{
-        //    flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
-        //    if (flatLook.sqrMagnitude < 1e-6f) flatLook = coreRB.transform.forward;
-        //}
-        //flatLook.Normalize();
-
-        //Quaternion facingFromLookDir = Quaternion.LookRotation(flatLook, Vector3.up);
-
-        //Quaternion rootMotionRot = animStateController ? animStateController.RootMotionRotation : Quaternion.identity;
-        //Vector3 rootMotionEuler = rootMotionRot.eulerAngles;
-
-        //float rootMotionYawDeg = (animStateController && animStateController.zIsUp) ? Mathf.DeltaAngle(0f, rootMotionEuler.z)
-        //    : Mathf.DeltaAngle(0f, rootMotionEuler.y);
-
-        //Quaternion rootYawOnWorldUp = Quaternion.AngleAxis(rootMotionYawDeg, Vector3.up);
-
-        //Quaternion targetRot = facingFromLookDir * rootYawOnWorldUp;
-
-        //Quaternion current = coreRB.rotation;
-
-        //Quaternion quaternionErrror = targetRot * Quaternion.Inverse(current);
-        //if (quaternionErrror.w < 0f) { quaternionErrror.x = -quaternionErrror.x; quaternionErrror.y = -quaternionErrror.y; quaternionErrror.z = -quaternionErrror.z; quaternionErrror.w = -quaternionErrror.w; }
-
-        //quaternionErrror.ToAngleAxis(out float errorINDegrees, out Vector3 errorAxsis);
-        //if (float.IsNaN(errorAxsis.x) || errorAxsis.sqrMagnitude < 1e-12f) return;
-
-        //float errorInRads = errorINDegrees * Mathf.Deg2Rad;
-        //Vector3 proportional = errorAxsis * errorInRads;              
-        //Vector3 derivative = -coreRB.angularVelocity;         
-
-
-        //float groundedScale = IsGrounded ? 1f : 0.5f;
-
-        //Vector3 torque = proportional * uprightSpringStrength + derivative * uprightSpringDamper;
-
-        //coreRB.AddTorque(torque * groundedScale, ForceMode.Acceleration);
-
-        Vector3 flatLook = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
+        Vector3 flatLook = Vector3.ProjectOnPlane(_desiredLookDirection, Vector3.up);
         if (flatLook.sqrMagnitude < 1e-6f)
             flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
         flatLook.Normalize();
 
         Quaternion qBase = Quaternion.LookRotation(flatLook, Vector3.up);
 
-        Quaternion qAnimDelta = animStateController ? animStateController.WorldDeltaFromTPose : Quaternion.identity;
+        Quaternion qAnimDelta = _currentAbsoluteRM_Rot;
 
         Quaternion targetRot = qBase * qAnimDelta;
 
@@ -256,56 +267,29 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     private void UpdateCoreMovement()
     {
-        if (!IsGrounded)
-            return;
+        if (!IsGrounded) return;
 
-        if (NetworkedWantsToJump)
+        if (_wantsToJump)
         {
             coreRB.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            NetworkedWantsToJump = false;
+            _wantsToJump = false; // Reset it immediately after applying
         }
 
-        float targetSpeed = NetworkedWantsToSprint ? maxSprintSpeed : maxWalkSpeed;
-
-        //Vector3 fwd;
-        //if (lookRot != Quaternion.identity)
-        //{
-        //    fwd = Vector3.ProjectOnPlane(lookRot * Vector3.forward, Vector3.up);
-        //}
-        //else
-        //{
-        //    fwd = Vector3.ProjectOnPlane(lookDir, Vector3.up);
-        //}
-
-        //if (fwd.sqrMagnitude < 1e-6f)
-        //{
-        //    fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
-        //}
-        //fwd.Normalize();
-
-        //Vector3 right = Vector3.Cross(Vector3.up, fwd);
-
-        //Vector2 input = moveInput;
-        //if (input.sqrMagnitude > 1f)
-        //    input.Normalize(); 
-
-        Vector3 targetVelocity = NetworkedMoveVector * targetSpeed;
-
+        // We assume _desiredMoveVelocity is already scaled by the Translator 
+        // (e.g., it passes dir * maxSprintSpeed), so we just try to reach it.
         Vector3 currentHorizontalVelocity = new Vector3(coreRB.linearVelocity.x, 0, coreRB.linearVelocity.z);
-        Vector3 velocityError = targetVelocity - currentHorizontalVelocity;
+        Vector3 velocityError = _desiredMoveVelocity - currentHorizontalVelocity;
 
         Vector3 force;
-        if (NetworkedMoveVector.magnitude > 0.01f)
+        if (_desiredMoveVelocity.magnitude > 0.01f)
         {
             force = velocityError * acceleration;
-            //Debug.Log($"Adding force to core {force} as we are ACCELERATING");
         }
         else
         {
             force = velocityError * braking;
-            //Debug.Log($"Adding force to core {force} as we are BRAKING");
         }
-        
+
         coreRB.AddForce(force, ForceMode.Acceleration);
     }
 
@@ -323,60 +307,30 @@ public class NPCActiveRagdollController : NetworkBehaviour
         xpbdSolver.Solve(dt, false,1, sizeMult);
     }
 
-    public void UpdateAnimators()
+    private void UpdateAnimatorParameters()
     {
-        //if (!targetAnimator || coreRB == null) return;
+        if (networkAnimator == null || coreRB == null) return;
 
-        //var targetPos = smoothedNetworkRoot.position + hipsOffset;
-        //var targetRot = smoothedNetworkRoot.rotation;
-
-        //Vector3 vel = coreRB.linearVelocity;
-        //vel.y = 0f;
-
-        //Vector3 fwd = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
-        //if (fwd.sqrMagnitude < 1e-6f)
-        //{
-        //    fwd = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
-        //}
-        //fwd.Normalize();
-
-        //Vector3 right = Vector3.Cross(Vector3.up, fwd);
-
-        //float localX = Vector3.Dot(vel, right); 
-        //float localY = Vector3.Dot(vel, fwd);   
-
-        //float normFactor = maxWalkSpeed > 0f ? maxWalkSpeed : 1f;
-        //localX /= normFactor;
-        //localY /= normFactor;
-
-        //animStateController.SetTargetMovement(new Vector2(localX, localY));
-
-        if (!targetAnimator || coreRB == null) return;
-
-        
-        float desiredSpeed = NetworkedWantsToSprint ? maxSprintSpeed : maxWalkSpeed;
-
-        Vector3 fwd = Vector3.ProjectOnPlane(NetworkedLookVector, Vector3.up);
+        Vector3 fwd = Vector3.ProjectOnPlane(_desiredLookDirection, Vector3.up);
         if (fwd.sqrMagnitude < 1e-6f)
         {
             fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
         }
         fwd.Normalize();
+
         Vector3 right = Vector3.Cross(Vector3.up, fwd);
 
-        float inputX = Vector3.Dot(NetworkedMoveVector, right);
-        float inputY = Vector3.Dot(NetworkedMoveVector, fwd);
+        Vector3 currentVel = coreRB.linearVelocity;
 
-        float normalizedSpeed = (NetworkedMoveVector.magnitude > 0.01f) ? (desiredSpeed / maxSprintSpeed) : 0f;
+        float velocityX = Vector3.Dot(currentVel, right);
+        float velocityY = Vector3.Dot(currentVel, fwd);
+        float verticalVelocity = currentVel.y;
 
+        networkAnimator.SetSimFloat("VelocityX", velocityX);
+        networkAnimator.SetSimFloat("VelocityY", velocityY);
+        networkAnimator.SetSimFloat("VerticalVelocity", verticalVelocity);
 
-        float finalX = inputX * normalizedSpeed;
-        float finalY = inputY * normalizedSpeed;
-
-        animStateController.SetTargetMovement(new Vector2(finalX, finalY));
-
-        var targetPos = smoothedNetworkRoot.position + hipsOffset;
-        var targetRot = smoothedNetworkRoot.rotation;
+        networkAnimator.SetSimBool("IsGrounded", IsGrounded);
     }
 
     [ContextMenu("PD Ragdoll/ Bake Anchors")]
@@ -407,7 +361,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
         if (Object.isActiveAndEnabled)
         {
             worldDirection.y = 0;
-            NetworkedLookVector = worldDirection.normalized;
+            _desiredLookDirection = worldDirection.normalized;
         }
     }
     public void SetMoveInput(Vector3 input, float speed) 
@@ -415,8 +369,8 @@ public class NPCActiveRagdollController : NetworkBehaviour
         if (!HasStateAuthority) return;
         if (Object.isActiveAndEnabled)
         {
-            NetworkedMoveVector = input;
-            NetworkedWantsToSprint = speed > 1 ? true: false;
+            _desiredMoveVelocity = input;
+            //NetworkedWantsToSprint = speed > 1 ? true: false;
         }
     }
 

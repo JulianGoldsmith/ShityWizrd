@@ -10,8 +10,8 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Animations;
 
-[DefaultExecutionOrder(5)]
-public class EquipableItem : InteractableItem
+[DefaultExecutionOrder(150)]
+public class EquipableItem : InteractableItem, IAfterRender
 {
     public string itemName;
 
@@ -132,6 +132,11 @@ public class EquipableItem : InteractableItem
         InitialiseRuntimeActions();
     }
 
+    public void AfterRender()
+    {
+        UpdateModelVisuals();
+    }
+
     public override void Spawned()
     {
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
@@ -149,7 +154,7 @@ public class EquipableItem : InteractableItem
         Runner.SetIsSimulated(this.Object, true);
     }
 
-    public override void Render()
+    public void UpdateModelVisuals()
     {
         if (visualModel == null || HoldingPlayer == null) return;
         if (!HoldingPlayer.TryGetComponent(out HybridCharacterController hcc)) return;
@@ -807,6 +812,8 @@ public class EquipableItem : InteractableItem
             // Client Side: Play local hit sound / sparks immediately if you want zero latency feel
         }
     }
+
+  
 
     #endregion
 

@@ -351,7 +351,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         //transform.rotation = hipsRb.transform.rotation;
         if (disableCC > 0){ return; }
 
-        UpdateCameraAnchor();
+        //UpdateCameraAnchor();
         CasheMovement();
 
         UpdateAnimator(false);
@@ -483,7 +483,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             netAnimator.SetSimBool("IsGrounded", IsGrounded);
             netAnimator.SetSimFloat("VerticalVelocity", hipsRb.linearVelocity.y);
 
-            netAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRot);
+            netAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRotout, out Vector3 rmAbsPos, out Quaternion rmAbsRot);
 
             //armatureRetargeter.animatedHipRootMotion = rmDeltaPos / Runner.DeltaTime;
         }

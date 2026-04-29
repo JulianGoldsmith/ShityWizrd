@@ -53,6 +53,8 @@ public class NetworkAnimator : NetworkBehaviour
     public Transform RootMotionBone;
     [Tooltip("The local bind pose to lock the bone to so the mesh doesn't double-dip")]
     public Vector3 RootBoneBindPose;
+
+    public Quaternion RootBoneBindRot = Quaternion.identity;
     [Tooltip("Multiplier to fix 0.01 scaled armatures")]
     public Vector3 RootMotionScale = Vector3.one;
 
@@ -150,7 +152,6 @@ public class NetworkAnimator : NetworkBehaviour
         }
     }
 
-    // (And the getters for your Conditions)
     public float GetSimFloat(string name) => _floatNameMap.TryGetValue(name, out int idx) ? _floatParams[idx] : 0f;
     public float GetRenderFloat(string name) => _floatVisualNameMap.TryGetValue(name, out int idx) ? _floatVisualParams[idx] : 0f;
     public bool GetSimBool(string name) => _boolNameMap.TryGetValue(name, out int idx) ? _boolParams[idx] : false;
@@ -176,19 +177,21 @@ public class NetworkAnimator : NetworkBehaviour
 
     public override void Spawned()
     {
-        // Cache the blackboard
         _speedProvider = GetComponent<IAnimVarSpeed>();
         InitializeParameters();
         InitializeGraph();
     }
-    public void UpdatePhysicsAnimator(out Vector3 rootMotionDeltaPos, out Quaternion rootMotionDeltaRot)
+    public void UpdatePhysicsAnimator(out Vector3 rootMotionDeltaPos, out Quaternion rootMotionDeltaRot
+        , out Vector3 absoluteRootOffset, out Quaternion absoluteRootRot)
     {
         rootMotionDeltaPos = Vector3.zero;
         rootMotionDeltaRot = Quaternion.identity;
 
+        absoluteRootOffset = Vector3.zero;
+        absoluteRootRot = Quaternion.identity;
+
         if (!_graph.IsValid()) return;
 
-        // 1. Transition Logic
         byte nextID = CheckTransitions(AnimState.CurrentStateID);
         if (nextID != AnimState.CurrentStateID)
         {
@@ -210,7 +213,6 @@ public class NetworkAnimator : NetworkBehaviour
 
         if (extractRM && RootMotionBone != null)
         {
-            // --- EVALUATE T-1 (The Past) ---
             int prevTick = Runner.Tick - 1;
             float prevWeight = GetWeightForTick(prevTick);
             float prevTime = prevTick * Runner.DeltaTime;
@@ -219,7 +221,6 @@ public class NetworkAnimator : NetworkBehaviour
             Vector3 localPosT0 = RootMotionBone.localPosition;
             Quaternion localRotT0 = RootMotionBone.localRotation;
 
-            // --- EVALUATE T (The Present) ---
             float currWeight = GetWeightForTick(Runner.Tick);
             float currTime = Runner.Tick * Runner.DeltaTime;
 
@@ -227,28 +228,31 @@ public class NetworkAnimator : NetworkBehaviour
             Vector3 localPosT1 = RootMotionBone.localPosition;
             Quaternion localRotT1 = RootMotionBone.localRotation;
 
-            // --- CALCULATE DELTAS ---
             Vector3 localDelta = localPosT1 - localPosT0;
             localDelta.Scale(RootMotionScale); 
 
             rootMotionDeltaPos = transform.TransformDirection(localDelta);
             rootMotionDeltaRot = localRotT1 * Quaternion.Inverse(localRotT0);
 
+            Vector3 localOffsetAbsolute = localPosT1 - RootBoneBindPose;
+            localOffsetAbsolute.Scale(RootMotionScale);
+
+            absoluteRootOffset = UnityAnimator.transform.TransformDirection(localOffsetAbsolute);
+            absoluteRootRot = localRotT1 * Quaternion.Inverse(RootBoneBindRot);
+
             RootMotionBone.localPosition = RootBoneBindPose;
+            RootMotionBone.localRotation = RootBoneBindRot;
         }
         else
         {
-            // Normal Evaluation (No Root Motion)
             float weight = GetWeightForTick(Runner.Tick);
             float time = Runner.Tick * Runner.DeltaTime;
             ApplyPose(weight, time, true);
         }
     }
 
-    // ==========================================
-    // 2. SMOOTH VISUAL UPDATE (PROXIES)
-    // ==========================================
-    public void UpdateVisualAnimator(out Vector3 absoluteVisualRootOffset, out Quaternion absoluteVisualRootRot)
+
+    public void UpdateVisualAnimator(out Vector3 absoluteVisualRootOffset, out Quaternion absoluteVisualRootRot, bool overRideWithSimValues = false)
     {
         absoluteVisualRootOffset = Vector3.zero;
         absoluteVisualRootRot = Quaternion.identity;
@@ -267,9 +271,8 @@ public class NetworkAnimator : NetworkBehaviour
             weight = Mathf.Clamp01((currentTime - startTickTime) / (endTickTime - startTickTime));
         }
 
-        // 2. FORCE SMOOTH POSE FOR THE CAMERA
-        // By passing currentTime, Render and FUN are now perfectly phase-locked!
-        ApplyPose(weight, currentTime, false);
+
+        ApplyPose(weight, currentTime, overRideWithSimValues);
 
         var currentStateLogic = Profile.AllStates.Find(s => s.StateID == AnimState.CurrentStateID);
         if (currentStateLogic != null && currentStateLogic.ExtractRootMotion && RootMotionBone != null)
@@ -278,16 +281,15 @@ public class NetworkAnimator : NetworkBehaviour
             localOffset.Scale(RootMotionScale);
 
             absoluteVisualRootOffset = UnityAnimator.transform.TransformDirection(localOffset);
-            absoluteVisualRootRot = RootMotionBone.localRotation * Quaternion.Inverse(Quaternion.identity);
+            absoluteVisualRootRot = RootMotionBone.localRotation * Quaternion.Inverse(RootBoneBindRot);
 
             RootMotionBone.localPosition = RootBoneBindPose;
+            RootMotionBone.localRotation = RootBoneBindRot;
         }
 
     }
 
-    // ==========================================
-    // 3. THE STATELESS GRAPH EVALUATOR
-    // ==========================================
+
     private void ApplyPose(float transitionWeight, float absoluteTime, bool isSim)
     {
         for (int i = 0; i < _masterMixer.GetInputCount(); i++)
@@ -298,21 +300,18 @@ public class NetworkAnimator : NetworkBehaviour
 
             _masterMixer.SetInputWeight(i, targetWeight);
 
-            // Only process states that are actually contributing to the pose
             if (targetWeight > 0.001f)
             {
                 var stateLogic = Profile.AllStates.Find(s => s.StateID == (byte)i);
                 if (stateLogic != null)
                 {
                     var mixer = _stateMixers[i];
-                    // Feed the absolute time directly into the polymorphic state logic
                     stateLogic.ProcessState(ref mixer, absoluteTime, gameObject, isSim);
                 }
             }
         }
 
-        // We evaluate with 0 deltaTime! 
-        // Because we manually set the clip times above, we don't want the graph advancing itself.
+
         _graph.Evaluate(0f);
 
         foreach (var constraint in AimConstraints) constraint.Solve();
@@ -321,13 +320,11 @@ public class NetworkAnimator : NetworkBehaviour
     {
         if (Profile == null || UnityAnimator == null) return;
 
-        // 1. Find max ID for array sizing
         for (int i = 0; i < Profile.AllStates.Count; i++)
         {
             Profile.AllStates[i].StateID = (byte)i;
         }
 
-        // 2. Find max ID for array sizing (This is now just the Count - 1)
         int maxStateID = Profile.AllStates.Count - 1;
 
         _graph = PlayableGraph.Create("NetworkAnimatorGraph");
@@ -339,16 +336,13 @@ public class NetworkAnimator : NetworkBehaviour
 
         _stateMixers = new AnimationMixerPlayable[maxStateID + 1];
 
-        // 2. Build States Polymorphically
         foreach (var stateDef in Profile.AllStates)
         {
-            // Ask the state how many ports its mixer needs
             var stateMixer = AnimationMixerPlayable.Create(_graph, stateDef.GetClipCount());
 
             _graph.Connect(stateMixer, 0, _masterMixer, stateDef.StateID);
             _masterMixer.SetInputWeight(stateDef.StateID, 0f);
 
-            // DELIGATE: Let the state connect its own clips to its mixer
             stateDef.InitializeState(_graph, stateMixer);
 
             _stateMixers[stateDef.StateID] = stateMixer;
@@ -360,13 +354,11 @@ public class NetworkAnimator : NetworkBehaviour
 
     private byte CheckTransitions(byte currentStateID)
     {
-        // 1. Check Global "Any State" Transitions
         foreach (var transition in Profile.AnyStateTransitions)
         {
             if (EvaluateTransition(transition)) return transition.TargetStateID;
         }
 
-        // 2. Check Outbound Transitions from the Current State
         var currentStateLogic = Profile.AllStates.Find(s => s.StateID == currentStateID);
         if (currentStateLogic != null)
         {
@@ -383,7 +375,6 @@ public class NetworkAnimator : NetworkBehaviour
     {
         if (transition.Conditions == null || transition.Conditions.Count == 0) return false;
 
-        // AND Logic: All conditions must be true
         foreach (var condition in transition.Conditions)
         {
             if (!condition.Evaluate(gameObject)) return false;
@@ -422,7 +413,7 @@ public class NetworkAnimator : NetworkBehaviour
         // Because the game isn't running, the animator hasn't touched the bones,
         // so this is guaranteed to be the pure, unposed bind pose.
         RootBoneBindPose = RootMotionBone.localPosition;
-        
+        RootBoneBindRot = RootMotionBone.localRotation;
         // 2. Mark it dirty so Unity saves the change to the Prefab
         UnityEditor.EditorUtility.SetDirty(this);
         

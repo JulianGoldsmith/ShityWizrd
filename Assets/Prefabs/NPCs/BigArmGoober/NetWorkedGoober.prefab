@@ -626,6 +626,37 @@ Transform:
   - {fileID: 184637550646308013}
   m_Father: {fileID: 4126210608261758056}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &716689683629552205
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 998715318745345807}
+  m_Layer: 18
+  m_Name: PathingSource
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &998715318745345807
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 716689683629552205}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.365, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1958424150419228518}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &822279263761367870
 GameObject:
   m_ObjectHideFlags: 0
@@ -3670,7 +3701,7 @@ Animator:
   m_Avatar: {fileID: 9000000, guid: 1f38905d7b85c494498267ab1dbd03e0, type: 3}
   m_Controller: {fileID: 0}
   m_CullingMode: 0
-  m_UpdateMode: 1
+  m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
@@ -3687,7 +3718,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5263949144533705276}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2d8418b0b9634b1892b0268dd9c2743, type: 3}
   m_Name: 
@@ -6279,7 +6310,7 @@ MonoBehaviour:
   animatedHipRootMotion: {x: 0, y: 0, z: 0}
   animatedHipRotation: {x: 0, y: 0, z: 0, w: 1}
   disableRetargetingToProxys: 0
-  lerpTProxy: 0
+  lerpTProxy: 1
   overRideAndInjectAnimatedHipsRootMotionToAll: 0
 --- !u!114 &3318371847716034844
 MonoBehaviour:
@@ -6701,6 +6732,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 965293959662271204}
+  - {fileID: 998715318745345807}
   m_Father: {fileID: 6194324531746408223}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &5531538140928643104
@@ -6983,6 +7015,11 @@ GameObject:
   - component: {fileID: 908422980306863945}
   - component: {fileID: 3419587978383463369}
   - component: {fileID: 5915804676976040147}
+  - component: {fileID: 3304759973319979564}
+  - component: {fileID: 6158706908187212526}
+  - component: {fileID: 5279554271172316789}
+  - component: {fileID: 4361945682367613513}
+  - component: {fileID: 2544257463892314708}
   m_Layer: 0
   m_Name: NetWorkedGoober
   m_TagString: Untagged
@@ -7039,6 +7076,10 @@ MonoBehaviour:
   - {fileID: 5418577610760186941}
   - {fileID: 908422980306863945}
   - {fileID: 5915804676976040147}
+  - {fileID: 3304759973319979564}
+  - {fileID: 6158706908187212526}
+  - {fileID: 4361945682367613513}
+  - {fileID: 2544257463892314708}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3746105418634596271
 MonoBehaviour:
@@ -7071,15 +7112,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coreRB: {fileID: 5531538140928643104}
   _ragDollStrength: 0.65
-  sizeMult: 1.5
-  extraRideHeight: 0.2
+  _IsGrounded:
+    _value: 1
+  sizeMult: 2
+  extraRideHeight: 1.3
   extraGroundCheckDistance: 0.1
   groundLayer:
     serializedVersion: 2
     m_Bits: 5891
   suspensionCastRadius: 0.125
-  _IsGrounded:
-    _value: 1
   rideSpringStrength: 100
   rideSpringDampingRatio: 0.4
   rideSpringDamper: 60
@@ -7611,18 +7652,13 @@ MonoBehaviour:
   - {fileID: 2324168261029828707}
   - {fileID: 120737389028226268}
   - {fileID: 5190465792086210517}
-  targetAnimator: {fileID: 7638773589888862629}
-  animStateController: {fileID: 0}
+  networkAnimator: {fileID: 6158706908187212526}
   hipsOffset: {x: 0, y: -0.5594505, z: 0}
   rootMotionForceStrength: 100
   useRootMotionXZ: 1
   useRootMotionY: 1
-  _NetworkedWantsToSprint: 0
-  _NetworkedWantsToJump: 0
-  _NetworkedLookVector: {x: -0.65599424, y: 0, z: -0.7547659}
-  _NetworkedMoveVector: {x: -0.6551084, y: -0.055931594, z: -0.75346184}
-  agent: {fileID: 0}
-  homeLocationVaraibleName: HomeLocation
+  _currentAbsoluteRM_Y: 0
+  _currentAbsoluteRM_Rot: {x: 0, y: 0, z: 0, w: 0}
   xpbdSolver: {fileID: 3419587978383463369}
   characterBonkController: {fileID: 0}
 --- !u!114 &3854823433223173183
@@ -7977,6 +8013,143 @@ MonoBehaviour:
   _BonkedState: 0
   bonkChangedThisUpdate: 0
   ragdollProxysRoot: {fileID: 0}
+--- !u!114 &3304759973319979564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1522b4ccb01e74d4daaeaa659d8e1a59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _GlobalClearTick: 0
+  _TargetWaypoints: []
+  _CurrentWaypointIndex: 0
+  _PathVersion: 0
+  _IsFrozen: 0
+  muscleController: {fileID: 597343824857953483}
+  behaviorAgent: {fileID: 5279554271172316789}
+  globalRegistry: {fileID: 11400000, guid: 7910fec3acae4e34ba22b22172b7b11b, type: 2}
+  commandOverrides: []
+  aggroController: {fileID: 2544257463892314708}
+--- !u!114 &6158706908187212526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df0cdf78c18a34a45aa75fd70c1ca4db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Profile: {fileID: 11400000, guid: 11f03185b1cca184fab3c93150724ca2, type: 2}
+  UnityAnimator: {fileID: 7638773589888862629}
+  AimConstraints: []
+  _floatParams: []
+  _boolParams: 
+  _floatVisualParams: []
+  _boolVisualParams: 
+  _TriggerTicks: 
+  RootMotionBone: {fileID: 2004947992228224748}
+  RootBoneBindPose: {x: -0, y: 55.945053, z: 3.7357628}
+  RootBoneBindRot: {x: 0.000000020762997, y: -0, z: -0, w: 1}
+  RootMotionScale: {x: 0.01, y: 0.01, z: 0.01}
+  BindPoseClip: {fileID: 0}
+--- !u!114 &5279554271172316789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0038c16c34866b4f9e25c9c0dc0f7e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Graph: {fileID: -2221796376738893910, guid: df9b629dcd808134eb4c190c43afc0d0, type: 2}
+  m_BlackboardVariableOverridesList:
+  - rid: 2425488075104715001
+  m_IsInitialised: 0
+  m_IsStarted: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 2425488075104715001
+      type: {class: 'BlackboardVariable`1[[UnityEngine.GameObject, UnityEngine.CoreModule]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 1
+          m_Value1: 0
+        Name: Self
+        m_Value: {fileID: 9055020635152288778}
+--- !u!114 &4361945682367613513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1285a24bb98d1944b54cabf2032ee39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  muscle: {fileID: 597343824857953483}
+  _WaypointBuffer: []
+  _MasterPathCounter: 0
+  _CurrentWaypointIndex: 0
+  pathingSource: {fileID: 998715318745345807}
+--- !u!114 &2544257463892314708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e20b946a0a734c54eba63da0612e88b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 0}
+  targetVariableName: Target
+  chasePositionVariableName: ChasePosition
+  investigatePositionVariableName: InvestigatePosition
+  aggroStateVariableName: AggroState
+  canSeeCurrentTargetVariableName: CanSeeCurrentTarget
+  generalAggroValueVariableName: GeneralAggro
+  interestPointThreatVariableName: InterestPointThreat
+  unattributedThreatVariableName: UnattributedThreat
+  unattributedThreatDirectionVariableName: UnattributedThreatDirection
+  currentTargetThreatVariableName: CurrentTargetThreat
+  targetStickinessMultiplier: 1.2
+  aggroActivationThreshold: 1
+  persistentThreatRampUpRate: 20
+  persistentThreatDecayRate: 1
+  spikeThreatDecayRate: 30
+  bonkToThreatMultiplier: 1.5
+  lineOfSightMultiplier: 3
+  hearingRadius: 25
+  hearingSensitivity: 1
+  minHearingThreshold: 10
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 320
+  visionRadius: 15
+  visionAngle: 181
+  sightThreatPerSecond: 25
+  visionBlockers:
+    serializedVersion: 2
+    m_Bits: 4096
+  eyeOffset: {x: 0, y: 1.75, z: 0}
+  _inspectorDebugThreatTable: []
+  showThreatDebug: 1
 --- !u!1 &9110468450381859461
 GameObject:
   m_ObjectHideFlags: 0

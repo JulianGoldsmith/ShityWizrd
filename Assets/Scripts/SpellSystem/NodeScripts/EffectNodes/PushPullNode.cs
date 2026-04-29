@@ -191,7 +191,7 @@ public class PushPullEffect : IEffect
                 if (target.TryGetComponent<PhysicsObject>(out PhysicsObject PO))
                 {
                     PO.ApplyForce(rawDirection.normalized * magnitude, ForceMode);
-                    PO.BonkFromImpulse(magnitude, instigator);
+                    //PO.BonkFromImpulse(magnitude, instigator);
                 }
                 else if (target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject PSO))
                 {
@@ -199,7 +199,7 @@ public class PushPullEffect : IEffect
                     {
                         PSO.rb.AddForce(rawDirection.normalized * magnitude, ForceMode);
                     }
-                    PSO.parent_physics_object.BonkFromImpulse(magnitude, instigator);
+                    //PSO.parent_physics_object.BonkFromImpulse(magnitude, instigator);
                 }
             }
         }

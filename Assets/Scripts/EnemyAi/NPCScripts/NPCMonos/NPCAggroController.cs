@@ -50,13 +50,12 @@ public class NPCAggroController : NetworkBehaviour
     [SerializeField] private LayerMask visionBlockers;
     [SerializeField] private Vector3 eyeOffset = new Vector3(0, 1.5f, 0);
 
-    [Header("Networking")] //im not sure if this needs networking ? im working under the theory that we network predict NPC actions on clients although i have changed this now 
-    [Networked] public AggroState CurrentAggroState { get; set; }
-    [Networked] public NetworkObject CurrentTarget { get; set; }
-    [Networked] public InterestPoint CurrentInterestPoint { get; set; }
-    [Networked] private float GeneralAggro { get; set; }
-    [Networked, SerializeField] private float UnattributedThreat { get; set; }
-    [Networked, SerializeField] private Vector3 UnattributedThreatDirection { get; set; }
+    public AggroState CurrentAggroState { get; set; }
+    public NetworkObject CurrentTarget { get; set; }
+    public InterestPoint CurrentInterestPoint { get; set; }
+    private float GeneralAggro { get; set; }
+    [SerializeField] private float UnattributedThreat { get; set; }
+    [SerializeField] private Vector3 UnattributedThreatDirection { get; set; }
 
 
     private Dictionary<NetworkObject, ThreatInfo> _threatTable = new Dictionary<NetworkObject, ThreatInfo>();
@@ -78,7 +77,7 @@ public class NPCAggroController : NetworkBehaviour
     }
 
 
-    public override void FixedUpdateNetwork()
+    public void TickAggroSensors()
     {
         if (!HasStateAuthority)
             return;
@@ -93,6 +92,11 @@ public class NPCAggroController : NetworkBehaviour
         {
             UpdateInspectorDebug();
         }
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        TickAggroSensors();
     }
 
     public override void Spawned()
@@ -115,7 +119,8 @@ public class NPCAggroController : NetworkBehaviour
     public void ReportBonk(NetworkObject instigator, float bonkAmmount, Vector3? hitPosition)
     {
         if (!HasStateAuthority) return;
-        Debug.Log($"Recieved bonk report - {instigator.name} ammount - {bonkAmmount}");
+        if(instigator!=null)
+            Debug.Log($"Recieved bonk report - {instigator.name} ammount - {bonkAmmount}");
         float baseThreat = bonkAmmount * bonkToThreatMultiplier;
         AssessNewThreat(instigator, baseThreat, hitPosition);
     }
@@ -454,6 +459,27 @@ public class NPCAggroController : NetworkBehaviour
         }
 
         return target.transform.position;
+    }
+
+
+    public Vector3 GetKnownPositionForTarget(NetworkObject target)
+    {
+        if (target != null && _threatTable.TryGetValue(target, out ThreatInfo info))
+        {
+            return info.lastKnownPosition;
+        }
+
+        return core.position;
+    }
+
+    public bool CanSeeTarget(NetworkObject target)
+    {
+        if (target != null && _threatTable.TryGetValue(target, out ThreatInfo info))
+        {
+            return info.hasLineOfSight;
+        }
+
+        return false;
     }
 }
 
