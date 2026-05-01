@@ -135,7 +135,7 @@ public class DraggableItem : InteractableItem
         {
             Debug.Log($"{numberOfHolders} Holders of {this.name}");
             Vector3 damp = rb.linearVelocity * dampening * rb.mass;
-            rb.AddForce(forceToAdd - damp, ForceMode.Force);
+            rb.AddForce(forceToAdd , ForceMode.Force);
 
             Vector3 angularDamp = rb.angularVelocity * rotationalDampening;
             rb.AddTorque(torqueToAdd - angularDamp);

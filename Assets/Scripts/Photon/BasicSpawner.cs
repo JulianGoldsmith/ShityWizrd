@@ -61,17 +61,25 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             // Create a unique position for the player
             Vector3 spawnPosition;
-            LevelGenerator levelGen = GameController.Instance.levelGenerator;
 
-            if (levelGen != null && levelGen.IsLevelGenerated)
+            if (GameController.Instance != null)
             {
-                spawnPosition = levelGen.StartRoomSpawnPoint.transform.position;
+                LevelGenerator levelGen = GameController.Instance.levelGenerator;
+
+                if (levelGen != null && levelGen.IsLevelGenerated)
+                {
+                    spawnPosition = levelGen.StartRoomSpawnPoint.transform.position;
+                }
+                else
+                {
+                    spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
+                }
             }
             else
             {
                 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 1, 1, 0);
-            }
 
+            }
             //Vector3 handsoffset = new Vector3(0,0,-1);
             //NetworkObject networkHandsObject = runner.Spawn(_handsPrefab, spawnPosition + handsoffset, Quaternion.identity, player);
 
@@ -200,7 +208,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
                 GUI.Label(new Rect(0, 0, 200, 40), $"Ping: {displayedPing} ms");
             }
 
-            if (_runner.IsServer)
+            if (_runner.IsServer && GameController.Instance != null)
             {
                 if (GameController.Instance.levelGenerator != null)
                 {
