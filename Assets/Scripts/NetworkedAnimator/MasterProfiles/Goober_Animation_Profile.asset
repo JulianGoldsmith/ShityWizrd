@@ -18,7 +18,15 @@ MonoBehaviour:
   - rid: 2425487985908121745
   - rid: 2425487985908121746
   - rid: 2425487985908121747
-  AnyStateTransitions: []
+  - rid: 2425488141165527274
+  - rid: 2425488141165527276
+  - rid: 2425488141165527275
+  AnyStateTransitions:
+  - TargetStateID: 4
+    BlendDurationSeconds: 0
+    Priority: 0
+    Conditions:
+    - rid: 2425488141165527283
   FloatParameters:
   - Name: VelocityX
     DefaultValue: 0
@@ -31,6 +39,9 @@ MonoBehaviour:
     DefaultValue: 0
   TriggerParameters:
   - Name: Jump
+  - Name: Attack_1_Windup
+  - Name: Attack_1_Hold
+  - Name: Attack_1_Release
   references:
     version: 2
     RefIds:
@@ -52,6 +63,11 @@ MonoBehaviour:
           Conditions:
           - rid: 2425487985908121758
           - rid: 2425487985908121759
+        - TargetStateID: 4
+          BlendDurationSeconds: 0.1
+          Priority: 0
+          Conditions:
+          - rid: 2425488155577156345
         _parameterX: VelocityX
         _parameterY: VelocityY
         Motions:
@@ -201,3 +217,74 @@ MonoBehaviour:
         ParameterName: VelocityY
         Operator: 0
         Threshold: 0.01
+    - rid: 2425488141165527274
+      type: {class: BlendTree1DState, ns: , asm: Assembly-CSharp}
+      data:
+        StateName: Attack_1_Windup
+        StateID: 4
+        ExtractRootMotion: 1
+        OutboundTransitions:
+        - TargetStateID: 5
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425488141165527277
+        _parameterName: VelocityX
+        Motions:
+        - Clip: {fileID: -1903853533451568363, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Threshold: 0
+          TimeScale: 1
+    - rid: 2425488141165527275
+      type: {class: BlendTree1DState, ns: , asm: Assembly-CSharp}
+      data:
+        StateName: Attack_1_Release
+        StateID: 6
+        ExtractRootMotion: 1
+        OutboundTransitions:
+        - TargetStateID: 0
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425488141165527282
+        _parameterName: VelocityX
+        Motions:
+        - Clip: {fileID: -2408017366080655815, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Threshold: 0
+          TimeScale: 1
+    - rid: 2425488141165527276
+      type: {class: BlendTree1DState, ns: , asm: Assembly-CSharp}
+      data:
+        StateName: Attack_1_Hold
+        StateID: 5
+        ExtractRootMotion: 1
+        OutboundTransitions:
+        - TargetStateID: 6
+          BlendDurationSeconds: 0
+          Priority: 0
+          Conditions:
+          - rid: 2425488141165527278
+        _parameterName: VelocityX
+        Motions:
+        - Clip: {fileID: 8171402764322112196, guid: 67496b5798bce9044893c0509c630117, type: 3}
+          Threshold: 0
+          TimeScale: 1
+    - rid: 2425488141165527277
+      type: {class: TriggerCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: Attack_1_Hold
+    - rid: 2425488141165527278
+      type: {class: TriggerCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: Attack_1_Release
+    - rid: 2425488141165527282
+      type: {class: StateTimeCondition, ns: , asm: Assembly-CSharp}
+      data:
+        MinimumSecondsInState: 0.4
+    - rid: 2425488141165527283
+      type: {class: TriggerCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: Attack_1_Windup
+    - rid: 2425488155577156345
+      type: {class: TriggerCondition, ns: , asm: Assembly-CSharp}
+      data:
+        ParameterName: Attack_1_Windup

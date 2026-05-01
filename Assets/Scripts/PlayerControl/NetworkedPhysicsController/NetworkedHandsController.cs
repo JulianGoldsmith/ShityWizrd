@@ -840,7 +840,7 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
             hand.casheDefaultHandIKTarget.rotation = Quaternion.LookRotation(reachDir, Vector3.up) * Quaternion.Euler(pickUpWristRotOffset);
             if (!isLeft)
             {
-                Debug.Log($"player is reaching = {isReach}");
+                //Debug.Log($"player is reaching = {isReach}");
             }
         }
         else 

@@ -14,7 +14,7 @@ public enum BONKEDSTATE
 }
 
 [DefaultExecutionOrder(-5)]
-public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimVarDirection, IAnimVarGrounded, IAnimEventListener
+public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimVarDirection, IAnimVarGrounded, IAnimEventListener, IHasPhysicalCore
 {
     [Header("Components")]
     public Rigidbody hipsRb;
@@ -53,6 +53,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     public float uprightForce, uprightDamp;
 
     [Header("Animation")]
+    public NetworkAnimator netAnimator;
     public Animator targetAnimator, finalAnimator;
     public BoneMapper boneMapper;
     public Transform spineIKTarget;
@@ -77,6 +78,8 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     [HideInInspector][Networked] public Vector2 moveInput { get; set; }
     [HideInInspector][Networked] public Quaternion lookRot { get; set; }
     [HideInInspector][Networked] public NetworkButtons _lastButtonsInput { get; set; }
+    [Networked] public int LastJumpTick { get; set; }
+    public float jumpSuspensionDuration = 0.2f;
     [Networked] private int _jumpCount { get; set; }
     [Networked] public bool sprint { get; set; }
     private int _lastVisibleJump;
@@ -216,7 +219,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
         armatureHipsStartOffset = new Vector3(armatureHipsRoot.transform.localPosition.x,
                 armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z);
-
+        netAnimator = GetComponent<NetworkAnimator>();
     }
 
 
@@ -275,9 +278,8 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.JUMP) && IsGrounded)
             {
-                ApplyJump(); //animation is applied in Render -> Update Animations()
-                _jumpCount++;
-
+                //ApplyJump(); 
+                TriggerJump();
             }
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
@@ -310,25 +312,24 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
        
         if (bonkController.BonkedState != BONKEDSTATE.BONKED)
         {
+            bool isJumping = CheckIsJumpingAndApplyJump();
+
             ApplyUprightTorque();
 
             ApplyLookRotation();
 
             CalculateObservedAccelerationAndVelocity();
+            
+            if(!isJumping)
+                ApplyHipsSuspension();
+            
+            ApplyHipsHorizontalMovement();
 
             UpdateAnimator(true);
 
-            UpdateHips();
-            
-            ApplyHipsMovement();
-
             UpdateSpineIK();
-
-            
         }
 
-        if(!bonkController.bonkChangedThisUpdate)
-            UpdateTorsoAndHead();
 
         if (Runner.DeltaTime > 1e-6f)
         {
@@ -347,8 +348,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
     public override void Render()
     {
-        //transform.position = hipsRb.transform.position;
-        //transform.rotation = hipsRb.transform.rotation;
+
         if (disableCC > 0){ return; }
 
         //UpdateCameraAnchor();
@@ -419,6 +419,20 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         lastRenderDt = Time.deltaTime;
     }
 
+    private bool CheckIsJumpingAndApplyJump()
+    {
+        int ticksSinceJump = Runner.Tick - LastJumpTick;
+
+        int suspensionBlindTicks = Mathf.CeilToInt(jumpSuspensionDuration / Runner.DeltaTime);
+        bool isJumpBlindWindow = ticksSinceJump <= suspensionBlindTicks;
+
+        if (ticksSinceJump == 0)
+        {
+            hipsRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+
+        return isJumpBlindWindow;
+    }
     private void UpdateCameraAnchor()
     {
         //if (!cameraAnchorTransform || !networkedRenderRoot) return;
@@ -453,7 +467,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
     void UpdateAnimator(bool isSim)
     {
-        var netAnimator = GetComponent<NetworkAnimator>();
+        
         if (netAnimator == null) return;
         
 
@@ -731,12 +745,25 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
         hipsRb.AddForce(jumpForce * Vector3.up, ForceMode.VelocityChange);
 
-        var netAnimator = GetComponent<NetworkAnimator>();
         if (netAnimator != null)
         {
             netAnimator.SetTrigger("Jump");
         }
     }
+
+    public void TriggerJump()
+    {
+        if (IsGrounded && Runner.Tick > LastJumpTick + Mathf.CeilToInt(jumpSuspensionDuration / Runner.DeltaTime))
+        {
+            LastJumpTick = Runner.Tick;
+
+            if (netAnimator != null)
+            {
+                netAnimator.SetTrigger("Jump");
+            }
+        }
+    }
+
     void ApplyUprightTorque()
     {
         Vector3 up = hipsRb.rotation * Vector3.up;
@@ -762,7 +789,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
         hipsRb.AddTorque(torque, ForceMode.Acceleration);
     }
-    public void UpdateHips()
+    public void ApplyHipsSuspension()
     {
         // IsGrounded = Physics.Raycast(hipsRb.transform.position, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
 
@@ -813,7 +840,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         }
     }
 
-    private void ApplyHipsMovement()
+    private void ApplyHipsHorizontalMovement()
     {
 
         Vector2 rawInput = moveInput;
@@ -1157,8 +1184,20 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         bone.BakeAnchorsFromWorldPivot(bone.childRigidbody.transform.position);
     }
 
+    public NetworkObject GetCoreNetworkObject()
+    {
+        return hipsRb.GetComponent<NetworkObject>();    
+    }
 
+    public Transform GetCoreTransform(bool smoothedTrans = false)
+    {
+        return smoothedTrans ? networkedRenderRoot.transform : hipsRb.transform;
+    }
 
+    public Rigidbody GetCoreRigidbody()
+    {
+        return hipsRb;
+    }
 }
 
 
@@ -1267,3 +1306,9 @@ public class PDSpring
 
 
 
+public interface IHasPhysicalCore
+{
+    NetworkObject GetCoreNetworkObject();
+    Transform GetCoreTransform(bool smoothedTrans = false);
+    Rigidbody GetCoreRigidbody();
+}

@@ -19,7 +19,7 @@ public struct NPCCommandData : INetworkStruct
     public float FloatData;
     public int IntData;
 }
-public enum CommandType : byte
+public enum CommandType
 {
     None,
     Move_PathfindToID,
@@ -27,6 +27,9 @@ public enum CommandType : byte
     Move_Forward,
     Move_Stop,
     Look_InMoveDirection,
-    Action_MeleeAttack,
-     // <-- ADD THIS
+    Action_Execute,
+    Look_InDirection,
+    Look_AtPoint,
+    Look_AtID
+    // <-- ADD THIS
 }

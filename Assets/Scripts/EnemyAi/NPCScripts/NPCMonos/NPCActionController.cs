@@ -10,13 +10,13 @@ public class NPCActionController : CastActionController
     [SerializeField] private string targetVariableName = "Target";
     [SerializeField] private string canAttackVariableName = "CanAttack";
 
-    [SerializeField] public List<NPCAction> actions = new List<NPCAction>();
+    [SerializeField] public List<NPC_Action> actions = new List<NPC_Action>();
     public List<HitBoxBehaviour> hitboxes = new List<HitBoxBehaviour>();
-    private List<NPCAction> _runtimeActions = new List<NPCAction>(); // this is cloned list at runtime
+    private List<NPC_Action> _runtimeActions = new List<NPC_Action>(); // this is cloned list at runtime
 
     [SerializeField] private AnimationStateController _animStateController;
 
-    private Dictionary<NPCAction, int> _actionBaseIndices = new Dictionary<NPCAction, int>();
+    private Dictionary<NPC_Action, int> _actionBaseIndices = new Dictionary<NPC_Action, int>();
 
     //public NPCAction _currentCastingAction;
     //private int _currentCastingBaseIndex;
@@ -39,7 +39,7 @@ public class NPCActionController : CastActionController
     {
         //// clone all the actions here so were not editing assets. 
         _runtimeActions.Clear();
-        foreach (NPCAction actionTemplate in actions)
+        foreach (NPC_Action actionTemplate in actions)
         {
             if (actionTemplate == null)
             {
@@ -48,7 +48,7 @@ public class NPCActionController : CastActionController
             }
 
             //Clone the ScriptableObject asset
-            NPCAction runtimeInstance = Instantiate(actionTemplate);
+            NPC_Action runtimeInstance = Instantiate(actionTemplate);
             runtimeInstance.name = actionTemplate.name + " (Runtime Instance)";
             _runtimeActions.Add(runtimeInstance);
 
@@ -62,7 +62,7 @@ public class NPCActionController : CastActionController
     }
 
     
-    public void RegisterActionBaseIndex(NPCAction action, int baseIndex)
+    public void RegisterActionBaseIndex(NPC_Action action, int baseIndex)
     {
         //Called by our animationStateControler - it registers a "base" int that is used for action animation clips to a dictionary
         if (action == null) return;
@@ -156,7 +156,7 @@ public class NPCActionController : CastActionController
             Debug.LogError($"Invalid actionID: {actionID}");
             return null;
         }
-        NPCAction actionToCast = _runtimeActions[actionID];
+        NPC_Action actionToCast = _runtimeActions[actionID];
         if (actionToCast == null) return null;
 
         int baseIndex = _actionBaseIndices[actions[actionID]]; //get the base index from our dictionary of actions to index
@@ -299,7 +299,7 @@ public class NPCActionController : CastActionController
     #endregion
 
     #region spells
-    public SpellState Spell_StartCast(NPCActionSpell spellToCast, NPCAction actionToCast)
+    public SpellState Spell_StartCast(NPCActionSpell spellToCast, NPC_Action actionToCast)
     {
         Debug.Log("NPC cast spell StartCast called and action is spell");
         if (spellToCast.spell == null) return null;

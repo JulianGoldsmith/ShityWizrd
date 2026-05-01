@@ -8,7 +8,7 @@ using UnityEditor; // Required for AssetDatabase and EditorUtility
 #endif
 
 [CreateAssetMenu(fileName = "NPCSpell", menuName = "NPCACtions/Spell")]
-public class NPCActionSpell : NPCAction
+public class NPCActionSpell : NPC_Action
 {
 
     [Tooltip("populated by the 'Bake Spell From Name in context menu'")]

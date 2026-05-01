@@ -3,6 +3,8 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "AI Commands/Move/Pathfind To Point")]
 public class Move_PathfindToPointCommand : NPCCommand
 {
+    public override CommandType Type => CommandType.Move_PathfindToPoint;
+
     public override void PreTick(ref NPCCommandData data, NPCBehaviourManager manager, NPCActiveRagdollController muscle)
     {
         if (!manager.HasStateAuthority) return;
@@ -39,6 +41,6 @@ public class Move_PathfindToPointCommand : NPCCommand
 
         moveManager.LookInMoveDirection();
 
-         Debug.Log($"{this.name} Pathfinding to Point: {data.VectorData}");
+         //Debug.Log($"{this.name} Pathfinding to Point: {data.VectorData}");
     }
 }

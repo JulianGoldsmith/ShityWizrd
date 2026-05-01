@@ -150,7 +150,7 @@ public class OverlapSphereTrigger : ITrigger
     {
         if(!core.HasStateAuthority && !core.HasInputAuthority)
         {
-            Debug.Log("VFX are running render on a proxy");
+           // Debug.Log("VFX are running render on a proxy");
         }
 
         if (VfxContext == null) return;

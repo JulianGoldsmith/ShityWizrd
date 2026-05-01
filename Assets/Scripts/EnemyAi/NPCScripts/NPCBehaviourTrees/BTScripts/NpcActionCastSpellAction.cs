@@ -15,7 +15,7 @@ public partial class NpcActionCastSpellAction : Action
     private Phase _currentPhase;
 
     private NPCActionController _actionController;
-    private NPCAction _actionData; 
+    private NPC_Action _actionData; 
     private SpellState _currentSpellState;
     private float _phaseTimer;
 

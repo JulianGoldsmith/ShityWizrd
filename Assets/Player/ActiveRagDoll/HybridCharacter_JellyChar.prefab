@@ -2787,7 +2787,7 @@ MonoBehaviour:
   maxSprintSpeed: 5
   acceleration: 10
   braking: 10
-  jumpForce: 20
+  jumpForce: 5
   turnStrength: 100
   turnDamping: 15
   turnBufferCurve:
@@ -2825,6 +2825,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   uprightForce: 300
   uprightDamp: 10
+  netAnimator: {fileID: 0}
   targetAnimator: {fileID: 5367763451751236983}
   finalAnimator: {fileID: 2660284122264214847}
   boneMapper: {fileID: 2693293064502896331}
@@ -2913,6 +2914,8 @@ MonoBehaviour:
   ragDollBones: []
   _moveInput: {x: 0, y: 0}
   _lookRot: {x: 0, y: 0, z: 0, w: 0}
+  _LastJumpTick: 0
+  jumpSuspensionDuration: 0.2
   _sprint: 0
   networkedRenderRoot: {fileID: 5162603037753169754}
   smoothedNetworkedRenderRoot: {fileID: 8932821910823328615}
@@ -3579,6 +3582,7 @@ MonoBehaviour:
   primaryAttackReleaseBuffered: 0
   _nextActionId: 0
   _TotalSpellCasts: 0
+  spellCastPoints: []
 --- !u!114 &5532856637667607981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4173,6 +4177,8 @@ MonoBehaviour:
   RootBoneBindRot: {x: 0, y: 0, z: 0, w: 1}
   RootMotionScale: {x: 0.01, y: 0.01, z: 0.01}
   BindPoseClip: {fileID: 0}
+  ForwardAxis: 2
+  UpAxis: 1
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0

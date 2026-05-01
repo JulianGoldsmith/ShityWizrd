@@ -208,7 +208,7 @@ public class SpellCreatedCore : NetworkBehaviour
                             activeSpell = new ActiveSpell(ActiveCastID, blueprint, dummyProxyState);
                             SpellStateManager.instance.RegisterNewCast(ActiveCastID, activeSpell);
 
-                            Debug.Log($"[Proxy Sync] Flawlessly Rehydrated Cast {ActiveCastID.CastNumber} from Player {casterObj.name}!");
+                            Debug.Log($"[Proxy Sync] Rehydrated Cast {ActiveCastID.CastNumber} from Player {casterObj.name}!");
                             if (activeSpell != null) activeSpell.AddToken();
                         }
                         else

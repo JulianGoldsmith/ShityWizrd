@@ -5,6 +5,8 @@ using UnityEngine.AI;
 [CreateAssetMenu(menuName = "AI Commands/Move/Pathfind To Target")]
 public class Move_PathfindCommand : NPCCommand
 {
+    public override CommandType Type => CommandType.Move_PathfindToID;
+
     public override void PreTick(ref NPCCommandData data, NPCBehaviourManager manager, NPCActiveRagdollController muscle)
     {
         if (!manager.HasStateAuthority) return;
@@ -54,6 +56,6 @@ public class Move_PathfindCommand : NPCCommand
             moveManager.LookInMoveDirection();
         }
 
-        Debug.Log($"{this.name} Pathfinding to {lookTarget.gameObject.name} ");
+        //Debug.Log($"{this.name} Pathfinding to {lookTarget.gameObject.name} ");
     }
 }

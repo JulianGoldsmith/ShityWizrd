@@ -43,6 +43,8 @@ public class NPCBehaviourManager : NetworkBehaviour
 
     public NPCAggroController aggroController;
 
+    public NPCActionManager actionManager;
+
     public override void Spawned()
     {
         globalRegistry.Initialize();
@@ -50,6 +52,10 @@ public class NPCBehaviourManager : NetworkBehaviour
         if(aggroController == null)
         {
             aggroController = this.GetComponent<NPCAggroController>();
+        }
+        if(actionManager == null)
+        {
+            actionManager = this.GetComponent<NPCActionManager>();
         }
 
         foreach (var mapping in commandOverrides)
@@ -72,14 +78,22 @@ public class NPCBehaviourManager : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        if (HasStateAuthority && behaviorAgent != null)
-        {
-          //  behaviorAgent.Graph.Tick();
-           
-        }
+        TickPerception();
 
+        TickCommands();
+
+        TickActionManager();
+
+        TickRagDollController();
+    }
+
+    public void TickPerception()
+    {
         if (aggroController != null) aggroController.TickAggroSensors();
+    }
 
+    public void TickCommands()
+    {
         _executionBuffer.Clear();
 
         for (int i = 0; i < ActiveCommands.Length; i++)
@@ -132,6 +146,16 @@ public class NPCBehaviourManager : NetworkBehaviour
         }
     }
 
+    public void TickActionManager()
+    {
+        actionManager.Tick();
+    }
+
+    public void TickRagDollController()
+    {
+        muscleController.Tick();
+    }
+
     private NPCCommand GetProcessorForCommand(CommandType type)
     {
         // 1. Check if this specific NPC has a weird/custom way of doing this
@@ -166,6 +190,27 @@ public class NPCBehaviourManager : NetworkBehaviour
             var cmd = ActiveCommands[i];
 
             if (cmd.CommandID == type)
+            {
+                if (specificTarget.IsValid)
+                {
+                    if (cmd.TargetID == specificTarget) return true;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public bool IsCommandQueuedAndWaiting(CommandType type, NetworkId specificTarget = default)
+    {
+        for (int i = 0; i < ActiveCommands.Length; i++)
+        {
+            var cmd = ActiveCommands[i];
+
+            if (cmd.CommandID == type && Runner.Tick < cmd.StartTick)
             {
                 if (specificTarget.IsValid)
                 {

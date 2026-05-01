@@ -60,6 +60,12 @@ public class NetworkAnimator : NetworkBehaviour
 
     public AnimationClip BindPoseClip;
 
+    [Header("Root Motion Axis Alignment")]
+    [Tooltip("Which axis on the bone points FORWARD relative to the character?")]
+    public BoneAxis ForwardAxis = BoneAxis.Z;
+
+    [Tooltip("Which axis on the bone points UP relative to the character?")]
+    public BoneAxis UpAxis = BoneAxis.Y;
     public void InitializeParameters()
     {
         _floatParams = new float[Profile.FloatParameters.Count];
@@ -240,6 +246,29 @@ public class NetworkAnimator : NetworkBehaviour
             absoluteRootOffset = UnityAnimator.transform.TransformDirection(localOffsetAbsolute);
             absoluteRootRot = localRotT1 * Quaternion.Inverse(RootBoneBindRot);
 
+            Quaternion correction = GetAlignmentCorrection();
+
+            Vector3 rawLocalDelta = localPosT1 - localPosT0;
+            Vector3 standardLocalDelta = correction * rawLocalDelta; // Twist it to standard space!
+            standardLocalDelta.Scale(RootMotionScale);
+            rootMotionDeltaPos = transform.TransformDirection(standardLocalDelta);
+
+            // --- 2. DELTA ROTATION (Turning) ---
+            Quaternion rawDeltaRot = localRotT1 * Quaternion.Inverse(localRotT0);
+            // To apply a twist to a rotation, you multiply it on both sides (Similarity Transform)
+            rootMotionDeltaRot = correction * rawDeltaRot * Quaternion.Inverse(correction);
+
+            // --- 3. ABSOLUTE OFFSET (Y Ride Height) ---
+            Vector3 rawAbsoluteOffset = localPosT1 - RootBoneBindPose;
+            Vector3 standardAbsoluteOffset = correction * rawAbsoluteOffset; // Twist it!
+            standardAbsoluteOffset.Scale(RootMotionScale);
+            absoluteRootOffset = UnityAnimator.transform.TransformDirection(standardAbsoluteOffset);
+
+            // --- 4. ABSOLUTE ROTATION ---
+            Quaternion rawAbsoluteRot = localRotT1 * Quaternion.Inverse(RootBoneBindRot);
+            absoluteRootRot = correction * rawAbsoluteRot * Quaternion.Inverse(correction);
+
+            // Reset bone
             RootMotionBone.localPosition = RootBoneBindPose;
             RootMotionBone.localRotation = RootBoneBindRot;
         }
@@ -249,6 +278,8 @@ public class NetworkAnimator : NetworkBehaviour
             float time = Runner.Tick * Runner.DeltaTime;
             ApplyPose(weight, time, true);
         }
+
+       
     }
 
 
@@ -282,6 +313,17 @@ public class NetworkAnimator : NetworkBehaviour
 
             absoluteVisualRootOffset = UnityAnimator.transform.TransformDirection(localOffset);
             absoluteVisualRootRot = RootMotionBone.localRotation * Quaternion.Inverse(RootBoneBindRot);
+
+            Quaternion correction = GetAlignmentCorrection();
+
+            Vector3 rawLocalOffset = RootMotionBone.localPosition - RootBoneBindPose;
+            Vector3 standardLocalOffset = correction * rawLocalOffset; // Twist it!
+            standardLocalOffset.Scale(RootMotionScale);
+
+            absoluteVisualRootOffset = UnityAnimator.transform.TransformDirection(standardLocalOffset);
+
+            Quaternion rawAbsoluteRot = RootMotionBone.localRotation * Quaternion.Inverse(RootBoneBindRot);
+            absoluteVisualRootRot = correction * rawAbsoluteRot * Quaternion.Inverse(correction);
 
             RootMotionBone.localPosition = RootBoneBindPose;
             RootMotionBone.localRotation = RootBoneBindRot;
@@ -382,7 +424,37 @@ public class NetworkAnimator : NetworkBehaviour
         return true;
     }
 
+    public enum BoneAxis
+    {
+        X, Y, Z,
+        NegativeX, NegativeY, NegativeZ
+    }
 
+    private Quaternion GetAlignmentCorrection()
+    {
+        Vector3 localForward = GetAxisVector(ForwardAxis);
+        Vector3 localUp = GetAxisVector(UpAxis);
+
+        Quaternion boneOrientation = Quaternion.LookRotation(localForward, localUp);
+
+        return Quaternion.Inverse(boneOrientation);
+    }
+
+    private Vector3 GetAxisVector(BoneAxis axis)
+    {
+        switch (axis)
+        {
+            case BoneAxis.X: return Vector3.right;
+            case BoneAxis.Y: return Vector3.up;
+            case BoneAxis.Z: return Vector3.forward;
+            case BoneAxis.NegativeX: return Vector3.left;
+            case BoneAxis.NegativeY: return Vector3.down;
+            case BoneAxis.NegativeZ: return Vector3.back;
+            default: return Vector3.forward;
+        }
+    }
+
+   
 
     public void OnDestroy()
     {

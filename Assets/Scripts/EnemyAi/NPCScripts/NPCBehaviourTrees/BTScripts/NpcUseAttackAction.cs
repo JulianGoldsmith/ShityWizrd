@@ -13,7 +13,7 @@ public partial class NpcUseAttackAction : Action
 
 
     private NPCActionController actionController;
-    private NPCAction actionToUse;
+    private NPC_Action actionToUse;
     private float durationToHold, timeToRelease;
 
     protected override Status OnStart()

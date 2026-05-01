@@ -1,0 +1,37 @@
+{
+    "entryPointControllerNodeGuid": "72c94dec-017d-4fcd-b598-c0e9c5d45fb7",
+    "nodes": [
+        {
+            "guid": "72c94dec-017d-4fcd-b598-c0e9c5d45fb7",
+            "position": {
+                "x": -0.7882729768753052,
+                "y": -0.024333536624908448,
+                "z": -0.01855035126209259
+            },
+            "nodeTemplateName": "EntryPointControler",
+            "connections": [
+                {
+                    "fromOutputSocketName": "Combo 1",
+                    "fromOutputOwnerGUID": "72c94dec-017d-4fcd-b598-c0e9c5d45fb7",
+                    "targetNodeGUID": "4905ca1b-34c1-47bc-b53e-1b8e41992cd5",
+                    "toInputSocketName": "Exec In",
+                    "toInputOwnerGUID": "4905ca1b-34c1-47bc-b53e-1b8e41992cd5"
+                }
+            ],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        },
+        {
+            "guid": "4905ca1b-34c1-47bc-b53e-1b8e41992cd5",
+            "position": {
+                "x": -0.026648253202438356,
+                "y": 0.0019353926181793213,
+                "z": 0.38999781012535097
+            },
+            "nodeTemplateName": "EnergyCore",
+            "connections": [],
+            "childNodeGUIDs": [],
+            "sourceTemplateNodeGuid": ""
+        }
+    ]
+}

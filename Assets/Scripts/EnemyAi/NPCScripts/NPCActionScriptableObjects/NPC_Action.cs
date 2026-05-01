@@ -3,7 +3,7 @@ using System.IO;
 using UnityEngine;
 
 
-public abstract class NPCAction: ScriptableObject
+public abstract class NPC_Action: ScriptableObject
 {
     public AnimationClip windUpClip;
     public AnimationClip holdClip;

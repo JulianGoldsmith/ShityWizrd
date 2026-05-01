@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class NPCActiveRagdollController : NetworkBehaviour
+public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 {
     [Header("Components")]
     public Rigidbody coreRB;
@@ -12,6 +12,10 @@ public class NPCActiveRagdollController : NetworkBehaviour
     [Header("RagDoll Strength"), Range(0,2f)]
     [Networked] public float ragDollStrength { get; set; } = 1;
     [Networked] public NetworkBool IsGrounded { get; set; }
+
+    [Networked] public int LastJumpTick { get; set; }
+    public float jumpSuspensionDuration = 0.2f;
+
 
     [Header("Size")]
     public float sizeMult = 1;
@@ -41,7 +45,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
     public Transform smoothedNetworkRoot;
 
     [Header("PD Bones")]
-    public List<PdBone> pdBones = new List<PdBone>();
+    //public List<PdBone> pdBones = new List<PdBone>();
     private float pdDesignDt = 1f / 64f;
 
     public List<NetworkRigidbody3D> rbComponents = new List<NetworkRigidbody3D>();
@@ -52,6 +56,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     public float rootMotionForceStrength = 5.0f;
     public bool useRootMotionXZ = true, useRootMotionY = true;
+    public float rootYMult = 1f;
 
     public float _currentAbsoluteRM_Y;
     public Quaternion _currentAbsoluteRM_Rot;
@@ -64,6 +69,8 @@ public class NPCActiveRagdollController : NetworkBehaviour
     private Vector3 _desiredMoveVelocity;
     private Vector3 _desiredLookDirection;
     private bool _wantsToJump;
+
+
 
 
     public XpbdConstraintSolver xpbdSolver;
@@ -81,10 +88,14 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
     public void TriggerJump()
     {
-        _wantsToJump = true;
-        if (networkAnimator != null)
+        if (IsGrounded && Runner.Tick > LastJumpTick + Mathf.CeilToInt(jumpSuspensionDuration / Runner.DeltaTime))
         {
-            networkAnimator.SetTrigger("Jump");
+            LastJumpTick = Runner.Tick;
+
+            if (networkAnimator != null)
+            {
+                networkAnimator.SetTrigger("Jump");
+            }
         }
     }
 
@@ -108,21 +119,15 @@ public class NPCActiveRagdollController : NetworkBehaviour
         characterBonkController = this.GetComponent<CharacterBonkController>();
     }
 
-    public override void FixedUpdateNetwork()
+    public void Tick()
     {
-
-
-        // ragDollStrength = this.GetComponent<NPCPhysicsObject>().current_bonkedness/100;
-         //SetMovementTarget(transform.forward * maxWalkSpeed);
-         //SetLookDirection(transform.right);
-
         if (characterBonkController.BonkedState == BONKEDSTATE.ALIVE)
         {
             ApplyUprightStabilization();
 
             UpdateCoreMovement();
 
-            ApplyCoreSuspention();
+            //ApplyCoreSuspention();
         }
 
 
@@ -130,9 +135,9 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         if (networkAnimator != null)
         {
-            
+
             networkAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRot, out Vector3 absRmPos, out Quaternion absRmRot);
-           
+
             if (useRootMotionXZ && rmDeltaPos.sqrMagnitude > 0.0001f)
             {
                 // Convert Delta to Velocity, and scale it by the NPC's size!
@@ -157,9 +162,21 @@ public class NPCActiveRagdollController : NetworkBehaviour
 
         UpdatePDDrives();
 
-        
+        _desiredLookDirection = Vector3.zero;
+        _desiredMoveVelocity = Vector3.zero;
         //ApplyRootMotionForce();
 
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+
+
+        // ragDollStrength = this.GetComponent<NPCPhysicsObject>().current_bonkedness/100;
+         //SetMovementTarget(transform.forward * maxWalkSpeed);
+         //SetLookDirection(transform.right);
+
+        
         
 
       
@@ -194,7 +211,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
     private void ApplyCoreSuspention()
     {
         //get the y (differecne between armeture and root from the animator (this is already scaled in the animator)
-        float rootMotionVerticalDelta = _currentAbsoluteRM_Y * sizeMult; //this is our ride height now
+        float rootMotionVerticalDelta = _currentAbsoluteRM_Y * rootYMult; //this is our ride height now
 
         //float targetHeight = extraRideHeight + sizeMult + rootMotionVerticalDelta;
 
@@ -251,32 +268,40 @@ public class NPCActiveRagdollController : NetworkBehaviour
         flatLook.Normalize();
 
         Quaternion qBase = Quaternion.LookRotation(flatLook, Vector3.up);
-
         Quaternion qAnimDelta = _currentAbsoluteRM_Rot;
-
         Quaternion targetRot = qBase * qAnimDelta;
 
-        float springDrive = uprightSpringStrength * Mathf.Min(ragDollStrength, 1) * Mathf.Min(ragDollStrength, 1);   
-        float springDamp = uprightSpringDamper * Mathf.Min(ragDollStrength, 1);   
-        float maxAngleRad = 60f * Mathf.Deg2Rad; 
-        float maxAccel = 4000f;           
+        float springDrive = uprightSpringStrength * Mathf.Min(ragDollStrength, 1) * Mathf.Min(ragDollStrength, 1);
+        float springDamp = uprightSpringDamper * Mathf.Min(ragDollStrength, 1);
 
-        ApplyPdRotationLikeBone(childRB: coreRB,targetRotationWorld: targetRot, parentAngularVelocityWorld: Vector3.zero, kp: springDrive, kd: springDamp,
+        // THE FIX: Reduce rotational stiffness by 50% when picked up / in the air!
+        if (!IsGrounded)
+        {
+          
+            springDrive *= 0.2f;
+            springDamp *= 0.2f;
+        }
+
+        float maxAngleRad = 60f * Mathf.Deg2Rad;
+        float maxAccel = 4000f;
+
+        ApplyPdRotationLikeBone(childRB: coreRB, targetRotationWorld: targetRot, parentAngularVelocityWorld: Vector3.zero, kp: springDrive, kd: springDamp,
             maximumAngleRadians: maxAngleRad, maximumTorqueAcceleration: maxAccel, rotationErrorCurve: null);
     }
 
     private void UpdateCoreMovement()
     {
-        if (!IsGrounded) return;
+        int ticksSinceJump = Runner.Tick - LastJumpTick;
 
-        if (_wantsToJump)
+        int suspensionBlindTicks = Mathf.CeilToInt(jumpSuspensionDuration / Runner.DeltaTime);
+        bool isJumpBlindWindow = ticksSinceJump <= suspensionBlindTicks;
+
+        if (ticksSinceJump == 0)
         {
             coreRB.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            _wantsToJump = false; // Reset it immediately after applying
         }
 
-        // We assume _desiredMoveVelocity is already scaled by the Translator 
-        // (e.g., it passes dir * maxSprintSpeed), so we just try to reach it.
+
         Vector3 currentHorizontalVelocity = new Vector3(coreRB.linearVelocity.x, 0, coreRB.linearVelocity.z);
         Vector3 velocityError = _desiredMoveVelocity - currentHorizontalVelocity;
 
@@ -290,7 +315,18 @@ public class NPCActiveRagdollController : NetworkBehaviour
             force = velocityError * braking;
         }
 
-        coreRB.AddForce(force, ForceMode.Acceleration);
+        if (IsGrounded)
+        {
+            coreRB.AddForce(force, ForceMode.Acceleration);
+        }
+
+       
+
+
+        if (!isJumpBlindWindow)
+        {
+            ApplyCoreSuspention();
+        }
     }
 
     private void UpdatePDDrives()
@@ -333,7 +369,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
         networkAnimator.SetSimBool("IsGrounded", IsGrounded);
     }
 
-    [ContextMenu("PD Ragdoll/ Bake Anchors")]
+    /*[ContextMenu("PD Ragdoll/ Bake Anchors")]
     private void ContextBakeAnchorsFromTargets()
     {
 
@@ -354,10 +390,10 @@ public class NPCActiveRagdollController : NetworkBehaviour
         Debug.Log("Baked PD anchors from each bone's targetTransform remember to save");
 
     }
-
+*/
     public void SetLookDir(Vector3 worldDirection)
     {
-        if (!HasStateAuthority) return;
+        //if (!HasStateAuthority) return;
         if (Object.isActiveAndEnabled)
         {
             worldDirection.y = 0;
@@ -366,7 +402,7 @@ public class NPCActiveRagdollController : NetworkBehaviour
     }
     public void SetMoveInput(Vector3 input, float speed) 
     {
-        if (!HasStateAuthority) return;
+        //if (!HasStateAuthority) return;
         if (Object.isActiveAndEnabled)
         {
             _desiredMoveVelocity = input;
@@ -410,5 +446,20 @@ public class NPCActiveRagdollController : NetworkBehaviour
         childRB.maxAngularVelocity = Mathf.Max(childRB.maxAngularVelocity, 50f);
 
         childRB.AddTorque(torqueAccelerationWorld, ForceMode.Acceleration);
+    }
+
+    public NetworkObject GetCoreNetworkObject()
+    {
+        return coreRB.GetComponent<NetworkObject>();
+    }
+
+    public Transform GetCoreTransform(bool smoothedTrans = false)
+    {
+        return smoothedTrans ? networkedRenderRoot.transform : coreRB.transform;
+    }
+
+    public Rigidbody GetCoreRigidbody()
+    {
+        return coreRB;
     }
 }

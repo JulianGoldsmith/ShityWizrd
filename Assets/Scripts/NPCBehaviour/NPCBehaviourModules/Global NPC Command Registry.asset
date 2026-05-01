@@ -13,13 +13,30 @@ MonoBehaviour:
   m_Name: Global NPC Command Registry
   m_EditorClassIdentifier: 
   UniversalCommands:
-  - Type: 4
-    Command: {fileID: 11400000, guid: 28fa0c32b6073ae4085fb215d53023ef, type: 2}
-  - Type: 3
-    Command: {fileID: 11400000, guid: 21ded74a1b199d84bbf1f5924325c482, type: 2}
-  - Type: 1
+  - SlotName: Move_PathfindToID
+    Type: 1
     Command: {fileID: 11400000, guid: 719ab9e6538318646a78bf5438989ae9, type: 2}
-  - Type: 5
-    Command: {fileID: 11400000, guid: 6bf66f22fe1fa0e479a4eb7f5325edf4, type: 2}
-  - Type: 2
+  - SlotName: Move_PathfindToPoint
+    Type: 2
     Command: {fileID: 11400000, guid: e875f895817c7e74db2f3a115a2aef0f, type: 2}
+  - SlotName: Move_Forward
+    Type: 3
+    Command: {fileID: 11400000, guid: 21ded74a1b199d84bbf1f5924325c482, type: 2}
+  - SlotName: Move_Stop
+    Type: 4
+    Command: {fileID: 11400000, guid: 28fa0c32b6073ae4085fb215d53023ef, type: 2}
+  - SlotName: Look_InMoveDirection
+    Type: 5
+    Command: {fileID: 11400000, guid: 6bf66f22fe1fa0e479a4eb7f5325edf4, type: 2}
+  - SlotName: Action_Execute
+    Type: 6
+    Command: {fileID: 11400000, guid: 0c634c6ee54ebdd4fb757b84ae470c96, type: 2}
+  - SlotName: Look_InDirection
+    Type: 7
+    Command: {fileID: 11400000, guid: 999bced7e8211f34da0573f9d73c4335, type: 2}
+  - SlotName: Look_AtPoint
+    Type: 8
+    Command: {fileID: 11400000, guid: 553f6e8d955ec2c4da54932d795699f9, type: 2}
+  - SlotName: Look_AtID
+    Type: 9
+    Command: {fileID: 11400000, guid: 3ff17f7d1bf929a4883830435528aa6e, type: 2}

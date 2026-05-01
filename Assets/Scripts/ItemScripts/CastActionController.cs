@@ -33,6 +33,7 @@ public abstract class CastActionController : NetworkBehaviour
     private GameObject _activeHitboxInstance;
     [Networked] public int TotalSpellCasts { get; set; }
 
+    public List<Vector3> spellCastPoints = new List<Vector3>();
     public override void Spawned()
     {
         base.Spawned();
@@ -333,7 +334,10 @@ public abstract class CastActionController : NetworkBehaviour
     public abstract void ActivateHitbox(int hitBoxID, SpellState state);
     public abstract void DeactivateHitbox(int hitBoxID);
 
-
+    public virtual Vector3 GetSpellCastPoint()
+    {
+        return transform.position;
+    }
 
 
     public void HandleAnimationEvent(string eventName)

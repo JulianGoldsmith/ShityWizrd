@@ -3,6 +3,8 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "AI Commands/Move/Move Forward")]
 public class Move_ForwardCommand : NPCCommand
 {
+    public override CommandType Type => CommandType.Move_Forward;
+
     public override void ActiveTick(ref NPCCommandData data, NPCBehaviourManager manager, NPCActiveRagdollController muscle)
     {
         Vector3 direction = data.VectorData;

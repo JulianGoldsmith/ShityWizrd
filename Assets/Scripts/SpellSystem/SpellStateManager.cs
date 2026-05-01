@@ -25,7 +25,8 @@ public class SpellStateManager : NetworkBehaviour
 
     public Dictionary<ActiveCastID, ActiveSpell> activeSpells = new Dictionary<ActiveCastID, ActiveSpell>();
 
-
+    [Header("Static Spells")]
+    public StaticSpellDatabase staticSpellDatabase;
     [Networked, Capacity(100)] public NetworkArray<SpellGraphId> ActiveManifest { get; }
     //[Networked, Capacity(100)] public NetworkArray<NetworkCastData> ActiveCastsData { get; }
 
@@ -46,6 +47,8 @@ public class SpellStateManager : NetworkBehaviour
     {
         base.Spawned();
         Runner.SetIsSimulated(this.Object, true);
+
+        LoadStaticSpells();
 
         _manifestChangeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
@@ -190,6 +193,7 @@ public class SpellStateManager : NetworkBehaviour
 
         foreach (var localKey in active_spellblueprints.Keys)
         {
+            if (localKey.AuthorRef == PlayerRef.None) continue;
             bool foundInManifest = false;
             for (int i = 0; i < ActiveManifest.Length; i++)
             {
@@ -469,10 +473,38 @@ public class SpellStateManager : NetworkBehaviour
         return null;
     }
 
+
+    private void LoadStaticSpells()
+    {
+        if (staticSpellDatabase == null) return;
+
+        for (int i = 0; i < staticSpellDatabase.staticSpells.Count; i++)
+        {
+            TextAsset spellJson = staticSpellDatabase.staticSpells[i];
+            if (spellJson == null || string.IsNullOrEmpty(spellJson.text)) continue;
+
+            try
+            {
+                SpellGraph graph = SpellGraph.FromJson(spellJson.text);
+
+                SpellGraphId staticId = new SpellGraphId(PlayerRef.None, i + 1);
+                graph.spellGraphId = staticId;
+
+                active_spellblueprints[staticId] = graph;
+
+                Debug.Log($"[SpellStateManager] Loaded Static Spell [{i + 1}]: {spellJson.name}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[SpellStateManager] Failed to load static spell at index {i + 1}: {e.Message}");
+            }
+        }
+    }
+
     #region Spell Graphs
     // Track all spellgraphs in the scene so that clients 
     // can look up the spellnodes of a spawned spell object.
-    
+
     // A dictionary to track how many active instances of a spellgraph there are.
     // When it hits zero, we clean it up from active_spellgraphs so that we
     // don't create an arbitrarily large dict as people change their spells.

@@ -7,11 +7,12 @@ public class GlobalNPCCommandRegistry : ScriptableObject
     [System.Serializable]
     public struct Mapping
     {
+        [HideInInspector] public string SlotName;
         public CommandType Type;
         public NPCCommand Command;
     }
 
-    public List<Mapping> UniversalCommands;
+    public List<Mapping> UniversalCommands = new List<Mapping>();
 
     private Dictionary<CommandType, NPCCommand> _dict;
 
@@ -21,13 +22,14 @@ public class GlobalNPCCommandRegistry : ScriptableObject
         _dict = new Dictionary<CommandType, NPCCommand>();
         foreach (var map in UniversalCommands)
         {
-            _dict[map.Type] = map.Command;
+            if (map.Command != null)
+                _dict[map.Type] = map.Command;
         }
     }
 
     public NPCCommand GetUniversalCommand(CommandType type)
     {
-        if (_dict.TryGetValue(type, out var proc)) return proc;
+        if (_dict != null && _dict.TryGetValue(type, out var proc)) return proc;
         Debug.LogError($"[GlobalCommandRegistry] Missing universal fallback for {type}!");
         return null;
     }
