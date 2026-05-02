@@ -106,6 +106,7 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
     public float maxDragStrength = 150f;
 
     public float dragStength = 50, dragDamp = 10, dragRange = 10;
+    public float grabDamping = 1, playerDragResistance = 1;
     public AnimationCurve dragStrengthCurve;
     public float dragRotationalStrength = 50;
     public AnimationCurve dragRotationStrengthCurve = AnimationCurve.Linear(0, 0, 1, 1);

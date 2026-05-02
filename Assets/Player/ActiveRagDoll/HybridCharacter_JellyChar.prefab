@@ -2783,6 +2783,9 @@ MonoBehaviour:
   rideSpringStrength: 100
   rideSpringDamper: 10
   suspensionCastRadius: 0.125
+  dragStength: 100
+  grabDamping: 1
+  playerDragResistance: 5
   maxWalkSpeed: 2.25
   maxSprintSpeed: 5
   acceleration: 10
@@ -2914,6 +2917,7 @@ MonoBehaviour:
   ragDollBones: []
   _moveInput: {x: 0, y: 0}
   _lookRot: {x: 0, y: 0, z: 0, w: 0}
+  _previousLookRot: {x: 0, y: 0, z: 0, w: 0}
   _LastJumpTick: 0
   jumpSuspensionDuration: 0.2
   _sprint: 0
@@ -3359,6 +3363,8 @@ MonoBehaviour:
   dragStength: 50
   dragDamp: 10
   dragRange: 10
+  grabDamping: 1
+  playerDragResistance: 1
   dragStrengthCurve:
     serializedVersion: 2
     m_Curve:

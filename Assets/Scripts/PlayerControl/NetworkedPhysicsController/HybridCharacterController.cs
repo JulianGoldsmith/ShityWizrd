@@ -40,6 +40,8 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     public float rideSpringDamper = 10f; // How much the spring is damped to prevent bouncing
     public float suspensionCastRadius = 0.25f; // The radius of the spherecast
 
+    [Header("ItemGrabStats")]
+    public float dragStength = 50, grabDamping = 10, playerDragResistance = 10;
 
     [Header("Movement Settings")]
     public float maxWalkSpeed = 3f, maxSprintSpeed = 5f;
@@ -77,6 +79,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     [Header("Network Input")]
     [HideInInspector][Networked] public Vector2 moveInput { get; set; }
     [HideInInspector][Networked] public Quaternion lookRot { get; set; }
+    [HideInInspector][Networked] public Quaternion previousLookRot { get; set; }
     [HideInInspector][Networked] public NetworkButtons _lastButtonsInput { get; set; }
     [Networked] public int LastJumpTick { get; set; }
     public float jumpSuspensionDuration = 0.2f;
@@ -138,6 +141,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
     [Header("Bonked Variables")]
     public CharacterBonkController bonkController;
+
 
 
     ChangeDetector
@@ -264,7 +268,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             disableCC--; 
             return;      // Skip ALL simulation logic for this tick
         }
-
+        previousLookRot = lookRot;
         //Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
         DetectVariablesChangedOnNetwork();
         if (GetInput(out NetworkInputData data) && HasStateAuthority || HasInputAuthority)
@@ -956,7 +960,11 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     {
         return HasInputAuthority ? cameraTransform.rotation : lookRot;
     }
-
+    public Vector3 GetPreviousEyePosSim(Vector3 previousHipsPos)
+    {
+        // Identical to GetEyePosSim, but uses the rolled-back data!
+        return previousHipsPos + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(previousLookRot);
+    }
     public Vector3 GetEyePos()
     {
         //if(HasInputAuthority)

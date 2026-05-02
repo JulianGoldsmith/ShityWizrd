@@ -2611,7 +2611,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7532608151074762406, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3454,7 +3454,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7532608151074762406, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5755,6 +5755,10 @@ PrefabInstance:
       propertyPath: SortKey
       value: 3422515312
       objectReference: {fileID: 0}
+    - target: {fileID: 4480425943024258786, guid: 0c7d9fbe5c0d35748a058bf3856d18f7, type: 3}
+      propertyPath: dragStength
+      value: 50
+      objectReference: {fileID: 0}
     - target: {fileID: 5129134168091289256, guid: 0c7d9fbe5c0d35748a058bf3856d18f7, type: 3}
       propertyPath: SortKey
       value: 3290587567
@@ -6397,8 +6401,6 @@ GameObject:
   - component: {fileID: 1637512529}
   - component: {fileID: 1637512530}
   - component: {fileID: 1637512531}
-  - component: {fileID: 1637512533}
-  - component: {fileID: 1637512532}
   m_Layer: 0
   m_Name: PhotonObject
   m_TagString: Untagged
@@ -6537,37 +6539,6 @@ MonoBehaviour:
   OnObjectExitAOI:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &1637512532
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1637512528}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 526b142195d343c39a9184405f9ed5e0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NetworkObject: {fileID: 0}
---- !u!114 &1637512533
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1637512528}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SortKey: 2561896034
-  ObjectInterest: 1
-  Flags: 262145
-  NestedObjects: []
-  NetworkedBehaviours: []
-  ForceRemoteRenderTimeframe: 0
 --- !u!1001 &1657924504
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6992,7 +6963,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7532608151074762406, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8057,6 +8028,8 @@ GameObject:
   - component: {fileID: 1974162381}
   - component: {fileID: 1974162383}
   - component: {fileID: 1974162384}
+  - component: {fileID: 1974162385}
+  - component: {fileID: 1974162386}
   m_Layer: 0
   m_Name: GameController
   m_TagString: Untagged
@@ -8086,6 +8059,7 @@ MonoBehaviour:
   levelNetworkController: {fileID: 1974162382}
   textDisplay: {fileID: 882835090}
   spellStateManager: {fileID: 0}
+  xPBDGlobalManager: {fileID: 0}
 --- !u!4 &1974162380
 Transform:
   m_ObjectHideFlags: 0
@@ -8121,6 +8095,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 1974162382}
   - {fileID: 1974162383}
+  - {fileID: 1974162385}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &1974162382
 MonoBehaviour:
@@ -8166,6 +8141,94 @@ MonoBehaviour:
   capsuleMesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
   cylinderMesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
   instancedMaterial: {fileID: 2100000, guid: a635fe365d203e34d80a9fc3271a71ea, type: 2}
+--- !u!114 &1974162385
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1974162378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33325dc13a59adf4a97ca6ded280fce1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  iterations: 4
+  enableSolver: 1
+  registeredRagdolls: []
+  _NetworkedTempJoints: []
+  _NetworkedGrabJoints: []
+  distanceComplianceCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 10
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  recoilTensionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 5
+      value: 0
+      inSlope: -0.0004358629
+      outSlope: -0.0004358629
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.034151126
+    - serializedVersion: 3
+      time: 25
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  dragRange: 10
+--- !u!114 &1974162386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1974162378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fa2d0275004527428d388a05d104177, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  runner: {fileID: 0}
 --- !u!1001 &1976166661
 PrefabInstance:
   m_ObjectHideFlags: 0

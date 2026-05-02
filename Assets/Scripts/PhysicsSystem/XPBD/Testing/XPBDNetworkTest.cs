@@ -1,5 +1,6 @@
 using UnityEngine;
 using Fusion;
+using System.Collections.Generic;
 public class XPBDNetworkTest : NetworkBehaviour
 {
     public XPBDPosAndRotSolver posAndRotSolver;
@@ -7,12 +8,12 @@ public class XPBDNetworkTest : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         base.FixedUpdateNetwork();
-        posAndRotSolver.SolveJointTick(Runner.DeltaTime);
     }
 
     public override void Spawned()
     {
         base.Spawned();
+        GameController.Instance.xPBDGlobalManager.registeredRagdolls.Add(posAndRotSolver);
         Runner.SetIsSimulated(this.Object, true);
         foreach(XPBDTestJoint j in posAndRotSolver.joints)
         {

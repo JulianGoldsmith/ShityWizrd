@@ -24,16 +24,19 @@ public class DraggableItem : InteractableItem
 
     public bool isCharacterObject = false;
 
+    private XPBDGlobalManager _globalManager;
+
     public override void Spawned()
     {
         rb = GetComponent<Rigidbody>();
         networkedRB = this.GetComponent<NetworkRigidbody3D>();
         Runner.SetIsSimulated(this.Object, true);
+        _globalManager = FindObjectOfType<XPBDGlobalManager>();
     }
 
     public override void FixedUpdateNetwork()
     {
-
+        return; //tmp 
         Vector3 forceToAdd = Vector3.zero;
         Vector3 torqueToAdd = Vector3.zero;
 
@@ -327,11 +330,39 @@ public class DraggableItem : InteractableItem
             // Use the index of the first empty slot we found.
             CurrentHoldingPlayers.Set(firstEmptySlot, playerObjectToAdd);
 
-            var handPos = _playerObjectToAdd.GetComponent<NetworkedHandsController>().rightHand.transformNet.transform.position;
+            if (_globalManager != null && _playerObjectToAdd.TryGetComponent(out HybridCharacterController controller))
+            {
+                var hands = _playerObjectToAdd.GetComponent<NetworkedHandsController>();
 
-            transform.InverseTransformPoint(handPos);
+                // 1. Where did the crosshair hit the object?
+                Vector3 handPos = hands.rightHand.transformNet.transform.position;
+                Vector3 localGrabPos = transform.InverseTransformPoint(handPos);
 
-            LocalGrabPos.Set(firstEmptySlot, transform.InverseTransformPoint(handPos));
+                // 2. How far away is the object from the camera right now?
+                Vector3 eyePos = controller.GetEyePosSim();
+                float distance = Vector3.Distance(eyePos, rb.worldCenterOfMass); // Or handPos, depending on preference
+
+                // 3. How is the object rotated relative to the camera right now?
+                Quaternion snapshotRot = Quaternion.Inverse(controller.lookRot) * rb.rotation;
+
+                // 4. Create the Network Struct
+                NetworkGrabJoint newGrab = new NetworkGrabJoint()
+                {
+                    grabberId = _playerObjectToAdd.Id,
+                    itemId = this.Object.Id,
+                    localGrabOffset = localGrabPos,
+                    grabDistance = distance,
+                    targetLocalRotation = snapshotRot,
+
+                    // Route your hand variables directly into the XPBD solver!
+                    grabStrength = controller.dragStength,
+                    grabDamping = controller.grabDamping,
+                    dragResistance = controller.playerDragResistance
+                };
+
+                // 5. Send to the Global Physics God
+                _globalManager.AddGrabJoint(newGrab);
+            }
 
             Debug.Log($"Added player {playerObjectToAdd.PlayerId} to slot {firstEmptySlot} of draggable item '{this.name}'.");
         }
@@ -351,7 +382,10 @@ public class DraggableItem : InteractableItem
             if (CurrentHoldingPlayers[i] == playerObjectToRemove)
             {
                 CurrentHoldingPlayers.Set(i, PlayerRef.None);
-
+                if (_globalManager != null)
+                {
+                    _globalManager.RemoveGrabJoint(_playerObjectToRemove.Id, this.Object.Id);
+                }
                 Debug.Log($"Removed player {playerObjectToRemove.PlayerId} from slot {i} of draggin items for {this.name}.");
                 return;
             }
@@ -369,6 +403,10 @@ public class DraggableItem : InteractableItem
         {
             hands.RightHandMode = TargetingMode.ARMATURE;
             hands.SetHandTarget_ToArmature(false);
+        }
+        if (_globalManager != null)
+        {
+            _globalManager.RemoveGrabJoint(playerObject.Id, this.Object.Id);
         }
     }
 }

@@ -30,6 +30,7 @@ public class GameController : MonoBehaviour
 
     public SpellStateManager spellStateManager;
 
+    public XPBDGlobalManager xPBDGlobalManager;
 
     private void Awake()
     {
@@ -52,6 +53,10 @@ public class GameController : MonoBehaviour
         if(spellStateManager == null)
         {
             spellStateManager = GetComponent<SpellStateManager>();
+        }
+        if(xPBDGlobalManager == null)
+        {
+            xPBDGlobalManager = GetComponent<XPBDGlobalManager>();
         }
         StatusEffectRegistry.Initialize();
     }
