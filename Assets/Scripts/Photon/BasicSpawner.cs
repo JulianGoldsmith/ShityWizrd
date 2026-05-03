@@ -34,6 +34,9 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [Tooltip("X-axis: 0 to 1 (Progress). Y-axis: 1 to 0 (Multiplier).")]
     public AnimationCurve decayCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
 
+    public bool spawnPlayers = true;
+    public bool showLevelGen = false;
+
     public static NetworkObject Spawn(NetworkPrefabRef prefab, Vector3 pos, Quaternion rot, NetworkRunner.OnBeforeSpawned onBeforeSpawned = null)
     {
         // Deal with spawning objects.
@@ -59,6 +62,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (runner.IsServer)
         {
+            if (!spawnPlayers) return;
             // Create a unique position for the player
             Vector3 spawnPosition;
 
@@ -208,7 +212,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
                 GUI.Label(new Rect(0, 0, 200, 40), $"Ping: {displayedPing} ms");
             }
 
-            if (_runner.IsServer && GameController.Instance != null)
+            if (_runner.IsServer && GameController.Instance != null && showLevelGen)
             {
                 if (GameController.Instance.levelGenerator != null)
                 {

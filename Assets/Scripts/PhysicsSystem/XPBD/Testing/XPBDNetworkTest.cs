@@ -13,7 +13,8 @@ public class XPBDNetworkTest : NetworkBehaviour
     public override void Spawned()
     {
         base.Spawned();
-        GameController.Instance.xPBDGlobalManager.registeredRagdolls.Add(posAndRotSolver);
+        GameController.Instance.xPBDGlobalManager.RegisterRagdoll(posAndRotSolver);
+       // GameController.Instance.xPBDGlobalManager.registeredRagdolls.Add(posAndRotSolver);
         Runner.SetIsSimulated(this.Object, true);
         foreach(XPBDTestJoint j in posAndRotSolver.joints)
         {

@@ -496,7 +496,7 @@ public class SpellStateManager : NetworkBehaviour
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SpellStateManager] Failed to load static spell at index {i + 1}: {e.Message}");
+                Debug.LogWarning($"[SpellStateManager] Failed to load static spell at index {i + 1}: {e.Message}");
             }
         }
     }
