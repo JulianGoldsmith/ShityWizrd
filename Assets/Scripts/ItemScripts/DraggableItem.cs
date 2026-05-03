@@ -8,19 +8,6 @@ public class DraggableItem : InteractableItem
 {
     [HideInInspector]
     public Rigidbody rb;
-    public float dampening = 10f;
-    public float rotationalDampening = 0.1f;
-
-    [Networked, OnChangedRender(nameof(PickUpOrDropItem))] public int HolderChangedCount { get; set; } //int that increments everytime someone picks up or drops an item
-    [Networked, Capacity(6)] public NetworkArray<PlayerRef> CurrentHoldingPlayers { get; }
-        = MakeInitializer(new PlayerRef[] { PlayerRef.None, PlayerRef.None, PlayerRef.None, PlayerRef.None, PlayerRef.None, PlayerRef.None });
-
-    [Networked, Capacity(6)] public NetworkArray<Vector3> LocalGrabPos { get; } 
-        = MakeInitializer(new Vector3[] { Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero });
-
-
-    public bool _localPendingDrop;
-    private int _removeIATick = -1;
 
     public bool isCharacterObject = false;
 
@@ -36,131 +23,8 @@ public class DraggableItem : InteractableItem
 
     public override void FixedUpdateNetwork()
     {
-        return; //tmp 
-        Vector3 forceToAdd = Vector3.zero;
-        Vector3 torqueToAdd = Vector3.zero;
-
-        int numberOfHolders = 0;
-        for(int i = 0; i < CurrentHoldingPlayers.Length; i++)
-        {
-            PlayerRef playerRef = CurrentHoldingPlayers[i];
-
-            if (playerRef == PlayerRef.None)
-            {
-                continue;
-            }
-
-            if (!Runner.TryGetPlayerObject(playerRef, out NetworkObject player) || player == null)
-            {
-                continue;
-            }
-
-            bool isLocalHolder = (CurrentHoldingPlayers[i] == Runner.LocalPlayer);
-
-            if (_localPendingDrop && HasInputAuthority && isLocalHolder)
-            {
-                continue;
-            }
-
-            if(!player.TryGetComponent(out NetworkedInventoryManager inv)){
-                continue;
-            }
-
-            if (inv._dragTargetPos == Vector3.zero)
-            {
-                continue;
-            }
-
-            numberOfHolders = numberOfHolders+1;
-
-            var controller = player.GetComponent<HybridCharacterController>();
-            var handController = player.GetComponent<NetworkedHandsController>();
-
-            Vector3 targetHoldPos = inv._dragTargetPos;
-
-            Vector3 positionError = targetHoldPos - rb.worldCenterOfMass;
-            float distance = positionError.magnitude;
-
-            float strengthMultiplier = handController.dragStrengthCurve.Evaluate(Mathf.Clamp01(distance / handController.dragRange));
-            Vector3 springForce = positionError * handController.dragStength * strengthMultiplier;
-
-            Vector3 actualForceOnObject = Vector3.ClampMagnitude(springForce, handController.maxDragStrength);
-
-            forceToAdd += actualForceOnObject;
-
-            float targetDistanceToPlayer = (targetHoldPos - handController.rightHand.shoulderTransform.position).magnitude;
-            float actualDistanceToPlayer = (rb.worldCenterOfMass - handController.rightHand.shoulderTransform.position).magnitude;
-            float dist = actualDistanceToPlayer - targetDistanceToPlayer;
-            Debug.Log("Dist " + dist);
-            if (dist > 0)
-            {
-                Vector3 tensionForce = (rb.worldCenterOfMass - handController.rightHand.shoulderTransform.position).normalized * (dist) * handController.handElasticForceOnPlayer.Evaluate(dist/handController.maxDistanceBeforeMaxElasticForce) * 10f;
-                controller.hipsRb.AddForce(tensionForce / controller.totalMass, ForceMode.Acceleration);
-            }
-
-            //controller.pdBones[0].childRigidbody.AddForceAtPosition(tensionForce * actualForceOnObject.magnitude / 5f, handController.rightHand.shoulderTransform.position, ForceMode.Acceleration);
-
-            //if (actualForceOnObject.magnitude > handController.maxDragStrength * handController.maxStableStrengthRatio)
-            //{
-            //    Vector3 forceOnPlayer = -(actualForceOnObject.magnitude - (handController.maxDragStrength * handController.maxStableStrengthRatio)) * actualForceOnObject.normalized;
-            //    controller.pdBones[0].childRigidbody.AddForceAtPosition((forceOnPlayer / controller.pdBones[0].childRigidbody.mass) / 2f, transform.position, ForceMode.Acceleration);
-            //}
-
-            //Vector3 forceOnPlayer = -actualForceOnObject / (controller.totalMass);
-            //controller.hipsRb.AddForce(forceOnPlayer, ForceMode.Acceleration);
-
-            //rotation
-
-            Vector3 facing = inv._dragFacingDir;
-            if (facing.sqrMagnitude > 0.001f)
-            {
-                Vector3 currentDirection = (transform.TransformPoint(LocalGrabPos[i]) - rb.worldCenterOfMass).normalized;
-                Vector3 targetDirection = facing.normalized;
-
-                if (currentDirection.sqrMagnitude > 0.01f && targetDirection.sqrMagnitude > 0.01f)
-                {
-                    Quaternion rotationError = Quaternion.FromToRotation(currentDirection, targetDirection);
-
-                    rotationError.ToAngleAxis(out float angleInDeg, out Vector3 axis);
-                    if (angleInDeg > 180) angleInDeg -= 360;
-                    float normalizedAngleError = Mathf.Clamp01(Mathf.Abs(angleInDeg) / 180);
-
-                    float rotationMultiplier = handController.dragRotationStrengthCurve.Evaluate(normalizedAngleError);
-
-                    Vector3 rotationalSpringForce = axis * (angleInDeg * Mathf.Deg2Rad) * handController.dragRotationalStrength * rotationMultiplier;
-                    torqueToAdd += rotationalSpringForce;
-                }
-            }
-        }
-        
-
-        if(numberOfHolders > 0)
-        {
-            Debug.Log($"{numberOfHolders} Holders of {this.name}");
-            Vector3 damp = rb.linearVelocity * dampening * rb.mass;
-            rb.AddForce(forceToAdd , ForceMode.Force);
-
-            Vector3 angularDamp = rb.angularVelocity * rotationalDampening;
-            rb.AddTorque(torqueToAdd - angularDamp);
-        }
-
-
 
     }
-
-
-    void DetermineInputAuth(int numberOfHolders, PlayerRef primaryHolder)
-    {
-        if(numberOfHolders > 1)
-        {
-            this.GetComponent<NetworkObject>().RemoveInputAuthority();
-        }
-        else if(numberOfHolders == 1 && !isCharacterObject)
-        {
-            this.GetComponent<NetworkObject>().AssignInputAuthority(primaryHolder);
-        }
-    }
-
 
     public Vector3 GetPlayerTargetHoldPos(NetworkObject playerObj, out Vector3 dragFacingDir)
     {
@@ -203,210 +67,51 @@ public class DraggableItem : InteractableItem
         return dragTargetPos;
     }
 
-    public void PickUpOrDropItem() //runs for this item on eveyones game
-    {
-        //loop through each player
-        //if the networked array holds this player Id && were not dragging then this player registers they are "dragging" this items so we call PickUpItem locally on everyones game
-        //if the networked array dosnt hold this player Id && were are draggin then call drop item 
-        if (_localPendingDrop) _localPendingDrop = false;
-        // Debug.Log($"picked up or drag called on local player");
-        if (HasStateAuthority) return;
-        if (HasInputAuthority) return;
-        if (IsProxy) return;  //this dosnt actually run now but ive left it incase
-        
-        //after looking at this again i think this dosnt need to run at all as the state is now networked i think ive over complicated things
-
-        foreach (PlayerRef p in Runner.ActivePlayers)
-        {
-            //Debug.Log($"looping through active players");
-            
-
-            bool holding = false;
-            foreach (PlayerRef playerCurrentlyHolding in CurrentHoldingPlayers)
-            {
-                //  Debug.Log($"Id for player and holding player {p.PlayerId} and  {playerCurrentlyHolding.PlayerId}");
-                //Debug.Log($"looping playerCurrentlyHolding found {playerCurrentlyHolding.PlayerId}");
-                if (p == playerCurrentlyHolding)
-                {
-                    //Debug.Log("Id match");
-                    holding = true; 
-                }
-            }
-
-            if (!Runner.TryGetPlayerObject(p, out var player)) continue;
-
-            Debug.Log($"pickup called for {player.Id}");
-
-            if (holding)
-            {
-                if(player.GetComponent<NetworkedInventoryManager>().currentItemInHand == null)
-                {
-                    PickUpItem(player);
-                    Debug.Log($"pickup called for {player.Id}");
-                }
-            }
-            else
-            {
-                if (player.GetComponent<NetworkedInventoryManager>().currentItemInHand != null)
-                {
-                    DropItem(player, player.HasInputAuthority, player.HasStateAuthority);
-                    Debug.Log($"Drop called for {player.Id}");
-                }
-            }
-        }
-    }
-
     public override void PickUpItem(NetworkObject playerObject)
     {
-        //if we have state auth then we increment HolderChangedCount and add the playerObject's localPlayerId to the networkArray
+       // networkedRB.RBIsKinematic = false; // (Or true, depending on if you want unity physics off)
 
-        if (true) //if we the server
+        if (_globalManager != null && playerObject.TryGetComponent(out HybridCharacterController controller))
         {
-            if(TryGetComponent<PhysicsObject>(out PhysicsObject PO))
-            {
-                PO.lastInteractor = playerObject;
-            }
-            HolderChangedCount++;
-            AddPlayerToCurrentHoldingPlayers(playerObject);
-            if (playerObject.TryGetComponent<NetworkedHandsController>(out NetworkedHandsController hands))
-            {
-                hands.RightHandMode = TargetingMode.DRAGG;
-                ///////////////////////////MAKE DRAGGG///////////
-            }
-            playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = this.GetComponent<NetworkObject>();
-            Debug.Log($"picked up draggable item and currentItemInHand is {playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand.name}");
-            //set the player's hand controller to dragging. 
+            var hands = playerObject.GetComponent<NetworkedHandsController>();
+            hands.RightHandMode = TargetingMode.DRAGG;
 
-            //if(!isCharacterObject)
-            //    this.GetComponent<NetworkObject>().AssignInputAuthority(playerObject.InputAuthority);
+            Vector3 handPos = hands.rightHand.transformNet.transform.position;
+            Vector3 localGrabPos = transform.InverseTransformPoint(handPos);
+            Vector3 eyePos = controller.GetEyePosSim();
+            float distance = Vector3.Distance(eyePos, rb.worldCenterOfMass);
+            Quaternion snapshotRot = Quaternion.Inverse(controller.lookRot) * rb.rotation;
+
+            NetworkGrabJoint newGrab = new NetworkGrabJoint()
+            {
+                grabberId = playerObject.Id,
+                itemId = this.Object.Id,
+                localGrabOffset = localGrabPos,
+                grabDistance = distance,
+                targetLocalRotation = snapshotRot,
+                grabStrength = controller.dragStength,
+                grabDamping = controller.grabDamping, // (or controller.grabDamping)
+                dragResistance = controller.playerDragResistance,
+            };
+
+            _globalManager.AddGrabJoint(newGrab);
         }
     }
 
-    public override void DropItem(NetworkObject playerObject, bool playerHasInputAuthority, bool playerHasStateAuthority) //note playerHasInputAut is different to this object
+    public override void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority)
     {
-        if (playerHasInputAuthority)
+        if (_globalManager != null)
         {
-            LocalImmediateDrop(playerObject);
+            _globalManager.RemoveGrabJoint(playerObject.Id, this.Object.Id);
         }
-
-        if (HasStateAuthority) //if we the server
-        {
-            HolderChangedCount++;
-            RemovePlayerFromCurrentHoldingPlayers(playerObject);
-
-            if (playerObject.TryGetComponent<NetworkedHandsController>(out NetworkedHandsController hands))
-            {
-                hands.RightHandMode = TargetingMode.ARMATURE;
-                hands.SetHandTarget_ToArmature(false);
-            }
-
-            playerObject.GetComponent<NetworkedInventoryManager>().currentItemInHand = null;
-
-            _removeIATick = Runner.Tick + 1;
-        }
-    }
-
-    public void AddPlayerToCurrentHoldingPlayers(NetworkObject _playerObjectToAdd)
-    {
-        PlayerRef playerObjectToAdd = _playerObjectToAdd.InputAuthority;
-
-        int firstEmptySlot = -1;
-
-        for (int i = 0; i < CurrentHoldingPlayers.Length; i++ )
-        {
-            if (CurrentHoldingPlayers[i] == playerObjectToAdd)
-            {
-                Debug.LogWarning($"Player {playerObjectToAdd.PlayerId} is already in the CurrentHoldingPlayers array. No action taken.");
-                return;
-            }
-            if (firstEmptySlot == -1 && CurrentHoldingPlayers[i] == PlayerRef.None)
-            {
-                firstEmptySlot = i;
-            }
-        }
-
-        if (firstEmptySlot != -1)
-        {
-            // Use the index of the first empty slot we found.
-            CurrentHoldingPlayers.Set(firstEmptySlot, playerObjectToAdd);
-
-            if (_globalManager != null && _playerObjectToAdd.TryGetComponent(out HybridCharacterController controller))
-            {
-                var hands = _playerObjectToAdd.GetComponent<NetworkedHandsController>();
-
-                // 1. Where did the crosshair hit the object?
-                Vector3 handPos = hands.rightHand.transformNet.transform.position;
-                Vector3 localGrabPos = transform.InverseTransformPoint(handPos);
-
-                // 2. How far away is the object from the camera right now?
-                Vector3 eyePos = controller.GetEyePosSim();
-                float distance = Vector3.Distance(eyePos, rb.worldCenterOfMass); // Or handPos, depending on preference
-
-                // 3. How is the object rotated relative to the camera right now?
-                Quaternion snapshotRot = Quaternion.Inverse(controller.lookRot) * rb.rotation;
-
-                // 4. Create the Network Struct
-                NetworkGrabJoint newGrab = new NetworkGrabJoint()
-                {
-                    grabberId = _playerObjectToAdd.Id,
-                    itemId = this.Object.Id,
-                    localGrabOffset = localGrabPos,
-                    grabDistance = distance,
-                    targetLocalRotation = snapshotRot,
-
-                    // Route your hand variables directly into the XPBD solver!
-                    grabStrength = controller.dragStength,
-                    grabDamping = controller.grabDamping,
-                    dragResistance = controller.playerDragResistance
-                };
-
-                // 5. Send to the Global Physics God
-                _globalManager.AddGrabJoint(newGrab);
-            }
-
-            Debug.Log($"Added player {playerObjectToAdd.PlayerId} to slot {firstEmptySlot} of draggable item '{this.name}'.");
-        }
-        else
-        {
-            // If firstEmptySlot is still -1, the array is full.
-            Debug.LogWarning($"Could not add player {playerObjectToAdd.PlayerId}, the CurrentHoldingPlayers array for '{this.name}' is full.");
-        }
-    }
-
-    public void RemovePlayerFromCurrentHoldingPlayers(NetworkObject _playerObjectToRemove)
-    {
-        PlayerRef playerObjectToRemove = _playerObjectToRemove.InputAuthority;
-
-        for (int i = 0; i < CurrentHoldingPlayers.Length; i++)
-        {
-            if (CurrentHoldingPlayers[i] == playerObjectToRemove)
-            {
-                CurrentHoldingPlayers.Set(i, PlayerRef.None);
-                if (_globalManager != null)
-                {
-                    _globalManager.RemoveGrabJoint(_playerObjectToRemove.Id, this.Object.Id);
-                }
-                Debug.Log($"Removed player {playerObjectToRemove.PlayerId} from slot {i} of draggin items for {this.name}.");
-                return;
-            }
-        }
-    }
-
-
-
-
-    public void LocalImmediateDrop(NetworkObject playerObject)
-    {
-        _localPendingDrop = true;
 
         if (playerObject.TryGetComponent<NetworkedHandsController>(out var hands))
         {
             hands.RightHandMode = TargetingMode.ARMATURE;
             hands.SetHandTarget_ToArmature(false);
         }
-        if (_globalManager != null)
-        {
-            _globalManager.RemoveGrabJoint(playerObject.Id, this.Object.Id);
-        }
+
     }
+
+
 }

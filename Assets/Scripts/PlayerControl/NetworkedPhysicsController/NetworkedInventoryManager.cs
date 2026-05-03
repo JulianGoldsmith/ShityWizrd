@@ -30,12 +30,6 @@ public class NetworkedInventoryManager : NetworkBehaviour
     [Networked] public Vector3 localHandPosOnItem { get; set; }
 
     Quaternion lookRotation;
-
-    [Header("Networking Inputs")]
-    [Networked] public int PickUpPressCount { get; set; }
-    int lastPickUpCount;
-    [Networked] public int DropPressCount { get; set; }
-    int lastDropCount;
     [Networked] NetworkButtons Prior_buttons { get; set; }
 
     [Networked] public Vector3 _dragTargetPos { get; set; }
@@ -45,17 +39,12 @@ public class NetworkedInventoryManager : NetworkBehaviour
     {
         characterController = GetComponent<HybridCharacterController>();
 
-
     }
 
     public override void Spawned()
     {
-        lastPickUpCount = PickUpPressCount;
-        lastDropCount = DropPressCount;
-
         if (!HasInputAuthority)
             return;
-
         GameController.Instance.spellGraphController.inventory = this;
     }
 
@@ -69,27 +58,31 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             lookRotation = data.lookRotation;
 
+            if (currentItemInHand == null)
+            {
+                LookForItems();
+            }
 
             if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP)  )
             {
                 if(characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
-                    PickUpPressCount++;
+                    PickupItem();
             }
             if (data.buttons.WasReleased(Prior_buttons, EInputButton.DROP)  )
             {
                 if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
-                    DropPressCount++;
+                    DropItem();
             }
             Prior_buttons = data.buttons;
         }
 
         if (characterController.bonkController.BonkedState == BONKEDSTATE.BONKED)
         {
-            if(currentItemInHand != null)
+            if (currentItemInHand != null)
             {
                 DropItem();
             }
-            if(potentialItemToPickup != null)
+            if (potentialItemToPickup != null)
             {
                 potentialItemToPickup = null;
             }
@@ -99,54 +92,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         if (currentItemInHand != null && !currentItemInHand.gameObject.activeInHierarchy)
             currentItemInHand = null;
 
-        if (currentItemInHand == null)
-        {
-            LookForItems();
-        }
-       
-
-        if (!Object.IsProxy)
-        {
-            if (PickUpPressCount > lastPickUpCount)
-            {
-                lastPickUpCount++;
-                Debug.Log($"Lastpickup count = {lastPickUpCount} and PickUpPressCount = {PickUpPressCount} these should be the same");
-                PickupItem();
-            }
-            if (DropPressCount > lastDropCount)
-            {
-                lastDropCount++;
-                Debug.Log($"Last drop count = {lastDropCount} and DropPressCount = {DropPressCount} these should be the same");
-                DropItem();
-
-                //if (HasStateAuthority) {
-                //    DropItem();
-                //}
-                //else if(HasInputAuthority) 
-                //{
-                //    var rb = currentItemInHand.GetComponent<Rigidbody>();
-                //    var vel = rb.linearVelocity;
-                //    var ang = rb.angularVelocity;
-                //    var pos = rb.position;
-                //    var rot = rb.rotation;
-                //    var dropTick = Runner.Tick;
-
-                //   
-                //    LocalImmediateDrop(currentItemInHand);
-
-                //   
-                //    currentItemInHand.GetComponent<DraggableItem>().RPC_RequestDrop(dropTick, pos, rot, vel, ang, Object.InputAuthority);
-                //}
-
-            }
-        }
-    }
-
-
-    private void OnDrawGizmos()
-    {
-        //Gizmos.color = Color.green;
-       //Gizmos.DrawSphere(characterController.hipsRb.transform.position, pickupRadius);
+        
     }
 
     private void LookForItems()
@@ -158,7 +104,6 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hit, pickupRadius, itemLayer))
         {
-            //Debug.Log($"best candidate = {hit.collider.gameObject.name}");
             bestCandidate = hit.collider.GetComponent<InteractableItem>();
             overrideUpdatePos = true; //if finding by raycast it should be more accurate
         }
@@ -235,38 +180,25 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
     }
 
-    private void PickupItem() //only runs on state authority or input auth now (change this back to just state if not working)
+    private void PickupItem()
     {
         if (potentialItemToPickup == null) return;
 
         currentItemInHand = potentialItemToPickup;
         potentialItemToPickup = null;
-        if(currentItemInHand.TryGetBehaviour<EquipableItem>(out EquipableItem ei))
-        {
-          //  ei.HoldingPlayer = this.GetComponent<NetworkObject>();
-        }
-        currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>()); //meat and potatoes 
+        currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>());
     }
 
-    private void DropItem() //only runs on state authority
+    private void DropItem() 
     {
         if (currentItemInHand == null) return;
 
         InteractableItem droppedItem = currentItemInHand.GetComponent<InteractableItem>();
 
-        if (currentItemInHand.TryGetBehaviour<EquipableItem>(out EquipableItem ei))
-        {
-           // ei.HoldingPlayer = null;
-        }
         droppedItem.DropItem(this.GetComponent<NetworkObject>(), HasInputAuthority, HasStateAuthority);
 
         handController.DragDistance = 0;
 
-        if (HasStateAuthority)
-        {
-            currentItemInHand = null;
-        }
+        currentItemInHand = null;
     }
-
-    
 }
