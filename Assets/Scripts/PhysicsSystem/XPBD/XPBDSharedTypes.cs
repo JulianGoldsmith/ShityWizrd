@@ -159,7 +159,7 @@ public static class XPBDMath
     }
 
     public static void SolveSphericalPosition(XPBDState pState, XPBDState cState, Vector3 r0, Vector3 r1, Vector3 dir,
-        float alpha, float gamma, ref Vector3 lambdaPosition)
+        float alpha, float gamma, ref Vector3 lambdaPosition, float leverArmScale = 1.0f)
     {
         Vector3 dx0 = pState.p - pState.p_prev, dw0 = GetDeltaTheta(pState.q_prev, pState.q);
         Vector3 dx1 = cState.p - cState.p_prev, dw1 = GetDeltaTheta(cState.q_prev, cState.q);
@@ -192,18 +192,20 @@ public static class XPBDMath
             if (!pState.isKinematic)
             {
                 pState.p += pState.invMass * deltaLambda * gradP0;
-                ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * gradQ0, pState.q, pState.qInertia, pState.invInertiaLocal));
+                // THE LEAK: Multiply ONLY the rotation by the leverArmScale!
+                ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * gradQ0 * leverArmScale, pState.q, pState.qInertia, pState.invInertiaLocal));
             }
             if (!cState.isKinematic)
             {
                 cState.p += cState.invMass * deltaLambda * gradP1;
-                ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * gradQ1, cState.q, cState.qInertia, cState.invInertiaLocal));
+                // THE LEAK: Multiply ONLY the rotation by the leverArmScale!
+                ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * gradQ1 * leverArmScale, cState.q, cState.qInertia, cState.invInertiaLocal));
             }
         }
     }
 
     public static void SolveSphericalRotation(XPBDState pState, XPBDState cState, Quaternion targetQ,
-        float alpha, float gamma, ref Vector3 lambdaRotation)
+        float alpha, float gamma, ref Vector3 lambdaRotation, float parentRotationInfluence = 1.0f)
     {
         Quaternion qError = targetQ * Quaternion.Inverse(cState.q);
 
@@ -224,7 +226,7 @@ public static class XPBDMath
             Vector3 cAxis = axes[i];
             float C = Vector3.Dot(rotVec, cAxis);
 
-            float w0 = pState.isKinematic ? 0f : Vector3.Dot(cAxis, ApplyInvInertiaWorld(cAxis, pState.q, pState.qInertia, pState.invInertiaLocal));
+            float w0 = pState.isKinematic ? 0f : Vector3.Dot(cAxis, ApplyInvInertiaWorld(cAxis, pState.q, pState.qInertia, pState.invInertiaLocal)) * parentRotationInfluence;
             float w1 = cState.isKinematic ? 0f : Vector3.Dot(-cAxis, ApplyInvInertiaWorld(-cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
             float wSum = w0 + w1;
             if (wSum < 1e-6f) continue;
@@ -236,7 +238,7 @@ public static class XPBDMath
 
             if (i == 0) lambdaRotation.x += deltaLambda; else if (i == 1) lambdaRotation.y += deltaLambda; else lambdaRotation.z += deltaLambda;
 
-            if (!pState.isKinematic) ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * cAxis, pState.q, pState.qInertia, pState.invInertiaLocal));
+            if(!pState.isKinematic) ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * cAxis * parentRotationInfluence, pState.q, pState.qInertia, pState.invInertiaLocal));
             if (!cState.isKinematic) ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * -cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
         }
     }
@@ -334,7 +336,7 @@ public static class XPBDMath
         Quaternion rotDiff, Vector3 axisParentNorm,
         float minDeg, float maxDeg,
         float compliance, float damping, float dt,
-        ref float lambdaLimit)
+        ref float lambdaLimit, float parentRotationInfluence = 1.0f)
     {
         float angleDeg = GetAngleAroundAxis(rotDiff, axisParentNorm);
 
@@ -362,7 +364,7 @@ public static class XPBDMath
         float alpha = compliance / (dt * dt);
         float gamma = (alpha * (0.5f * dt * damping)) / dt;
 
-        float w0 = pState.isKinematic ? 0f : Vector3.Dot(gradP, ApplyInvInertiaWorld(gradP, pState.q, pState.qInertia, pState.invInertiaLocal));
+        float w0 = pState.isKinematic ? 0f : Vector3.Dot(gradP, ApplyInvInertiaWorld(gradP, pState.q, pState.qInertia, pState.invInertiaLocal)) * parentRotationInfluence;
         float w1 = cState.isKinematic ? 0f : Vector3.Dot(gradC, ApplyInvInertiaWorld(gradC, cState.q, cState.qInertia, cState.invInertiaLocal));
         float wSum = w0 + w1;
 
@@ -375,7 +377,7 @@ public static class XPBDMath
         lambdaLimit += deltaLambda;
 
         // Apply the corrected gradients to the bodies!
-        if (!pState.isKinematic) ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * gradP, pState.q, pState.qInertia, pState.invInertiaLocal));
+        if (!pState.isKinematic) ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * gradP * parentRotationInfluence, pState.q, pState.qInertia, pState.invInertiaLocal));
         if (!cState.isKinematic) ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * gradC, cState.q, cState.qInertia, cState.invInertiaLocal));
     }
 }

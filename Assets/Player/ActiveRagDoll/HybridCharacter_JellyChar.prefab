@@ -277,11 +277,11 @@ Animator:
   m_Avatar: {fileID: 9000000, guid: 3db26e6b0d9a68f48b157030b774f760, type: 3}
   m_Controller: {fileID: 0}
   m_CullingMode: 0
-  m_UpdateMode: 1
+  m_UpdateMode: 2
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_AnimatePhysics: 1
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -376,7 +376,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 401163698507315912}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2d8418b0b9634b1892b0268dd9c2743, type: 3}
   m_Name: 
@@ -799,18 +799,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!1 &611892313882257059
 GameObject:
@@ -1714,18 +1702,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &6688537883557615760
 MonoBehaviour:
@@ -2141,18 +2117,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!1 &1403407523279510926
 GameObject:
@@ -2603,18 +2567,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &6131588276227478974
 MonoBehaviour:
@@ -2712,9 +2664,9 @@ GameObject:
   - component: {fileID: 2204065667809111582}
   - component: {fileID: 4629630018618923149}
   - component: {fileID: 4081331116634787597}
-  - component: {fileID: 8400460405807038855}
   - component: {fileID: 1087551941607753607}
   - component: {fileID: 3635803465142382114}
+  - component: {fileID: 1760587690114921678}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -2783,12 +2735,12 @@ MonoBehaviour:
   rideSpringStrength: 100
   rideSpringDamper: 10
   suspensionCastRadius: 0.125
-  dragStength: 100
+  dragStength: 50
   grabDamping: 1
   playerDragResistance: 5
   maxWalkSpeed: 2.25
   maxSprintSpeed: 5
-  acceleration: 10
+  acceleration: 3
   braking: 10
   jumpForce: 5
   turnStrength: 100
@@ -2830,7 +2782,7 @@ MonoBehaviour:
   uprightDamp: 10
   netAnimator: {fileID: 0}
   targetAnimator: {fileID: 5367763451751236983}
-  finalAnimator: {fileID: 2660284122264214847}
+  visualAnimator: {fileID: 7502107928085943356}
   boneMapper: {fileID: 2693293064502896331}
   spineIKTarget: {fileID: 7768991424758246671}
   headOffset: {x: 0, y: 0, z: 0}
@@ -2952,7 +2904,8 @@ MonoBehaviour:
   cameraAnchorSmoothSpeed: 20
   handController: {fileID: 9045712812768551006}
   bonkController: {fileID: 0}
-  xpbdSolver: {fileID: 8400460405807038855}
+  xpbdSolver: {fileID: 0}
+  xpbdJointSolver: {fileID: 0}
   _AuthInputTick: 0
   inputSmoothingFactor: 0.1
 --- !u!114 &2693293064502896331
@@ -3562,8 +3515,6 @@ MonoBehaviour:
   _currentItemInHand: {fileID: 0}
   _potentialItemToPickup: {fileID: 0}
   _localHandPosOnItem: {x: 0, y: 0, z: 0}
-  _PickUpPressCount: 0
-  _DropPressCount: 0
   __dragTargetPos: {x: 0, y: 0, z: 0}
   __dragFacingDir: {x: 0, y: 0, z: 0}
 --- !u!114 &8374426935566782753
@@ -3670,9 +3621,10 @@ MonoBehaviour:
   armIKs:
   - {fileID: 3147677537925249661}
   - {fileID: 3703387793165805207}
-  _BonkedState: 0
-  bonkChangedThisUpdate: 0
   ragdollProxysRoot: {fileID: 4934047322141794123}
+  ragDollSolver: {fileID: 1760587690114921678}
+  _BonkTick: 0
+  _UnbonkTick: 0
 --- !u!114 &4629630018618923149
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3702,433 +3654,6 @@ MonoBehaviour:
   mainCamera: {fileID: 0}
   height: 1.5
   _CurrentDebugThreat: 0
---- !u!114 &8400460405807038855
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1481138972719167153}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 658d34e6331f0e646aaeea01ff89ffd6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  joints:
-  - parent: {fileID: 6006997495019278083}
-    child: {fileID: 2010255686653279327}
-    rb3d: {fileID: 3767396676275894626}
-    parentAnchorLocal: {x: 0, y: 0.34477454, z: -0.000000005656074}
-    childAnchorLocal: {x: -1.5571557e-15, y: 4.0450182e-10, z: -0.0000000055732756}
-    targetTransform: {fileID: 3209749074331946496}
-    jointActive: 1
-    po: {fileID: 6633720660449960508}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: -0.036217954, y: -0.00000013960677, z: 0.0000000050595896, w: 0.99934393}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0.0000000037228463, y: -1.8848447e-17, z: 5.2007574e-16, w: 1}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -45, y: 45}
-    swing1Limits: {x: -45, y: 45}
-    swing2Limits: {x: -20, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 1
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: 2.6645353e-15, y: 0.9973765, z: -0.07238839}
-    swing1AxisParent: {x: -0.00000027939686, y: 0.07238839, z: 0.9973765}
-    swing2AxisParent: {x: 1, y: 0.000000020225084, z: 0.00000027866386}
-  - parent: {fileID: 2010255686653279327}
-    child: {fileID: 7810365307095594437}
-    rb3d: {fileID: 2068868632083783361}
-    parentAnchorLocal: {x: 0.000000004502181, y: 0.38839287, z: 0.016113939}
-    childAnchorLocal: {x: -1.3340769e-20, y: -1.7486013e-14, z: 0.00000023469329}
-    targetTransform: {fileID: 7324967554987265396}
-    jointActive: 1
-    po: {fileID: 216459618862961754}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.00001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 1
-    restChildLocalRotation: {x: 0.03621793, y: 0.0000001396068, z: -0.0000000050595887, w: 0.99934393}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0.0000000014937243, y: 5.3067904e-24, z: -4.6597067e-22, w: 1}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -45, y: 45}
-    swing1Limits: {x: -45, y: 45}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 0.99999994
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: 0.000000020225077, y: 0.9973765, z: 0.07238834}
-    swing1AxisParent: {x: 0.00000027866392, y: -0.07238834, z: 0.9973765}
-    swing2AxisParent: {x: 1, y: 8.881784e-16, z: -0.00000027939691}
-  ragdollJoints:
-  - parent: {fileID: 2010255686653279327}
-    child: {fileID: 6101142755508974218}
-    rb3d: {fileID: 6339113199551495255}
-    parentAnchorLocal: {x: -0.1512003, y: 0.24266544, z: -0.0052776523}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    targetTransform: {fileID: 6483363119476739225}
-    jointActive: 1
-    po: {fileID: 216459618862961754}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: -0.53494394, y: 0.42836607, z: 0.52425027, w: 0.5054694}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000001}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 0
-    twistLimits: {x: -170, y: 90}
-    swing1Limits: {x: -90, y: 180}
-    swing2Limits: {x: -90, y: 180}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 0.99999994
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: 0.0833283, y: 0.071681224, z: -0.9939407}
-    swing1AxisParent: {x: -0.9882884, y: -0.12200676, z: -0.09165352}
-    swing2AxisParent: {x: -0.12783714, y: 0.9899375, z: 0.060674958}
-  - parent: {fileID: 2010255686653279327}
-    child: {fileID: 6246534985040638846}
-    rb3d: {fileID: 2407225106719026320}
-    parentAnchorLocal: {x: 0.1512003, y: 0.24266544, z: -0.005277738}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    targetTransform: {fileID: 3078145457548247495}
-    jointActive: 1
-    po: {fileID: 216459618862961754}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: -0.5321483, y: -0.4282409, z: -0.5273013, w: 0.50535274}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000001}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 0
-    twistLimits: {x: -170, y: 90}
-    swing1Limits: {x: -180, y: 90}
-    swing2Limits: {x: -90, y: 180}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 0.99999994
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: 0.07712614, y: -0.07717102, z: 0.99403024}
-    swing1AxisParent: {x: 0.98872155, y: -0.12245695, z: -0.08622121}
-    swing2AxisParent: {x: 0.12837954, y: 0.98946905, z: 0.06685584}
-  - parent: {fileID: 6101142755508974218}
-    child: {fileID: 5481002710832188955}
-    rb3d: {fileID: 2893546184362524742}
-    parentAnchorLocal: {x: 0.00000035762787, y: 0.2507495, z: -0.00000013038516}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    targetTransform: {fileID: 7745241035038913821}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: -0.024906375, y: -0.0069960374, z: 0.043698292, w: 0.99870986}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000001}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -90, y: 90}
-    swing1Limits: {x: -25, y: 150}
-    swing2Limits: {x: -175, y: 25}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 1.0000002
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: -0.086935334, y: 0.9949403, z: -0.050359912}
-    swing1AxisParent: {x: -0.016150756, y: 0.049137056, z: 0.99866146}
-    swing2AxisParent: {x: 0.996083, y: 0.08763232, z: 0.011797291}
-  - parent: {fileID: 6246534985040638846}
-    child: {fileID: 6363294540991803081}
-    rb3d: {fileID: 5175957042883489565}
-    parentAnchorLocal: {x: -0.00000008195639, y: 0.25063938, z: 0.000000048428774}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    targetTransform: {fileID: 3078145457548247495}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: -0.024781372, y: 0.003245384, z: -0.037324477, w: 0.9989907}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0.0034942052, y: -0.037307583, z: 0.024772977, w: 0.9989907}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -90, y: 90}
-    swing1Limits: {x: -150, y: 25}
-    swing2Limits: {x: -175, y: 20}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 1.0000002
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: 0.07441276, y: 0.9959855, z: -0.049754985}
-    swing1AxisParent: {x: 0.008334121, y: 0.04927046, z: 0.9987507}
-    swing2AxisParent: {x: 0.9971927, y: -0.074734464, z: -0.0046343133}
-  - parent: {fileID: 2010255686653279327}
-    child: {fileID: 8198824362954624908}
-    rb3d: {fileID: 6385770397196525003}
-    parentAnchorLocal: {x: -0.13971807, y: -0.3722423, z: -0.035642125}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    targetTransform: {fileID: 5552205477597068301}
-    jointActive: 1
-    po: {fileID: 216459618862961754}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: 0.9993478, y: -0.030799001, z: -0.0023593965, w: -0.018704379}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0, y: 0, z: 0, w: 1}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -90, y: 90}
-    swing1Limits: {x: -90, y: 90}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 0.99999994
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: -0.061646085, y: -0.9974031, z: -0.037239023}
-    swing1AxisParent: {x: -0.003563563, y: 0.037529696, z: -0.9992892}
-    swing2AxisParent: {x: 0.9980917, y: -0.061469566, z: -0.0058678677}
-  - parent: {fileID: 2010255686653279327}
-    child: {fileID: 7964538190193888579}
-    rb3d: {fileID: 7501283642854008574}
-    parentAnchorLocal: {x: 0.13971804, y: -0.3722423, z: -0.0356422}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    targetTransform: {fileID: 7489038466603675551}
-    jointActive: 1
-    po: {fileID: 216459618862961754}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: 0.9939485, y: 0.029178435, z: 0.104473785, w: -0.017329136}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000001}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -90, y: 90}
-    swing1Limits: {x: -90, y: 90}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 0.99999994
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: 0.061624598, y: -0.9976967, z: -0.02835177}
-    swing1AxisParent: {x: 0.20667182, y: 0.04054529, z: -0.9775698}
-    swing2AxisParent: {x: 0.97646767, y: 0.054382842, z: 0.2086944}
-  - parent: {fileID: 7964538190193888579}
-    child: {fileID: 5898820116323520833}
-    rb3d: {fileID: 4529699843610064920}
-    parentAnchorLocal: {x: 0.000000057742, y: 0.21328345, z: -0.000000110827386}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    targetTransform: {fileID: 2260425764659783714}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: 0.04014055, y: -0.10266148, z: 0.0029362724, w: 0.9939019}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000001}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -20, y: 20}
-    swing1Limits: {x: -20, y: 20}
-    swing2Limits: {x: -30, y: 170}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 1.0000004
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: -0.014078511, y: 0.99676025, z: 0.07918865}
-    swing1AxisParent: {x: -0.20383516, y: -0.080394424, z: 0.9756987}
-    swing2AxisParent: {x: 0.978904, y: -0.0024050437, z: 0.2043066}
-  - parent: {fileID: 8198824362954624908}
-    child: {fileID: 380827262451331305}
-    rb3d: {fileID: 8270905504867422628}
-    parentAnchorLocal: {x: -0.00000009033829, y: 0.21320821, z: -0.000000014901161}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    targetTransform: {fileID: 417777860803243168}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 800
-    rotationKd: 5
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: 0.03157884, y: 0.0006985559, z: 0.0011816148, w: 0.99950033}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: -9.450921e-11, y: 2.030283e-11, z: 0.0000000018122682, w: 1}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -20, y: 20}
-    swing1Limits: {x: -20, y: 20}
-    swing2Limits: {x: -30, y: 170}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 0.25
-    anchorParentInfluence: 0.5
-    bakedScale: 1.0000001
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: 0
-    lambdaRotation: 0
-    twistAxisParent: {x: -0.0023179296, y: 0.99800277, z: 0.06312777}
-    swing1AxisParent: {x: 0.0014710417, y: -0.06312446, z: 0.99800456}
-    swing2AxisParent: {x: 0.99999624, y: 0.0024061678, z: -0.0013217856}
-  distanceBiasScale: 1
-  distanceBiasScaleRagdoll: 0.5
-  iterations: 8
 --- !u!114 &1087551941607753607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4185,6 +3710,395 @@ MonoBehaviour:
   BindPoseClip: {fileID: 0}
   ForwardAxis: 2
   UpAxis: 1
+--- !u!114 &1760587690114921678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98afb7b7b205a62459986d866f51e5fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  complianceCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 10
+      inSlope: -9
+      outSlope: -9
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: -9
+      outSlope: -9
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  targetArmatureRoot: {fileID: 6635827893456137172}
+  joints:
+  - parent: {fileID: 6006997495019278083}
+    child: {fileID: 2010255686653279327}
+    parentAnchorLocal: {x: 0, y: 0.34477454, z: 0.000000009245087}
+    childAnchorLocal: {x: 0, y: 0, z: 0}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 4033882599428079034}
+    childTarget: {fileID: 3209749074331946496}
+    isRagdollJoint: 0
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 0
+    twistAxis: 1
+    forwardAxis: 2
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -90, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: -0.036217954, y: -0.00000013960677, z: 0.0000000050595896, w: 0.99934393}
+    twistAxisParent: {x: 2.6645353e-15, y: 0.9973765, z: -0.07238839}
+    swing1AxisParent: {x: 1, y: 0.000000020225084, z: 0.00000027866386}
+    swing2AxisParent: {x: 0.00000027939686, y: -0.07238839, z: -0.9973765}
+    leverArmScale: 0.1
+    parentRotationInfluence: 0.1
+  - parent: {fileID: 2010255686653279327}
+    child: {fileID: 7810365307095594437}
+    parentAnchorLocal: {x: 0.000000004502119, y: 0.388393, z: 0.016113713}
+    childAnchorLocal: {x: -8.470331e-22, y: 0.00000011920929, z: 8.881784e-15}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 3209749074331946496}
+    childTarget: {fileID: 7324967554987265396}
+    isRagdollJoint: 0
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 0
+    twistAxis: 1
+    forwardAxis: 2
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -90, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: 0.03621793, y: 0.0000001396068, z: -0.0000000050595887, w: 0.99934393}
+    twistAxisParent: {x: 0.000000020225077, y: 0.9973765, z: 0.07238834}
+    swing1AxisParent: {x: 1, y: 8.881784e-16, z: -0.00000027939691}
+    swing2AxisParent: {x: -0.00000027866392, y: 0.07238834, z: -0.9973765}
+    leverArmScale: 0.5
+    parentRotationInfluence: 0.5
+  - parent: {fileID: 2010255686653279327}
+    child: {fileID: 6101142755508974218}
+    parentAnchorLocal: {x: -0.15120031, y: 0.24266545, z: -0.005277766}
+    childAnchorLocal: {x: 0.000000118794695, y: 0.000000009844481, z: 0.0000000013284733}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 3209749074331946496}
+    childTarget: {fileID: 6483363119476739225}
+    isRagdollJoint: 1
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 1
+    twistAxis: 1
+    forwardAxis: 3
+    twistLimits: {x: -45, y: 90}
+    swing1Limits: {x: -16, y: 150}
+    swing2Limits: {x: -180, y: 121}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.3
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: -0.534944, y: 0.42836612, z: 0.5242503, w: 0.50546944}
+    twistAxisParent: {x: -0.9882884, y: -0.12200695, z: -0.09165348}
+    swing1AxisParent: {x: -0.1278371, y: 0.9899375, z: 0.060674734}
+    swing2AxisParent: {x: 0.08332807, y: 0.07168127, z: -0.9939407}
+    leverArmScale: 0.3
+    parentRotationInfluence: 0.3
+  - parent: {fileID: 6101142755508974218}
+    child: {fileID: 5481002710832188955}
+    parentAnchorLocal: {x: 0.000000080721136, y: 0.25074947, z: -0.000000136048}
+    childAnchorLocal: {x: -0.0000002384155, y: 0.0000000011993677, z: 2.164029e-10}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 6483363119476739225}
+    childTarget: {fileID: 7745241035038913821}
+    isRagdollJoint: 1
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 1
+    twistAxis: 1
+    forwardAxis: 3
+    twistLimits: {x: -90, y: 180}
+    swing1Limits: {x: 5, y: 170}
+    swing2Limits: {x: -180, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.3
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: -0.024906382, y: -0.0069960393, z: 0.0436983, w: 0.9987101}
+    twistAxisParent: {x: -0.08693537, y: 0.9949403, z: -0.050359942}
+    swing1AxisParent: {x: -0.016150763, y: 0.04913708, z: 0.99866146}
+    swing2AxisParent: {x: 0.996083, y: 0.08763236, z: 0.011797298}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+  - parent: {fileID: 2010255686653279327}
+    child: {fileID: 6246534985040638846}
+    parentAnchorLocal: {x: 0.15120018, y: 0.24266545, z: -0.00527785}
+    childAnchorLocal: {x: -0.00000012804686, y: -0.00000010867016, z: -0.000000014714505}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 3209749074331946496}
+    childTarget: {fileID: 3078145457548247495}
+    isRagdollJoint: 1
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 1
+    twistAxis: 1
+    forwardAxis: 0
+    twistLimits: {x: -90, y: 45}
+    swing1Limits: {x: -150, y: 16}
+    swing2Limits: {x: -180, y: 121}
+    isMirroredBasis: 1
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.3
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: -0.53214836, y: -0.42824095, z: -0.5273014, w: 0.5053528}
+    twistAxisParent: {x: 0.98872143, y: -0.12245715, z: -0.08622117}
+    swing1AxisParent: {x: 0.12837957, y: 0.98946905, z: 0.06685559}
+    swing2AxisParent: {x: 0.07712588, y: -0.077171, z: 0.99403036}
+    leverArmScale: 0.3
+    parentRotationInfluence: 0.3
+  - parent: {fileID: 6246534985040638846}
+    child: {fileID: 6363294540991803081}
+    parentAnchorLocal: {x: -0.000000044814577, y: 0.25063938, z: 0.000000045237442}
+    childAnchorLocal: {x: -0.000000029802237, y: 7.106227e-11, z: 1.2824408e-11}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 3078145457548247495}
+    childTarget: {fileID: 5658626983444230188}
+    isRagdollJoint: 1
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 1
+    twistAxis: 1
+    forwardAxis: 0
+    twistLimits: {x: -180, y: 90}
+    swing1Limits: {x: -170, y: -5}
+    swing2Limits: {x: -180, y: 10}
+    isMirroredBasis: 1
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.3
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: -0.024781382, y: 0.0032453851, z: -0.03732449, w: 0.998991}
+    twistAxisParent: {x: 0.07441281, y: 0.9959855, z: -0.04975502}
+    swing1AxisParent: {x: 0.008334126, y: 0.049270492, z: 0.9987507}
+    swing2AxisParent: {x: 0.9971927, y: -0.07473451, z: -0.0046343165}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+  - parent: {fileID: 2010255686653279327}
+    child: {fileID: 8198824362954624908}
+    parentAnchorLocal: {x: -0.13971807, y: -0.37224233, z: -0.035641942}
+    childAnchorLocal: {x: -2.5078856e-10, y: 0.0000000062690524, z: -0.00000017870383}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 3209749074331946496}
+    childTarget: {fileID: 5552205477597068301}
+    isRagdollJoint: 1
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 1
+    twistAxis: 1
+    forwardAxis: 5
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -20, y: 110}
+    swing2Limits: {x: -60, y: 70}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.3
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: 0.9993478, y: -0.030799001, z: -0.0023593965, w: -0.018704379}
+    twistAxisParent: {x: -0.061646085, y: -0.9974031, z: -0.037239023}
+    swing1AxisParent: {x: -0.9980917, y: 0.061469566, z: 0.0058678677}
+    swing2AxisParent: {x: -0.003563563, y: 0.037529696, z: -0.9992892}
+    leverArmScale: 0.3
+    parentRotationInfluence: 0.3
+  - parent: {fileID: 2010255686653279327}
+    child: {fileID: 7964538190193888579}
+    parentAnchorLocal: {x: 0.13971806, y: -0.37224233, z: -0.03564202}
+    childAnchorLocal: {x: 0.00000003651568, y: 0.000000007857855, z: -0.00000017486933}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 3209749074331946496}
+    childTarget: {fileID: 7489038466603675551}
+    isRagdollJoint: 1
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 1
+    twistAxis: 1
+    forwardAxis: 5
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -110, y: 20}
+    swing2Limits: {x: -60, y: 70}
+    isMirroredBasis: 1
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.3
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: 0.99394864, y: 0.029178439, z: 0.10447379, w: -0.017329138}
+    twistAxisParent: {x: 0.061624583, y: -0.9976967, z: -0.028351763}
+    swing1AxisParent: {x: 0.97646767, y: 0.054382857, z: 0.20869443}
+    swing2AxisParent: {x: -0.20667174, y: -0.04054528, z: 0.9775698}
+    leverArmScale: 0.3
+    parentRotationInfluence: 0.3
+  - parent: {fileID: 8198824362954624908}
+    child: {fileID: 380827262451331305}
+    parentAnchorLocal: {x: -0.00000008847734, y: 0.21320824, z: -0.00000013317158}
+    childAnchorLocal: {x: 3.366335e-13, y: -0.0000000033493743, z: -0.00000011916223}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 5552205477597068301}
+    childTarget: {fileID: 417777860803243168}
+    isRagdollJoint: 1
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 1
+    twistAxis: 1
+    forwardAxis: 5
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -160, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: 0.03157884, y: 0.00069855584, z: 0.0011816148, w: 0.9995003}
+    twistAxisParent: {x: -0.0023179296, y: 0.99800277, z: 0.06312777}
+    swing1AxisParent: {x: -0.99999624, y: -0.0024061678, z: 0.0013217855}
+    swing2AxisParent: {x: 0.0014710416, y: -0.06312446, z: 0.99800456}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+  - parent: {fileID: 7964538190193888579}
+    child: {fileID: 5898820116323520833}
+    parentAnchorLocal: {x: 0.000000070060935, y: 0.21328348, z: -0.00000016719397}
+    childAnchorLocal: {x: -1.7016943e-13, y: -0.0000000021764515, z: -0.000000059564893}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 7489038466603675551}
+    childTarget: {fileID: 2260425764659783714}
+    isRagdollJoint: 1
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 1
+    twistAxis: 1
+    forwardAxis: 5
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -0, y: 160}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 1
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: 0.040140558, y: -0.10266151, z: 0.0029362733, w: 0.99390215}
+    twistAxisParent: {x: -0.014078518, y: 0.99676025, z: 0.07918869}
+    swing1AxisParent: {x: 0.978904, y: -0.0024050442, z: 0.20430672}
+    swing2AxisParent: {x: 0.20383528, y: 0.08039446, z: -0.9756987}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+  isRagdolling: 0
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0
@@ -4523,18 +4437,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!1 &1696620562780351615
 GameObject:
@@ -4920,7 +4822,7 @@ CapsuleCollider:
   m_Radius: 0.17
   m_Height: 0.45
   m_Direction: 1
-  m_Center: {x: 0, y: 0.13, z: 0}
+  m_Center: {x: 0, y: 0.11, z: 0}
 --- !u!114 &8986160937471608004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4935,18 +4837,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &1379092314146761437
 MonoBehaviour:
@@ -5258,7 +5148,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4965081860498496945}
-  - component: {fileID: 8595309036505255360}
   m_Layer: 0
   m_Name: RagDolllIKRig
   m_TagString: Untagged
@@ -5282,20 +5171,6 @@ Transform:
   - {fileID: 3958796512734368935}
   m_Father: {fileID: 7502107928085943356}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8595309036505255360
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1906787517089728040}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70b342d8ce5c2fd48b8fa3147d48d1d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Weight: 0
-  m_Effectors: []
 --- !u!1 &1951288737647351708
 GameObject:
   m_ObjectHideFlags: 0
@@ -6292,18 +6167,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!1 &2688980813616801725
 GameObject:
@@ -7102,18 +6965,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!1 &3274262638892841201
 GameObject:
@@ -9324,18 +9175,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!1 &5621514761454871725
 GameObject:
@@ -9626,18 +9465,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!1 &5912976876399600515
 GameObject:
@@ -11420,18 +11247,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!1 &7223541438998726363
 GameObject:

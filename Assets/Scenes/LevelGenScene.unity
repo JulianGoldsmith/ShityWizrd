@@ -493,9 +493,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterController: {fileID: 0}
   armIKs: []
-  _BonkedState: 0
-  bonkChangedThisUpdate: 0
   ragdollProxysRoot: {fileID: 0}
+  ragDollSolver: {fileID: 0}
+  _BonkTick: 0
+  _UnbonkTick: 0
 --- !u!1 &49232468
 GameObject:
   m_ObjectHideFlags: 0
@@ -660,6 +661,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 939617591}
   m_SourcePrefab: {fileID: 100100000, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+--- !u!4 &92729972 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5277838912451825449, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+  m_PrefabInstance: {fileID: 2145501633}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &139276618
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5731,10 +5737,6 @@ PrefabInstance:
       propertyPath: SortKey
       value: 3422515312
       objectReference: {fileID: 0}
-    - target: {fileID: 4480425943024258786, guid: 0c7d9fbe5c0d35748a058bf3856d18f7, type: 3}
-      propertyPath: dragStength
-      value: 50
-      objectReference: {fileID: 0}
     - target: {fileID: 5129134168091289256, guid: 0c7d9fbe5c0d35748a058bf3856d18f7, type: 3}
       propertyPath: SortKey
       value: 3290587567
@@ -6446,6 +6448,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  spawnPlayers: 1
+  showLevelGen: 0
 --- !u!114 &1637512531
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8709,6 +8713,42 @@ PrefabInstance:
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].child
+      value: 
+      objectReference: {fileID: 1315371867}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].parent
+      value: 
+      objectReference: {fileID: 1056853929}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[0].twistAxis
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].twistAxis
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[0].forwardAxis
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].childTarget
+      value: 
+      objectReference: {fileID: 92729972}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].forwardAxis
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].parentTarget
+      value: 
+      objectReference: {fileID: 2145501634}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       propertyPath: joints.Array.data[0].muscleDamping
       value: 1
       objectReference: {fileID: 0}
@@ -8721,8 +8761,48 @@ PrefabInstance:
       value: 0.0005
       objectReference: {fileID: 0}
     - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].lambdaRotation.x
+      value: 0.000507509
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].lambdaRotation.y
+      value: -0.000011715045
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].lambdaRotation.z
+      value: -0.001601273
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       propertyPath: joints.Array.data[1].muscleCompliance
       value: 0.0005
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[0].twistAxisParent.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[0].twistAxisParent.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].bakedChildScale.x
+      value: 1.92693
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].bakedChildScale.y
+      value: 1.9269297
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].bakedChildScale.z
+      value: 1.92693
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].twistAxisParent.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].twistAxisParent.y
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       propertyPath: joints.Array.data[0].childAnchorLocal.y
@@ -8733,12 +8813,52 @@ PrefabInstance:
       value: 0.0000001256631
       objectReference: {fileID: 0}
     - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[0].swing1AxisParent.x
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[0].swing1AxisParent.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[0].swing2AxisParent.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].bakedParentScale.x
+      value: 1.531454
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].bakedParentScale.y
+      value: 1.5314541
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].bakedParentScale.z
+      value: 1.531454
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       propertyPath: joints.Array.data[1].childAnchorLocal.y
       value: -0.6583569
       objectReference: {fileID: 0}
     - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       propertyPath: joints.Array.data[1].childAnchorLocal.z
       value: 0.0000001569645
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].swing1AxisParent.x
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].swing1AxisParent.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[1].swing2AxisParent.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: joints.Array.data[0].enableAngularLimits
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3443278293078884297, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       propertyPath: joints.Array.data[0].parentAnchorLocal.y
@@ -8928,6 +9048,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2075920577}
   m_SourcePrefab: {fileID: 100100000, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+--- !u!4 &2145501634 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3698984405333044369, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+  m_PrefabInstance: {fileID: 2145501633}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &88507033556753612
 PrefabInstance:
   m_ObjectHideFlags: 0

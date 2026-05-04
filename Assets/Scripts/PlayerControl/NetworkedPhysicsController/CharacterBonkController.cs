@@ -1,202 +1,107 @@
 using Fusion;
-using Fusion.Addons.Physics;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.Animations.Rigging;
-using static NetworkedRagDoll;
 
 [DefaultExecutionOrder(100)]
 public class CharacterBonkController : NetworkBehaviour
 {
     [HideInInspector] public HybridCharacterController characterController;
     public List<StretchyArmIK> armIKs;
-
-    [Networked] public BONKEDSTATE BonkedState { get; set; }
-    public bool bonkChangedThisUpdate = false;
-    [HideInInspector] int _swapAtTick = -1;
     public GameObject ragdollProxysRoot;
 
-    public ChangeDetector _changeDetector;
+    public XPBDPosAndRotSolver ragDollSolver;
+    [Networked] public int BonkTick { get; set; }
+    [Networked] public int UnbonkTick { get; set; }
 
+    public BONKEDSTATE BonkedState => BonkTick>UnbonkTick ? BONKEDSTATE.BONKED: BONKEDSTATE.ALIVE;
+
+    private bool _localRagdollActive = false;
 
     public override void Spawned()
     {
-        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         characterController = this.GetComponent<HybridCharacterController>();
-
-        if (BonkedState == BONKEDSTATE.ALIVE)
-        {
-            //DeActivateConfigurableJoint()
-            DeactivateRagDoll();
-        }
-        else
-        {
-            ActivateRagDoll();
-        }
-
+        ragDollSolver = characterController.xpbdJointSolver;
+        EvaluateRagdollState();
     }
 
     public override void FixedUpdateNetwork()
     {
-        bonkChangedThisUpdate = false;
-        foreach (var change in _changeDetector.DetectChanges(this))
-        {
-            switch (change)
-            {
-                case nameof(BonkedState):
-                    bonkChangedThisUpdate = true;
-                    OnBonkedStateChangedFixed();
-                    break;
-            }
-        }
+        EvaluateRagdollState();
     }
 
-    public void OnBonkedStateChangedFixed()
+    private void EvaluateRagdollState()
     {
-        //if (HasStateAuthority) return;
+        bool shouldBeBonked = BonkTick > UnbonkTick;
 
-        if (BonkedState == BONKEDSTATE.BONKED)
+        if (_localRagdollActive != shouldBeBonked)
         {
-            GetBonked();
+            
+            if (shouldBeBonked) ActivateRagDoll(snapBones: false);
+            else DeactivateRagDoll();
+
+            _localRagdollActive = shouldBeBonked;
         }
-        else
+
+        if (characterController != null && ragDollSolver != null)
         {
-            GetUnBonked();
+            ragDollSolver.isRagdolling = shouldBeBonked;
         }
-        bonkChangedThisUpdate = true;
     }
+
+    // --- LOCAL / PREDICTED ACTIONS ---
 
     public void GetBonked()
     {
-        if (HasStateAuthority)
+        // 1. Immediately predict the visual and physics change locally! 
+        // Pass TRUE to snap the rigidbodies to the current animation frame so they fall correctly.
+        if (!_localRagdollActive)
         {
-            BonkedState = BONKEDSTATE.BONKED;
+            ActivateRagDoll(snapBones: true);
+            _localRagdollActive = true;
         }
-        _swapAtTick = Runner.Tick + 1;
 
-       
-        if (characterController != null) //character 
-        {
-            ActivateRagDoll();
-            foreach (StretchyArmIK ik in armIKs)
-            {
-                ik.enabled = false;
-            }
-            characterController.handController.DisableHands();
-            characterController.armatureRetargetingLerp = 1;
-  
-        }
+        // 2. Tell the network when this happened
+        BonkTick = Runner.Tick;
     }
 
     public void GetUnBonked()
     {
-        //ragDollController.DeactivateRagDoll();
-        if (HasStateAuthority)
-        {
-            BonkedState = BONKEDSTATE.ALIVE;
-        }
-        _swapAtTick = Runner.Tick + 1;
-
-        
-        if (characterController != null) //character 
+        if (_localRagdollActive)
         {
             DeactivateRagDoll();
-            foreach (StretchyArmIK ik in armIKs)
-            {
-                ik.enabled = true;
-            }
-            characterController.armatureRetargetingLerp = 0;
-            characterController.handController.EnableHands();
+            _localRagdollActive = false;
         }
+
+        UnbonkTick = Runner.Tick;
     }
 
-    public override void Render()
+    // --- EXECUTION METHODS ---
+
+    private void ActivateRagDoll(bool snapBones)
     {
-        if (_swapAtTick >= 0 && Runner.Tick >= _swapAtTick)
-        {
-            _swapAtTick = -1;
-            bool showRagdoll = (BonkedState == BONKEDSTATE.BONKED);
-
-
-            //if (showRagdoll)
-            //{
-            //    characterController.armatureRetargetingLerp = 1;
-            //}
-            //else
-            //{
-            //   characterController.armatureRetargetingLerp = 0;
-            //}
-
-        }
-    }
-
-
-
-    public void ActivateRagDoll()
-    {
-
+        if (ragdollProxysRoot != null) ragdollProxysRoot.SetActive(true);
         if (characterController != null)
         {
-            //ragdollProxysRoot.SetActive(true);
-            foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
-            {
-                var nrb = joint.rb3d;
-                if (nrb == null) continue;
-                var rb = nrb.Rigidbody;
-                if (rb == null) continue;
+            foreach (StretchyArmIK ik in armIKs) ik.enabled = false;
+            characterController.handController.DisableHands();
+            characterController.armatureRetargetingLerp = 1f;
 
-                var col = rb.GetComponent<Collider>();
-                if (col) col.enabled = true;
-
-                nrb.RBIsKinematic = false;
-                if (nrb.Object.HasStateAuthority)
-                    nrb.ResetRigidbody();
-
-                joint.AddForcesAndApplyPhycis(HasStateAuthority);
-            }
+            // Pass the snap instruction down to the solver
+            ragDollSolver.SetRagdollState(true, snapBones);
         }
-        if (ragdollProxysRoot != null)
-            ragdollProxysRoot.SetActive(true);
+        
     }
 
-    public void DeactivateRagDoll()
+    private void DeactivateRagDoll()
     {
-        if(characterController != null) { 
-            foreach (XpbdJoint joint in characterController.xpbdSolver.ragdollJoints)
-            {
-                var nrb = joint.rb3d;
-                if (nrb == null) continue;
-                var rb = nrb.Rigidbody;
-                if (rb == null) continue;
+        if (characterController != null)
+        {
+            foreach (StretchyArmIK ik in armIKs) ik.enabled = true;
+            characterController.armatureRetargetingLerp = 0f;
+            characterController.handController.EnableHands();
 
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-
-                nrb.RBIsKinematic = true;
-
-                var col = rb.GetComponent<Collider>();
-                if (col) col.enabled = false;
-
-                if (nrb.Object.HasStateAuthority)
-                    nrb.ResetRigidbody();
-
-                joint.SleepBone(HasStateAuthority);
-            }
+            ragDollSolver.SetRagdollState(false, false);
         }
-        if(ragdollProxysRoot != null)
-            ragdollProxysRoot.SetActive(false);
+        if (ragdollProxysRoot != null) ragdollProxysRoot.SetActive(false);
     }
-
-    public void SwitchToRagdoll()
-    {
-
-    }
-
-    // Call this from your 'GetUnBonked' method
-    public void SwitchToAnimated()
-    {
-       
-    }
-
 }

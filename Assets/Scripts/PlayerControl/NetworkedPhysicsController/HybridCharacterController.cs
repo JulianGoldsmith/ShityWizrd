@@ -56,7 +56,8 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
     [Header("Animation")]
     public NetworkAnimator netAnimator;
-    public Animator targetAnimator, finalAnimator;
+    public Animator targetAnimator;
+    public Transform visualAnimator;
     public BoneMapper boneMapper;
     public Transform spineIKTarget;
     public Vector3 headOffset;
@@ -156,6 +157,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     private int disableCC = -1; // -1 = enabled - > 0 = disabled for X ticks.
 
     public XpbdConstraintSolver xpbdSolver;
+    public XPBDPosAndRotSolver xpbdJointSolver;
 
     [Header("Proxy Extrapolation")]
     [Networked] public int AuthInputTick { get; set; }
@@ -224,6 +226,12 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         armatureHipsStartOffset = new Vector3(armatureHipsRoot.transform.localPosition.x,
                 armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z);
         netAnimator = GetComponent<NetworkAnimator>();
+
+        if (xpbdJointSolver == null)
+        {
+            xpbdJointSolver = this.GetComponent<XPBDPosAndRotSolver>();
+            GameController.Instance.xPBDGlobalManager.RegisterRagdoll(xpbdJointSolver);
+        }
     }
 
 
@@ -562,10 +570,10 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         targetAnimator.gameObject.transform.position = targetPos; 
         targetAnimator.gameObject.transform.rotation = targetRot;
 
-        finalAnimator.gameObject.transform.position = targetPos;
-            //+ ((new Vector3(armatureHipsRoot.transform.localPosition.x,
-            //armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z)) /100); 
-        finalAnimator.gameObject.transform.rotation = targetRot;
+        visualAnimator.position = targetPos;
+        //+ ((new Vector3(armatureHipsRoot.transform.localPosition.x,
+        //armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z)) /100); 
+        visualAnimator.rotation = targetRot;
     }
 
     public void UpdateSpineIK()
@@ -1087,9 +1095,9 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         {
             targetAnimator.transform.SetPositionAndRotation(targetPos, rotation);
         }
-        if (finalAnimator != null)
+        if (visualAnimator != null)
         {
-            finalAnimator.transform.SetPositionAndRotation(targetPos, rotation);
+            visualAnimator.SetPositionAndRotation(targetPos, rotation);
         }
         if (handController != null)
         {

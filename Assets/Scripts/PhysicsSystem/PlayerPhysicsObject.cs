@@ -10,24 +10,24 @@ public class PlayerPhysicsObject : PhysicsObject
     {
         base.FixedUpdateNetwork();
 
-        if(HasStateAuthority)
-            current_bonkedness = Mathf.Min(current_bonkedness + player_bonkedness_recovery_rate_per_tick, starting_bonkedness);
+        
+        current_bonkedness = Mathf.Min(current_bonkedness + player_bonkedness_recovery_rate_per_tick, starting_bonkedness);
     }
     protected override void OnZeroBonk()
     {
         base.OnZeroBonk();
 
         // can also go to a death state at a high bonk threshold.
-        if(HasStateAuthority)
-            hybridCharacterController.GetBonked();
+       
+        hybridCharacterController.GetBonked();
     }
 
     protected override void OnRecoverFromBonk()
     {
         base.OnRecoverFromBonk();
-        if (HasStateAuthority)
+      
             // Recovered from bonk.
-            hybridCharacterController.GetUnBonked();
+        hybridCharacterController.GetUnBonked();
     }
 
     public override void OnBonkednessChanged(NetworkBehaviourBuffer previous)
