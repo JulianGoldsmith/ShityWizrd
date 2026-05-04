@@ -15,6 +15,8 @@ public class CharacterCustomization : NetworkBehaviour
     [SerializeField] private Material hostMat;
     [SerializeField] private Material clientMat;
 
+    public bool boolShowApparelOnLocalPlayer = false;
+
     [Networked, OnChangedRender(nameof(OnAppearanceStateChanged))] public bool IsHost { get; set; }
 
     // --- Add future [Networked] properties here ---
@@ -30,7 +32,7 @@ public class CharacterCustomization : NetworkBehaviour
         {
             IsHost = Object.HasInputAuthority;
         }
-        if (HasInputAuthority)
+        if (HasInputAuthority && !boolShowApparelOnLocalPlayer)
         {
             modelRenderer.enabled = false;
             //robeRenderer.enabled = false;

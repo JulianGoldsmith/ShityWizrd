@@ -176,9 +176,8 @@ public class BlendState2D : AnimStateBase
         float totalWeight = 0f;
         float[] weights = new float[count];
 
-        // How much more we penalize being off-angle compared to being off-speed.
-        // Higher number = Snaps to the correct direction harder, preventing "Walk node" bleed when turning.
-        float anglePenalty = 2.0f;
+        // The base penalty for being off-angle
+        float baseAnglePenalty = 2.0f;
 
         for (int i = 0; i < count; i++)
         {
@@ -186,7 +185,6 @@ public class BlendState2D : AnimStateBase
             float posMag = pos.magnitude;
 
             // --- 1. EXACT MATCH SHORT-CIRCUIT ---
-            // If the input is exactly on a node, give it 100% immediately.
             float exactDistSq = (input - pos).sqrMagnitude;
             if (exactDistSq < 0.0001f)
             {
@@ -198,12 +196,9 @@ public class BlendState2D : AnimStateBase
             // --- 2. IDLE NODE HANDLING ---
             if (posMag < 0.001f)
             {
-                // Idle perfectly matches any angle, so its distance is purely based on magnitude difference.
-                float magDiffIdle = inputMag;
-                float polarDistSqIdle = (magDiffIdle * magDiffIdle);
-
-                // Power of 4 falloff for crisp blending
-                weights[i] = 1f / (polarDistSqIdle * polarDistSqIdle);
+                float polarDistSqIdle = (inputMag * inputMag);
+                // Added a tiny epsilon (0.0001f) to prevent divide-by-zero explosions
+                weights[i] = 1f / (polarDistSqIdle * polarDistSqIdle + 0.0001f);
                 totalWeight += weights[i];
                 continue;
             }
@@ -212,25 +207,24 @@ public class BlendState2D : AnimStateBase
             Vector2 posDir = pos / posMag;
             float dot = Vector2.Dot(inputDir, posDir);
 
-            // Hemisphere Culling: If node is backwards, kill it.
-            if (dot <= 0f && inputMag > 0.01f)
-            {
-                weights[i] = 0f;
-                continue;
-            }
+            // THE FIX 1: Smooth Hemisphere Falloff (No more hard 'if' cutoff!)
+            // dot ranges from 1 (perfect) to -1 (exact opposite).
+            // We map this to a penalty: 0 (perfect) to 2 (opposite).
+            float angleMetric = 1f - dot;
 
-            // Angle Metric: 0 = perfect match, 1 = 90 degrees off.
-            float angleMetric = 1f - Mathf.Max(0f, dot);
+            // THE FIX 2: Stateless Origin Singularity Fix
+            // As input magnitude approaches 0, the direction becomes hypersensitive and meaningless.
+            // By scaling the penalty by inputMag, the angle matters less and less as you stop!
+            float dynamicAnglePenalty = baseAnglePenalty * inputMag;
 
-            // Magnitude Difference
             float magDiff = Mathf.Abs(inputMag - posMag);
 
-            // The "Warped" Distance: Angle matters more than speed.
-            float warpedAngle = angleMetric * anglePenalty;
+            // The "Warped" Distance
+            float warpedAngle = angleMetric * dynamicAnglePenalty;
             float polarDistSq = (warpedAngle * warpedAngle) + (magDiff * magDiff);
 
-            // Power of 4 falloff ensures the closest node absolutely dominates
-            weights[i] = 1f / (polarDistSq * polarDistSq + 0.001f);
+            // Power of 4 falloff
+            weights[i] = 1f / (polarDistSq * polarDistSq + 0.0001f);
             totalWeight += weights[i];
         }
 
@@ -239,7 +233,6 @@ public class BlendState2D : AnimStateBase
         {
             float finalWeight = totalWeight > 0.0001f ? (weights[i] / totalWeight) : 0f;
 
-            // Fallback safety
             if (totalWeight <= 0.0001f && i == 0) finalWeight = 1f;
 
             stateMixer.SetInputWeight(i, finalWeight);

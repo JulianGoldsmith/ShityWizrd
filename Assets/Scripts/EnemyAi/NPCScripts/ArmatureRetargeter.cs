@@ -17,6 +17,7 @@ public class ArmatureRetargeter : MonoBehaviour
     public bool disableRetargetingToProxys = false;
     public float lerpTProxy = 0;
     public bool overRideAndInjectAnimatedHipsRootMotionToAll = false;
+    public bool overRideAndKillInjectedMotion = false;
 
     // --- DICTIONARY CACHE FOR VIRTUAL PARENTING ---
     private Dictionary<Transform, RetargetedBone> _sourceToBoneMap;
@@ -97,6 +98,9 @@ public class ArmatureRetargeter : MonoBehaviour
     {
         if (retargetedBones == null || retargetedBones.Count == 0) return;
 
+        var animatedRootMotion = animatedHipRootMotion * (1-lerpTProxy);
+       
+
         // 1. Process Hips (Root)
         var rootBone = retargetedBones[0];
         if (rootBone.physicsProxy != null && !disableRetargetingToProxys)
@@ -106,7 +110,7 @@ public class ArmatureRetargeter : MonoBehaviour
 
             if (rootBone.injectAnimatedHipsRootMotion || overRideAndInjectAnimatedHipsRootMotionToAll)
             {
-                rootBone.targetBone.position += animatedHipRootMotion;
+                rootBone.targetBone.position += animatedRootMotion;
             }
         }
         else if (rootBone.sourceBone != null)
@@ -115,23 +119,19 @@ public class ArmatureRetargeter : MonoBehaviour
             rootBone.targetBone.localScale = rootBone.sourceBone.localScale;
         }
 
-        // 2. Process Children (Guaranteed Top-to-Bottom)
         for (int i = 1; i < retargetedBones.Count; i++)
         {
             var bone = retargetedBones[i];
             if (!bone.enabled) continue;
 
             bool hasActiveProxy = bone.physicsProxy != null && !disableRetargetingToProxys;
+            bool injectRootMotion = ((bone.injectAnimatedHipsRootMotion || overRideAndInjectAnimatedHipsRootMotionToAll) && (!overRideAndKillInjectedMotion));
 
-            // --- EXPLICIT WORLD PROJECTION ---
-            // Instead of trusting Unity's hierarchy, we explicitly calculate where the bone 
-            // should be by projecting its local offset out from the ALREADY UPDATED target parent!
             Vector3 projectedPos = bone.sourceBone.position;
             Quaternion projectedRot = bone.sourceBone.rotation;
 
             if (bone.sourceBone.parent != null && _sourceToBoneMap.TryGetValue(bone.sourceBone.parent, out var parentBoneData))
             {
-                // parentBoneData.targetBone was updated in a previous loop iteration, so it is leaning correctly!
                 projectedPos = parentBoneData.targetBone.TransformPoint(bone.sourceBone.localPosition);
                 projectedRot = parentBoneData.targetBone.rotation * bone.sourceBone.localRotation;
             }
@@ -143,7 +143,6 @@ public class ArmatureRetargeter : MonoBehaviour
                     Vector3 proxyPos = bone.physicsProxy.position;
                     Quaternion proxyRot = bone.physicsProxy.rotation;
 
-                    // Lerp between the projected animated position and the physics proxy
                     Vector3 targetPos = Vector3.Lerp(projectedPos, proxyPos, lerpTProxy);
                     Quaternion targetRot = Quaternion.Slerp(projectedRot, proxyRot, lerpTProxy);
                     Vector3 targetScale = Vector3.Lerp(bone.sourceBone.localScale, bone.physicsProxy.localScale, lerpTProxy);
@@ -172,9 +171,9 @@ public class ArmatureRetargeter : MonoBehaviour
                 }
             }
 
-            if ((bone.injectAnimatedHipsRootMotion || overRideAndInjectAnimatedHipsRootMotionToAll) && hasActiveProxy)
+            if ((injectRootMotion) && hasActiveProxy)
             {
-                bone.targetBone.position += animatedHipRootMotion;
+                bone.targetBone.position += animatedRootMotion;
             }
         }
     }
