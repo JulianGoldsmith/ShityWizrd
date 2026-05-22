@@ -66,6 +66,12 @@ public class XPBDTestJoint
 
     [Range(0f, 2f)] public float leverArmScale = 1f;           
     [Range(0f, 1f)] public float parentRotationInfluence = 1f;
+    [Range(0f, 1f)] public float parentPositionInfluence = 1f;
+
+    public bool scaleForceByTension = false;
+    public float minTensionDistance = 0.05f;
+    public float maxTensionDistance = 0.25f;
+    public AnimationCurve tensionReleaseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     public Vector3 GetAxisVector(JointAxisDirection axis)
     {
@@ -248,7 +254,7 @@ public class XPBDPosAndRotSolver : MonoBehaviour
 
     private void SolveDistanceConstraint(XPBDTestJoint joint, float dt, Dictionary<Rigidbody, XPBDState> states)
     {
-        if(!joint.enablePosition) return;
+        if (!joint.enablePosition) return;
         var pState = states[joint.parent];
         var cState = states[joint.child];
         if (pState.isKinematic && cState.isKinematic) return;
@@ -263,7 +269,24 @@ public class XPBDPosAndRotSolver : MonoBehaviour
         float alpha = joint.distanceCompliance / (dt * dt);
         float gamma = (alpha * (0.5f * dt * joint.distanceDamping)) / dt;
 
-        XPBDMath.SolveSphericalPosition(pState, cState, r0, r1, dir, alpha, gamma, ref joint.lambdaPosition, isRagdolling ? 1: joint.leverArmScale);
+        // --- ------------------------------- DYNAMIC TENSION INFLUENCE --------------------------
+        float effectivePosInfluence = isRagdolling ? 1f : joint.parentPositionInfluence;
+
+        if (!isRagdolling && joint.scaleForceByTension)
+        {
+            float stretch = dir.magnitude;
+            if (stretch > joint.minTensionDistance)
+            {
+                float normalizedTension = Mathf.Clamp01((stretch - joint.minTensionDistance) / Mathf.Max(0.001f, joint.maxTensionDistance - joint.minTensionDistance));
+
+                float curveVal = joint.tensionReleaseCurve.Evaluate(normalizedTension);
+                effectivePosInfluence = Mathf.Lerp(joint.parentPositionInfluence, 1.0f, curveVal);
+            }
+        }
+        // --------------------------------------
+
+        XPBDMath.SolveSphericalPosition(pState, cState, r0, r1, dir, alpha, gamma, ref joint.lambdaPosition,
+            isRagdolling ? 1f : joint.leverArmScale, effectivePosInfluence);
     }
 
     private void SolveRotationConstraint(XPBDTestJoint joint, float dt, Dictionary<Rigidbody, XPBDState> states)

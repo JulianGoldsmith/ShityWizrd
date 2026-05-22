@@ -116,19 +116,50 @@ public class XPBDPosAndRotSolverEditor : Editor
                 // --- NEW: INFLUENCE & LEVER ARM GRID ---
                 EditorGUILayout.BeginHorizontal();
                 float oldLabel = EditorGUIUtility.labelWidth;
-                
+
                 EditorGUIUtility.labelWidth = 70;
                 EditorGUILayout.PropertyField(joint.FindPropertyRelative("leverArmScale"), new GUIContent("Lever Arm"), GUILayout.MinWidth(120));
-                
+
                 GUILayout.Space(10);
-                
-                EditorGUIUtility.labelWidth = 75;
-                EditorGUILayout.PropertyField(joint.FindPropertyRelative("parentRotationInfluence"), new GUIContent("Parent Inf"), GUILayout.MinWidth(120));
-                
-                EditorGUIUtility.labelWidth = oldLabel;
+
+                EditorGUIUtility.labelWidth = 85; // Slightly wider to fit the text
+                EditorGUILayout.PropertyField(joint.FindPropertyRelative("parentRotationInfluence"), new GUIContent("Rot Influence"), GUILayout.MinWidth(120));
                 EditorGUILayout.EndHorizontal();
 
+                // NEW ROW
+                EditorGUILayout.BeginHorizontal();
+                EditorGUIUtility.labelWidth = 70;
+                EditorGUILayout.PropertyField(joint.FindPropertyRelative("parentPositionInfluence"), new GUIContent("Pos Influence"), GUILayout.MinWidth(120));
+
+                GUILayout.Space(10);
+
+                // Empty space to maintain the right-side alignment of the grid
+                EditorGUILayout.LabelField("", GUILayout.MinWidth(120)); 
+
+                EditorGUIUtility.labelWidth = oldLabel;
+                EditorGUILayout.EndHorizontal(); // <--- WE CLOSE THE HORIZONTAL ROW HERE!
+
+                // --- DYNAMIC TENSION RELEASE UI ---
+                // Because the horizontal block is closed, these will now perfectly stack vertically.
                 EditorGUILayout.Space(5);
+                SerializedProperty scaleForceProp = joint.FindPropertyRelative("scaleForceByTension");
+                
+                EditorGUILayout.PropertyField(scaleForceProp, new GUIContent("Dynamic Tension Release"));
+
+                if (scaleForceProp.boolValue)
+                {
+                    EditorGUI.indentLevel++;
+                    
+                    EditorGUILayout.PropertyField(joint.FindPropertyRelative("minTensionDistance"), new GUIContent("Min Distance"));
+                    EditorGUILayout.PropertyField(joint.FindPropertyRelative("maxTensionDistance"), new GUIContent("Max Distance"));
+                    EditorGUILayout.PropertyField(joint.FindPropertyRelative("tensionReleaseCurve"), new GUIContent("Release Curve"));
+                    
+                    EditorGUI.indentLevel--;
+                }
+
+                EditorGUILayout.Space(5);
+
+               
 
                 // --- DYNAMICS GRID ---
                 DrawGridHeader("Constraint", "On", "Compliance", "Damping");
@@ -280,6 +311,15 @@ public class XPBDPosAndRotSolverEditor : Editor
         mirrored.muscleDamping = source.muscleDamping;
         mirrored.limitCompliance = source.limitCompliance;
         mirrored.limitDamping = source.limitDamping;
+
+        mirrored.leverArmScale = source.leverArmScale;
+        mirrored.parentRotationInfluence = source.parentRotationInfluence;
+        mirrored.parentPositionInfluence = source.parentPositionInfluence;
+
+        mirrored.scaleForceByTension = source.scaleForceByTension;
+        mirrored.minTensionDistance = source.minTensionDistance;
+        mirrored.maxTensionDistance = source.maxTensionDistance;
+        mirrored.tensionReleaseCurve = new AnimationCurve(source.tensionReleaseCurve.keys);
 
         mirrored.drawLimitGizmos = source.drawLimitGizmos;
         mirrored.gizmoSize = source.gizmoSize;

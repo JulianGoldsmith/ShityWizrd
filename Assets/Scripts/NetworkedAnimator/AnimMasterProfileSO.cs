@@ -7,7 +7,7 @@ public class AnimMasterProfileSO : ScriptableObject
     [AnimStateDropdown]
     public byte DefaultEntryStateID;
 
-    [SerializeReference, SubclassSelector]
+    [SerializeReference]
     public List<AnimStateBase> AllStates = new List<AnimStateBase>();
 
     [SerializeField]

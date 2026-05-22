@@ -2739,8 +2739,8 @@ MonoBehaviour:
   grabDamping: 1
   playerDragResistance: 5
   maxWalkSpeed: 2.25
-  maxSprintSpeed: 5
-  acceleration: 3
+  maxSprintSpeed: 4.5
+  acceleration: 2
   braking: 10
   jumpForce: 5
   turnStrength: 100
@@ -3784,6 +3784,34 @@ MonoBehaviour:
     swing2AxisParent: {x: 0.00000027939686, y: -0.07238839, z: -0.9973765}
     leverArmScale: 0.1
     parentRotationInfluence: 0.1
+    parentPositionInfluence: 0
+    scaleForceByTension: 1
+    minTensionDistance: 0.02
+    maxTensionDistance: 0.125
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 2010255686653279327}
     child: {fileID: 7810365307095594437}
     parentAnchorLocal: {x: 0.000000004502119, y: 0.388393, z: 0.016113713}
@@ -3819,6 +3847,34 @@ MonoBehaviour:
     swing2AxisParent: {x: -0.00000027866392, y: 0.07238834, z: -0.9973765}
     leverArmScale: 0.5
     parentRotationInfluence: 0.5
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 2010255686653279327}
     child: {fileID: 6101142755508974218}
     parentAnchorLocal: {x: -0.15120031, y: 0.24266545, z: -0.005277766}
@@ -3854,6 +3910,34 @@ MonoBehaviour:
     swing2AxisParent: {x: 0.08332807, y: 0.07168127, z: -0.9939407}
     leverArmScale: 0.3
     parentRotationInfluence: 0.3
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 6101142755508974218}
     child: {fileID: 5481002710832188955}
     parentAnchorLocal: {x: 0.000000080721136, y: 0.25074947, z: -0.000000136048}
@@ -3889,6 +3973,34 @@ MonoBehaviour:
     swing2AxisParent: {x: 0.996083, y: 0.08763236, z: 0.011797298}
     leverArmScale: 1
     parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 2010255686653279327}
     child: {fileID: 6246534985040638846}
     parentAnchorLocal: {x: 0.15120018, y: 0.24266545, z: -0.00527785}
@@ -3924,6 +4036,34 @@ MonoBehaviour:
     swing2AxisParent: {x: 0.07712588, y: -0.077171, z: 0.99403036}
     leverArmScale: 0.3
     parentRotationInfluence: 0.3
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 6246534985040638846}
     child: {fileID: 6363294540991803081}
     parentAnchorLocal: {x: -0.000000044814577, y: 0.25063938, z: 0.000000045237442}
@@ -3959,6 +4099,34 @@ MonoBehaviour:
     swing2AxisParent: {x: 0.9971927, y: -0.07473451, z: -0.0046343165}
     leverArmScale: 1
     parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 2010255686653279327}
     child: {fileID: 8198824362954624908}
     parentAnchorLocal: {x: -0.13971807, y: -0.37224233, z: -0.035641942}
@@ -3994,6 +4162,34 @@ MonoBehaviour:
     swing2AxisParent: {x: -0.003563563, y: 0.037529696, z: -0.9992892}
     leverArmScale: 0.3
     parentRotationInfluence: 0.3
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 2010255686653279327}
     child: {fileID: 7964538190193888579}
     parentAnchorLocal: {x: 0.13971806, y: -0.37224233, z: -0.03564202}
@@ -4029,6 +4225,34 @@ MonoBehaviour:
     swing2AxisParent: {x: -0.20667174, y: -0.04054528, z: 0.9775698}
     leverArmScale: 0.3
     parentRotationInfluence: 0.3
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 8198824362954624908}
     child: {fileID: 380827262451331305}
     parentAnchorLocal: {x: -0.00000008847734, y: 0.21320824, z: -0.00000013317158}
@@ -4064,6 +4288,34 @@ MonoBehaviour:
     swing2AxisParent: {x: 0.0014710416, y: -0.06312446, z: 0.99800456}
     leverArmScale: 1
     parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   - parent: {fileID: 7964538190193888579}
     child: {fileID: 5898820116323520833}
     parentAnchorLocal: {x: 0.000000070060935, y: 0.21328348, z: -0.00000016719397}
@@ -4099,6 +4351,34 @@ MonoBehaviour:
     swing2AxisParent: {x: 0.20383528, y: 0.08039446, z: -0.9756987}
     leverArmScale: 1
     parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   isRagdolling: 0
 --- !u!1 &1509911169854208335
 GameObject:

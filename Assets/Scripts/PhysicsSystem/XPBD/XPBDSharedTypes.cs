@@ -159,13 +159,12 @@ public static class XPBDMath
     }
 
     public static void SolveSphericalPosition(XPBDState pState, XPBDState cState, Vector3 r0, Vector3 r1, Vector3 dir,
-        float alpha, float gamma, ref Vector3 lambdaPosition, float leverArmScale = 1.0f)
+    float alpha, float gamma, ref Vector3 lambdaPosition, float leverArmScale = 1.0f, float parentPositionInfluence = 1.0f)
     {
         Vector3 dx0 = pState.p - pState.p_prev, dw0 = GetDeltaTheta(pState.q_prev, pState.q);
         Vector3 dx1 = cState.p - cState.p_prev, dw1 = GetDeltaTheta(cState.q_prev, cState.q);
 
         Vector3[] axes = { Vector3.right, Vector3.up, Vector3.forward };
-
         for (int i = 0; i < 3; i++)
         {
             Vector3 cAxis = axes[i];
@@ -176,14 +175,14 @@ public static class XPBDMath
             Vector3 gradQ0 = Vector3.Cross(r0, gradP0);
             Vector3 gradQ1 = Vector3.Cross(r1, gradP1);
 
-            float w0 = pState.isKinematic ? 0f : pState.invMass + Vector3.Dot(gradQ0, ApplyInvInertiaWorld(gradQ0, pState.q, pState.qInertia, pState.invInertiaLocal));
+            // Apply parentPositionInfluence to w0 so the solver views the parent as heavier
+            float w0 = pState.isKinematic ? 0f : (pState.invMass + Vector3.Dot(gradQ0, ApplyInvInertiaWorld(gradQ0, pState.q, pState.qInertia, pState.invInertiaLocal))) * parentPositionInfluence;
             float w1 = cState.isKinematic ? 0f : cState.invMass + Vector3.Dot(gradQ1, ApplyInvInertiaWorld(gradQ1, cState.q, cState.qInertia, cState.invInertiaLocal));
 
             float wSum = w0 + w1;
             if (wSum < 1e-6f) continue;
 
             float dC = Vector3.Dot(gradP0, dx0) + Vector3.Dot(gradP1, dx1) + Vector3.Dot(gradQ0, dw0) + Vector3.Dot(gradQ1, dw1);
-
             float currentLambda = i == 0 ? lambdaPosition.x : (i == 1 ? lambdaPosition.y : lambdaPosition.z);
             float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * wSum + alpha);
 
@@ -191,14 +190,15 @@ public static class XPBDMath
 
             if (!pState.isKinematic)
             {
-                pState.p += pState.invMass * deltaLambda * gradP0;
-                // THE LEAK: Multiply ONLY the rotation by the leverArmScale!
-                ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * gradQ0 * leverArmScale, pState.q, pState.qInertia, pState.invInertiaLocal));
+                // Apply influence to the positional shift
+                pState.p += pState.invMass * deltaLambda * gradP0 * parentPositionInfluence;
+                // Multiply the rotation by the leverArmScale AND the positional influence!
+                ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * gradQ0 * leverArmScale * parentPositionInfluence, pState.q, pState.qInertia, pState.invInertiaLocal));
             }
             if (!cState.isKinematic)
             {
                 cState.p += cState.invMass * deltaLambda * gradP1;
-                // THE LEAK: Multiply ONLY the rotation by the leverArmScale!
+                //Multiply ONLY the rotation by the leverArmScale!
                 ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * gradQ1 * leverArmScale, cState.q, cState.qInertia, cState.invInertiaLocal));
             }
         }

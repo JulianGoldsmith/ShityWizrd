@@ -123,16 +123,16 @@ public class BlendTree1DState : AnimStateBase
 [Serializable]
 public class BlendState2D : AnimStateBase
 {
-    [Header("Blend Parameters")]
+    //[Header("Blend Parameters")]
     [Tooltip("The parameter for the X axis (Horizontal/Strafe).")]
     [SerializeField, AnimParameter(AnimParamType.Float)]
     private string _parameterX;
 
-    [Tooltip("The parameter for the Y axis (Vertical/Forward).")]
+    //[Tooltip("The parameter for the Y axis (Vertical/Forward).")]
     [SerializeField, AnimParameter(AnimParamType.Float)]
     private string _parameterY;
 
-    [Header("Motions")]
+   // [Header("Motions")]
     public List<BlendTreeMotion2D> Motions = new List<BlendTreeMotion2D>();
 
     // We cache weights array to avoid GC allocations during FUN
