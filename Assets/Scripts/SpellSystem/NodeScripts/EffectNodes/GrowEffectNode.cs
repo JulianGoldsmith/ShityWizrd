@@ -112,11 +112,11 @@ public class GrowStatusEffect : IStatusEffect
         return true;
     }
 
-    public void Tick(NetworkRunner runner, PhysicsObject target, NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData, ref StatusEffectPropertyModifiers effectPropertyModifiers)
+    public void Tick(NetworkRunner runner, PhysicsObject target, NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData, ref MaterialState currentState)
     {
         float currentScale = effectData.GetFloat(SLOT_CURRENT_SCALE, memory);
 
-        effectPropertyModifiers.ScaleMultiplier *= currentScale;
+        currentState.ScaleMultiplier *= currentScale;
     }
 
     public void OnRemoved(NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData)

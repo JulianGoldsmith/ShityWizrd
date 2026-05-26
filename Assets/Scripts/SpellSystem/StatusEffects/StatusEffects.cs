@@ -45,7 +45,7 @@ public interface IStatusEffect
 {
     // The core Execution Loop. Runs every tick in FUN.
     // We pass 'ref' to the effectData so if the logic needs to update the EndTick, it can!
-    void Tick( NetworkRunner runner, PhysicsObject target, NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData, ref StatusEffectPropertyModifiers currentMods);
+    void Tick( NetworkRunner runner, PhysicsObject target, NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData, ref MaterialState currentState);
 
     // Returns TRUE if absorbed. Returns FALSE if they should coexist.
     bool TryStack( NetworkRunner runner, ref ActiveStatusEffectData existingEffect, NetworkedMemoryAllocator memory, ProposedEffectPayload newPayload);

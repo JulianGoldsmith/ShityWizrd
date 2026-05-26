@@ -8,7 +8,7 @@ using System.Collections.Generic;
 [RequireComponent(typeof(PhysicsObject))]
 public class StatusEffectManager : NetworkBehaviour
 {
-    const int CAPACITY = 16;
+    const int CAPACITY = 32;
     [Networked, Capacity(CAPACITY)] public NetworkArray<ActiveStatusEffectData> ActiveEffects { get; }
 
     private NetworkedMemoryAllocator _memory;
@@ -51,9 +51,7 @@ public class StatusEffectManager : NetworkBehaviour
         }
     }
 
-    /// <summary>
-    /// Called by Spell Cores (OverlapSphere, Hitbox, etc.)
-    /// </summary>
+
     public void AddEffect(byte effectId, ProposedEffectPayload payload)
     {
         IStatusEffect processor = StatusEffectRegistry.GetStatusEffect(effectId);
@@ -111,13 +109,13 @@ public class StatusEffectManager : NetworkBehaviour
     }
 
 
-    // --- EXECUTION LOGIC ---
 
     public override void FixedUpdateNetwork()
     {
-        StatusEffectPropertyModifiers  effectPropertyModifires = new StatusEffectPropertyModifiers();
-        effectPropertyModifires.Reset();
+        MaterialState tickState = new MaterialState();
+        tickState.Reset();
 
+        // 2. Process all effects
         for (int i = 0; i < ActiveEffects.Length; i++)
         {
             ActiveStatusEffectData effect = ActiveEffects.Get(i);
@@ -127,24 +125,29 @@ public class StatusEffectManager : NetworkBehaviour
             IStatusEffect statusEffect = StatusEffectRegistry.GetStatusEffect(effect.EffectID);
             if (statusEffect == null) continue;
 
-            // STEP 1: Check Expiration
+            // Check Expiration
             if (effect.IsExpired(Runner.Tick))
             {
                 RemoveEffect(i, statusEffect, effect);
                 continue;
             }
 
-            // STEP 2: Execute the continuous logic
-            statusEffect.Tick(Runner, _physicsObject, _memory, ref effect, ref effectPropertyModifires);
+            // Execute the logic. 
+            // We pass 'ref effect' so the struct can be modified.
+            // We pass 'ref tickState' so the effect can accumulate its deltas.
+            statusEffect.Tick(Runner, _physicsObject, _memory, ref effect, ref tickState);
 
-            // STEP 3: Save back to the array. 
-            // (We pass 'ref effect' to Execute, so if the processor decided to 
-            // artificially end the effect by changing EndTick, we must sync it).
+            // CRITICAL FUSION REQUIREMENT: 
+            // Save the struct back to the network array in case Tick() modified it.
             ActiveEffects.Set(i, effect);
         }
 
+        // 3. Hand the fully accumulated state to the Material to get Layer 0
+        // (Assuming _physicsObject holds the reference to the ScriptableObject)
+        SimProperties finalSim = _physicsObject.objectMaterial.GetSimProperties(tickState);
 
-        _physicsObject.ApplyStatusEffectModifiers(effectPropertyModifires);
+        // 4. Apply Layer 0 to the actual physics simulation
+        _physicsObject.ApplySimProperties(finalSim);
 
     }
 
