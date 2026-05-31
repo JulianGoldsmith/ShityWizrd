@@ -7,6 +7,7 @@ using UnityEngine.Events;
 using static Fusion.NetworkBehaviour;
 
 [DefaultExecutionOrder(+50)]
+[RequireComponent(typeof(PhysicsObjectProperties))]
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
     /* Defines interactions of physics objects in the physics system.
@@ -35,10 +36,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     private ChangeDetector _changeDetector;
 
-    [Networked, OnChangedRender(nameof(OnPhysicsObjectPropertiesChanged))]
-    public PhysicsObjectProperties physicsObjectProperties { get; set; }
+    public PhysicsObjectProperties physicsObjectProperties;
 
-    public CurrentPhysicsProperties currentProperties;
+
     public Rigidbody rb;
     public SimulatedPhysicsObject tPO;
     public PhysicsMaterial physicsMaterial;
@@ -54,8 +54,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public NetworkObject lastInteractor;
     public NetworkObject currentThreatCause => (lastInteractor ?? creator)?? null;
 
-    [Networked]
-    public SpellEffectStates SpellEffectState { get; set; }
+
+   
+
 
     #region Data Networking
     public void OnPhysicsObjectPropertiesChanged()
@@ -64,20 +65,29 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // This includes assigning properties as well
         InitialisePhysicsObject();
     }
+    private void Awake()
+    {
+        physicsObjectProperties = GetComponent<PhysicsObjectProperties>();
+        InitilizeCoreInterfaces();
+    }
+
     public override void Spawned()
     {
         // When it spawns, ensure the properties are mapped.
         base.Spawned();
 
-        InitilizeCoreInterfaces();
-
         tick_spawned = Runner.Tick;
-        InitialisePhysicsObject();
+        //InitialisePhysicsObject();
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         current_bonkedness = starting_bonkedness;
     }
     #endregion
 
+
+    public override void Render()
+    {
+        //transform.localScale = physicsObjectProperties.InitialEditorScale * physicsObjectProperties.CurrentSimData.Scale;
+    }
 
     #region Initialisation
 
@@ -86,139 +96,32 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         _movementHandler = GetComponent<IMovementHandler>();
     }
 
-    private void Awake()
-    {
-        
-    }
 
-    // Assign parameter values to Rigidbody and Unity PhysicsMaterials
     public void InitialisePhysicsObject()
     {
-        UpdateRigidbody(GetComponent<Rigidbody>());
-        _movementHandler = GetComponent<IMovementHandler>();
+        rb = GetComponent<Rigidbody>();
+
         Collider col = GetComponent<Collider>();
         if (col != null)
-            UpdatePhysicsMaterial(col.material);
+        {
+            physicsMaterial = col.material;
+        }
+
+        _movementHandler = GetComponent<IMovementHandler>();
+
+        // 2. Setup the shaders/colors based on the material
         UpdateVisuals();
-        ModifyTransform();
-        UpdateDerivedPhysics();
-    }
-    public Rigidbody UpdateRigidbody(Rigidbody _rb)
-    {
-        if (_rb == null) return null;
 
-        rb = _rb;
-
-        rb.mass = physicsObjectProperties.mass;
-        rb.linearDamping = physicsObjectProperties.hardness;
-        rb.angularDamping = physicsObjectProperties.mass * 0.05f;
-
-        return rb;
+        // 3. FORCE AN IMMEDIATE PHYSICS CALCULATION!
+        // This runs the rollback loop (for 0 ticks), gets the Layer 0 properties, 
+        // scales the Vector3, and applies the mass to the Rigidbody instantly.
+        SimMaterialStateAndEffects();
     }
 
-    public PhysicsMaterial UpdatePhysicsMaterial(PhysicsMaterial mat)
-    {
-        if (mat == null) return null;
-
-        physicsMaterial = mat;
-
-        // Friction
-        //physicsMaterial.staticFriction = physicsObjectProperties.stickiness;
-        //physicsMaterial.dynamicFriction = physicsObjectProperties.stickiness;
-        //physicsMaterial.frictionCombine = PhysicsMaterialCombine.Average;
-
-        // Bounciness
-        //physicsMaterial.bounciness = physicsObjectProperties.elasticity;
-        //physicsMaterial.bounceCombine = PhysicsMaterialCombine.Minimum;
-
-        return physicsMaterial;
-    }
-
-    public void ApplySimProperties(SimProperties finalSim)
-    {
-
-    }
-
-   
-
-    public void UpdateDerivedPhysics()
-    {
-        
-
-        // 1. SIZE (Volume)
-        float scaleModifier = 1f + (SpellEffectState.Scale / 125f);
-        currentProperties.size = Mathf.Max(0.1f, physicsObjectProperties.size * scaleModifier);
-        transform.localScale = Vector3.one * currentProperties.size;
-
-        // 2. DENSITY & MASS
-        float densityModifier = 1f
-            + (SpellEffectState.Stone / 255f * 5f)
-            - (SpellEffectState.Feather / 255f * 0.9f)
-            + (SpellEffectState.Damp / 255f * 0.2f);
-
-        currentProperties.density = physicsObjectProperties.density * densityModifier;
-
-        // Mass = Density * Volume (Size^3 roughly)
-        currentProperties.mass = Mathf.Max(0.01f, currentProperties.density * Mathf.Pow(currentProperties.size, 1.5f));
-        
-
-        // 3. ELASTICITY
-        float coldPenalty = SpellEffectState.Temperature < 0 ? (Mathf.Abs(SpellEffectState.Temperature) / 125f * 0.5f) : 0f;
-        currentProperties.elasticity = physicsObjectProperties.elasticity
-            + (SpellEffectState.Elastic / 255f * 1.5f)
-            - (SpellEffectState.Stone / 255f * 0.8f)
-            - coldPenalty;
-       
-
-        // --- 4a. STICKINESS (Your Custom Momentum Engine) ---
-        currentProperties.stickiness = physicsObjectProperties.stickiness
-            + (SpellEffectState.Adhesion / 255f * 3f)   // Adhesion makes it glue to things
-            - (SpellEffectState.Phase / 255f * 0.8f);   // Phase makes it ghost through things
-
-        // Clamp between 0 (no stick) and 1 (perfect momentum share)
-        currentProperties.stickiness = Mathf.Clamp01(currentProperties.stickiness);
 
 
-        // --- 4b. FRICTION / DRAG (Unity Physics Engine) ---
-        // Cold massively drops friction (Ice). Damp slightly increases it (Wet drag).
-        float icePenalty = SpellEffectState.Temperature < 0 ? (Mathf.Abs(SpellEffectState.Temperature) / 125f * 0.8f) : 0f;
 
-        currentProperties.friction = physicsObjectProperties.friction
-            + (SpellEffectState.Damp / 255f * 0.2f)     // Wet surface drag
-            - (SpellEffectState.Phase / 255f * 0.8f)    // Ethereal objects slide easily
-            - icePenalty;                               // Ice removes sliding resistance
 
-        // Apply strictly to the Unity Physics Material for sliding
-       
-
-        // 5. HARDNESS & BRITTLENESS
-        float heatBonus = SpellEffectState.Temperature > 0 ? (SpellEffectState.Temperature / 125f * 0.5f) : 0f;
-
-        currentProperties.hardness = physicsObjectProperties.hardness
-            + (SpellEffectState.Stone / 255f * 2f)
-            - heatBonus;
-
-        currentProperties.brittleness = physicsObjectProperties.brittleness
-            + coldPenalty
-            + (SpellEffectState.Feather / 255f * 0.5f)
-            - heatBonus
-            - (SpellEffectState.Stone / 255f * 0.9f);
-
-        // Ensure we don't hit zero or negatives
-        currentProperties.hardness = Mathf.Max(0.01f, currentProperties.hardness);
-        currentProperties.brittleness = Mathf.Max(0.01f, currentProperties.brittleness);
-
-        currentProperties.gravityMultiplier = physicsObjectProperties.base_gravity_multiplier
-                                          + (SpellEffectState.Gravity / 25f);
-
-        if (rb == null || physicsMaterial == null) return;
-
-        physicsMaterial.bounciness = Mathf.Clamp01(currentProperties.elasticity);
-        physicsMaterial.staticFriction = Mathf.Max(0f, currentProperties.friction);
-        physicsMaterial.dynamicFriction = Mathf.Max(0f, currentProperties.friction);
-        rb.mass = currentProperties.mass;
-        rb.useGravity = false;
-    }
 
     public void UpdateVisuals()
     {
@@ -243,13 +146,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         }
     }
 
-    public void ModifyTransform()
-    {
-        // TODO:
-        // This should be based on a base-size, not a multiplication.
-        // So it wouldn't matter how often this is called.
-        transform.localScale = Vector3.one * physicsObjectProperties.size;
-    }
     #endregion
 
 
@@ -290,7 +186,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (other == null || other.Object == null || other.Object.IsValid == false)
             other = null;
 
-        float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.currentProperties);
+        float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.physicsObjectProperties);
 
         //Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
         if (IfGetBonked(bonk_amount))
@@ -308,7 +204,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     //This needs
     public void BonkFromImpulse(float impulse, PhysicsObject otherPhysicsObject, NetworkObject bonk_instigator = null, Vector3? pos = null)
     {
-        float bonk_amount = BonkAmount(impulse, otherPhysicsObject?.currentProperties);
+        float bonk_amount = BonkAmount(impulse, otherPhysicsObject?.physicsObjectProperties);
 
         if (IfGetBonked(bonk_amount))
         {
@@ -320,7 +216,15 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public Vector3 velocity_before_physics_update;
     public override void FixedUpdateNetwork()
     {
-        ApplyForce(Physics.gravity * currentProperties.gravityMultiplier, ForceMode.Acceleration);
+        /*if (TryGetComponent<StatusEffectManager>(out var effectManager))
+        {
+            effectManager.BeginTick();
+        }*/
+
+        SimMaterialStateAndEffects();
+
+        ApplyForce(Physics.gravity * physicsObjectProperties.CurrentSimData.GravityMultiplier, ForceMode.Acceleration);
+        
         foreach (var propertyname in _changeDetector.DetectChanges(this, out var previousBuffer, out var currentBuffer))
         {
             switch (propertyname)
@@ -330,9 +234,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
                         OnBonkednessChanged(previousBuffer);
                         break;
                     }
-                case nameof(SpellEffectState):
-                    UpdateDerivedPhysics();
-                    break;
             }
         }
 
@@ -345,6 +246,52 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         RunHaloCollisions();
     }
 
+    public void SimMaterialStateAndEffects()
+    {
+        StatusEffectManager effectManager = null;
+        NetworkedMemoryAllocator memory = null;
+
+        if (TryGetComponent<StatusEffectManager>(out effectManager))
+        {
+            effectManager.CleanUpExpiredEffects(Runner.Tick);
+            memory = GetComponent<NetworkedMemoryAllocator>();
+        }
+
+        // 1. RUN THE SIMULATION ENGINE
+        physicsObjectProperties.CalculateSimState(Runner, this, memory, effectManager);
+
+
+
+        if (TryGetComponent<StatusEffectManager>(out effectManager))
+        {
+            effectManager.ClearPersistanceCache();
+        }
+        
+
+        // 2. APPLY TO UNITY PHYSICS
+        SimProperties finalSim = physicsObjectProperties.CurrentSimData;
+
+        if (rb != null)
+        {
+            rb.mass = finalSim.Mass;
+            rb.linearDamping = finalSim.LinearDamping;
+            rb.angularDamping = finalSim.AngularDamping;
+            rb.useGravity = false; // We apply custom gravity in FUN
+        }
+
+        if (physicsMaterial != null)
+        {
+            physicsMaterial.dynamicFriction = finalSim.Friction;
+            physicsMaterial.staticFriction = finalSim.Friction;
+            physicsMaterial.bounciness = finalSim.Restitution;
+        }
+
+
+   
+        transform.localScale =
+            physicsObjectProperties.InitialEditorScale *
+            finalSim.Scale;
+    }
 
 
     #region Material Physics
@@ -355,7 +302,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         // currently only run if sticky.
         // can add more.
-        return currentProperties.stickiness > 0;
+        return physicsObjectProperties.stickiness > 0;
     }
     float halo_radius()
     {
@@ -463,9 +410,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
                 other_velocity = other_rb.linearVelocity;
             }
 
-            other_mass = other_po.currentProperties.mass;
+            other_mass = other_po.physicsObjectProperties.mass;
             //if (other_po.physicsObjectProperties.physicsobjectmaterial != null)
-            other_stickiness = other_po.currentProperties.stickiness;
+            other_stickiness = other_po.physicsObjectProperties.stickiness;
         }
 
         // QUESTION: should we be including the other's stickiness? They'll run their
@@ -474,13 +421,13 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // to and then only let one of them run the calc.
 
         // Here we combine stickiness.
-        float shared_stickiness_factor = Mathf.Clamp01(currentProperties.stickiness + other_stickiness);
+        float shared_stickiness_factor = Mathf.Clamp01(physicsObjectProperties.stickiness + other_stickiness);
         
 
-        float total_mass = currentProperties.mass + other_mass;
+        float total_mass = physicsObjectProperties.mass + other_mass;
 
         // Here's some standard momentum sharing physics:
-        Vector3 my_momentum = rb.linearVelocity * currentProperties.mass;
+        Vector3 my_momentum = rb.linearVelocity * physicsObjectProperties.mass;
         Vector3 other_momentum = other_velocity * other_mass;
         Vector3 total_momentum = my_momentum + other_momentum;
 
@@ -488,9 +435,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // we then distribute out the momenta back to the two objects based on mass
         // and stickiness.
         Vector3 my_new_momentum = my_momentum * (1 - shared_stickiness_factor) + 
-            total_momentum * shared_stickiness_factor * currentProperties.mass / total_mass;
+            total_momentum * shared_stickiness_factor * physicsObjectProperties.mass / total_mass;
 
-        Vector3 velocity_diff = (my_new_momentum / currentProperties.mass) - rb.linearVelocity;
+        Vector3 velocity_diff = (my_new_momentum / physicsObjectProperties.mass) - rb.linearVelocity;
         ApplyForceToSelfAndSubObjects(velocity_diff, ForceMode.VelocityChange);
 
         if (other_po != null)
@@ -546,7 +493,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             return;
         }
 
-        if (currentProperties.elasticity == 0)
+        if (physicsObjectProperties.elasticity == 0)
             return;
 
         // unfortunately, can't just use the impulse
@@ -571,16 +518,16 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (velAlongNormal < 0)
             return;
 
-        float invMass = 1f / currentProperties.mass;
+        float invMass = 1f / physicsObjectProperties.mass;
         float other_invMass;
         
         PhysicsObject other_po = col.gameObject.GetComponent<PhysicsObject>();
         if (other_po != null)
-            other_invMass = 1f / other_po.currentProperties.mass;
+            other_invMass = 1f / other_po.physicsObjectProperties.mass;
         else
             other_invMass = 0;
 
-        float j = currentProperties.elasticity * velAlongNormal / (invMass + other_invMass);
+        float j = physicsObjectProperties.elasticity * velAlongNormal / (invMass + other_invMass);
 
         //Vector3 bounce_impulse = col.impulse * physicsObjectProperties.elasticity * 5;
         Vector3 bounce_impulse = j * normal;
@@ -616,24 +563,24 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         // But then 
         return bonk_amount > bonk_threshold;
     }
-    float BonkAmount(float collision_impulse, CurrentPhysicsProperties? other_properties)
+    float BonkAmount(float collision_impulse, PhysicsObjectProperties? other_properties)
     {
         // Depends on size and brittleness.
         // - higher size means more effective health
         // - higher brittleness means lower effective health.
-        float mass = currentProperties.mass > 0 ? currentProperties.mass : 1.0f;
+        float mass = physicsObjectProperties.mass > 0 ? physicsObjectProperties.mass : 1.0f;
 
         // bonk is proportional to the hardness of both objects.
-        float hardness_factor = currentProperties.hardness > 0 ? currentProperties.hardness : PhysicsObjectMaterial.default_hardness;
+        float hardness_factor = physicsObjectProperties.hardness > 0 ? physicsObjectProperties.hardness : 1;
         if(other_properties != null)
-            hardness_factor *= (other_properties?.hardness > 0 ? other_properties?.hardness : PhysicsObjectMaterial.default_hardness) ?? PhysicsObjectMaterial.default_hardness;
+            hardness_factor *= (other_properties?.hardness > 0 ? other_properties?.hardness : 1) ?? 1;
 
         // quadratic.
         // this is a bad idea since falling on an object would come with a different bonk calc.
         float wall_or_floor_penalty = (other_properties == null)? 0.1f: 1.0f;
 
         return 150f * collision_impulse * hardness_factor * wall_or_floor_penalty *
-            currentProperties.brittleness /
+            physicsObjectProperties.brittleness /
             mass;
     }
 
@@ -749,34 +696,3 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     #endregion
 }
 
-public struct SpellEffectStates : INetworkStruct
-{
-    // twoway -125 - 125
-    public sbyte Temperature;
-    public sbyte Scale;
-    public sbyte Gravity;
-
-    // oneway
-    public byte Stone;
-    public byte Damp;
-    public byte Charge;
-    public byte Feather;
-    public byte Elastic;
-    public byte Phase;
-    public byte Adhesion;
-   
-}
-
-[System.Serializable]
-public struct CurrentPhysicsProperties
-{
-    public float size;
-    public float density;
-    public float mass;
-    public float hardness;
-    public float elasticity;
-    public float brittleness;
-    public float stickiness;
-    public float friction;
-    public float gravityMultiplier;
-}

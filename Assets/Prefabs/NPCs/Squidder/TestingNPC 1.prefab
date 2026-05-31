@@ -103,18 +103,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 2888350923097071999}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &4280979134898669390
 MonoBehaviour:
@@ -438,114 +426,140 @@ MonoBehaviour:
     targetBone: {fileID: 3505666986225127640}
     physicsProxy: {fileID: 6095370504088226660}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4083591847271118633}
     targetBone: {fileID: 7843292459571252834}
     physicsProxy: {fileID: 2341068911128189223}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 1187340231799751356}
     targetBone: {fileID: 4902566698194598903}
     physicsProxy: {fileID: 8868192015161409186}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 3696391024804034926}
     targetBone: {fileID: 7439689041032429605}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 8415271885267175877}
     targetBone: {fileID: 2358233604738691214}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 5944042342353998728}
     targetBone: {fileID: 436381656591116995}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 7914802486039308546}
     targetBone: {fileID: 4153492193010012233}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4038993424363501526}
     targetBone: {fileID: 7817772689412263581}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 7706681176612930193}
     targetBone: {fileID: 4503754088542649306}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 2679284799887068442}
     targetBone: {fileID: 8168850904454755409}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 2792396951941333477}
     targetBone: {fileID: 8265156389918275758}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 7562348159186062318}
     targetBone: {fileID: 4360036793335509669}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 5041715143219515648}
     targetBone: {fileID: 1262389966348396619}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 8592673932727455709}
     targetBone: {fileID: 2543516345878886038}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 776013598562669101}
     targetBone: {fileID: 6825162939000646502}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 3754355022439460327}
     targetBone: {fileID: 6947096861925512364}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 9133604069958753453}
     targetBone: {fileID: 3076584494003398118}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 5868853158717966609}
     targetBone: {fileID: 360700372784279642}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4207784833239654250}
     targetBone: {fileID: 7932567146683344417}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 860276639177380766}
     targetBone: {fileID: 6882481828700367573}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4255965344415215836}
     targetBone: {fileID: 8026281118645209495}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   - sourceBone: {fileID: 4855376250944513833}
     targetBone: {fileID: 1662654202730667618}
     physicsProxy: {fileID: 0}
     enabled: 1
+    ragDollBone: 0
     injectAnimatedHipsRootMotion: 0
   animatedHipRootMotion: {x: 0, y: 0, z: 0}
   animatedHipRotation: {x: 0, y: 0, z: 0, w: 1}
+  disableRetargetingToProxys: 0
+  lerpTProxy: 0
+  overRideAndInjectAnimatedHipsRootMotionToAll: 0
+  overRideAndKillInjectedMotion: 0
 --- !u!1 &635060877302287510
 GameObject:
   m_ObjectHideFlags: 0
@@ -596,6 +610,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &1119281139105790255
 GameObject:
   m_ObjectHideFlags: 0
@@ -975,6 +990,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &2700920391655652558
 GameObject:
   m_ObjectHideFlags: 0
@@ -1098,18 +1114,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 8554936416858507756}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &7256180040006797073
 MonoBehaviour:
@@ -1524,6 +1528,7 @@ MonoBehaviour:
   pingScalar: 5
   unParentOnSpawn: 0
   syncScale: 1
+  smoothingEnabled: 1
 --- !u!1 &3936038465445363722
 GameObject:
   m_ObjectHideFlags: 0
@@ -1704,6 +1709,7 @@ GameObject:
   - component: {fileID: 1537595608460148306}
   - component: {fileID: 226515128592896572}
   - component: {fileID: 1181774792633362585}
+  - component: {fileID: 4558121905058620571}
   m_Layer: 0
   m_Name: TestingNPC 1
   m_TagString: Untagged
@@ -1755,6 +1761,7 @@ MonoBehaviour:
   - {fileID: 1537595608460148306}
   - {fileID: 226515128592896572}
   - {fileID: 1181774792633362585}
+  - {fileID: 4558121905058620571}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2949232162196738072
 MonoBehaviour:
@@ -1786,15 +1793,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coreRB: {fileID: 3872425383671569580}
+  _ragDollStrength: 1
+  _IsGrounded:
+    _value: 0
+  _LastJumpTick: 0
+  jumpSuspensionDuration: 0.2
+  sizeMult: 1
+  extraRideHeight: 0
   extraGroundCheckDistance: 0.05
   groundLayer:
     serializedVersion: 2
     m_Bits: 262015
   suspensionCastRadius: 0.04
-  _IsGrounded:
-    _value: 0
-  rideHeight: 0.15
   rideSpringStrength: 500
+  rideSpringDampingRatio: 1
   rideSpringDamper: 25
   uprightSpringStrength: 1000
   uprightSpringDamper: 10
@@ -1805,119 +1817,20 @@ MonoBehaviour:
   jumpForce: 50
   networkedRenderRoot: {fileID: 3269784909851539992}
   smoothedNetworkRoot: {fileID: 6095370504088226660}
-  pdBones:
-  - childRigidbody: {fileID: 3802016166967499973}
-    parentRigidbody: {fileID: 3872425383671569580}
-    targetTransform: {fileID: 4083591847271118633}
-    proportionalGainRotation: 400
-    derivativeGainRotation: 40
-    applyEqualAndOppositeTorque: 1
-    rotationErrorCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0.2
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 0.25
-        value: 1
-        inSlope: -0.0000020394657
-        outSlope: -0.0000020394657
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0.11690247
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    maximumAngleRadians: 0.7
-    maximumTorqueAcceleration: 1200
-    usePositionDrive: 1
-    parentAnchorLocal: {x: 0, y: 0.41297793, z: 0}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    proportionalGainPosition: 600
-    derivativeGainPosition: 20
-    applyEqualAndOppositeForce: 1
-    maximumForceAcceleration: 200
-    designDeltaTime: 0.015625
-  - childRigidbody: {fileID: 5311972928531932872}
-    parentRigidbody: {fileID: 3802016166967499973}
-    targetTransform: {fileID: 1187340231799751356}
-    proportionalGainRotation: 300
-    derivativeGainRotation: 40
-    applyEqualAndOppositeTorque: 1
-    rotationErrorCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0.2
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 0.25
-        value: 1
-        inSlope: -0.0000020394657
-        outSlope: -0.0000020394657
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0.11690247
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    maximumAngleRadians: 0.7
-    maximumTorqueAcceleration: 1200
-    usePositionDrive: 1
-    parentAnchorLocal: {x: 0, y: 0.45758563, z: 0}
-    childAnchorLocal: {x: 0, y: 0, z: 0}
-    proportionalGainPosition: 600
-    derivativeGainPosition: 20
-    applyEqualAndOppositeForce: 1
-    maximumForceAcceleration: 200
-    designDeltaTime: 0.015625
   rbComponents:
   - {fileID: 2888350923097071999}
   - {fileID: 6202289155301866775}
   - {fileID: 8554936416858507756}
-  targetAnimator: {fileID: 455054832584376484}
-  animStateController: {fileID: 0}
+  networkAnimator: {fileID: 0}
   hipsOffset: {x: 0, y: -0.08, z: 0}
   rootMotionForceStrength: 100
   useRootMotionXZ: 1
   useRootMotionY: 1
-  _NetworkedWantsToSprint: 0
-  _NetworkedWantsToJump: 0
-  _NetworkedLookVector: {x: 0, y: 0, z: 0}
-  _NetworkedMoveVector: {x: 0, y: 0, z: 0}
+  rootYMult: 1
+  _currentAbsoluteRM_Y: 0
+  _currentAbsoluteRM_Rot: {x: 0, y: 0, z: 0, w: 0}
+  xpbdSolver: {fileID: 0}
+  characterBonkController: {fileID: 0}
 --- !u!114 &764547303363181115
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1931,25 +1844,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _animator: {fileID: 455054832584376484}
-  _clipsConfig:
-  - Clip: {fileID: 2309300341071783715, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
-    Speed: 1
-  - Clip: {fileID: -8119403950739411288, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
-    Speed: 1
-  - Clip: {fileID: -8119403950739411288, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
-    Speed: -1
-  - Clip: {fileID: -6344824580521597273, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
-    Speed: 1
-  - Clip: {fileID: 2729161144076196762, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
-    Speed: 1
+  _locomotionClipsConfig: []
   _tPoseClip: {fileID: -6257937421963181302, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
   _CurrentState: 0
+  _npcActionController: {fileID: 0}
   _blendSpeed: 5
+  _actionBlendSpeed: 20
   _locomotionBlendSpeed: 10
   _ClipWeights: []
   _ClipTimes: []
+  _ActiveClipIndex: -1
   armatureRoot: {fileID: 7265867803234363795}
-  zIsUp: 1
+  armatureLocalUpAxis: 1
+  armatureLocalForwardAxis: 2
 --- !u!114 &6718825358511771310
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1990,11 +1897,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7606a1bce324bb04eba04ee820969f60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blackboard:
-    m_Variables: []
-  references:
-    version: 2
-    RefIds: []
+  agent: {fileID: 0}
 --- !u!114 &3265330234082672118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2010,6 +1913,7 @@ MonoBehaviour:
   agent: {fileID: 6718825358511771310}
   targetVariableName: Target
   lastSeenPositionVariableName: TargetLastSeenPosition
+  homeLocationVariableName: HomeLocation
   perceptionRadius: 10
   perceptionAngle: 180
   targetTag: Player
@@ -2021,6 +1925,7 @@ MonoBehaviour:
     m_Bits: 0
   eyeOffset: {x: 0, y: 0.5, z: 0}
   root: {fileID: 2117861437352292569}
+  controller: {fileID: 0}
 --- !u!114 &1585689525517121370
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2049,13 +1954,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55a47827fb9403844a902d3ec8175ced, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _physicsObjectProperties:
-    material_label: 4
-    size: 0.3
+  defaultGravityScale: 1
+  physicsObjectProperties: {fileID: 0}
+  currentProperties:
+    size: 0
+    density: 0
+    mass: 0
+    hardness: 0
+    elasticity: 0
+    brittleness: 0
+    stickiness: 0
+    friction: 0
+    gravityMultiplier: 0
   rb: {fileID: 0}
+  tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
   velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
   OnZeroBonk_event:
@@ -2064,7 +1982,7 @@ MonoBehaviour:
   OnRecoverFromBonk_event:
     m_PersistentCalls:
       m_Calls: []
-  controller: {fileID: 232658919603037716}
+  bonkController: {fileID: 0}
 --- !u!114 &226515128592896572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2099,7 +2017,42 @@ MonoBehaviour:
   primaryAttackBuffered: 0
   primaryAttackReleaseBuffered: 0
   _nextActionId: 0
+  _TotalSpellCasts: 0
+  spellCastPoints: []
+  agent: {fileID: 0}
+  targetVariableName: Target
+  canAttackVariableName: CanAttack
   actions: []
+  hitboxes: []
+  _animStateController: {fileID: 0}
+  spellSpawnPoint: {fileID: 0}
+  activeRagdollController: {fileID: 0}
+--- !u!114 &4558121905058620571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4800428965064687594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Friction: 0
+    Restitution: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  CachedTick: -1
 --- !u!1 &4836704107927610604
 GameObject:
   m_ObjectHideFlags: 0
@@ -2254,18 +2207,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 6202289155301866775}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &3644118708778166596
 MonoBehaviour:

@@ -26,7 +26,7 @@ public class XpbdConstraintSolver : MonoBehaviour
         {
             j.tmpSizeMult = 1;
             if (j.po != null)
-            j.tmpSizeMult = j.po.currentProperties.size;
+            j.tmpSizeMult = j.po.physicsObjectProperties.Size;
         }
 
         var bodySnapshots = StoreRBSnapshot();

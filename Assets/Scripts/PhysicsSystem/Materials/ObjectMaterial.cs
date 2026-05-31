@@ -22,42 +22,4 @@ public class ObjectMaterial : ScriptableObject
     }
 }
 
-[System.Serializable]
-public struct SimProperties
-{
-    public float Mass;
-    public float Friction;
-    public float Restitution; // Bounce
-    public float LinearDrag;
-    public float AngularDrag;
 
-    public float ThermalConductance;
-    public float ElectricalConductance;
-
-    public float Brittleness; // Impact fracture threshold
-    public float Adhesion;    // Force required to pull away
-}
-
-public struct MaterialState
-{
-    public float Temperature;
-    public float Wetness;
-    public float Charge;
-
-    public float Rubberization;
-    public float Lubrication;
-
-    public float ScaleMultiplier;
-    public float DensityMultiplier;
-
-    public void Reset()
-    {
-        Temperature = 0f;
-        Wetness = 0f;
-        Charge = 0f;
-        Rubberization = 0f;
-        Lubrication = 0f;
-        ScaleMultiplier = 1f;
-        DensityMultiplier = 1f;
-    }
-}

@@ -37,9 +37,9 @@ public class TransformCoreMovement : NetworkBehaviour, IMovementHandler
 
     public void ApplyForce(Vector3 force, ForceMode forceMode = ForceMode.Force)
     {
-        if (_po == null || _po.currentProperties.mass <= 0) return;
+        if (_po == null || _po.physicsObjectProperties.mass <= 0) return;
 
-        float mass = _po.currentProperties.mass;
+        float mass = _po.physicsObjectProperties.mass;
 
         switch (forceMode)
         {
@@ -67,17 +67,17 @@ public class TransformCoreMovement : NetworkBehaviour, IMovementHandler
 
     public void ApplyImpulse(Vector3 force, Vector3 hitPosition = default)
     {
-        if (_po != null && _po.currentProperties.mass > 0)
+        if (_po != null && _po.physicsObjectProperties.mass > 0)
         {
-            NetworkedVelocity += force / _po.currentProperties.mass;
+            NetworkedVelocity += force / _po.physicsObjectProperties.mass;
         }
     }
 
     public void ApplyContinuousForce(Vector3 force)
     {
-        if (_po != null && _po.currentProperties.mass > 0)
+        if (_po != null && _po.physicsObjectProperties.mass > 0)
         {
-            NetworkedVelocity += (force / _po.currentProperties.mass) * Runner.DeltaTime;
+            NetworkedVelocity += (force / _po.physicsObjectProperties.mass) * Runner.DeltaTime;
         }
     }
 

@@ -48,39 +48,23 @@ public class ScaleEffect : IEffect
     {
         foreach (var info in hitInfos)
         {
-            // Struct validation check
             if (!info.IsValid || info.HitObject == null) continue;
 
             GameObject target = info.HitObject;
 
-            if (target.TryGetComponent<PhysicsObject>(out PhysicsObject PO))
+            if (target.TryGetComponent<StatusEffectManager>(out var effectManager))
             {
-                ApplyScaleChange(PO);
-            }
-            else if (target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject PSO))
-            {
-                if (PSO.parent_physics_object != null)
+                ProposedEffectPayload payload = new ProposedEffectPayload
                 {
-                    //ApplyScaleChange(PSO.parent_physics_object);
-                }
+                    DurationInTicks = 0, // 0 = permanent until cleansed
+                    Magnitude = ScaleChangeAmount / 100f, // Convert to a multiplier
+                    TargetId = core.Object != null ? core.Object.Id : default
+                };
+
+                // 3. Send it to the engine! 
+                // (Assuming '1' is the ID for your Scale/Grow effect in your registry)
+                effectManager.AddEffect(1, payload);
             }
         }
-    }
-
-    private void ApplyScaleChange(PhysicsObject po)
-    {
-        SpellEffectStates currentState = po.SpellEffectState;
-
-        float percentMultiplier = (100f + ScaleChangeAmount) / 100f;
-
-        float currentVisualSize = 1f + (currentState.Scale / 125f);
-
-        float newVisualSize = currentVisualSize * percentMultiplier;
-
-        float calculatedScale = (newVisualSize - 1f) * 125f;
-
-        currentState.Scale = (sbyte)Mathf.Clamp(Mathf.RoundToInt(calculatedScale), -125, 125);
-
-        po.SpellEffectState = currentState;
     }
 }

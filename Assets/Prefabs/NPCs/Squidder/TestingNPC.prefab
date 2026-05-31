@@ -105,6 +105,7 @@ GameObject:
   - component: {fileID: 8778855457837639377}
   - component: {fileID: 2033750985627491913}
   - component: {fileID: 6697534619558627041}
+  - component: {fileID: 6211924996856723778}
   m_Layer: 0
   m_Name: TestingNPC
   m_TagString: Untagged
@@ -161,6 +162,7 @@ MonoBehaviour:
   - {fileID: 4909579585887290146}
   - {fileID: 8778855457837639377}
   - {fileID: 2033750985627491913}
+  - {fileID: 6211924996856723778}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &800159727264757731
 MonoBehaviour:
@@ -343,9 +345,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterController: {fileID: 0}
   armIKs: []
-  _BonkedState: 0
-  bonkChangedThisUpdate: 0
   ragdollProxysRoot: {fileID: 0}
+  ragDollSolver: {fileID: 0}
+  _BonkTick: 0
+  _UnbonkTick: 0
 --- !u!114 &8593918960458374616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -489,10 +492,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultGravityScale: 1
-  _physicsObjectProperties:
-    material_label: 4
-    size: 2
-    base_gravity_multiplier: 0
+  physicsObjectProperties: {fileID: 0}
   currentProperties:
     size: 0
     density: 0
@@ -506,6 +506,7 @@ MonoBehaviour:
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
   creator: {fileID: 0}
@@ -592,6 +593,32 @@ MonoBehaviour:
           m_Value1: 0
         Name: Self
         m_Value: {fileID: 4526936778991103423}
+--- !u!114 &6211924996856723778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4526936778991103423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Friction: 0
+    Restitution: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  CachedTick: -1
 --- !u!1 &4577340965753083559
 GameObject:
   m_ObjectHideFlags: 0
@@ -746,18 +773,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 173163635148667022}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &7469360575369398979
 MonoBehaviour:
@@ -917,18 +932,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 5222548125519802837}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &7180379688605715818
 MonoBehaviour:
@@ -1170,18 +1173,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 7834450559577288110}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 1
 --- !u!114 &4571679568921831809
 MonoBehaviour:
@@ -1676,6 +1667,7 @@ MonoBehaviour:
   disableRetargetingToProxys: 0
   lerpTProxy: 1
   overRideAndInjectAnimatedHipsRootMotionToAll: 0
+  overRideAndKillInjectedMotion: 0
 --- !u!4 &7537459874393038386 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 452720090720547876, guid: 9dedb54c271db7543ba50c4df7d7a875, type: 3}

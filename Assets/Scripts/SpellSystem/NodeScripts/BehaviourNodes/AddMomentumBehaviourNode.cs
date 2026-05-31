@@ -33,7 +33,7 @@ public class AddMomentumBehaviour : IBehaviour
 
         if (core.TryGetComponent<PhysicsObject>(out var po))
         {
-            float calcMass = Mathf.Max(0.01f, po.currentProperties.mass);
+            float calcMass = Mathf.Max(0.01f, po.physicsObjectProperties.mass);
 
             po.ApplyForce((charge* direction * ForceMultiplier) / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
         }
@@ -76,7 +76,7 @@ public class AddMomentumSBMono : SpellBehaviour
 
         if (TryGetComponent<PhysicsObject>(out var po))
         {
-            float calcMass = Mathf.Max(0.01f, po.currentProperties.mass);
+            float calcMass = Mathf.Max(0.01f, po.physicsObjectProperties.mass);
 
             // Apply universal force!
             po.ApplyForce(velocity / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);

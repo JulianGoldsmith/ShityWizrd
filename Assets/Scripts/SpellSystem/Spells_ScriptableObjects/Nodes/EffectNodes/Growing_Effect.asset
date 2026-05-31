@@ -9,11 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dba77547a991d4d44a9ec5525cc96c9f, type: 3}
-  m_Name: GrowEffectNode
+  m_Script: {fileID: 11500000, guid: c3e6355992410234faa67b9b8a3a908e, type: 3}
+  m_Name: Growing_Effect
   m_EditorClassIdentifier: 
-  nodeName: GrowEffectNode
-  description: 'Grows the object '
+  nodeName: Grow
+  description: 
   category: 5
   valueContainers: []
   icon: {fileID: 2800000, guid: 1e18f85808152514d8feb2fe7228109a, type: 3}
@@ -21,5 +21,11 @@ MonoBehaviour:
   overrideMaterial: {fileID: 0}
   ovverideVisualScale: 1
   casterTriggerMethod: 0
-  growthRate: 0.1
-  durationTicks: 300
+  NetworkEffectID: 1
+  Lifecycle: 1
+  DurationTicks: 300
+  Components:
+  - Target: 5
+    Mutation: 0
+    BaseMagnitude: 0.2
+    AutoVFX: 0

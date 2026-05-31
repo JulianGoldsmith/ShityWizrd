@@ -51,6 +51,7 @@ public class GrowRuntimeEffect : IEffect
                 {
                     DurationInTicks = DurationTicks,
                     Magnitude = GrowthRate,
+                    EffectType = EffectLifecycle.Duration,
                     TargetId = core.Object.Id 
                 };
 
@@ -64,6 +65,7 @@ public class GrowRuntimeEffect : IEffect
                     {
                         DurationInTicks = DurationTicks,
                         Magnitude = GrowthRate,
+                        EffectType = EffectLifecycle.Duration,
                         TargetId = core.Object.Id
                     };
 
@@ -77,46 +79,47 @@ public class GrowRuntimeEffect : IEffect
 public class GrowStatusEffect : IStatusEffect
 {
     private const int FLOATS_NEEDED = 1;
-    private const int SLOT_CURRENT_SCALE = 0;
-    private const float growthRate = 0.1f;
+    private const int SLOT_GROWTH_RATE = 0;
+
 
     public void OnAllocated(NetworkedMemoryAllocator memory, ref ActiveStatusEffectData newEffectData, ProposedEffectPayload payload)
     {
         if (memory.TryClaimFloats(FLOATS_NEEDED, out byte startIndex))
         {
             newEffectData.FloatOffset = startIndex;
-
-            float initialScale = 1.0f + payload.Magnitude;
-            newEffectData.SetFloat(SLOT_CURRENT_SCALE, initialScale, memory);
-        }
-        else
-        {
-            Debug.LogWarning("GrowEffect failed to allocate memory! Object sketchpad is full.");
+            newEffectData.SetFloat(SLOT_GROWTH_RATE, payload.Magnitude, memory);
         }
     }
 
     public bool TryStack(NetworkRunner runner, ref ActiveStatusEffectData existingEffect, NetworkedMemoryAllocator memory, ProposedEffectPayload newPayload)
     {
-        float currentScale = existingEffect.GetFloat(SLOT_CURRENT_SCALE, memory);
-        currentScale += newPayload.Magnitude;
-        currentScale = Mathf.Clamp(currentScale, 1.0f, 10.0f);
+        if (newPayload.EffectType == EffectLifecycle.Channeled) return true;
 
-        existingEffect.SetFloat(SLOT_CURRENT_SCALE, currentScale, memory);
+        float currentRate = existingEffect.GetFloat(SLOT_GROWTH_RATE, memory);
+        existingEffect.SetFloat(SLOT_GROWTH_RATE, currentRate + newPayload.Magnitude, memory);
 
         if (newPayload.DurationInTicks > 0)
         {
             int proposedEndTick = runner.Tick + newPayload.DurationInTicks;
             existingEffect.EndTick = Mathf.Max(existingEffect.EndTick, proposedEndTick);
         }
-
         return true;
     }
 
-    public void Tick(NetworkRunner runner, PhysicsObject target, NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData, ref MaterialState currentState)
+    public void Tick(int simTick, PhysicsObject target, NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData, ref MaterialState currentState, PhysicsObjectMaterial mat)
     {
-        float currentScale = effectData.GetFloat(SLOT_CURRENT_SCALE, memory);
+        float growthPerSecond = effectData.GetFloat(SLOT_GROWTH_RATE, memory);
+        float growthThisTick = growthPerSecond * target.Runner.DeltaTime;
+        
+        // Multiply by the official NETWORKED presence count
+        if (effectData.EffectType == EffectLifecycle.Channeled)
+        {
+            growthThisTick *= effectData.PresenceCount;
+        }
 
-        currentState.ScaleMultiplier *= currentScale;
+        mat.MutateScale(ref currentState, MutationType.Add, growthThisTick);
+
+        if (currentState.ScaleMultiplier > 10f) currentState.ScaleMultiplier = 10f;
     }
 
     public void OnRemoved(NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData)

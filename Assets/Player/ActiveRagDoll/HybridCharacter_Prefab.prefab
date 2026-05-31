@@ -190,18 +190,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &47061550507917322
 GameObject:
@@ -489,18 +477,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &233864207525178288
 GameObject:
@@ -1313,18 +1289,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &710594657216964834
 GameObject:
@@ -3028,6 +2992,7 @@ GameObject:
   - component: {fileID: 6685984473246634530}
   - component: {fileID: 7064564967240851666}
   - component: {fileID: 4969265624486796617}
+  - component: {fileID: 4885437083157261521}
   m_Layer: 0
   m_Name: HybridCharacter_Prefab
   m_TagString: Untagged
@@ -3088,6 +3053,9 @@ MonoBehaviour:
   rideSpringStrength: 100
   rideSpringDamper: 10
   suspensionCastRadius: 0.25
+  dragStength: 50
+  grabDamping: 10
+  playerDragResistance: 10
   maxWalkSpeed: 2.25
   maxSprintSpeed: 5
   acceleration: 100
@@ -3130,8 +3098,9 @@ MonoBehaviour:
     m_RotationOrder: 4
   uprightForce: 10000
   uprightDamp: 10
+  netAnimator: {fileID: 0}
   targetAnimator: {fileID: 7130913059605174}
-  finalAnimator: {fileID: 3514596635999219096}
+  visualAnimator: {fileID: 0}
   boneMapper: {fileID: 5430316478385969607}
   spineIKTarget: {fileID: 1434938052664185444}
   headOffset: {x: 0, y: 0, z: 0}
@@ -3218,15 +3187,29 @@ MonoBehaviour:
   ragDollBones: []
   _moveInput: {x: 0, y: 0}
   _lookRot: {x: 0, y: 0, z: 0, w: 0}
+  _previousLookRot: {x: 0, y: 0, z: 0, w: 0}
+  _LastJumpTick: 0
+  jumpSuspensionDuration: 0.2
   _sprint: 0
   networkedRenderRoot: {fileID: 1652055986857824785}
   smoothedNetworkedRenderRoot: {fileID: 0}
   rendererPos: {x: 0, y: 0, z: 0}
   rendererRot: {x: 0, y: 0, z: 0, w: 0}
   rendererVelocity: {x: 0, y: 0, z: 0}
+  rendererAccel: {x: 0, y: 0, z: 0}
   rendererYawSpeed: 0
   rendererAngularVel: {x: 0, y: 0, z: 0}
   lastRendererPos: {x: 0, y: 0, z: 0}
+  smoothRendererVelocity: {x: 0, y: 0, z: 0}
+  smoothRendererAccel: {x: 0, y: 0, z: 0}
+  smoothRendererYawSpeed: 0
+  smoothRendererAngularVel: {x: 0, y: 0, z: 0}
+  smoothLastRendererPos: {x: 0, y: 0, z: 0}
+  lastFixedPos: {x: 0, y: 0, z: 0}
+  calculatedFixedVel: {x: 0, y: 0, z: 0}
+  lastFixedVel: {x: 0, y: 0, z: 0}
+  calculatedFixedAccel: {x: 0, y: 0, z: 0}
+  lastRenderDt: 0
   _isHost: 0
   cashIsHost: 0
   hostMat: {fileID: 2100000, guid: e09614160cb77a0498ad88d9b300cff8, type: 2}
@@ -3240,6 +3223,9 @@ MonoBehaviour:
   handController: {fileID: 1863557189476980646}
   bonkController: {fileID: 0}
   xpbdSolver: {fileID: 0}
+  xpbdJointSolver: {fileID: 0}
+  _AuthInputTick: 0
+  inputSmoothingFactor: 0.1
 --- !u!114 &5430316478385969607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3300,6 +3286,7 @@ MonoBehaviour:
   - {fileID: 6685984473246634530}
   - {fileID: 7064564967240851666}
   - {fileID: 4969265624486796617}
+  - {fileID: 4885437083157261521}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6340558049541726636
 MonoBehaviour:
@@ -3313,25 +3300,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20f6bae2c43360e45bae960bfcb9671f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraAnchor: {fileID: 1652055986857824785}
-  cameraTransform: {fileID: 0}
+  followTarget: {fileID: 0}
   localEyeOffset: {x: 0, y: 0.85, z: 0}
+  positionSmoothTime: 0.05
   lookInput: {x: 0, y: 0}
   mouseSensitivity: 0.12
   lookSmoothing: 0.1
   minPitch: -89
   maxPitch: 89
-  useRbMoveRotation: 1
-  maxYawDegreesPerSec: 720
   pitchOffset: {x: -0.5, y: 0.3, z: 0}
   targetYaw: 0
   targetPitch: 0
   finalYaw: 0
-  yawVel: 0
   finalPitch: 0
-  pitchVel: 0
   camActive: 1
   isLocalAuthority: 0
+  cameraTransform: {fileID: 0}
 --- !u!114 &23419628365479375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3558,6 +3542,8 @@ MonoBehaviour:
     draggingTransform: {fileID: 0}
     localDragPoint: {x: 0, y: 0, z: 0}
     cashePalmOffset: {x: 0, y: 0, z: 0}
+    localWristToPalmPos: {x: 0, y: 0, z: 0}
+    localWristToPalmRot: {x: 0, y: 0, z: 0, w: 0}
     currentFrametargetPos: {x: 0, y: 0, z: 0}
     currentFrametargetRot: {x: 0, y: 0, z: 0, w: 0}
     temporaryTarget: {fileID: 0}
@@ -3590,6 +3576,8 @@ MonoBehaviour:
     draggingTransform: {fileID: 0}
     localDragPoint: {x: 0, y: 0, z: 0}
     cashePalmOffset: {x: 0, y: 0, z: 0}
+    localWristToPalmPos: {x: 0, y: 0, z: 0}
+    localWristToPalmRot: {x: 0, y: 0, z: 0, w: 0}
     currentFrametargetPos: {x: 0, y: 0, z: 0}
     currentFrametargetRot: {x: 0, y: 0, z: 0, w: 0}
     temporaryTarget: {fileID: 0}
@@ -3649,6 +3637,8 @@ MonoBehaviour:
   dragStength: 50
   dragDamp: 10
   dragRange: 10
+  grabDamping: 1
+  playerDragResistance: 1
   dragStrengthCurve:
     serializedVersion: 2
     m_Curve:
@@ -3828,8 +3818,6 @@ MonoBehaviour:
   _currentItemInHand: {fileID: 0}
   _potentialItemToPickup: {fileID: 0}
   _localHandPosOnItem: {x: 0, y: 0, z: 0}
-  _PickUpPressCount: 0
-  _DropPressCount: 0
   __dragTargetPos: {x: 0, y: 0, z: 0}
   __dragFacingDir: {x: 0, y: 0, z: 0}
 --- !u!114 &7391232409836999049
@@ -3853,6 +3841,8 @@ MonoBehaviour:
   primaryAttackBuffered: 0
   primaryAttackReleaseBuffered: 0
   _nextActionId: 0
+  _TotalSpellCasts: 0
+  spellCastPoints: []
 --- !u!114 &3683111111694485463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3959,11 +3949,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555192956e27541428a30177a29851ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _physicsObjectProperties:
-    material_label: 4
-    size: 1
+  defaultGravityScale: 1
+  physicsObjectProperties: {fileID: 0}
+  currentProperties:
+    size: 0
+    density: 0
+    mass: 0
+    hardness: 0
+    elasticity: 0
+    brittleness: 0
+    stickiness: 0
+    friction: 0
+    gravityMultiplier: 0
   rb: {fileID: 0}
+  tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
   creator: {fileID: 0}
@@ -3994,6 +3995,7 @@ MonoBehaviour:
   apparel: []
   hostMat: {fileID: 2100000, guid: e09614160cb77a0498ad88d9b300cff8, type: 2}
   clientMat: {fileID: 2100000, guid: 099c94d8d75be114b827069f92f46f83, type: 2}
+  boolShowApparelOnLocalPlayer: 0
   _IsHost: 0
 --- !u!114 &7064564967240851666
 MonoBehaviour:
@@ -4009,9 +4011,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterController: {fileID: 0}
   armIKs: []
-  _BonkedState: 0
-  bonkChangedThisUpdate: 0
   ragdollProxysRoot: {fileID: 0}
+  ragDollSolver: {fileID: 0}
+  _BonkTick: 0
+  _UnbonkTick: 0
 --- !u!114 &4969265624486796617
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4025,6 +4028,32 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   local_active_aura_ids: 0000000000000000000000000000000000000000000000000000000000000000
+--- !u!114 &4885437083157261521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1646711710736611360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Friction: 0
+    Restitution: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  CachedTick: -1
 --- !u!1 &1659192456888941227
 GameObject:
   m_ObjectHideFlags: 0
@@ -5084,18 +5113,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &2436815131286936935
 GameObject:
@@ -6023,18 +6040,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &3274281945828152825
 GameObject:
@@ -9764,18 +9769,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &6375520681918198621
 GameObject:
@@ -10999,18 +10992,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &7323091411262347518
 GameObject:
@@ -11203,18 +11184,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &7338861969815519338
 GameObject:
@@ -11483,18 +11452,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &7489487263190616936
 GameObject:
@@ -12302,18 +12259,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &8113989867165637303
 GameObject:
@@ -12982,18 +12927,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!1 &8480578302440985837
 GameObject:

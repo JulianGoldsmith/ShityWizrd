@@ -1,114 +1,160 @@
 using Fusion;
+using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public struct PhysicsObjectProperties : INetworkStruct
+// The struct that gets saved periodically over the network to prevent endless catch-up loops
+public struct NetworkedMaterialState : INetworkStruct
 {
-    /* Define the base properties of a physics object and 
-     how they combine in physics calculations. 
-        Has to be a class to work with the modifier system.
-    Otherwise we modify a value, creating a new struct, and then
-        never return that struct to the original object.
-    It doesn't really make much of a difference which is is,
-        though may need to be careful if multiple objects
-        end up having the same instance of POP.
-     */
+    public int Tick;
+    public MaterialState State;
+}
 
-    // This remains as a struct so that it can be automatically
-    // serialised and networked by Photon (user-defined Blittable Structs
-    // are fine).
+[RequireComponent(typeof(PhysicsObject))]
+public class PhysicsObjectProperties : NetworkBehaviour
+{
+    #region Base Networked Properties (Promotable)
+    // By using { get; set; }, Fusion networks these automatically. 
+    // Your updated SpellNode reflection will find them via GetProperties()!
 
-    // As an INetworkStruct, it cannot contain any:
-    // - reference types
-    // - string or char (use NetworkString instead).
-    // - bools (use NetworkBool or int instead)
-
-    #region Base Properties
     [Promotable("Material", DataTypeTag.Material)]
-    public PHYSICS_OBJECT_MATERIAL material_label;
+    [Networked, OnChangedRender(nameof(OnMaterialChanged))]
+    public PHYSICS_OBJECT_MATERIAL Material_label { get; set; }
 
-    
-    //private PhysicsObjectMaterial _physicsobjectmaterial;
-    public PhysicsObjectMaterial physicsobjectmaterial
-    {
-        get
-        {
-            //if (_physicsobjectmaterial == null
-            //    || _physicsobjectmaterial.label != material_label)
-            //{
-            //    _physicsobjectmaterial = POMLookUp.Get(material_label);
-            //}
-            //return _physicsobjectmaterial;
-            return POMLookUp.Get(material_label);
-        }
-    }
-
-    #endregion
-
-
-    #region Inherited Base Properties
-    // from PhysicsObjectMaterial (POM)
-    // (expose parameters from material for ease of use.
-    public float density
-    {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.density : PhysicsObjectMaterial.default_density; }
-    }
-    public float hardness
-    {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.hardness : PhysicsObjectMaterial.default_hardness; }
-    }
-    public float elasticity
-    {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.elasticity : PhysicsObjectMaterial.default_elasticity; }
-    }
-    public float brittleness
-    {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.brittleness : PhysicsObjectMaterial.default_brittleness; }
-    }
-    public float stickiness
-    {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.stickiness : PhysicsObjectMaterial.default_stickiness; }
-    }
-    public float friction
-    {
-        get { return (physicsobjectmaterial != null) ? physicsobjectmaterial.friction : PhysicsObjectMaterial.default_friction; }
-    }
-    #endregion
-
-
-    #region Modifiers
     [Promotable("Size", DataTypeTag.Radius)]
-    public float size;
+    [Networked] public float Size { get; set; } = 1f;
+
+    public Vector3 InitialEditorScale { get; private set; }
 
     [Promotable("Base Gravity", DataTypeTag.Generic)]
-    public float base_gravity_multiplier;
+    [Networked] public float Base_gravity_multiplier { get; set; } = 1f;
     #endregion
 
+    #region State Checkpoints & Caches
+    [Networked] public NetworkedMaterialState CheckpointState { get; set; }
 
-    #region Derived Properties
-    public float mass { 
-        get 
-        {
-            // mass should be size**3 and moment of inertia size**2,
-            // but it might not matter in practice.
-            return density * size;
-        }
-    }
-    public float moment_of_inertia
+    // CHANGED: Unified Cache
+    public NetworkedMaterialState CachedNetworkState;
+    public SimProperties CurrentSimData;
+    #endregion
+    [SerializeField]
+    public List<string> debugState = new List<string>();
+
+    private void Awake()
     {
-        get
+        // Grab the largest axis of the object's transform in the scene.
+        InitialEditorScale = transform.localScale;
+    }
+
+    public override void Spawned()
+    {
+        base.Spawned();
+        MaterialState startingState = new MaterialState();
+        startingState.Reset(); // Sets Scale and Density to 1f!
+
+        CheckpointState = new NetworkedMaterialState
         {
-            // perhaps, mass should be size**3 and moment of inertia size**2,
-            // but it might not matter in practice.
-            return density * size;
+            Tick = Runner.Tick,
+            State = startingState
+        };
+        CachedNetworkState = CheckpointState;
+
+        GetComponent<PhysicsObject>().InitialisePhysicsObject();
+    }
+
+    public void OnMaterialChanged()
+    {
+        GetComponent<PhysicsObject>().InitialisePhysicsObject();
+    }
+
+    public override void Render()
+    {
+        base.Render();
+        debugState.Clear();
+        debugState.Add($"Temp  = {CachedNetworkState.State.Temperature}");
+        debugState.Add($"Wetness  = {CachedNetworkState.State.Wetness}");
+        debugState.Add($"Charge  = {CachedNetworkState.State.Charge}");
+        debugState.Add($"Scale  = {CachedNetworkState.State.ScaleMultiplier}");
+
+
+    }
+
+    #region The Simulation Engine
+    public void CalculateSimState(NetworkRunner runner, PhysicsObject target, NetworkedMemoryAllocator memory, StatusEffectManager effectManager)
+    {
+        if (physicsobjectmaterial == null) return;
+
+        // 1. ROLLBACK / LATE-JOIN DETECTION
+        if (CachedNetworkState.Tick != runner.Tick - 1)
+        {
+            CachedNetworkState = CheckpointState;
+        }
+
+        // 2. THE CATCH-UP LOOP
+        int ticksToSimulate = runner.Tick - CachedNetworkState.Tick;
+
+        PhysicsObjectMaterial currentMaterial = physicsobjectmaterial;
+
+        // Replay only if needed
+        if (ticksToSimulate > 0)
+        {
+            for (int simTick = CachedNetworkState.Tick + 1;simTick <= runner.Tick; simTick++)
+            {
+                if (effectManager != null)
+                {
+                    currentMaterial.ResolveTick(simTick,ref CachedNetworkState.State,effectManager.ActiveEffects,
+                        target,memory);
+                }
+                else
+                {
+                    currentMaterial.ResolveTick(simTick,ref CachedNetworkState.State,
+                        default,target,memory);
+                }
+            }
+
+            CachedNetworkState.Tick = runner.Tick;
+        }
+
+        CurrentSimData = currentMaterial.GetSimProperties(CachedNetworkState.State,Size,Base_gravity_multiplier);
+
+        // 3. PERIODIC CHECKPOINTING
+        if ((runner.Tick - CheckpointState.Tick >= 30))
+        {
+            ForceCheckpoint();
         }
     }
 
+    // NEW: Used by StatusEffectManager to bake history when effects are added/removed
+    public void ForceCheckpoint()
+    {
+        
+            //CachedNetworkState.Tick = currentTick;
+            CheckpointState = CachedNetworkState;
+        
+    }
     #endregion
 
+    #region Material Lookup
+    public PhysicsObjectMaterial physicsobjectmaterial
+    {
+        get { return POMLookUp.Get(Material_label); }
+    }
+    #endregion
 
-    #region Physics Interactions
-    // Physics interactions we need to calculate manually, since not
-    // dealt with natively through unity/rigidbody.
+    #region Legacy Getters (The API Bridge)
+    // External scripts (like VFX or UI) can read these without breaking, 
+    // completely unaware that a rollback simulation is feeding them the numbers!
+
+    public float density => physicsobjectmaterial != null ? physicsobjectmaterial.density :1f;
+
+    // Mass pulls directly from the newly calculated Layer 0 data
+    public float mass => CurrentSimData.Mass > 0 ? CurrentSimData.Mass : 0.01f;
+
+    public float hardness => CurrentSimData.Hardness;
+    public float elasticity => CurrentSimData.Restitution;
+    public float brittleness => CurrentSimData.Brittleness;
+    public float stickiness => CurrentSimData.Stickiness;
+    public float friction => CurrentSimData.Friction;
+
+    public float moment_of_inertia => density * Size;
     #endregion
 }

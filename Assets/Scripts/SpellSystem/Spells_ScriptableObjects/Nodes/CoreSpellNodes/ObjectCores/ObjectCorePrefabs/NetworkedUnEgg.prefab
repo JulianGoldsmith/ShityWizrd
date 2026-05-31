@@ -102,6 +102,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5750959168854019402}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8784290017043729233}
   m_SourcePrefab: {fileID: 100100000, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
 --- !u!1 &7532608151074762406 stripped
 GameObject:
@@ -170,10 +173,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultGravityScale: 1
-  _physicsObjectProperties:
-    material_label: 0
-    size: 1
-    base_gravity_multiplier: 0
+  physicsObjectProperties: {fileID: 0}
   currentProperties:
     size: 0
     density: 0
@@ -187,6 +187,7 @@ MonoBehaviour:
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
   creator: {fileID: 0}
@@ -254,6 +255,7 @@ MonoBehaviour:
   - {fileID: -8108757413318474618}
   - {fileID: 32742562258277121}
   - {fileID: 5750959168854019402}
+  - {fileID: 8784290017043729233}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3439672038872102933
 MonoBehaviour:
@@ -269,18 +271,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   rb: {fileID: 0}
-  dampening: 10
-  rotationalDampening: 0.1
-  _HolderChangedCount: 0
-  _CurrentHoldingPlayers: []
-  _LocalGrabPos:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  _localPendingDrop: 0
   isCharacterObject: 0
 --- !u!114 &-5027240436109435661
 MonoBehaviour:
@@ -346,3 +336,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02ff5681e3dd7ec4398ec076acedcdfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugEffectNames: 1
+  activeEffectNames: []
+--- !u!114 &8784290017043729233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7532608151074762406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Friction: 0
+    Restitution: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  CachedTick: -1

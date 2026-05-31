@@ -49,7 +49,7 @@ public class EnterCollisionST : SpellTrigger
             else if (TryGetComponent<Rigidbody>(out var rb))
                 impactSpeed = rb.linearVelocity.magnitude;
 
-            targetPO.OnBonk(impactSpeed * po.currentProperties.mass, GetComponent<NetworkObject>(), hitPoint);
+            targetPO.OnBonk(impactSpeed * po.physicsObjectProperties.mass, GetComponent<NetworkObject>(), hitPoint);
         }
 
         // 4. Continue with your existing Graph logic

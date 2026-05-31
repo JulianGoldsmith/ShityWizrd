@@ -107,7 +107,7 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         if(TryGetComponent<NPCPhysicsObject>(out NPCPhysicsObject NPCPO))
         {
             PhysicsObjectProperties props = NPCPO.physicsObjectProperties;
-            props.size = sizeMult;
+            props.Size = sizeMult;
             NPCPO.physicsObjectProperties = props;
         }
         Runner.SetIsSimulated(this.Object, true);

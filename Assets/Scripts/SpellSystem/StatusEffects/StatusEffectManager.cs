@@ -1,9 +1,7 @@
 using Fusion;
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
-
-[DefaultExecutionOrder(-50)] //call the ticks on the status effects before running physics
 [RequireComponent(typeof(NetworkedMemoryAllocator))]
 [RequireComponent(typeof(PhysicsObject))]
 public class StatusEffectManager : NetworkBehaviour
@@ -12,15 +10,20 @@ public class StatusEffectManager : NetworkBehaviour
     [Networked, Capacity(CAPACITY)] public NetworkArray<ActiveStatusEffectData> ActiveEffects { get; }
 
     private NetworkedMemoryAllocator _memory;
-    private PhysicsObject _physicsObject;
+
+    // We don't even need the _physicsObject reference here anymore!
 
     public bool debugEffectNames = true;
     public List<string> activeEffectNames = new List<string>();
 
+    private byte[] _channelPresenceThisTick = new byte[CAPACITY];
+
+    private bool _isSpawned = false;
+
     public override void Spawned()
     {
         _memory = GetComponent<NetworkedMemoryAllocator>();
-        _physicsObject = GetComponent<PhysicsObject>();
+        _isSpawned= true;
     }
 
     public override void Render()
@@ -49,11 +52,17 @@ public class StatusEffectManager : NetworkBehaviour
                 }
             }
         }
+
     }
 
+    public void BeginTick()
+    {
+       // System.Array.Clear(_channelPresenceThisTick, 0, CAPACITY);
+    }
 
     public void AddEffect(byte effectId, ProposedEffectPayload payload)
     {
+        if (!_isSpawned) return;
         IStatusEffect processor = StatusEffectRegistry.GetStatusEffect(effectId);
         if (processor == null) return;
 
@@ -62,25 +71,27 @@ public class StatusEffectManager : NetworkBehaviour
         {
             ActiveStatusEffectData existing = ActiveEffects.Get(i);
 
-            // Is this the same type of spell?
             if (existing.EffectID == effectId)
             {
-                // Ask the logic if it wants to absorb the new hit
-                if (processor.TryStack(Runner, ref existing, _memory, payload))
+                // CHANGE: Use payload.EffectType instead of processor.EffectType
+                if (payload.EffectType == EffectLifecycle.Channeled)
                 {
-                    // It absorbed it! (e.g., refreshed duration or added scale).
-                    // Save the modified struct back to the network array and we are done!
+                    _channelPresenceThisTick[i]++;
+                    return;
+                }
+                else if (processor.TryStack(Runner, ref existing, _memory, payload))
+                {
                     ActiveEffects.Set(i, existing);
                     return;
                 }
             }
         }
 
-        // STEP 2: Find an empty slot for a new effect
+        // STEP 2: Find an empty slot
         int emptySlot = -1;
         for (int i = 0; i < ActiveEffects.Length; i++)
         {
-            if (ActiveEffects.Get(i).EffectID == 0) // 0 means empty/NULL
+            if (ActiveEffects.Get(i).EffectID == 0)
             {
                 emptySlot = i;
                 break;
@@ -97,112 +108,85 @@ public class StatusEffectManager : NetworkBehaviour
         ActiveStatusEffectData newEffect = new ActiveStatusEffectData
         {
             EffectID = effectId,
+            EffectType = payload.EffectType,
             StartTick = Runner.Tick,
-            EndTick = payload.DurationInTicks > 0 ? Runner.Tick + payload.DurationInTicks : 0
+             // CHANGE: Save the type permanently into network memory!
+            EndTick = payload.DurationInTicks > 0 ? Runner.Tick + payload.DurationInTicks : 0,
+            PresenceCount = 0
         };
 
-        // STEP 4: Let the processor claim its memory and write the payload data
         processor.OnAllocated(_memory, ref newEffect, payload);
 
-        // STEP 5: Save it to the network
+        // If it's a duration effect, it changes the math instantly, so force checkpoint
+        if (payload.EffectType == EffectLifecycle.Duration)
+        {
+            GetComponent<PhysicsObject>().physicsObjectProperties.ForceCheckpoint();
+        }
+        else
+        {
+            _channelPresenceThisTick[emptySlot] = 1;
+        }
+
+  
         ActiveEffects.Set(emptySlot, newEffect);
     }
 
-
-
-    public override void FixedUpdateNetwork()
+    // --- REPLACES FixedUpdateNetwork ---
+    // The master PhysicsObject calls this to tell the manager to take out the trash.
+    public void CleanUpExpiredEffects(int currentTick)
     {
-        MaterialState tickState = new MaterialState();
-        tickState.Reset();
+        bool historyChanged = false;
 
-        // 2. Process all effects
         for (int i = 0; i < ActiveEffects.Length; i++)
         {
             ActiveStatusEffectData effect = ActiveEffects.Get(i);
+            if (effect.EffectID == 0) continue;
 
-            if (effect.EffectID == 0) continue; // Skip empty slots
+            IStatusEffect processor = StatusEffectRegistry.GetStatusEffect(effect.EffectID);
+            if (processor == null) continue;
 
-            IStatusEffect statusEffect = StatusEffectRegistry.GetStatusEffect(effect.EffectID);
-            if (statusEffect == null) continue;
-
-            // Check Expiration
-            if (effect.IsExpired(Runner.Tick))
+            if (effect.EffectType == EffectLifecycle.Channeled)
             {
-                RemoveEffect(i, statusEffect, effect);
-                continue;
+                if (effect.PresenceCount != _channelPresenceThisTick[i])
+                {
+                    effect.PresenceCount = _channelPresenceThisTick[i];
+                    ActiveEffects.Set(i, effect);
+                    historyChanged = true;
+                }
             }
 
-            // Execute the logic. 
-            // We pass 'ref effect' so the struct can be modified.
-            // We pass 'ref tickState' so the effect can accumulate its deltas.
-            statusEffect.Tick(Runner, _physicsObject, _memory, ref effect, ref tickState);
-
-            // CRITICAL FUSION REQUIREMENT: 
-            // Save the struct back to the network array in case Tick() modified it.
-            ActiveEffects.Set(i, effect);
+            // --- EXPIRY CHECK ---
+            if (effect.IsExpired(currentTick))
+            {
+                RemoveEffect(i, processor, effect);
+                historyChanged = true;
+            }
         }
 
-        // 3. Hand the fully accumulated state to the Material to get Layer 0
-        // (Assuming _physicsObject holds the reference to the ScriptableObject)
-        SimProperties finalSim = _physicsObject.objectMaterial.GetSimProperties(tickState);
+        if (historyChanged)
+        {
+            GetComponent<PhysicsObject>().physicsObjectProperties.ForceCheckpoint();
+        }
 
-        // 4. Apply Layer 0 to the actual physics simulation
-        _physicsObject.ApplySimProperties(finalSim);
-
+       
     }
 
-
-    // --- CLEANUP LOGIC ---
+    public void ClearPersistanceCache() {
+        for (int i = 0; i < ActiveEffects.Length; i++)
+        {
+            _channelPresenceThisTick[i] = 0;
+        }
+    }
 
     private void RemoveEffect(int arrayIndex, IStatusEffect statusEffect, ActiveStatusEffectData effectData)
     {
-        // 1. Let the processor free the exact floats/ints it claimed
         statusEffect.OnRemoved(_memory, ref effectData);
-
-        // 2. Wipe the slot completely clean
         ActiveEffects.Set(arrayIndex, default);
+        _channelPresenceThisTick[arrayIndex] = 0; // Clear the mitt just in case
     }
-}
 
-public struct StatusEffectPropertyModifiers
-{
-    // --- 1. ELEMENTAL ACCUMULATORS ---
-    public float TemperatureDelta;
-    public float MoistureDelta;
-    public float ChargeDelta;
-
-    // --- 2. TRANSMUTATION ---
-    public byte MaterialOverride; // 0 = default, >0 maps to PHYSICS_OBJECT_MATERIAL
-
-    // --- 3. MULTIPLIERS (Default to 1) ---
-    public float ScaleMultiplier;
-    public float GravityMultiplier;
-    public float DensityMultiplier;
-    public float FrictionMultiplier;
-
-    // --- 4. ADDITIVES (Default to 0) ---
-    public float ElasticityAdditive;
-    public float BrittlenessAdditive;
-    public float StickinessAdditive;
-    public float HardnessAdditive;
-
-    // Must be called at the start of every tick before passing to effects!
-    public void Reset()
+    public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        TemperatureDelta = 0f;
-        MoistureDelta = 0f;
-        ChargeDelta = 0f;
-
-        MaterialOverride = 0;
-
-        ScaleMultiplier = 1f;
-        GravityMultiplier = 1f;
-        DensityMultiplier = 1f;
-        FrictionMultiplier = 1f;
-
-        ElasticityAdditive = 0f;
-        BrittlenessAdditive = 0f;
-        StickinessAdditive = 0f;
-        HardnessAdditive = 0f;
+        _isSpawned = false;
     }
 }

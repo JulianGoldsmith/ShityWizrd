@@ -10,7 +10,7 @@ public class ShatterVFX : MonoBehaviour
     {
         VisualEffect effect = GetComponent<VisualEffect>();
         effect.SetVector4("ParticleColor",props.physicsobjectmaterial.shatter_particle_color);
-        effect.SetFloat("Size",props.size);
+        effect.SetFloat("Size",props.Size);
         effect.SetFloat("FinalHit",bonk_amount);
     }
     void Start()

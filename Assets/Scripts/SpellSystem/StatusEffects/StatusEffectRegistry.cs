@@ -13,12 +13,23 @@ public static class StatusEffectRegistry
     {
         if (_isInitialized) return;
 
-        // Register all your effects here manually, or use reflection to find them all.
-        // Example IDs: 1 = Grow, 2 = Pull, 3 = Freeze
-        _effects.Add(1, new GrowStatusEffect());
+        GenericStatusEffect genericProcessor = new GenericStatusEffect();
+
+        if (MasterEffectDictionary.Instance != null)
+        {
+            var dict = MasterEffectDictionary.Instance.BakedEffects;
+
+            for (int i = 1; i < dict.Count; i++)
+            {
+                if (dict[i] != null)
+                {
+                    _effects.Add((byte)i, genericProcessor);
+                }
+            }
+        }
 
         _isInitialized = true;
-        Debug.Log("[StatusEffectRegistry] Initialized all stateless processors.");
+        Debug.Log($"[StatusEffectRegistry] Initialized all stateless processors.");
     }
 
     public static IStatusEffect GetStatusEffect(byte effectID)

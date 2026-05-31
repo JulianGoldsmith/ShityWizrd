@@ -64,7 +64,7 @@ public class PropertyBinder //Modifiers (intermediary parameters) = mutable prop
     public List<ValueNode> ModifyingNodes = new List<ValueNode>();
 }
 
-[AttributeUsage(AttributeTargets.Field)]
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 public class PromotableAttribute : Attribute
 {
     public string DisplayName;

@@ -32,14 +32,11 @@ public class GravityBehaviour : IBehaviour
     {
         if (core.TryGetComponent<PhysicsObject>(out var po))
         {
-            var state = po.SpellEffectState;
+            // Convert your old -125 to 125 system into a simple float multiplier
+            float gravityModifier = GravityAdded / 100f;
 
-            int newGravity = Mathf.Clamp(state.Gravity + GravityAdded, -125, 125);
-            state.Gravity = (sbyte)newGravity;
-
-            po.SpellEffectState = state;
-
-            po.UpdateDerivedPhysics();
+            // Modify the base property on the new Ledger directly
+            po.physicsObjectProperties.Base_gravity_multiplier += gravityModifier;
         }
     }
 
@@ -62,7 +59,6 @@ public class GravitySB : SpellBehaviour
     public float terminalSpeed = 80f;
     private PhysicsObject po;
 
-
     public void Init(SpellTriggerInfo _triggerInfo, sbyte _gravityAdded)
     {
         triggerInfo = _triggerInfo;
@@ -72,15 +68,9 @@ public class GravitySB : SpellBehaviour
 
         if (po != null)
         {
-            int newGravity = Mathf.Clamp(po.SpellEffectState.Gravity + gravityAdded, -125, 125);
-
-            var state = po.SpellEffectState;
-            state.Gravity = (sbyte)newGravity;
-            po.SpellEffectState = state;
-
-            po.UpdateDerivedPhysics();
+            float gravityModifier = gravityAdded / 100f;
+            po.physicsObjectProperties.Base_gravity_multiplier += gravityModifier;
         }
-
     }
 }
 

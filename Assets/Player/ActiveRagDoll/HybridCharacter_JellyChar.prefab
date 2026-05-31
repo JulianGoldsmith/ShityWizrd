@@ -1556,6 +1556,7 @@ GameObject:
   - component: {fileID: 6688537883557615760}
   - component: {fileID: 3738573248299957918}
   - component: {fileID: 8106832246569366305}
+  - component: {fileID: 5320465569205229457}
   m_Layer: 19
   m_Name: Head
   m_TagString: Untagged
@@ -1650,6 +1651,7 @@ MonoBehaviour:
   - {fileID: 6688537883557615760}
   - {fileID: 3738573248299957918}
   - {fileID: 8106832246569366305}
+  - {fileID: 5320465569205229457}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2068868632083783361
 MonoBehaviour:
@@ -1732,10 +1734,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultGravityScale: 0
-  _physicsObjectProperties:
-    material_label: 0
-    size: 1
-    base_gravity_multiplier: 0
+  physicsObjectProperties: {fileID: 0}
   currentProperties:
     size: 0
     density: 0
@@ -1749,6 +1748,7 @@ MonoBehaviour:
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
   creator: {fileID: 0}
@@ -1775,6 +1775,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   debugEffectNames: 1
   activeEffectNames: []
+--- !u!114 &5320465569205229457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1120674298739478926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Friction: 0
+    Restitution: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  CachedTick: -1
 --- !u!1 &1162211359479184167
 GameObject:
   m_ObjectHideFlags: 0
@@ -2419,6 +2445,7 @@ GameObject:
   - component: {fileID: 6131588276227478974}
   - component: {fileID: 216459618862961754}
   - component: {fileID: 706942683793237186}
+  - component: {fileID: 5499814240527988072}
   m_Layer: 19
   m_Name: Torso
   m_TagString: Untagged
@@ -2515,6 +2542,7 @@ MonoBehaviour:
   - {fileID: 6131588276227478974}
   - {fileID: 216459618862961754}
   - {fileID: 706942683793237186}
+  - {fileID: 5499814240527988072}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3767396676275894626
 MonoBehaviour:
@@ -2597,10 +2625,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultGravityScale: 0
-  _physicsObjectProperties:
-    material_label: 0
-    size: 1
-    base_gravity_multiplier: 0
+  physicsObjectProperties: {fileID: 0}
   currentProperties:
     size: 0
     density: 0
@@ -2614,6 +2639,7 @@ MonoBehaviour:
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
   creator: {fileID: 0}
@@ -2640,6 +2666,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   debugEffectNames: 1
   activeEffectNames: []
+--- !u!114 &5499814240527988072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1469383134852111960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Friction: 0
+    Restitution: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  CachedTick: -1
 --- !u!1 &1481138972719167153
 GameObject:
   m_ObjectHideFlags: 0
@@ -2667,6 +2719,7 @@ GameObject:
   - component: {fileID: 1087551941607753607}
   - component: {fileID: 3635803465142382114}
   - component: {fileID: 1760587690114921678}
+  - component: {fileID: 492262295890835074}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -2966,6 +3019,7 @@ MonoBehaviour:
   - {fileID: 4081331116634787597}
   - {fileID: 1087551941607753607}
   - {fileID: 3635803465142382114}
+  - {fileID: 492262295890835074}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2497915391348923376
 MonoBehaviour:
@@ -3553,10 +3607,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultGravityScale: 1
-  _physicsObjectProperties:
-    material_label: 4
-    size: 1
-    base_gravity_multiplier: 1
+  physicsObjectProperties: {fileID: 0}
   currentProperties:
     size: 0
     density: 0
@@ -3570,6 +3621,7 @@ MonoBehaviour:
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
   creator: {fileID: 0}
@@ -4380,6 +4432,32 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   isRagdolling: 0
+--- !u!114 &492262295890835074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Friction: 0
+    Restitution: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  CachedTick: -1
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0
@@ -4969,6 +5047,7 @@ GameObject:
   - component: {fileID: 1379092314146761437}
   - component: {fileID: 6633720660449960508}
   - component: {fileID: 4489969598392922137}
+  - component: {fileID: 5307545886066301310}
   m_Layer: 19
   m_Name: Hips
   m_TagString: Untagged
@@ -5066,6 +5145,7 @@ MonoBehaviour:
   - {fileID: 1379092314146761437}
   - {fileID: 6633720660449960508}
   - {fileID: 4489969598392922137}
+  - {fileID: 5307545886066301310}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4190250984183214555
 MonoBehaviour:
@@ -5148,10 +5228,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultGravityScale: 1
-  _physicsObjectProperties:
-    material_label: 0
-    size: 1
-    base_gravity_multiplier: 1
+  physicsObjectProperties: {fileID: 0}
   currentProperties:
     size: 0
     density: 0
@@ -5165,6 +5242,7 @@ MonoBehaviour:
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
   physicsSubObjects: []
   _current_bonkedness: 0
   creator: {fileID: 0}
@@ -5191,6 +5269,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   debugEffectNames: 1
   activeEffectNames: []
+--- !u!114 &5307545886066301310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755946207224043466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Friction: 0
+    Restitution: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  CachedTick: -1
 --- !u!1 &1796409561661315163
 GameObject:
   m_ObjectHideFlags: 0
