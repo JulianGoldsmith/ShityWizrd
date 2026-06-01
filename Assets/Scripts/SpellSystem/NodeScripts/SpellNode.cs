@@ -27,6 +27,10 @@ public abstract class SpellNode : ScriptableObject
     public Material overrideMaterial = null;
     public float ovverideVisualScale = 1f;
 
+    [Header("Network Identity")]
+    [Tooltip("Assigned by the Dictionary Publisher. Do not edit.")]
+    public ushort NetworkNodeID = 0;
+
     public virtual void Compile()
     {
         ApplyPromotableValues();

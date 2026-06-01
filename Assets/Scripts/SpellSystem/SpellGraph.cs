@@ -1,3 +1,4 @@
+using Fusion;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
@@ -512,5 +513,110 @@ public class SpellGraph : ScriptableObject
         }
     }
 
+    public SpellNetworkData CompileToNetworkData() //new struct saving
+    {
+        SpellNetworkData payload = new SpellNetworkData();
+
+        if (nodes == null || nodes.Count == 0) return payload;
+
+        Dictionary<string, byte> guidToLocalIndex = new Dictionary<string, byte>();
+
+        payload.NodeCount = (byte)nodes.Count;
+        for (byte i = 0; i < nodes.Count; i++)
+        {
+            NodeInstanceData visualNode = nodes[i];
+
+            guidToLocalIndex[visualNode.guid] = i;
+
+            //this might need to change so were using our new dict
+            SpellNode template = SpellGraphController.Instance.FindTemplateByName(visualNode.nodeTemplateName);
+            ushort templateID = template != null ? template.NetworkNodeID : (ushort)0;
+
+            NetworkNodeData networkNode = new NetworkNodeData
+            {
+                TemplateID = templateID,
+                Position = visualNode.position
+            };
+
+            payload.Nodes.Set(i, networkNode);
+        }
+
+        byte currentWireIndex = 0;
+
+        foreach (var visualNode in nodes)
+        {
+            SpellNode fromTemplate = SpellGraphController.Instance.FindTemplateByName(visualNode.nodeTemplateName);
+            if (fromTemplate == null) continue;
+            var fromSockets = fromTemplate.GetSockets();
+
+            foreach (var connection in visualNode.connections)
+            {
+                NodeInstanceData targetNode = GetNodeInstance(connection.targetNodeGUID);
+                if (targetNode == null) continue;
+
+                SpellNode toTemplate = SpellGraphController.Instance.FindTemplateByName(targetNode.nodeTemplateName);
+                if (toTemplate == null) continue;
+                var toSockets = toTemplate.GetSockets();
+
+                if (!guidToLocalIndex.TryGetValue(visualNode.guid, out byte fromNodeId)) continue;
+                if (!guidToLocalIndex.TryGetValue(targetNode.guid, out byte toNodeId)) continue;
+
+                int fromSocketId = fromSockets.FindIndex(s =>
+                    s.Direction == SocketDirection.Output &&
+                    (s.Name == connection.fromOutputSocketName || s.TargetFieldName == connection.fromOutputSocketName));
+
+                int toSocketId = toSockets.FindIndex(s =>
+                    s.Direction == SocketDirection.Input &&
+                    (s.Name == connection.toInputSocketName || s.TargetFieldName == connection.toInputSocketName));
+
+                if (fromSocketId != -1 && toSocketId != -1)
+                {
+                    WireData wire = new WireData
+                    {
+                        FromNodeIndex = fromNodeId,
+                        FromSocketIndex = (byte)fromSocketId,
+                        ToNodeIndex = toNodeId,
+                        ToSocketIndex = (byte)toSocketId
+                    };
+
+                    payload.Wires.Set(currentWireIndex, wire);
+                    currentWireIndex++;
+                }
+                else
+                {
+                    Debug.LogWarning($"[Compiler] Failed to map socket indices between Node {fromNodeId} and {toNodeId}. Check your socket names!");
+                }
+            }
+        }
+
+        payload.WireCount = currentWireIndex;
+        return payload;
+    }
+
     #endregion
+}
+
+public struct NetworkNodeData : INetworkStruct
+{
+    public ushort TemplateID; 
+    public Vector3 Position; 
+}
+
+public struct WireData : INetworkStruct
+{
+    public byte FromNodeIndex;
+    public byte FromSocketIndex;
+    public byte ToNodeIndex;
+    public byte ToSocketIndex;
+}
+
+
+
+public struct SpellNetworkData : INetworkStruct
+{
+    [Capacity(64)] public NetworkArray<NetworkNodeData> Nodes => default;
+    [Capacity(128)] public NetworkArray<WireData> Wires => default;
+
+    public byte NodeCount;
+    public byte WireCount;
 }

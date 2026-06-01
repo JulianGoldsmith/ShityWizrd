@@ -1102,6 +1102,17 @@ public class SpellGraphController : MonoBehaviour
             graphToSave.nodes.Add(nodeData);
         }
 
+        // --- NEW: TEST THE TRANSLATOR ---
+        SpellNetworkData testPayload = graphToSave.CompileToNetworkData();
+        Debug.Log($"<color=cyan>[Translator Test]</color> Compiled {testPayload.NodeCount} Nodes and {testPayload.WireCount} Wires cleanly!");
+
+        for (int i = 0; i < testPayload.WireCount; i++)
+        {
+            WireData wire = testPayload.Wires[i];
+            Debug.Log($"<color=green>[Translator Test]</color> Wire {i}: Node {wire.FromNodeIndex} (Pin {wire.FromSocketIndex}) ---> Node {wire.ToNodeIndex} (Pin {wire.ToSocketIndex})");
+        }
+        // --------------------------------
+
         string json = JsonUtility.ToJson(graphToSave, true);
         System.IO.File.WriteAllText(savePath, json);
         Debug.Log($"Spell saved to: {savePath}");
