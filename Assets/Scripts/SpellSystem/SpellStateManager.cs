@@ -272,96 +272,40 @@ public class SpellStateManager : NetworkBehaviour
     public void RPC_RequestSpellBlueprint(SpellGraphId missingId, RpcInfo info = default)
     {
         PlayerRef requester = info.Source;
-        Debug.Log($"[Host] Received request from {requester} for Blueprint {missingId.BlueprintNumber}");
-
         if (active_spellblueprints.TryGetValue(missingId, out SpellGraph graph))
         {
-            string json = JsonUtility.ToJson(graph, true);
-            byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
-            int chunkSize = 200; // Safe MTU size
-            int totalChunks = (data.Length + chunkSize - 1) / chunkSize;
-
-            Debug.Log($"[Host] Sending Blueprint {missingId.BlueprintNumber} to {requester} in {totalChunks} chunks.");
-
-            for (int i = 0; i < totalChunks; i++)
-            {
-                int size = Mathf.Min(chunkSize, data.Length - (i * chunkSize));
-                byte[] chunk = new byte[size];
-                Buffer.BlockCopy(data, i * chunkSize, chunk, 0, size);
-
-                RPC_DeliverSpellChunk(requester, missingId, i, totalChunks, chunk);
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"[Host] Client asked for Blueprint {missingId.BlueprintNumber}, but Host doesn't have it!");
+            byte[] compressedData = SerializeSpellData(graph.Data);
+            RPC_DeliverSpell(requester, missingId, compressedData); // 1 single packet!
         }
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_DeliverSpellChunk(PlayerRef targetPlayer, SpellGraphId sgid, int chunkIndex, int totalChunks, byte[] chunkData)
+    public void RPC_DeliverSpell(PlayerRef targetPlayer, SpellGraphId sgid, byte[] compressedData)
     {
         if (Runner.LocalPlayer.PlayerId != targetPlayer.PlayerId) return;
 
-        Debug.Log($"[Client] Received chunk {chunkIndex + 1}/{totalChunks} for Blueprint {sgid.BlueprintNumber}");
-
-        if (!_downloadingSpells.ContainsKey(sgid))
+        try
         {
-            _downloadingSpells[sgid] = new byte[totalChunks][];
-        }
+            SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
+            newGraph.Data = DeserializeSpellData(compressedData);
+            newGraph.spellGraphId = sgid;
 
-        _downloadingSpells[sgid][chunkIndex] = chunkData;
+            active_spellblueprints[sgid] = newGraph;
+            HydrateAndStoreSpell(sgid, newGraph);
 
-        bool complete = true;
-        for (int i = 0; i < totalChunks; i++)
-        {
-            if (_downloadingSpells[sgid][i] == null)
+            Debug.Log($"[Manifest] SUCCESSFULLY downloaded Spell {sgid.BlueprintNumber} from Host!");
+
+            EquipableItem[] allItems = FindObjectsOfType<EquipableItem>();
+            foreach (var item in allItems)
             {
-                complete = false;
-                break;
+                if (item.PrimarySpellID.Equals(sgid)) item.OnPrimarySpellChanged();
             }
         }
-
-        if (complete)
+        catch (Exception e)
         {
-            Debug.Log($"[Client] All chunks received for Blueprint {sgid.BlueprintNumber}. Rebuilding JSON...");
-
-            try
-            {
-                byte[] fullData = _downloadingSpells[sgid].SelectMany(c => c).ToArray();
-                string json = System.Text.Encoding.UTF8.GetString(fullData);
-
-                SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
-                JsonUtility.FromJsonOverwrite(json, newGraph);
-
-                if (newGraph != null)
-                {
-                    newGraph.spellGraphId = sgid;
-                    active_spellblueprints[sgid] = newGraph;
-                    HydrateAndStoreSpell(sgid, newGraph);
-                    _downloadingSpells.Remove(sgid);
-
-                    Debug.Log($"[Manifest] SUCCESSFULLY downloaded and built Spell {sgid.BlueprintNumber} from Host!");
-
-                    // Wake up the weapons
-                    EquipableItem[] allItems = FindObjectsOfType<EquipableItem>();
-                    foreach (var item in allItems)
-                    {
-                        if (item.PrimarySpellID.Equals(sgid))
-                        {
-                            item.OnPrimarySpellChanged();
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[Client] Failed to build Blueprint {sgid.BlueprintNumber} from JSON! Error: {e.Message}");
-                _downloadingSpells.Remove(sgid); // Clear it so we can retry safely!
-            }
+            Debug.LogError($"[Client] Failed to build requested Blueprint {sgid.BlueprintNumber}!");
         }
     }
-
     public void SubmitNewSpellToHost(SpellGraph graph, NetworkId targetWeapon)
     {
         if (Object.HasStateAuthority)
@@ -381,149 +325,139 @@ public class SpellStateManager : NetworkBehaviour
         }
         else
         {
-            string json = JsonUtility.ToJson(graph, true);
-            byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
-            int chunkSize = 200;
-            int totalChunks = (data.Length + chunkSize - 1) / chunkSize;
-
-            for (int i = 0; i < totalChunks; i++)
-            {
-                int size = Mathf.Min(chunkSize, data.Length - (i * chunkSize));
-                byte[] chunk = new byte[size];
-                Buffer.BlockCopy(data, i * chunkSize, chunk, 0, size);
-
-               
-                RPC_SubmitSpellChunkToHost(Runner.LocalPlayer, i, totalChunks, chunk, targetWeapon);
-            }
+            // Instantly compress and send in 1 packet!
+            byte[] compressedData = SerializeSpellData(graph.Data);
+            RPC_SubmitSpellToHost(Runner.LocalPlayer, compressedData, targetWeapon);
         }
     }
 
-    
     [Rpc(RpcSources.Proxies | RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void RPC_SubmitSpellChunkToHost(PlayerRef author, int chunkIndex, int totalChunks, byte[] chunkData, NetworkId targetWeapon)
+    public void RPC_SubmitSpellToHost(PlayerRef author, byte[] compressedData, NetworkId targetWeapon)
     {
-        if (!_incomingSubmissions.ContainsKey(author))
+        try
         {
-            _incomingSubmissions[author] = new byte[totalChunks][];
+            SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
+            newGraph.Data = DeserializeSpellData(compressedData); // Instantly rebuild!
+
+            _hostMasterBlueprintCounter++;
+            SpellGraphId newId = new SpellGraphId(author, _hostMasterBlueprintCounter);
+            newGraph.spellGraphId = newId;
+
+            active_spellblueprints[newId] = newGraph;
+            HydrateAndStoreSpell(newId, newGraph);
+            AddToManifest(newId);
+            BroadcastSpellToAll(newId, newGraph);
+
+            if (targetWeapon.IsValid && Runner.TryFindObject(targetWeapon, out var weaponObj))
+            {
+                weaponObj.GetComponent<EquipableItem>().PrimarySpellID = newId;
+            }
+
+            Debug.Log($"[Manifest] Host registered new Spell {newId.BlueprintNumber} from {author}.");
         }
-
-        _incomingSubmissions[author][chunkIndex] = chunkData;
-
-        bool complete = true;
-        for (int i = 0; i < totalChunks; i++)
+        catch (Exception e)
         {
-            if (_incomingSubmissions[author][i] == null)
-            {
-                complete = false;
-                break;
-            }
-        }
-
-        if (complete)
-        {
-            try
-            {
-                byte[] fullData = _incomingSubmissions[author].SelectMany(c => c).ToArray();
-                string json = System.Text.Encoding.UTF8.GetString(fullData);
-                SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
-                JsonUtility.FromJsonOverwrite(json, newGraph);
-                _hostMasterBlueprintCounter++;
-                SpellGraphId newId = new SpellGraphId(author, _hostMasterBlueprintCounter);
-                newGraph.spellGraphId = newId;
-
-                active_spellblueprints[newId] = newGraph;
-                HydrateAndStoreSpell(newId, newGraph);
-                AddToManifest(newId);
-                BroadcastSpellToAll(newId, newGraph);
-                _incomingSubmissions.Remove(author);
-
-                if (targetWeapon.IsValid && Runner.TryFindObject(targetWeapon, out var weaponObj))
-                {
-                    weaponObj.GetComponent<EquipableItem>().PrimarySpellID = newId;
-                }
-
-                Debug.Log($"[Manifest] Host officially registered new Spell {newId.BlueprintNumber} from Player {author}.");
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[Host] Failed to compile submitted spell from {author}. Error: {e.Message}");
-                _incomingSubmissions.Remove(author);
-            }
+            Debug.LogError($"[Host] Failed to compile submitted spell. Error: {e.Message}");
         }
     }
-
 
     private void BroadcastSpellToAll(SpellGraphId id, SpellGraph graph)
     {
-        string json = JsonUtility.ToJson(graph, true);
-        byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
-
-        // Bumped chunk size to 400 bytes to cut RPC calls in half!
-        int chunkSize = 400;
-        int totalChunks = (data.Length + chunkSize - 1) / chunkSize;
-
-        for (int i = 0; i < totalChunks; i++)
-        {
-            int size = Mathf.Min(chunkSize, data.Length - (i * chunkSize));
-            byte[] chunk = new byte[size];
-            Buffer.BlockCopy(data, i * chunkSize, chunk, 0, size);
-
-            // Instantly push to all clients!
-            RPC_BroadcastSpellChunk(id, i, totalChunks, chunk);
-        }
+        byte[] compressedData = SerializeSpellData(graph.Data);
+        RPC_BroadcastSpell(id, compressedData); // 1 single packet!
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_BroadcastSpellChunk(SpellGraphId sgid, int chunkIndex, int totalChunks, byte[] chunkData)
+    public void RPC_BroadcastSpell(SpellGraphId sgid, byte[] compressedData)
     {
-        // (Don't process if we are the Host, we already have it in RAM!)
         if (Object.HasStateAuthority) return;
 
-        if (!_downloadingSpells.ContainsKey(sgid))
-            _downloadingSpells[sgid] = new byte[totalChunks][];
-
-        _downloadingSpells[sgid][chunkIndex] = chunkData;
-
-        bool complete = true;
-        for (int i = 0; i < totalChunks; i++)
+        try
         {
-            if (_downloadingSpells[sgid][i] == null) { complete = false; break; }
+            SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
+            newGraph.Data = DeserializeSpellData(compressedData);
+            newGraph.spellGraphId = sgid;
+
+            active_spellblueprints[sgid] = newGraph;
+            HydrateAndStoreSpell(sgid, newGraph);
+
+            Debug.Log($"[Manifest] Broadcast Received! Instantly Hydrated Spell {sgid.BlueprintNumber}");
+
+            EquipableItem[] allItems = FindObjectsOfType<EquipableItem>();
+            foreach (var item in allItems)
+            {
+                if (item.PrimarySpellID.Equals(sgid)) item.OnPrimarySpellChanged();
+            }
         }
-
-        if (complete)
+        catch (Exception e)
         {
-            try
+            Debug.LogError($"[Client] Failed to build Broadcasted Spell: {e.Message}");
+        }
+    }
+    #endregion
+
+    #region Compression
+
+    private byte[] SerializeSpellData(SpellNetworkData data)
+    {
+        using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+        using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(ms))
+        {
+            writer.Write(data.MaxNodeIndex);
+            writer.Write(data.MaxWireIndex);
+
+            // Only network the active nodes!
+            for (int i = 0; i <= data.MaxNodeIndex; i++)
             {
-                byte[] fullData = _downloadingSpells[sgid].SelectMany(c => c).ToArray();
-                string json = System.Text.Encoding.UTF8.GetString(fullData);
-
-                SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
-                JsonUtility.FromJsonOverwrite(json, newGraph);
-                newGraph.spellGraphId = sgid;
-
-                active_spellblueprints[sgid] = newGraph;
-                HydrateAndStoreSpell(sgid, newGraph);
-                _downloadingSpells.Remove(sgid);
-
-                Debug.Log($"[Manifest] Broadcast Received! Instantly Hydrated Spell {sgid.BlueprintNumber}");
-
-                // Wake up weapons holding this spell
-                EquipableItem[] allItems = FindObjectsOfType<EquipableItem>();
-                foreach (var item in allItems)
-                {
-                    if (item.PrimarySpellID.Equals(sgid)) item.OnPrimarySpellChanged();
-                }
+                writer.Write(data.Nodes[i].TemplateID);
+                writer.Write(data.Nodes[i].Position.x);
+                writer.Write(data.Nodes[i].Position.y);
+                writer.Write(data.Nodes[i].Position.z);
             }
-            catch (Exception e)
+
+            // Only network the active wires!
+            for (int i = 0; i <= data.MaxWireIndex; i++)
             {
-                Debug.LogError($"[Client] Failed to build Broadcasted Spell: {e.Message}");
-                _downloadingSpells.Remove(sgid);
+                writer.Write(data.Wires[i].FromNodeIndex);
+                writer.Write(data.Wires[i].FromSocketIndex);
+                writer.Write(data.Wires[i].ToNodeIndex);
+                writer.Write(data.Wires[i].ToSocketIndex);
             }
+
+            return ms.ToArray();
         }
     }
 
-    #endregion
+    private SpellNetworkData DeserializeSpellData(byte[] bytes)
+    {
+        SpellNetworkData data = new SpellNetworkData();
+        data.Nodes = new NetworkNodeData[64];
+        data.Wires = new WireData[128];
+        for (int i = 0; i < 128; i++) data.Wires[i].FromSocketIndex = 255; // Apply tombstones
 
+        using (System.IO.MemoryStream ms = new System.IO.MemoryStream(bytes))
+        using (System.IO.BinaryReader reader = new System.IO.BinaryReader(ms))
+        {
+            data.MaxNodeIndex = reader.ReadByte();
+            data.MaxWireIndex = reader.ReadByte();
+
+            for (int i = 0; i <= data.MaxNodeIndex; i++)
+            {
+                data.Nodes[i].TemplateID = reader.ReadUInt16();
+                data.Nodes[i].Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            }
+
+            for (int i = 0; i <= data.MaxWireIndex; i++)
+            {
+                data.Wires[i].FromNodeIndex = reader.ReadByte();
+                data.Wires[i].FromSocketIndex = reader.ReadByte();
+                data.Wires[i].ToNodeIndex = reader.ReadByte();
+                data.Wires[i].ToSocketIndex = reader.ReadByte();
+            }
+        }
+        return data;
+    }
+    #endregion
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_DeleteActiveSpell(NetworkId casterId, int castNum)
