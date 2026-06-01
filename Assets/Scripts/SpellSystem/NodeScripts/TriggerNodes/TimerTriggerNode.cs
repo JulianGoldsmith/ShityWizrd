@@ -10,7 +10,7 @@ public class TimerTriggerNode : TriggerNode
     // number times it can trigger. if >1, then it will wait for the duration between triggers.
     public int repeated_trigger_count = 1;
 
-    public override ITrigger CompileTriggerCondition(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         float bakedDuration = GetFinalValue(nameof(duration_in_seconds), duration_in_seconds);
 
@@ -38,7 +38,7 @@ public class TimerTriggerNode : TriggerNode
     }
 }
 
-public class TimerTrigger : ITrigger
+public class TimerTrigger : RuntimeTriggerBase
 {
 
     public float DurationInSeconds;
@@ -48,12 +48,12 @@ public class TimerTrigger : ITrigger
     public TriggerExecutioPlan Plan { get; set; }
 
     
-    public void InitTick(SpellCreatedCore core)
+    public override void InitTick(SpellCreatedCore core)
     {
 
     }
 
-    public bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> triggerInfo)
+    public override bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> triggerInfo)
     {
         triggerInfo =  new List<SpellTriggerInfo>();
         SpellTriggerInfo hitInfo = default;
@@ -79,10 +79,10 @@ public class TimerTrigger : ITrigger
         return false;
     }
 
-    public void TickVFX(SpellCreatedCore core)
+    public override void TickVFX(SpellCreatedCore core)
     {
     }
-    public void CleanupVFX(SpellCreatedCore core)
+    public override void CleanupVFX(SpellCreatedCore core)
     {
     }
 

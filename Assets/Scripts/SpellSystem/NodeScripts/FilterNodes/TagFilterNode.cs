@@ -7,6 +7,11 @@ public class TagFilterNode : FilterNode
 {
     public List<string> tags;
 
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
     public override bool Evaluate(GameObject go) {
         bool isValid = false;
 

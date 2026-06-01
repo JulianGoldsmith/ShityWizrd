@@ -7,7 +7,7 @@ public class SimpleMovementNode : BehaviourNode
     [Promotable("Motion Speed", DataTypeTag.Speed)]
     public float speed;
 
-    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         throw new NotImplementedException();
     }

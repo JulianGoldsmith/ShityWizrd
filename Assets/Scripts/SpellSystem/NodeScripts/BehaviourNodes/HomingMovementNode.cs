@@ -12,7 +12,7 @@ public class HomingMovementNode : BehaviourNode
     public float search_range = 5.0f;
     public float min_speed = 1.0f;
 
-    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         int targetMemorySlot = context.ClaimIntSlot();
 

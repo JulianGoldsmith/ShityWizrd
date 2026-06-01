@@ -14,7 +14,7 @@ public class OverlapSphereNode : TriggerNode
     [Tooltip("0 = Infinite Field, 1 = Instant Blast (Single Trigger), >1 = Lingering Field")]
     public int tickDuration = 1;
 
-    public override ITrigger CompileTriggerCondition(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         // 1. Resolve Promotables
         float bakedSize = GetFinalValue(nameof(size), size);
@@ -51,7 +51,7 @@ public class OverlapSphereNode : TriggerNode
     }
 }
 
-public class OverlapSphereTrigger : ITrigger
+public class OverlapSphereTrigger : RuntimeTriggerBase
 {
     // Required by ITrigger
     public TriggerExecutioPlan Plan { get; set; }
@@ -70,13 +70,13 @@ public class OverlapSphereTrigger : ITrigger
     public VFXContext VfxContext;
     public ModifierType VfxModType;
 
-    public void InitTick(SpellCreatedCore core)
+    public override void InitTick(SpellCreatedCore core)
     {
         // Record the exact tick this trigger was created (Rollback friendly!)
         core.SetInt(StartTickMemoryIndex, core.Runner.Tick);
     }
 
-    public bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
+    public override bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
     {
         hitInfos = new List<SpellTriggerInfo>();
         _hits.Clear();
@@ -146,7 +146,7 @@ public class OverlapSphereTrigger : ITrigger
         return hitInfos.Count > 0;
     }
 
-    public void TickVFX(SpellCreatedCore core)
+    public override void TickVFX(SpellCreatedCore core)
     {
         if(!core.HasStateAuthority && !core.HasInputAuthority)
         {
@@ -181,7 +181,7 @@ public class OverlapSphereTrigger : ITrigger
         }
     }
 
-    public void CleanupVFX(SpellCreatedCore core)
+    public override void CleanupVFX(SpellCreatedCore core)
     {
         if (core.ActiveVisuals.TryGetValue(VfxDictionaryId, out GameObject currentVfx))
         {

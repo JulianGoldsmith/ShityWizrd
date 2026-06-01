@@ -90,7 +90,7 @@ public class MeleeSweepST : SpellTrigger
             }
             foreach (CoreNode core in outcomeNodes.OfType<CoreNode>())
             {
-                core.CreateSpellCore(triggerInfo);
+                //core.CreateSpellCore(triggerInfo);
             }
         }
     }

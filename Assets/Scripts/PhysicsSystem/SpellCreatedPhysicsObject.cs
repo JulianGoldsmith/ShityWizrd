@@ -73,12 +73,10 @@ public class SpellCreatedPhysicsObject : PhysicsObject
 
         if (triggerInfo.IsValid)
         {
-            node.AttatchBehavioursAndTriggers(gameObject, triggerInfo);
             InitialiseAfterBehavioursAndTriggers(node, triggerInfo.State);
         }
         else
         {
-            node.AttatchBehavioursAndTriggers(gameObject, state);
             InitialiseAfterBehavioursAndTriggers(node, state);
         }
     }

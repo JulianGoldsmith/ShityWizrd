@@ -289,7 +289,7 @@ public abstract class CastActionController : NetworkBehaviour
         triggerInfo.State.CastAimTargetPos = GetAimTarget();
         if (node is CoreNode coreNode)
         {
-            coreNode.CreateSpellCore(triggerInfo);
+           // coreNode.CreateSpellCore(triggerInfo);
 
         }
         else if (node is EffectNode effectNode)
@@ -373,7 +373,8 @@ public abstract class CastActionController : NetworkBehaviour
                 if (node is CoreNode coreNode)
                 {
                     //Debug.Log($"Executing {node.name} on Animation event {eventName}");
-                    coreNode.CreateSpellCore(triggerInfo);
+                    IRuntimeNode runtimeNode = coreNode.CompileNode(new SpellCompilationContext());
+                    if (runtimeNode is IRuntimeCore core) core.ExecuteCore(triggerInfo);
                 }
                 else if (node is EffectNode effectNode)
                 {

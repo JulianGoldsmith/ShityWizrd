@@ -1728,23 +1728,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1120674298739478926}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   defaultGravityScale: 0
   physicsObjectProperties: {fileID: 0}
-  currentProperties:
-    size: 0
-    density: 0
-    mass: 0
-    hardness: 0
-    elasticity: 0
-    brittleness: 0
-    stickiness: 0
-    friction: 0
-    gravityMultiplier: 0
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
@@ -1768,7 +1758,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1120674298739478926}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 02ff5681e3dd7ec4398ec076acedcdfc, type: 3}
   m_Name: 
@@ -1782,7 +1772,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1120674298739478926}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
   m_Name: 
@@ -1792,6 +1782,7 @@ MonoBehaviour:
   _Base_gravity_multiplier: 1
   CurrentSimData:
     Mass: 0
+    Scale: 0
     Friction: 0
     Restitution: 0
     LinearDamping: 0
@@ -1800,7 +1791,7 @@ MonoBehaviour:
     Hardness: 0
     Stickiness: 0
     GravityMultiplier: 0
-  CachedTick: -1
+  debugState: []
 --- !u!1 &1162211359479184167
 GameObject:
   m_ObjectHideFlags: 0
@@ -2626,16 +2617,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultGravityScale: 0
   physicsObjectProperties: {fileID: 0}
-  currentProperties:
-    size: 0
-    density: 0
-    mass: 0
-    hardness: 0
-    elasticity: 0
-    brittleness: 0
-    stickiness: 0
-    friction: 0
-    gravityMultiplier: 0
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
@@ -2683,6 +2664,7 @@ MonoBehaviour:
   _Base_gravity_multiplier: 1
   CurrentSimData:
     Mass: 0
+    Scale: 0
     Friction: 0
     Restitution: 0
     LinearDamping: 0
@@ -2691,7 +2673,7 @@ MonoBehaviour:
     Hardness: 0
     Stickiness: 0
     GravityMultiplier: 0
-  CachedTick: -1
+  debugState: []
 --- !u!1 &1481138972719167153
 GameObject:
   m_ObjectHideFlags: 0
@@ -3608,16 +3590,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultGravityScale: 1
   physicsObjectProperties: {fileID: 0}
-  currentProperties:
-    size: 0
-    density: 0
-    mass: 0
-    hardness: 0
-    elasticity: 0
-    brittleness: 0
-    stickiness: 0
-    friction: 0
-    gravityMultiplier: 0
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
@@ -4449,6 +4421,7 @@ MonoBehaviour:
   _Base_gravity_multiplier: 1
   CurrentSimData:
     Mass: 0
+    Scale: 0
     Friction: 0
     Restitution: 0
     LinearDamping: 0
@@ -4457,7 +4430,7 @@ MonoBehaviour:
     Hardness: 0
     Stickiness: 0
     GravityMultiplier: 0
-  CachedTick: -1
+  debugState: []
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0
@@ -5229,16 +5202,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultGravityScale: 1
   physicsObjectProperties: {fileID: 0}
-  currentProperties:
-    size: 0
-    density: 0
-    mass: 0
-    hardness: 0
-    elasticity: 0
-    brittleness: 0
-    stickiness: 0
-    friction: 0
-    gravityMultiplier: 0
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
@@ -5286,6 +5249,7 @@ MonoBehaviour:
   _Base_gravity_multiplier: 1
   CurrentSimData:
     Mass: 0
+    Scale: 0
     Friction: 0
     Restitution: 0
     LinearDamping: 0
@@ -5294,7 +5258,7 @@ MonoBehaviour:
     Hardness: 0
     Stickiness: 0
     GravityMultiplier: 0
-  CachedTick: -1
+  debugState: []
 --- !u!1 &1796409561661315163
 GameObject:
   m_ObjectHideFlags: 0

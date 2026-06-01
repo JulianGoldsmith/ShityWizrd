@@ -18,8 +18,9 @@ public class GenericEffectNode : EffectNode
     [Header("Layer 1 Mutations")]
     public List<EffectComponent> Components = new List<EffectComponent>();
 
-    public override IEffect CompileEffect()
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
+
         return new GenericRuntimeEffect()
         {
             NetworkEffectID = this.NetworkEffectID,
@@ -79,7 +80,7 @@ public class GenericRuntimeEffect : IEffect
             }
             else if (target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject pso) && pso.parent_physics_object != null)
             {
-                pso.parent_physics_object.TryGetComponent<StatusEffectManager>(out targetManager);
+                //pso.parent_physics_object.TryGetComponent<StatusEffectManager>(out targetManager);
             }
 
             if (targetManager == null) continue;
@@ -227,4 +228,6 @@ public class EffectComponent
 
     [Tooltip("If true, the visual dictionary will attempt to spawn an auto-VFX for this specific component.")]
     public bool AutoVFX = true;
+
+    public bool effectsPlayerObjects = false;
 }

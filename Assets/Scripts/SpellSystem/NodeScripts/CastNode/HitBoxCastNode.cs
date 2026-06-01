@@ -60,7 +60,7 @@ public class HitBoxCastNode : CasterNode
         {
             if (node is CoreNode coreNode)
             {
-                coreNode.CreateSpellCore(triggerInfo);
+                //coreNode.CreateSpellCore(triggerInfo);
             }
             else if (node is EffectNode effectNode)
             {
@@ -68,5 +68,10 @@ public class HitBoxCastNode : CasterNode
                 effectNode.Execute(triggerInfo);
             }
         }
+    }
+
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
     }
 }

@@ -5,7 +5,7 @@ public class AddMomentumBehaviourNode : BehaviourNode
 {
     [Promotable("Force Multiplier", DataTypeTag.Force)]
     public float forceMultiplier = 1f;
-    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         float bakedForce = GetFinalValue(nameof(forceMultiplier), forceMultiplier);
 

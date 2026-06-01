@@ -11,42 +11,7 @@ public abstract class TriggerNode : SpellNode
     public VFXContext vfx_context;
     public ModifierType default_vfx_modifier_type;
 
-    public abstract ITrigger CompileTriggerCondition(SpellCompilationContext context);
-
-    public ITrigger CompileTrigger(SpellCompilationContext sCC)
-    {
-        ITrigger trigger = CompileTriggerCondition(sCC);
-        trigger.Plan = new TriggerExecutioPlan();
-
-        // Look at everything connected to the right side of this trigger in the UI
-        foreach (SpellNode outcome in outcomeNodes)
-        {
-            if (outcome is EffectNode effectNode)
-            {
-                trigger.Plan.EffectsToRun.Add(effectNode.CompileEffect());
-            }
-            else if (outcome is ObjectCore downstreamCore)
-            {
-                // We wrap the CoreNode into our new universal Spawner Effect!
-                // NOTE: downstreamCore.CompiledPlan will be populated because 
-                // SpellGraph compiles all nodes!
-                trigger.Plan.EffectsToRun.Add(new ExecuteDownstreamCoreEffect()
-                {
-                    CoreToExecute = downstreamCore
-                });
-
-                /*trigger.Plan.EffectsToRun.Add(new SpawnDownstreamCoreEffect()
-                {
-                    ChildPrefabRef = downstreamCore.corePrefabRef,
-                    ChildPlan = downstreamCore.CompiledPlan,
-                    ChildNodeGuid = downstreamCore.InstanceGuid
-                });*/
-            }
-        }
-
-        return trigger;
-    }
-
+    public abstract override IRuntimeNode CompileNode(SpellCompilationContext context);
     public abstract void SetUp(GameObject spellCore, SpellState state);
 
     public void Execute()
@@ -118,4 +83,5 @@ public abstract class TriggerNode : SpellNode
         return dependencies;
     }
 
-} 
+}
+

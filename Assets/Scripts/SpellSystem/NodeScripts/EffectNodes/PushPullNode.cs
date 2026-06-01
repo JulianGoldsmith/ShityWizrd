@@ -140,7 +140,9 @@ public class PushPullNode : EffectNode
         return dir.normalized * scaling;
     }
 
-    public override IEffect CompileEffect()
+    
+
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         float bakedForce = GetFinalValue(nameof(pushPullForce), pushPullForce);
 

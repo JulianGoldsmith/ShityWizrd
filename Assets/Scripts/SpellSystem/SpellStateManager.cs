@@ -23,6 +23,8 @@ public class SpellStateManager : NetworkBehaviour
 
     public Dictionary<SpellGraphId, int> active_spellgraph_instances = new Dictionary<SpellGraphId, int>();
 
+    public Dictionary<SpellGraphId, RuntimeSpell> hydratedSpells = new Dictionary<SpellGraphId, RuntimeSpell>();
+
     public Dictionary<ActiveCastID, ActiveSpell> activeSpells = new Dictionary<ActiveCastID, ActiveSpell>();
 
     [Header("Static Spells")]
@@ -274,7 +276,7 @@ public class SpellStateManager : NetworkBehaviour
 
         if (active_spellblueprints.TryGetValue(missingId, out SpellGraph graph))
         {
-            string json = graph.ToJson();
+            string json = JsonUtility.ToJson(graph, true);
             byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
             int chunkSize = 200; // Safe MTU size
             int totalChunks = (data.Length + chunkSize - 1) / chunkSize;
@@ -329,12 +331,14 @@ public class SpellStateManager : NetworkBehaviour
                 byte[] fullData = _downloadingSpells[sgid].SelectMany(c => c).ToArray();
                 string json = System.Text.Encoding.UTF8.GetString(fullData);
 
-                SpellGraph newGraph = SpellGraph.FromJson(json);
+                SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
+                JsonUtility.FromJsonOverwrite(json, newGraph);
 
                 if (newGraph != null)
                 {
                     newGraph.spellGraphId = sgid;
                     active_spellblueprints[sgid] = newGraph;
+                    HydrateAndStoreSpell(sgid, newGraph);
                     _downloadingSpells.Remove(sgid);
 
                     Debug.Log($"[Manifest] SUCCESSFULLY downloaded and built Spell {sgid.BlueprintNumber} from Host!");
@@ -366,9 +370,10 @@ public class SpellStateManager : NetworkBehaviour
             SpellGraphId newId = new SpellGraphId(Runner.LocalPlayer, _hostMasterBlueprintCounter);
             graph.spellGraphId = newId;
             active_spellblueprints[newId] = graph;
+            HydrateAndStoreSpell(newId, graph);
             AddToManifest(newId);
+            BroadcastSpellToAll(newId, graph);
 
-            
             if (targetWeapon.IsValid && Runner.TryFindObject(targetWeapon, out var weaponObj))
             {
                 weaponObj.GetComponent<EquipableItem>().PrimarySpellID = newId;
@@ -376,7 +381,7 @@ public class SpellStateManager : NetworkBehaviour
         }
         else
         {
-            string json = graph.ToJson();
+            string json = JsonUtility.ToJson(graph, true);
             byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
             int chunkSize = 200;
             int totalChunks = (data.Length + chunkSize - 1) / chunkSize;
@@ -420,14 +425,16 @@ public class SpellStateManager : NetworkBehaviour
             {
                 byte[] fullData = _incomingSubmissions[author].SelectMany(c => c).ToArray();
                 string json = System.Text.Encoding.UTF8.GetString(fullData);
-                SpellGraph newGraph = SpellGraph.FromJson(json);
-
+                SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
+                JsonUtility.FromJsonOverwrite(json, newGraph);
                 _hostMasterBlueprintCounter++;
                 SpellGraphId newId = new SpellGraphId(author, _hostMasterBlueprintCounter);
                 newGraph.spellGraphId = newId;
 
                 active_spellblueprints[newId] = newGraph;
+                HydrateAndStoreSpell(newId, newGraph);
                 AddToManifest(newId);
+                BroadcastSpellToAll(newId, newGraph);
                 _incomingSubmissions.Remove(author);
 
                 if (targetWeapon.IsValid && Runner.TryFindObject(targetWeapon, out var weaponObj))
@@ -444,6 +451,77 @@ public class SpellStateManager : NetworkBehaviour
             }
         }
     }
+
+
+    private void BroadcastSpellToAll(SpellGraphId id, SpellGraph graph)
+    {
+        string json = JsonUtility.ToJson(graph, true);
+        byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
+
+        // Bumped chunk size to 400 bytes to cut RPC calls in half!
+        int chunkSize = 400;
+        int totalChunks = (data.Length + chunkSize - 1) / chunkSize;
+
+        for (int i = 0; i < totalChunks; i++)
+        {
+            int size = Mathf.Min(chunkSize, data.Length - (i * chunkSize));
+            byte[] chunk = new byte[size];
+            Buffer.BlockCopy(data, i * chunkSize, chunk, 0, size);
+
+            // Instantly push to all clients!
+            RPC_BroadcastSpellChunk(id, i, totalChunks, chunk);
+        }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_BroadcastSpellChunk(SpellGraphId sgid, int chunkIndex, int totalChunks, byte[] chunkData)
+    {
+        // (Don't process if we are the Host, we already have it in RAM!)
+        if (Object.HasStateAuthority) return;
+
+        if (!_downloadingSpells.ContainsKey(sgid))
+            _downloadingSpells[sgid] = new byte[totalChunks][];
+
+        _downloadingSpells[sgid][chunkIndex] = chunkData;
+
+        bool complete = true;
+        for (int i = 0; i < totalChunks; i++)
+        {
+            if (_downloadingSpells[sgid][i] == null) { complete = false; break; }
+        }
+
+        if (complete)
+        {
+            try
+            {
+                byte[] fullData = _downloadingSpells[sgid].SelectMany(c => c).ToArray();
+                string json = System.Text.Encoding.UTF8.GetString(fullData);
+
+                SpellGraph newGraph = ScriptableObject.CreateInstance<SpellGraph>();
+                JsonUtility.FromJsonOverwrite(json, newGraph);
+                newGraph.spellGraphId = sgid;
+
+                active_spellblueprints[sgid] = newGraph;
+                HydrateAndStoreSpell(sgid, newGraph);
+                _downloadingSpells.Remove(sgid);
+
+                Debug.Log($"[Manifest] Broadcast Received! Instantly Hydrated Spell {sgid.BlueprintNumber}");
+
+                // Wake up weapons holding this spell
+                EquipableItem[] allItems = FindObjectsOfType<EquipableItem>();
+                foreach (var item in allItems)
+                {
+                    if (item.PrimarySpellID.Equals(sgid)) item.OnPrimarySpellChanged();
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Client] Failed to build Broadcasted Spell: {e.Message}");
+                _downloadingSpells.Remove(sgid);
+            }
+        }
+    }
+
     #endregion
 
 
@@ -485,13 +563,14 @@ public class SpellStateManager : NetworkBehaviour
 
             try
             {
-                SpellGraph graph = SpellGraph.FromJson(spellJson.text);
+                SpellGraph graph = ScriptableObject.CreateInstance<SpellGraph>();
+                JsonUtility.FromJsonOverwrite(spellJson.text, graph);
 
                 SpellGraphId staticId = new SpellGraphId(PlayerRef.None, i + 1);
                 graph.spellGraphId = staticId;
 
                 active_spellblueprints[staticId] = graph;
-
+                HydrateAndStoreSpell(staticId, graph);
                 Debug.Log($"[SpellStateManager] Loaded Static Spell [{i + 1}]: {spellJson.name}");
             }
             catch (Exception e)
@@ -499,6 +578,7 @@ public class SpellStateManager : NetworkBehaviour
                 Debug.LogWarning($"[SpellStateManager] Failed to load static spell at index {i + 1}: {e.Message}");
             }
         }
+        
     }
 
     #region Spell Graphs
@@ -563,6 +643,7 @@ public class SpellStateManager : NetworkBehaviour
         // so store it in the global dict.
         active_spellblueprints.Add(sgid, graph);
         active_spellgraph_instances.Add(sgid, 1);
+        HydrateAndStoreSpell(sgid, graph);
     }
     public void OnUnequipSpellGraph(SpellGraphId sgid)
     {
@@ -643,7 +724,35 @@ public class SpellStateManager : NetworkBehaviour
     //}
     //#endregion
 
-   
+    public void HydrateAndStoreSpell(SpellGraphId id, SpellGraph graph)
+    {
+        if (graph == null || graph.Data.Nodes == null) return;
+
+        SpellCompilationContext context = new SpellCompilationContext();
+
+        // 1. Run the Assembly Line to get the FULL array
+        // (We modify SpellHydrator to return the full array, not just the root)
+        IRuntimeNode[] hydratedGraph = SpellHydrator.HydrateFullGraph(graph.Data, SpellGraphController.Instance.availableNodeTemplates, context);
+
+        // 2. Store the whole package in RAM
+        hydratedSpells[id] = new RuntimeSpell()
+        {
+            Blueprint = graph,
+            HydratedNodes = hydratedGraph,
+            RootNode = hydratedGraph[0] // Entry Point is always index 0!
+        };
+    }
+
+    public IRuntimeNode GetHydratedSpell(SpellGraphId id)
+    {
+        // 1. Output the RuntimeSpell container
+        if (hydratedSpells.TryGetValue(id, out RuntimeSpell runtimeSpell))
+        {
+            // 2. Return the RootNode from inside the container!
+            return runtimeSpell.RootNode;
+        }
+        return null;
+    }
 
 }
 
@@ -675,5 +784,13 @@ public struct SpellGraphId : INetworkStruct, IEquatable<SpellGraphId>
     {
         return HashCode.Combine(AuthorRef, BlueprintNumber);
     }
+
+
 }
 
+public class RuntimeSpell
+{
+    public SpellGraph Blueprint;
+    public IRuntimeNode[] HydratedNodes; // The whole graph in RAM!
+    public IRuntimeNode RootNode;        // Entry Point (Node 0)
+}

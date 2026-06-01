@@ -135,8 +135,7 @@ public class ChargeItemAction : ItemAction
         state.CastPosition = spawnPosition;
 
         // Execute
-        graph.ExecuteComboIndex(comboIndex, state, controller);
-
+        ExecuteHydratedSpell(triggerInfo);
         RemoveCastingToken(state);
 
         if (!Item.HasStateAuthority && Item.Runner.IsResimulation)

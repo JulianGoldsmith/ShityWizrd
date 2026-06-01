@@ -10,6 +10,11 @@ public class MaterialTypeNode: ValueNode<PHYSICS_OBJECT_MATERIAL>
     public override Type ValueType => typeof(PHYSICS_OBJECT_MATERIAL);
     public override DataTypeTag ValueTag => tag;
 
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new NotImplementedException();
+    }
+
     public override ValueModifier<PHYSICS_OBJECT_MATERIAL> GetModifier(SpellState state)
     {
         return new ValueModifier<PHYSICS_OBJECT_MATERIAL>(material, ValueModifierType.Set);

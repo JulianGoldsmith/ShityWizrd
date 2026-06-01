@@ -7,7 +7,7 @@ public class OnDestroyTriggerNode : TriggerNode
     public bool on_expire = false; // at end of lifetime
     public bool on_break = true; // specifically when broken (destroyed)
 
-    public override ITrigger CompileTriggerCondition(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         throw new System.NotImplementedException();
     }

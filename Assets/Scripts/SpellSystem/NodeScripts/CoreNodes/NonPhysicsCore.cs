@@ -30,7 +30,7 @@ public class NonPhysicsCore : CoreNode, IHasPrefabRefToBuffer
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
 
 
-    public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
+   /* public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
         if (!CanSpawn(triggerInfo.State))
             return;
@@ -60,7 +60,7 @@ public class NonPhysicsCore : CoreNode, IHasPrefabRefToBuffer
         }
         InitialiseNonPhysicsObjectOnSpawn(spellCore, triggerInfo);
     }
-
+*/
     public void InitialiseNonPhysicsObjectOnSpawn(NetworkObject spellCore, SpellTriggerInfo triggerInfo)
     {
         // This is called by the spawner before replicating the networkobject across all instances.
@@ -159,5 +159,10 @@ public class NonPhysicsCore : CoreNode, IHasPrefabRefToBuffer
         }
 
         return sockets;
+    }
+
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
     }
 }

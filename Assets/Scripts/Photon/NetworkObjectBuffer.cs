@@ -3,6 +3,7 @@ using Fusion;
 using Fusion.Addons.Physics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -385,102 +386,31 @@ public class NetworkObjectBuffer : NetworkBehaviour
     const int _other_prefab_priority = 1;
     public void LoadFromSpellGraph(SpellGraph graph)
     {
-        if (graph == null)
-            return;
-
-        // Grab all the prefabs, their weights, and
-        // create a buffer based on that.
-
-        // Here we can assign weighting depending on
-        // what needs to be buffered more.
-        // We prioritise the first object most (for
-        // smooth casting), but might also want
-        // to prioritise runes that spawn many objects
-        // simultaneously (e.g. an explosion).
-
-        // assigns:
-        //prefab_ids
-        //prefab_counts
-        //_buffer_size
-
-        Debug.Log("loading buffer from spellgraph.");
+        if (graph == null || graph.Data.Nodes == null) return;
+        Debug.Log("Loading buffer from flat data-oriented SpellGraph array.");
 
         Dictionary<NetworkPrefabRef, float> found_prefabrefs_with_priorities = new Dictionary<NetworkPrefabRef, float>();
         float total_priority = 0;
-        float current_priority = 0;
 
-        int search_count_remaining = 0;
-        List<SpellNode> queued_search = new List<SpellNode>();
-
-        int infinite_loop_fallback = 0;
-        SpellNode next_node = graph.entryPointControllerNode;
-        NetworkPrefabRef next_ref;
-
-        while((next_node != null || search_count_remaining > 0) && infinite_loop_fallback < _max_iterations_search_in_graph)
+        for (int i = 0; i <= graph.Data.MaxNodeIndex; i++)
         {
-            //Debug.Log($"iteration {infinite_loop_fallback} and found {found_prefabrefs_with_priorities.Count}");
-            current_priority = 0;
+            ushort templateId = graph.Data.Nodes[i].TemplateID;
+            if (templateId == 0) continue;
 
-            if (search_count_remaining > 0 && next_node == null)
+            SpellNode template = SpellGraphController.Instance.availableNodeTemplates.FirstOrDefault(t => t.NetworkNodeID == templateId);
+
+            if (template != null && template is IHasPrefabRefToBuffer bufferNode)
             {
-                // just to catch weird cases of null nodes.
-                // Continue search.
-                search_count_remaining = queued_search.Count;
-                next_node = queued_search[0];
-                queued_search.RemoveAt(0);
-                continue;
-            }
+                NetworkPrefabRef next_ref = bufferNode.prefabRefToBuffer;
+                float current_priority = (total_priority <= 0) ? _first_prefab_priority : _other_prefab_priority;
 
-            // Break out of while loop if it's been going too long.
-            if (infinite_loop_fallback >= _max_iterations_search_in_graph)
-                break;
-            infinite_loop_fallback++;
-
-            //Debug.Log($"next node is {next_node.name} {next_node is IHasPrefabRefToBuffer}");
-
-            // This node has a prefabref to buffer, so add it to the dict.
-            if(next_node is IHasPrefabRefToBuffer)
-            {
-                //Debug.Log("has prefabreftobuffer");
-                // Give more priority to the first prefab found.
-                // TODO:
-                //  - Add more here to weight objects that might
-                // be spawned many-at-a-time simultaneously
-                // e.g. an explosion that creates many.
-                if (total_priority <= 0)
-                    current_priority = _first_prefab_priority;
-                else
-                    current_priority = _other_prefab_priority;
-
-                next_ref = (next_node as IHasPrefabRefToBuffer).prefabRefToBuffer;
                 if (!found_prefabrefs_with_priorities.ContainsKey(next_ref))
+                {
                     found_prefabrefs_with_priorities.Add(next_ref, 0);
-                
+                }
+
                 found_prefabrefs_with_priorities[next_ref] += current_priority;
                 total_priority += current_priority;
-            }
-
-            // Add all dependent nodes to the queue.
-            // Currently this will eventually get everything in the spell
-            // though I don't see a case where a some node types
-            // could even have a prefabref.
-            // So currently generic but could be streamlined for speed.
-            // All clientside though, at least.
-            queued_search.AddRange(next_node.GetAllDependentNodes());
-            //Debug.Log($"queued search count {queued_search.Count}");
-
-            if (queued_search.Count > 0)
-            {
-                // Continue search.
-                search_count_remaining = queued_search.Count;
-                next_node = queued_search[0];
-                queued_search.RemoveAt(0);
-            }
-            else
-            {
-                // nothing left to search, so leave the loop.
-                next_node = null;
-                break;
             }
         }
 

@@ -16,8 +16,8 @@ public class ExposedSocketUI : MonoBehaviour
         this.socketData = data;
         this.controller = spellGraphController;
 
-        nameInputField.text = data.exposedName;
-        socketColorImage.color = GetColorForSocketType(data.type);
+        nameInputField.text = data.ExposedName;
+        socketColorImage.color = GetColorForSocketType(data.Type);
 
         nameInputField.onEndEdit.AddListener(OnNameChanged);
         removeButton.onClick.AddListener(OnRemoveClicked);
@@ -25,12 +25,13 @@ public class ExposedSocketUI : MonoBehaviour
 
     private void OnNameChanged(string newName)
     {
-        controller.UpdateExposedSocketName(socketData.internalNodeGuid, socketData.internalSocketName, newName);
+        // Now passing the byte indices instead of string GUIDs!
+        controller.UpdateExposedSocketName(socketData.InternalNodeIndex, socketData.InternalSocketIndex, newName);
     }
 
     private void OnRemoveClicked()
     {
-        controller.UnexposeSocket(socketData.internalNodeGuid, socketData.internalSocketName);
+        controller.UnexposeSocket(socketData.InternalNodeIndex, socketData.InternalSocketIndex);
     }
 
     private Color GetColorForSocketType(SocketType type)
@@ -38,7 +39,7 @@ public class ExposedSocketUI : MonoBehaviour
         switch (type)
         {
             case SocketType.ExecutionLink: return Color.white;
-            case SocketType.BehaviourLink: return Color.purple;
+            case SocketType.BehaviourLink: return new Color(0.5f, 0, 0.5f); // Purple
             case SocketType.FilterLink: return Color.green;
             case SocketType.Data: return new Color(1, 0.5f, 0);
             default: return Color.magenta;

@@ -80,7 +80,7 @@ public class MomentumThrowCastNode : CasterNode
         {
             if (node is CoreNode coreNode)
             {
-                coreNode.CreateSpellCore(triggerInfo);
+                //coreNode.CreateSpellCore(triggerInfo);
             }
             else if (node is EffectNode effectNode)
             {
@@ -91,5 +91,10 @@ public class MomentumThrowCastNode : CasterNode
         Destroy(anchor);
         if (state.chargeCastVFX != null)
             GameObject.Destroy(state.chargeCastVFX);
+    }
+
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
     }
 }

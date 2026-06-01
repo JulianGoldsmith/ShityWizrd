@@ -6,8 +6,7 @@ public abstract class EffectNode : SpellNode
 {
     public CasterTriggerMethod casterTriggerMethod = CasterTriggerMethod.OnCast;
 
-    public abstract IEffect CompileEffect();
-
+    public abstract override IRuntimeNode CompileNode(SpellCompilationContext context);
     public abstract void Execute( List<SpellTriggerInfo> triggerInfo);
 
     public void Execute( SpellTriggerInfo singleTriggerInfo)
@@ -54,3 +53,4 @@ public abstract class EffectNode : SpellNode
         return new List<SpellNode>();
     }
 }
+

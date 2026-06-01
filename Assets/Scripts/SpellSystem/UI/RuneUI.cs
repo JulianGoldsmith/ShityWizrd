@@ -2,44 +2,48 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using UnityEngine.InputSystem;
-using Unity.VisualScripting;
+
 public class RuneUI : MonoBehaviour
 {
-    public NodeInstanceData InstanceData { get; private set; }
-    public SpellNode NodeClone { get; private set; }
-    private List<SocketUI> _sockets = new List<SocketUI>();
+    // The core of the new architecture: The UI just knows its Index!
+    public byte NodeIndex { get; private set; }
+    public SpellNode ReadOnlyTemplate { get; private set; }
 
-    public void Initialize(NodeInstanceData instanceData, SpellNode nodeClone)
+    private List<SocketUI> _sockets = new List<SocketUI>();
+    public List<SocketUI> Sockets => _sockets;
+    public void Initialize(byte nodeIndex, SpellNode template)
     {
-        this.InstanceData = instanceData;
-        this.NodeClone = nodeClone;
+        this.NodeIndex = nodeIndex;
+        this.ReadOnlyTemplate = template;
+
         var renderer = GetComponent<Renderer>();
-        if (renderer != null && NodeClone.icon != null)
+        if (renderer != null && ReadOnlyTemplate.icon != null)
         {
- 
-            renderer.material.SetTexture("_GlyphTex", NodeClone.icon);
+            renderer.material.SetTexture("_GlyphTex", ReadOnlyTemplate.icon);
         }
         CreateSockets();
     }
 
     private void CreateSockets()
     {
-        if (NodeClone == null) return;
+        if (ReadOnlyTemplate == null) return;
         var controller = SpellGraphController.Instance;
-        List<SocketDefinition> socketsToCreate = NodeClone.GetSockets();
+
+        // We read the socket definitions directly from the global Template
+        List<SocketDefinition> socketsToCreate = ReadOnlyTemplate.GetSockets();
         if (socketsToCreate.Count == 0) return;
 
-        float parentScale = this.transform.localScale.x * 1/controller.graphVisualScale;
+        float parentScale = this.transform.localScale.x * 1 / controller.graphVisualScale;
 
         foreach (var socketData in socketsToCreate)
         {
             GameObject socketObj = Instantiate(controller.socketPrefab, this.transform);
 
-            if (parentScale != 0) 
+            if (parentScale != 0)
             {
                 socketObj.transform.localScale *= 1 / parentScale;
             }
-            
+
             SocketUI socketUI = socketObj.AddComponent<SocketUI>();
             socketUI.Initialize(this, socketData);
             _sockets.Add(socketUI);
@@ -102,18 +106,15 @@ public class RuneUI : MonoBehaviour
         {
             if (lockedSockets.TryGetValue(targetSocket, out float originalAngle))
             {
-       
                 lockedSockets[targetSocket] = Mathf.LerpAngle(originalAngle, incomingAngle, 0.5f);
             }
             else
             {
-
                 lockedSockets[targetSocket] = incomingAngle;
             }
         }
 
         DistributeSockets(lockedSockets);
-
         UpdateAttractionLogic(validTargets);
     }
 
@@ -121,7 +122,7 @@ public class RuneUI : MonoBehaviour
     {
         var freeSockets = _sockets.Where(s => !lockedSockets.ContainsKey(s)).ToList();
 
-        if (lockedSockets.Count == 0) 
+        if (lockedSockets.Count == 0)
         {
             float angleIncrement = 360f / _sockets.Count;
             for (int i = 0; i < _sockets.Count; i++)
@@ -129,7 +130,7 @@ public class RuneUI : MonoBehaviour
                 _sockets[i].SetTargetLocalPosition(CalculatePositionFromAngle(angleIncrement * i));
             }
         }
-        else 
+        else
         {
             var sortedLockedAngles = lockedSockets.Values.OrderBy(a => a).ToList();
             float maxGap = 0, gapStartAngle = 0;
@@ -149,13 +150,14 @@ public class RuneUI : MonoBehaviour
                     freeSockets[i].SetTargetLocalPosition(CalculatePositionFromAngle(gapStartAngle + angleIncrement * (i + 1)));
                 }
             }
-        }
 
-        foreach (var pair in lockedSockets)
-        {
-            pair.Key.SetTargetLocalPosition(CalculatePositionFromAngle(pair.Value));
+            foreach (var pair in lockedSockets)
+            {
+                pair.Key.SetTargetLocalPosition(CalculatePositionFromAngle(pair.Value));
+            }
         }
     }
+
     private void UpdateAttractionLogic(List<SocketUI> candidateSockets)
     {
         if (candidateSockets == null || candidateSockets.Count == 0)
@@ -168,7 +170,7 @@ public class RuneUI : MonoBehaviour
 
         SocketUI closestCandidate = null;
         float minDistanceSq = float.MaxValue;
-  
+
         foreach (var socket in candidateSockets)
         {
             float distSq = (socket.transform.localPosition - mouseLocalPos).sqrMagnitude;
@@ -184,47 +186,18 @@ public class RuneUI : MonoBehaviour
             socket.SetMouseAttraction(socket == closestCandidate);
         }
     }
+
+    // TEMP FIX: We return empty here just to let Unity compile. 
+    // We will hook the wire bending back up to the Array in the Controller phase!
     private Dictionary<SocketUI, float> FindExistingLockedSockets()
     {
-        var locked = new Dictionary<SocketUI, float>();
-        var controller = SpellGraphController.Instance;
-
-        foreach (var c in InstanceData.connections)
-        {
-            SocketUI local = FindSocketByName(c.fromOutputSocketName);
-            RuneUI target = controller.FindRuneByGuid(c.targetNodeGUID);
-            if (local != null && target != null)
-            {
-                Vector3 dir = (target.transform.position - transform.position).normalized;
-                Vector3 dir_in_place = Quaternion.Inverse(SpellGraphController.Instance.transform.rotation) * dir;
-                locked[local] = Mathf.Atan2(dir_in_place.z, dir_in_place.x) * Mathf.Rad2Deg;
-            }
-        }
-        foreach (var otherRune in controller.GetAllRunes())
-        {
-            if (otherRune == this) continue;
-            foreach (var c in otherRune.InstanceData.connections)
-            {
-                if (c.targetNodeGUID == this.InstanceData.guid)
-                {
-                    SocketUI local = FindSocketByName(c.toInputSocketName);
-                    if (local != null)
-                    {
-                        Vector3 dir = (otherRune.transform.position - transform.position).normalized;
-                        Vector3 dir_in_place = Quaternion.Inverse(SpellGraphController.Instance.transform.rotation) * dir;
-                        locked[local] = Mathf.Atan2(dir_in_place.z, dir_in_place.x) * Mathf.Rad2Deg;
-                    }
-                }
-            }
-        }
-        return locked;
+        return new Dictionary<SocketUI, float>();
     }
 
     private Vector3 GetMouseWorldPosition()
     {
         var controller = SpellGraphController.Instance;
         Ray ray = controller.editorCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        //Plane plane = new Plane(Vector3.up, transform.position);
         Plane plane = new Plane(controller.editorCamera.transform.forward, transform.position);
         if (plane.Raycast(ray, out float enter)) { return ray.GetPoint(enter); }
         return transform.position;
@@ -232,23 +205,9 @@ public class RuneUI : MonoBehaviour
 
     private Vector3 CalculatePositionFromAngle(float angle)
     {
-
         var controller = SpellGraphController.Instance;
         float angleRad = angle * Mathf.Deg2Rad;
-        Transform planeT = controller.transform;
-
-        Vector3 planeLocalOffset = controller.socketOrbitRadius * new Vector3(Mathf.Cos(angleRad), 0, Mathf.Sin(angleRad));
-
-        //Transform editorPlane = controller.editorCamera.transform;
-        
-
-        //float angleRad = angle * Mathf.Deg2Rad;
-
-        //Vector3 worldOffset = controller.socketOrbitRadius * (editorPlane.right * Mathf.Cos(angleRad) + editorPlane.up * Mathf.Sin(angleRad));
-
         Vector3 worldOffset = controller.socketOrbitRadius * (Vector3.right * Mathf.Cos(angleRad) + Vector3.forward * Mathf.Sin(angleRad));
-
-        //return transform.InverseTransformDirection(worldOffset);
         return worldOffset;
     }
 

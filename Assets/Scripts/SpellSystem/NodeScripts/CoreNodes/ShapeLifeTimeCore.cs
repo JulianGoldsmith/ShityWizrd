@@ -21,7 +21,12 @@ public class ShapeLifeTimeCore : CoreNode
     public SpellPosition TriggerSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
 
-    public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
+   /* public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
         if (!CanSpawn(triggerInfo.State))
             return;
@@ -55,5 +60,5 @@ public class ShapeLifeTimeCore : CoreNode
         rb.linearVelocity = triggerInfo.TriggerVector * 8;
 
         AttatchBehavioursAndTriggers(spellCore, triggerInfo);
-    }
+    }*/
 }

@@ -70,7 +70,7 @@ public class MomentumFlickCastNode : CasterNode
         {
             if (node is CoreNode coreNode)
             {
-                coreNode.CreateSpellCore(triggerInfo);
+               // coreNode.CreateSpellCore(triggerInfo);
             }
             else if (node is EffectNode effectNode)
             {
@@ -81,5 +81,10 @@ public class MomentumFlickCastNode : CasterNode
             GameObject.Destroy(state.chargeCastVFX);
 
         //handController.leftHand.currentHandState = handController.defaultHandState;
+    }
+
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
     }
 }

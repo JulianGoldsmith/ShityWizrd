@@ -96,4 +96,9 @@ public class ChargeCasterNode : CasterNode
         if (state.chargeCastVFX != null)
             GameObject.Destroy(state.chargeCastVFX);
     }
+
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
 }

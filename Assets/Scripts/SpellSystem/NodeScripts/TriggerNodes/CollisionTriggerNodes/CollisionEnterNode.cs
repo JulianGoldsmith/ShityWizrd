@@ -8,7 +8,7 @@ public class CollisionEnterNode : TriggerNode
 
     public int maxContacts = 1;
 
-    public override ITrigger CompileTriggerCondition(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         int vfxId = context.ClaimVFXId();
 
@@ -37,7 +37,7 @@ public class CollisionEnterNode : TriggerNode
     }
 }
 
-public class CollisionEnterTrigger : ITrigger
+public class CollisionEnterTrigger : RuntimeTriggerBase
 {
     public TriggerExecutioPlan Plan { get; set; }
 
@@ -49,9 +49,9 @@ public class CollisionEnterTrigger : ITrigger
     public VFXContext VfxContext;
     public ModifierType VfxModType;
 
-    public void InitTick(SpellCreatedCore core) { }
+    public override void InitTick(SpellCreatedCore core) { }
 
-    public bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
+    public override bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
     {
         hitInfos = new List<SpellTriggerInfo>();
 
@@ -137,6 +137,8 @@ public class CollisionEnterTrigger : ITrigger
         return hitInfos.Count > 0;
     }
 
-    public void TickVFX(SpellCreatedCore core) { }
-    public void CleanupVFX(SpellCreatedCore core) { }
+    public override void TickVFX(SpellCreatedCore core) { }
+    public override void CleanupVFX(SpellCreatedCore core) { }
+
+    
 }

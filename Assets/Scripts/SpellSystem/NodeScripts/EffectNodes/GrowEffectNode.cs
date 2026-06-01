@@ -14,7 +14,7 @@ public class GrowEffectNode : EffectNode
     [Promotable("Duration Ticks", DataTypeTag.Generic)]
     public int durationTicks = 300; 
 
-    public override IEffect CompileEffect()
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         return new GrowRuntimeEffect()
         {
@@ -22,6 +22,8 @@ public class GrowEffectNode : EffectNode
             DurationTicks = durationTicks
         };
     }
+
+ 
 
     public override void Execute(List<SpellTriggerInfo> triggerInfo)
     {

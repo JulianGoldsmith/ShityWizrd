@@ -27,78 +27,37 @@ public abstract class CoreNode : SpellNode
     {
         CompiledPlan = new CoreExecutionPlan();
         SpellCompilationContext sCC = new SpellCompilationContext();
-        // 1. Compile all Behaviours
+
         if (defaultBehaviourNodes != null)
         {
             foreach (var b in defaultBehaviourNodes)
-                if (b != null) CompiledPlan.Behaviours.Add(b.CompileBehaviour(sCC));
+                if (b != null) CompiledPlan.Behaviours.Add((IBehaviour)b.CompileNode(sCC));
         }
         if (behaviourNodes != null)
         {
             foreach (var b in behaviourNodes)
-                if (b != null) CompiledPlan.Behaviours.Add(b.CompileBehaviour(sCC));
+                if (b != null) CompiledPlan.Behaviours.Add((IBehaviour)b.CompileNode(sCC));
         }
 
-        // 2. Compile all Triggers
         if (defaultTriggerNodes != null)
         {
             foreach (var t in defaultTriggerNodes)
-                if (t != null) CompiledPlan.Triggers.Add(t.CompileTrigger(sCC));
+                if (t != null) CompiledPlan.Triggers.Add((ITrigger)t.CompileNode(sCC));
         }
         if (triggerNodes != null)
         {
             foreach (var t in triggerNodes)
-                if (t != null) CompiledPlan.Triggers.Add(t.CompileTrigger(sCC));
+                if (t != null) CompiledPlan.Triggers.Add((ITrigger)t.CompileNode(sCC));
         }
     }
 
-    public abstract void CreateSpellCore(SpellTriggerInfo triggerInfo);
 
     protected bool CanSpawn(SpellState state)
     {
         return state?.CanSpawnAnotherCore()??false;
     }
 
-    public void AttatchBehavioursAndTriggers(GameObject spellCore, SpellTriggerInfo triggerInfo)
-    {
-        foreach (BehaviourNode behaviourNode in defaultBehaviourNodes)
-        {
-            behaviourNode.SetUp(spellCore, triggerInfo);
-        }
-        foreach (TriggerNode triggerNode in defaultTriggerNodes)
-        {
-            triggerNode.SetUp(spellCore, triggerInfo.State);
-        }
-        foreach (BehaviourNode behaviourNode in behaviourNodes)
-        {
-            behaviourNode.SetUp(spellCore, triggerInfo);
-        }
-        foreach (TriggerNode triggerNode in triggerNodes)
-        {
-            triggerNode.SetUp(spellCore, triggerInfo.State);
-        }
-    }
-    public void AttatchBehavioursAndTriggers(GameObject spellCore, SpellState state)
-    {
-        // triggerless setup.
-        // need to find a way to pass triggerinfo across network.
-        foreach (BehaviourNode behaviourNode in defaultBehaviourNodes)
-        {
-            behaviourNode.SetUp(spellCore, default);
-        }
-        foreach (TriggerNode triggerNode in defaultTriggerNodes)
-        {
-            triggerNode.SetUp(spellCore, state);
-        }
-        foreach (BehaviourNode behaviourNode in behaviourNodes)
-        {
-            behaviourNode.SetUp(spellCore, default);
-        }
-        foreach (TriggerNode triggerNode in triggerNodes)
-        {
-            triggerNode.SetUp(spellCore, state);
-        }
-    }
+
 
     public override List<SocketDefinition> GetSockets()
     {

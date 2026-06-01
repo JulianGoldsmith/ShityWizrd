@@ -6,7 +6,7 @@ public class ApplyAuraNode : EffectNode
 {
     [SerializeField] Aura[] auras;
 
-    public override IEffect CompileEffect()
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         throw new System.NotImplementedException();
     }

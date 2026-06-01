@@ -53,14 +53,12 @@ public class SpellCreatedObject : NetworkBehaviour
         node.ApplyPromotableValuesGeneric<SpellCreatedObject>(this);
         AssignProperties(node);
 
-        if (triggerInfo.IsValid)
+        if(triggerInfo.IsValid)
         {
-            node.AttatchBehavioursAndTriggers(gameObject, triggerInfo);
             InitialiseAfterBehavioursAndTriggers(node, triggerInfo.State);
         }
         else
         {
-            node.AttatchBehavioursAndTriggers(gameObject, state);
             InitialiseAfterBehavioursAndTriggers(node, state);
         }
     }

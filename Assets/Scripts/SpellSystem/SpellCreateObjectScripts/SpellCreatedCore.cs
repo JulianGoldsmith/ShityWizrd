@@ -1,5 +1,6 @@
 using Fusion;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class SpellCreatedCore : NetworkBehaviour
@@ -10,7 +11,7 @@ public class SpellCreatedCore : NetworkBehaviour
     [Networked] public SpellGraphId BlueprintID { get; set; }
     [Networked] public NetworkBool IsActiveInBuffer { get; set; }
     [Networked] public NetworkString<_64> NodeInstanceGuid { get; set; }
-
+    [Networked] public int NodeArrayIndex { get; set; }
 
 
     // current context / active variables
@@ -65,6 +66,11 @@ public class SpellCreatedCore : NetworkBehaviour
             }
         }
 
+        if (IsActiveInBuffer && !_isInitialized)
+        {
+            WakeUp();
+        }
+
         if (!_isInitialized || _myPlan == null) return;
 
         CoreContext tempContext = Context;
@@ -84,17 +90,20 @@ public class SpellCreatedCore : NetworkBehaviour
             if (trigger.Tick(this, Runner.DeltaTime, out List<SpellTriggerInfo> hitInfos))
             {
                 // 2. Execute every effect, passing the WHOLE LIST so the effect can do group math!
-                foreach (IEffect effect in trigger.Plan.EffectsToRun)
+                if (trigger is RuntimeTriggerBase runtimeTrigger)
                 {
-                    effect.Execute(this, hitInfos);
+                    foreach (var outcome in runtimeTrigger.Outcomes)
+                    {
+                        // If the outcome is an effect, fire it instantly!
+                        if (outcome is IEffect effect)
+                        {
+                            effect.Execute(this, hitInfos);
+                        }
+                        // (We will add the logic to spawn downstream Cores here later!)
+                    }
                 }
 
-                // Did hitting this trigger destroy the core? 
-                if (trigger.Plan.DestroysCore)
-                {
-                    DeactivateCore();
-                    break; // Stop evaluating further triggers, we are dead!
-                }
+                
             }
         }
 
@@ -102,14 +111,14 @@ public class SpellCreatedCore : NetworkBehaviour
 
     }
 
-    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, string nodeGuid, CoreExecutionPlan compliedExecutionPlan, CoreContext initialContext)
+    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, string nodeGuid, CoreExecutionPlan compliedExecutionPlan, CoreContext initialContext, int arrayIndex)
     {
         // 1. If we were somehow already active (buffer overlap), clean up the old spell first!
         if (IsActiveInBuffer)
         {
             DeactivateCore();
         }
-
+        NodeArrayIndex = arrayIndex;
 
         ActiveCastID = castId;
         BlueprintID = blueprintId;
@@ -225,18 +234,25 @@ public class SpellCreatedCore : NetworkBehaviour
         }
         if (_myPlan == null)
         {
-            if (SpellStateManager.instance.active_spellblueprints.TryGetValue(BlueprintID, out SpellGraph blueprint))
+            // 1. Attempt to grab the spell from RAM
+            if (SpellStateManager.instance.hydratedSpells.TryGetValue(BlueprintID, out RuntimeSpell runtimeSpell))
             {
-                SpellNode node = blueprint.entryPointControllerNode.GetNodeInChain(NodeInstanceGuid.ToString());
-                if (node is CoreNode coreNode)
+                IRuntimeNode myLogic = runtimeSpell.HydratedNodes[NodeArrayIndex];
+
+                if (myLogic is RuntimeCoreBase runtimeCore)
                 {
-                    if (coreNode.CompiledPlan == null) coreNode.Compile();
-                    _myPlan = coreNode.CompiledPlan;
+                    _myPlan = new CoreExecutionPlan();
+                    _myPlan.Behaviours = new List<IBehaviour>(runtimeCore.Behaviours);
+                    _myPlan.Triggers = new List<ITrigger>(runtimeCore.Triggers);
                 }
+
+                _isInitialized = true;
+            }
+            else
+            {
+                return;
             }
         }
-
-        _isInitialized = true;
     }
 
     private void GoToSleep()
@@ -287,12 +303,13 @@ public class SpellCreatedCore : NetworkBehaviour
 
 public class SpellCompilationContext
 {
+    public int CurrentNodeIndex { get; set; }
+
     private int _nextIntSlot = 0;
     private int _nextFloatSlot = 0;
     private int _nextVectorSlot = 0;
 
     private int _nextBoolBit = 0;
-
     public int ClaimIntSlot() => _nextIntSlot++;
     public int ClaimFloatSlot() => _nextFloatSlot++;
     public int ClaimVectorSlot() => _nextVectorSlot++;

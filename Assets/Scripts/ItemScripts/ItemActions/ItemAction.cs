@@ -40,7 +40,7 @@ public abstract class ItemAction : ScriptableObject
         if (Item == null || Item.primaryActionSpell == null) return;
 
         SpellGraph graph = Item.primaryActionSpell;
-        graph.CompileSpell();
+        //graph.CompileSpell();
 
         var controller = Item.activeCaster;
         var netObj = controller.GetComponent<NetworkObject>();
@@ -79,5 +79,26 @@ public abstract class ItemAction : ScriptableObject
         Item.ClearSpellState();
     }
 
+    protected void ExecuteHydratedSpell(SpellTriggerInfo triggerInfo)
+    {
+        if (Item == null) return;
 
+        IRuntimeNode rootNode = SpellStateManager.instance.GetHydratedSpell(Item.PrimarySpellID);
+
+        if (rootNode != null)
+        {
+            if (rootNode is RuntimeEntryPoint entryPoint)
+            {
+                entryPoint.Execute(triggerInfo);
+            }
+            else if (rootNode is IRuntimeCore core)
+            {
+                core.ExecuteCore(triggerInfo);
+            }
+        }
+        else
+        {
+            Debug.LogError($"[ItemAction] Failed to execute! Spell {Item.PrimarySpellID.BlueprintNumber} is not hydrated in RAM.");
+        }
+    }
 }

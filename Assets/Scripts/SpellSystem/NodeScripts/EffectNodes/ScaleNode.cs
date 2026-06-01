@@ -8,7 +8,8 @@ public class ScaleNode : EffectNode
     [Tooltip("Amount to add/subtract. 125 = Max Size, -125 = Min Size")]
     public int scaleChangeAmount = 10;
 
-    public override IEffect CompileEffect()
+ 
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         return new ScaleEffect()
         {

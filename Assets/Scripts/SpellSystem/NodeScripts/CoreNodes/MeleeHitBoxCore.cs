@@ -4,7 +4,12 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "MeleeHitBoxCore", menuName = "SpellNodes/CoreNodes/MeleeHitBoxCore")]
 public class MeleeHitBoxCore : CoreNode
 {
-    public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    /*public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
     {
         if (!CanSpawn(triggerInfo.State))
             return;
@@ -21,5 +26,5 @@ public class MeleeHitBoxCore : CoreNode
         AttatchBehavioursAndTriggers(spellCore, triggerInfo);
         spellCore.SetActive(true);
         triggerInfo.State.Controller.GetComponent<CastActionController>()?.RegisterActiveHitbox(spellCore);
-    }
+    }*/
 }

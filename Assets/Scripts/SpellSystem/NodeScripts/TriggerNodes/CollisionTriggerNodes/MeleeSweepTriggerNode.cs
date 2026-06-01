@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "MeleeSweepTriggerNode", menuName = "SpellNodes/TriggerNodes/MeleeSweepTriggerNode")]
 public class MeleeSweepTriggerNode : TriggerNode
 {
-    public override ITrigger CompileTriggerCondition(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         throw new System.NotImplementedException();
     }

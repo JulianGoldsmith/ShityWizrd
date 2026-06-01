@@ -32,111 +32,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
 
 
-    public override void CreateSpellCore(SpellTriggerInfo triggerInfo)
-    {
-        /*if (!CanSpawn(triggerInfo.State))
-            return;*/
-        //triggerInfo.State.SpawnedCoresCounter++;
-
-        Vector3 pos = SpellSystemHelpers.GetSpellPosition(
-            triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
-        Quaternion rot = SpellSystemHelpers.GetSpellRotation(
-            triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
-
-        // Prior implementation
-        // Create a lambda expression to be ran onspawn, then replicated across instances.
-        //NetworkRunner.OnBeforeSpawned beforespawned = (Runner, NObject) => InitialisePhysicsObjectOnSpawn(NObject, triggerInfo);
-
-        //NetworkObject spellCore = BasicSpawner.Spawn(corePrefabRef, pos, rot, beforespawned);
-
-        // Now we use the NetworkObjectBuffer to grab pre-spawned objects where possible.
-        // falls back to just spawn as before when not possible.
-        NetworkObjectBuffer activeBuffer = null;
-        NetworkObject spellCore = null;
-
-
-        if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.CastItem != null)
-        {
-            Debug.Log("Trying to buffer spawn from Item");
-            activeBuffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
-            if (activeBuffer != null)
-            {
-                spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
-            }
-        }
-        else if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.Controller != null) 
-        {
-            Debug.Log("Trying to buffer spawn from Controller (NPC)");
-            activeBuffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();
-            if (activeBuffer != null)
-            {
-                spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
-            }
-        }
-        else if (triggerInfo.IsValid && triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<SpellCreatedCore>(out var parentCore))
-        {
-            Debug.Log("Trying to buffer spawn from Parent Core's Networked Context");
-
-            // Read the perfectly networked ID we saved in the Context!
-            if (parentCore.Context.BufferSourceID.IsValid)
-            {
-                if (parentCore.Runner.TryFindObject(parentCore.Context.BufferSourceID, out NetworkObject bufferObj))
-                {
-                    activeBuffer = bufferObj.GetComponent<NetworkObjectBuffer>();
-                    if (activeBuffer != null)
-                    {
-                        spellCore = activeBuffer.Get(corePrefabRef, pos, rot);
-                    }
-                }
-            }
-        }
-
-        if (spellCore == null)
-        {
-            bool isProxy = triggerInfo.IsValid && triggerInfo.Source != null &&
-                           triggerInfo.Source.TryGetComponent<NetworkObject>(out var sourceNetObj) &&
-                           !sourceNetObj.HasStateAuthority && !sourceNetObj.HasInputAuthority;
-
-            if (isProxy)
-            {
-                Debug.LogWarning("Proxy buffer exhausted! Safely skipping visual prediction to prevent crash.");
-                return;
-            }
-
-            Debug.LogError("Couldn't buffer spawn so falling back.");
-            spellCore = BasicSpawner.Spawn(corePrefabRef, pos, rot);
-        }
-
-
-        if (spellCore != null)
-        {
-            var lifecycleManager = spellCore.GetComponent<SpellCreatedCore>();
-            if (lifecycleManager != null)
-            {
-                CoreContext context = new CoreContext()
-                {
-                    SpawnPosition = pos,
-                    CastChargeLevel = triggerInfo.State.CastChargeLevel,
-                    TriggerVector = triggerInfo.TriggerVector, // AddMomentum needs this!
-                    AliveTime = 0f,
-                    BufferSourceID = activeBuffer != null ? activeBuffer.Object.Id : default
-                };
-                if (triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<NetworkObject>(out var netObj))
-                {
-                    context.OriginalCaster = netObj.Id;
-                }
-
-                CoreExecutionPlan plan = new CoreExecutionPlan();
-                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, this.InstanceGuid, this.CompiledPlan, context);
-            }
-
-            // We leave this here for now so your current game doesn't break. 
-            // We will phase this out in Phase 4 when we convert to stateless math!
-            //this.AttatchBehavioursAndTriggers(spellCore.gameObject, triggerInfo);
-        }
-
-        InitialisePhysicsObjectOnSpawn(spellCore, triggerInfo);
-    }
+    
 
     public void InitialisePhysicsObjectOnSpawn(NetworkObject spellCore, SpellTriggerInfo triggerInfo)
     {
@@ -239,5 +135,99 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         }
 
         return sockets;
+    }
+
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        // 1. The Factory spits out the stateless C# block
+        return new RuntimeObjectCore()
+        {
+            ArrayIndex = context.CurrentNodeIndex,
+            Template = this, // We pass the template purely for legacy Physics Object initialization
+            PrefabRef = this.corePrefabRef,
+            CastSpawnPosition = this.CastSpawnPosition,
+            CastSpawnRotation = this.CastSpawnRotation,
+            TriggerSpawnPosition = this.TriggerSpawnPosition,
+            TriggerSpawnRotation = this.TriggerSpawnRotation,
+            OriginalTemplateGuid = this.InstanceGuid
+        };
+    }
+}
+
+public class RuntimeObjectCore : RuntimeCoreBase
+{
+    public int ArrayIndex;
+    public ObjectCore Template; // Legacy reference for Promotables
+    public NetworkPrefabRef PrefabRef;
+    public SpellPosition CastSpawnPosition;
+    public SpellRotation CastSpawnRotation;
+    public SpellPosition TriggerSpawnPosition;
+    public SpellRotation TriggerSpawnRotation;
+    public string OriginalTemplateGuid;
+
+    public override void ExecuteCore(SpellTriggerInfo triggerInfo)
+    {
+        Vector3 pos = SpellSystemHelpers.GetSpellPosition(triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
+        Quaternion rot = SpellSystemHelpers.GetSpellRotation(triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
+
+        NetworkObjectBuffer activeBuffer = null;
+        NetworkObject spellCore = null;
+
+        // 1. Try to pull from Weapon Buffer
+        if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.CastItem != null)
+        {
+            activeBuffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
+            if (activeBuffer != null) spellCore = activeBuffer.Get(PrefabRef, pos, rot);
+        }
+        // 2. Try to pull from NPC/Controller Buffer
+        else if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.Controller != null)
+        {
+            activeBuffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();
+            if (activeBuffer != null) spellCore = activeBuffer.Get(PrefabRef, pos, rot);
+        }
+        // 3. Try to pull from the Parent Core's Buffer (For downstream spawned projectiles)
+        else if (triggerInfo.IsValid && triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<SpellCreatedCore>(out var parentCore))
+        {
+            if (parentCore.Context.BufferSourceID.IsValid)
+            {
+                if (parentCore.Runner.TryFindObject(parentCore.Context.BufferSourceID, out NetworkObject bufferObj))
+                {
+                    activeBuffer = bufferObj.GetComponent<NetworkObjectBuffer>();
+                    if (activeBuffer != null) spellCore = activeBuffer.Get(PrefabRef, pos, rot);
+                }
+            }
+        }
+
+        // 4. Ultimate Fallback
+        if (spellCore == null)
+        {
+            spellCore = BasicSpawner.Spawn(PrefabRef, pos, rot);
+        }
+
+        if (spellCore != null)
+        {
+            var lifecycleManager = spellCore.GetComponent<SpellCreatedCore>();
+            if (lifecycleManager != null)
+            {
+                CoreContext context = new CoreContext()
+                {
+                    SpawnPosition = pos,
+                    CastChargeLevel = triggerInfo.State.CastChargeLevel,
+                    TriggerVector = triggerInfo.TriggerVector,
+                    AliveTime = 0f,
+                    BufferSourceID = activeBuffer != null ? activeBuffer.Object.Id : default
+                };
+
+                // TEMPORARY BRIDGE: Cast our new Hydrator lists back into the old Execution Plan
+                CoreExecutionPlan dummyPlan = new CoreExecutionPlan();
+                dummyPlan.Behaviours = new List<IBehaviour>(this.Behaviours);
+                dummyPlan.Triggers = new List<ITrigger>(this.Triggers);
+
+                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, OriginalTemplateGuid, dummyPlan, context, ArrayIndex);
+            }
+
+            // Initialize the Physics (Using the legacy template reference for now)
+            Template.InitialisePhysicsObjectOnSpawn(spellCore, triggerInfo);
+        }
     }
 }

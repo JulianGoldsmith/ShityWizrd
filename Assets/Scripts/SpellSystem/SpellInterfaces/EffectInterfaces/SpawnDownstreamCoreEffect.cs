@@ -72,7 +72,8 @@ public class SpawnDownstreamCoreEffect : IEffect
                     parentCore.BlueprintID,
                     ChildNodeGuid,
                     ChildPlan,
-                    childContext
+                    childContext, 
+                    0
                 );
             }
         }
@@ -89,7 +90,7 @@ public class ExecuteDownstreamCoreEffect : IEffect
         {
             // Route perfectly through your existing buffer, context, GUID, 
             // and physics initialization logic!
-            CoreToExecute.CreateSpellCore(hit);
+            //CoreToExecute.CreateSpellCore(hit);
         }
     }
 }

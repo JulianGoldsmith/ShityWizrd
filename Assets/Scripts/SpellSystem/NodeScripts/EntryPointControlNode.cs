@@ -59,4 +59,9 @@ public class EntryPointControlNode : SpellNode
         }
         return all;
     }
+
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
 }

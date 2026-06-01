@@ -9,7 +9,6 @@ public class DictionaryInitializer : MonoBehaviour
 
     private void Awake()
     {
-        // 1. Initialize the Node Registry
         if (nodeDictionary != null)
         {
             NodeRegistry.Initialize(nodeDictionary);

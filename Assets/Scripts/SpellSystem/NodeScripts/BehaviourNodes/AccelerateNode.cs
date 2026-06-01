@@ -7,7 +7,7 @@ public class AccelerateNode : BehaviourNode
     [Promotable("Acceleration", DataTypeTag.Speed)]
     public float acceleration;
 
-    public override IBehaviour CompileBehaviour(SpellCompilationContext sCC)
+    public override IRuntimeNode CompileNode(SpellCompilationContext sCC)
     {
         float bakedAcceleration = GetFinalValue(nameof(acceleration), acceleration);
 

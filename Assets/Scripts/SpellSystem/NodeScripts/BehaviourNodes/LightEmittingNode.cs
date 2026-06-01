@@ -11,7 +11,7 @@ public class LightEmittingNode : BehaviourNode
     public float radius = 20f;
     public float lumenPower = 3000f;
 
-    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         throw new NotImplementedException();
     }

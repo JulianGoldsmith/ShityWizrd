@@ -8,6 +8,11 @@ public class SetBoolValueNode : ValueNode<bool>
 
     public override DataTypeTag ValueTag => tag;
 
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new System.NotImplementedException();
+    }
+
     public override ValueModifier<bool> GetModifier(SpellState state)
     {
         return new ValueModifier<bool>(value, ValueModifierType.Set);

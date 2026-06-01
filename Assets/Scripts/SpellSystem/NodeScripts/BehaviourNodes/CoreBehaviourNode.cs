@@ -16,7 +16,7 @@ public class CoreBehaviourNode : BehaviourNode
     public SpellPosition TriggerSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
 
-    public override IBehaviour CompileBehaviour(SpellCompilationContext context)
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         throw new System.NotImplementedException();
     }

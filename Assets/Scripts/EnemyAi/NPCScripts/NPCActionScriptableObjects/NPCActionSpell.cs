@@ -23,7 +23,7 @@ public class NPCActionSpell : NPC_Action
 
     [Header("HitBoxID - 1 is no hitbox")]
     public int hitBoxID = -1;
-    public float timeAfterReleaseToActivateHitBox, hitBoxDuration; 
+    public float timeAfterReleaseToActivateHitBox, hitBoxDuration;
 
     public void LoadSpells(NetworkObjectBuffer nob)
     {
@@ -46,6 +46,7 @@ public class NPCActionSpell : NPC_Action
 
         try
         {
+            // This perfectly fills our unified SpellNetworkData structure natively!
             JsonUtility.FromJsonOverwrite(bakedJson, runtimeGraph);
         }
         catch (Exception e)
@@ -53,8 +54,6 @@ public class NPCActionSpell : NPC_Action
             Debug.LogError($"Failed to parse baked JSON for '{spellName}'. Error: {e.Message}");
             return;
         }
-
-        runtimeGraph.InitilizeFromNodeData(SpellGraphController.Instance);
         SetAndInitialise(runtimeGraph);
     }
 

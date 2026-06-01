@@ -7,7 +7,7 @@ public class DamageEffectNode : EffectNode
     [Promotable("Damage Amount", DataTypeTag.Damage)]
     public int damageAmount = 10;
 
-    public override IEffect CompileEffect()
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
         throw new System.NotImplementedException();
     }

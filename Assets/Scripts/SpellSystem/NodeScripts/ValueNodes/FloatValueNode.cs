@@ -11,6 +11,11 @@ public class FloatValueNode : ValueNode<float>
     public override Type ValueType => typeof(float);
     public override DataTypeTag ValueTag => tag;
 
+    public override IRuntimeNode CompileNode(SpellCompilationContext context)
+    {
+        throw new NotImplementedException();
+    }
+
     public override ValueModifier<float> GetModifier(SpellState state)
     {
         return new ValueModifier<float>(value, modifierType);

@@ -37,6 +37,8 @@ public abstract class SpellNode : ScriptableObject
         AssignCasterSpecificReferecnes(); //things like hitBoxs
     }
 
+    public abstract IRuntimeNode CompileNode(SpellCompilationContext context);
+
     ////Promotable attribues settings setting 
     public virtual void StoreBaseValues()
     {
@@ -58,8 +60,9 @@ public abstract class SpellNode : ScriptableObject
         // its physicsobject.
         if (baseValues == null)
         {
-            Debug.LogError($"[{this.name}] is trying to store basevalues from {obj} but baseValues does not exist.");
-            return;
+            StoreBaseValues();
+            //Debug.LogError($"[{this.name}] is trying to store basevalues from {obj} but baseValues does not exist.");
+            //return;
         }
 
         var fields = typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance);
@@ -85,13 +88,15 @@ public abstract class SpellNode : ScriptableObject
         if(obj == null)
         {
             Debug.LogError("Tried to modify values on a null-object.");
+           
             return (T)obj; 
         }
 
         if (baseValues == null)
         {
-            Debug.LogError($"Base values have not been stored for node {obj} you need to call StoredBaseValues() after cloning");
-            return (T)obj;
+            StoreBaseValues();
+            //Debug.LogError($"Base values have not been stored for node {obj} you need to call StoredBaseValues() after cloning");
+            //return (T)obj;
         }
         var fields = obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
 
