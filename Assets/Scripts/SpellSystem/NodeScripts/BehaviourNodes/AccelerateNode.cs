@@ -9,12 +9,10 @@ public class AccelerateNode : BehaviourNode
 
     public override IRuntimeNode CompileNode(SpellCompilationContext sCC)
     {
-        float bakedAcceleration = GetFinalValue(nameof(acceleration), acceleration);
 
-        // 2. Spit out the stateless C# class
         return new AccelerateBehaviour()
         {
-            Acceleration = bakedAcceleration
+            Acceleration = new RuntimeFloatProperty(this.acceleration)
         };
     }
 
@@ -30,9 +28,7 @@ public class AccelerateNode : BehaviourNode
 
 public class AccelerateBehaviour : IBehaviour
 {
-    public float Acceleration;
-
-    
+    public RuntimeFloatProperty Acceleration;
 
     public void InitTick(SpellCreatedCore core)
     {
@@ -48,7 +44,7 @@ public class AccelerateBehaviour : IBehaviour
                 Vector3 direction = mover.CurrentVelocity.normalized;
 
                 // Route the force directly to the handler
-                mover.ApplyForce(direction * Acceleration, ForceMode.Acceleration);
+                mover.ApplyForce(direction * Acceleration.GetValue(default), ForceMode.Acceleration);
             }
         }
     }

@@ -24,6 +24,12 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
     [Promotable("Lifetime", DataTypeTag.Lifetime)]
     public float lifetime = 0;
 
+    [Promotable("Size", DataTypeTag.Radius)] // (Use whatever tag you prefer)
+    public float size = 1f;
+
+    [Promotable("Material", DataTypeTag.Material)] // (Use whatever tag you prefer)
+    public PHYSICS_OBJECT_MATERIAL material;
+
     private bool base_values_from_dependencies_stored = false;
 
     public SpellPosition CastSpawnPosition = SpellPosition.CasterPosition;
@@ -96,61 +102,39 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         //}
     }
 
-    public override List<SocketDefinition> GetSockets()
-    {
-        List<SocketDefinition> sockets = base.GetSockets();
-
-        // Append on sockets for additional promotable values from extra scripts.
-        var modifiableFields = typeof(SpellCreatedPhysicsObject).GetFields(BindingFlags.Public | BindingFlags.Instance);
-        foreach (var field in modifiableFields)
-        {
-            var promotableAttr = field.GetCustomAttribute<PromotableAttribute>(); if (promotableAttr != null)
-            {
-                sockets.Add(new SocketDefinition(
-                    name: promotableAttr.DisplayName,
-                    type: SocketType.Data,
-                    direction: SocketDirection.Input,
-                    tag: promotableAttr.Tag,
-                    dataType: field.FieldType,
-                    owningNodeGUID: this.InstanceGuid,
-                    targetFieldName: field.Name
-                ));
-            }
-        }
-        modifiableFields = typeof(PhysicsObjectProperties).GetFields(BindingFlags.Public | BindingFlags.Instance);
-        foreach (var field in modifiableFields)
-        {
-            var promotableAttr = field.GetCustomAttribute<PromotableAttribute>(); if (promotableAttr != null)
-            {
-                sockets.Add(new SocketDefinition(
-                    name: promotableAttr.DisplayName,
-                    type: SocketType.Data,
-                    direction: SocketDirection.Input,
-                    tag: promotableAttr.Tag,
-                    dataType: field.FieldType,
-                    owningNodeGUID: this.InstanceGuid,
-                    targetFieldName: field.Name
-                ));
-            }
-        }
-
-        return sockets;
-    }
+    
 
     public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
-        // 1. The Factory spits out the stateless C# block
-        return new RuntimeObjectCore()
+        var runtimeCore = new RuntimeObjectCore()
         {
             ArrayIndex = context.CurrentNodeIndex,
-            Template = this, // We pass the template purely for legacy Physics Object initialization
+            Template = this,
             PrefabRef = this.corePrefabRef,
             CastSpawnPosition = this.CastSpawnPosition,
             CastSpawnRotation = this.CastSpawnRotation,
             TriggerSpawnPosition = this.TriggerSpawnPosition,
             TriggerSpawnRotation = this.TriggerSpawnRotation,
-            OriginalTemplateGuid = this.InstanceGuid
+            OriginalTemplateGuid = this.InstanceGuid,
+
+            lifetime = new RuntimeFloatProperty(this.lifetime),
+            size = new RuntimeFloatProperty(this.size),
+            material = new RuntimeMaterialProperty(this.material),
         };
+
+        if (this.defaultBehaviourNodes != null)
+        {
+            foreach (var b in this.defaultBehaviourNodes)
+                if (b != null) runtimeCore.AddBehaviour((IBehaviour)b.CompileNode(context));
+        }
+
+        if (this.defaultTriggerNodes != null)
+        {
+            foreach (var t in this.defaultTriggerNodes)
+                if (t != null) runtimeCore.AddTrigger((ITrigger)t.CompileNode(context));
+        }
+
+        return runtimeCore;
     }
 }
 
@@ -164,6 +148,10 @@ public class RuntimeObjectCore : RuntimeCoreBase
     public SpellPosition TriggerSpawnPosition;
     public SpellRotation TriggerSpawnRotation;
     public string OriginalTemplateGuid;
+
+    public RuntimeFloatProperty lifetime;
+    public RuntimeFloatProperty size;
+    public RuntimeMaterialProperty material;
 
     public override void ExecuteCore(SpellTriggerInfo triggerInfo)
     {
@@ -218,16 +206,8 @@ public class RuntimeObjectCore : RuntimeCoreBase
                     BufferSourceID = activeBuffer != null ? activeBuffer.Object.Id : default
                 };
 
-                // TEMPORARY BRIDGE: Cast our new Hydrator lists back into the old Execution Plan
-                CoreExecutionPlan dummyPlan = new CoreExecutionPlan();
-                dummyPlan.Behaviours = new List<IBehaviour>(this.Behaviours);
-                dummyPlan.Triggers = new List<ITrigger>(this.Triggers);
-
-                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, OriginalTemplateGuid, dummyPlan, context, ArrayIndex);
+                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, OriginalTemplateGuid, context, ArrayIndex);
             }
-
-            // Initialize the Physics (Using the legacy template reference for now)
-            Template.InitialisePhysicsObjectOnSpawn(spellCore, triggerInfo);
         }
     }
 }

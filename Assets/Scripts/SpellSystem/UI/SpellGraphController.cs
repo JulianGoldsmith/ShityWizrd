@@ -686,8 +686,10 @@ public class SpellGraphController : MonoBehaviour
         if (start.SocketData.Type != end.SocketData.Type) return false;
         if (start.SocketData.Type == SocketType.Data)
         {
-            if (start.SocketData.DataType != end.SocketData.DataType ||
-                start.SocketData.Tag != end.SocketData.Tag)
+            // NEW: Only check the Tag! 
+            // We removed the 'DataType' match because wrapper classes (RuntimeFloatProperty) 
+            // will always fail a strict type check against pure floats.
+            if (start.SocketData.Tag != end.SocketData.Tag)
             {
                 return false;
             }

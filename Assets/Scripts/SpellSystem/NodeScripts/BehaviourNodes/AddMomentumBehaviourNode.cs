@@ -7,11 +7,9 @@ public class AddMomentumBehaviourNode : BehaviourNode
     public float forceMultiplier = 1f;
     public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
-        float bakedForce = GetFinalValue(nameof(forceMultiplier), forceMultiplier);
-
         return new AddMomentumBehaviour()
         {
-            ForceMultiplier = bakedForce
+            ForceMultiplier = new RuntimeFloatProperty(this.forceMultiplier),
         };
     }
 
@@ -24,7 +22,7 @@ public class AddMomentumBehaviourNode : BehaviourNode
 
 public class AddMomentumBehaviour : IBehaviour
 {
-    public float ForceMultiplier;
+    public RuntimeFloatProperty ForceMultiplier;
 
     public void InitTick(SpellCreatedCore core)
     {
@@ -35,7 +33,7 @@ public class AddMomentumBehaviour : IBehaviour
         {
             float calcMass = Mathf.Max(0.01f, po.physicsObjectProperties.mass);
 
-            po.ApplyForce((charge* direction * ForceMultiplier) / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
+            po.ApplyForce((charge* direction * ForceMultiplier.GetValue(default)) / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
         }
     }
 

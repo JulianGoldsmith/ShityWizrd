@@ -13,11 +13,24 @@ public class FloatValueNode : ValueNode<float>
 
     public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
-        throw new NotImplementedException();
+        // Spit out the stateless math block!
+        return new RuntimeFloatValueNode()
+        {
+            Value = this.value,
+            ModifierType = this.modifierType
+        };
     }
+}
 
-    public override ValueModifier<float> GetModifier(SpellState state)
+// THE RUNTIME MATH CLASS
+public class RuntimeFloatValueNode : RuntimeValueNodeBase<float>
+{
+    public float Value;
+    public ValueModifierType ModifierType;
+
+    // The math evaluates here, entirely in Engine RAM!
+    public override ValueModifier<float> GetModifier(SpellTriggerInfo info)
     {
-        return new ValueModifier<float>(value, modifierType);
+        return new ValueModifier<float>(Value, ModifierType);
     }
 }

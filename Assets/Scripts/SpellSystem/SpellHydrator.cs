@@ -62,6 +62,58 @@ public static class SpellHydrator
                 {
                     triggerSource.AddOutcome(target);
                 }
+                // 5. DATA WIRES (Source = Value Node, Target = Any Promotable Property)
+                else if (source is IRuntimeValueNode valueSource)
+                {
+                    SpellNode targetTemplate = templateRegistry.FirstOrDefault(n => n.NetworkNodeID == data.Nodes[wire.ToNodeIndex].TemplateID);
+                    if (targetTemplate != null)
+                    {
+                        var sockets = targetTemplate.GetSockets();
+                        if (wire.ToSocketIndex < sockets.Count)
+                        {
+                            string fieldName = sockets[wire.ToSocketIndex].TargetFieldName;
+                            if (!string.IsNullOrEmpty(fieldName))
+                            {
+                                // Helper function to attempt injection via Reflection
+                                bool TryInject(object obj)
+                                {
+                                    var field = obj.GetType().GetField(fieldName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                                    if (field != null)
+                                    {
+                                        var propertyObj = field.GetValue(obj);
+                                        if (propertyObj is IRuntimeDataProperty dataProp)
+                                        {
+                                            dataProp.AddValueNode(valueSource);
+                                            return true;
+                                        }
+                                    }
+                                    return false;
+                                }
+
+                                // 1. Try to inject directly into the target node
+                                bool success = TryInject(target);
+
+                                // 2. "Promoted Socket Router" -> If the target is a Core, search its internal modules!
+                                if (!success && target is RuntimeCoreBase coreTarget2)
+                                {
+                                    foreach (var b in coreTarget2.Behaviours)
+                                        if (TryInject(b)) { success = true; break; }
+
+                                    if (!success)
+                                    {
+                                        foreach (var t in coreTarget2.Triggers)
+                                            if (TryInject(t)) { success = true; break; }
+                                    }
+                                }
+
+                                if (!success)
+                                {
+                                    Debug.LogWarning($"[Hydrator] Data wire failed! Could not find a RuntimeDataProperty named '{fieldName}' on {target.GetType().Name} or its innate components.");
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

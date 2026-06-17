@@ -32,9 +32,13 @@ public abstract class ValueNode : SpellNode
 public abstract class ValueNode<T> : ValueNode
 {
     public override System.Type ValueType => typeof(T);
-    public abstract ValueModifier<T> GetModifier(SpellState state);
+    public abstract override IRuntimeNode CompileNode(SpellCompilationContext context);
 }
 
+public abstract class RuntimeValueNodeBase<T> : IRuntimeValueNode<T>
+{
+    public abstract ValueModifier<T> GetModifier(SpellTriggerInfo info);
+}
 public enum ValueModifierType
 {
     Set,

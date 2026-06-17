@@ -6,6 +6,13 @@ public abstract class EffectNode : SpellNode
 {
     public CasterTriggerMethod casterTriggerMethod = CasterTriggerMethod.OnCast;
 
+    [Header("Network Identity")]
+    [Tooltip("This is assigned automatically when published to the Master Dictionary. Do not edit manually.")]
+    public int NetworkStatusID = 0;
+
+    [Header("Execution Settings")]
+    public EffectLifecycle Lifecycle = EffectLifecycle.Duration;
+
     public abstract override IRuntimeNode CompileNode(SpellCompilationContext context);
     public abstract void Execute( List<SpellTriggerInfo> triggerInfo);
 
@@ -54,3 +61,10 @@ public abstract class EffectNode : SpellNode
     }
 }
 
+
+public enum EffectLifecycle
+{
+    Instant = 0,
+    Duration = 1,
+    Channeled = 2
+}

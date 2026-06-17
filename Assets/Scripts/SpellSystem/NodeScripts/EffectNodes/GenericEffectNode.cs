@@ -5,12 +5,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "GenericEffectNode", menuName = "SpellNodes/Effect/Generic Effect Node")]
 public class GenericEffectNode : EffectNode
 {
-    [Header("Network Identity")]
-    [Tooltip("This is assigned automatically when published to the Master Dictionary. Do not edit manually.")]
-    public int NetworkEffectID = -1;
-
-    [Header("Execution Settings")]
-    public EffectLifecycle Lifecycle = EffectLifecycle.Duration;
 
     [Tooltip("Used only if Lifecycle is Duration. (0 = Infinite)")]
     public int DurationTicks = 300;
@@ -23,7 +17,7 @@ public class GenericEffectNode : EffectNode
 
         return new GenericRuntimeEffect()
         {
-            NetworkEffectID = this.NetworkEffectID,
+            NetworkStatusID = this.NetworkStatusID,
             LifeCycle = this.Lifecycle,
             DurationTicks = this.DurationTicks,
             Components = new System.Collections.Generic.List<EffectComponent>(this.Components)
@@ -59,7 +53,7 @@ public class GenericEffectNode : EffectNode
 
 public class GenericRuntimeEffect : IEffect
 {
-    public int NetworkEffectID;
+    public int NetworkStatusID;
     public EffectLifecycle LifeCycle;
     public int DurationTicks;
     public List<EffectComponent> Components;
@@ -102,7 +96,7 @@ public class GenericRuntimeEffect : IEffect
                     TargetId = core.Object.Id
                 };
 
-                targetManager.AddEffect((byte)NetworkEffectID, payload);
+                targetManager.AddEffect((byte)NetworkStatusID, payload);
             }
         }
     }
@@ -138,7 +132,8 @@ public class GenericStatusEffect : IStatusEffect
 {
     public void OnAllocated(NetworkedMemoryAllocator memory, ref ActiveStatusEffectData newEffectData, ProposedEffectPayload payload)
     {
-        GenericEffectNode blueprint = MasterEffectDictionary.Instance.BakedEffects[newEffectData.EffectID];
+        // Now it safely pulls from the fast static registry!
+        GenericEffectNode blueprint = StatusEffectRegistry.GetBlueprint(newEffectData.EffectID) as GenericEffectNode;
         if (blueprint == null) return;
 
         int floatsNeeded = blueprint.Components.Count;
@@ -165,7 +160,8 @@ public class GenericStatusEffect : IStatusEffect
 
     public void Tick(int simTick, PhysicsObject target, NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData, ref MaterialState currentState, PhysicsObjectMaterial mat)
     {
-        GenericEffectNode blueprint = MasterEffectDictionary.Instance.BakedEffects[effectData.EffectID];
+        // Now it safely pulls from the fast static registry!
+        GenericEffectNode blueprint = StatusEffectRegistry.GetBlueprint(effectData.EffectID) as GenericEffectNode;
         if (blueprint == null) return;
 
         for (int i = 0; i < blueprint.Components.Count; i++)
@@ -187,7 +183,8 @@ public class GenericStatusEffect : IStatusEffect
 
     public void OnRemoved(NetworkedMemoryAllocator memory, ref ActiveStatusEffectData effectData)
     {
-        GenericEffectNode blueprint = MasterEffectDictionary.Instance.BakedEffects[effectData.EffectID];
+        // Now it safely pulls from the fast static registry!
+        GenericEffectNode blueprint = StatusEffectRegistry.GetBlueprint(effectData.EffectID) as GenericEffectNode;
         if (blueprint != null)
         {
             memory.FreeFloats(effectData.FloatOffset, blueprint.Components.Count);
@@ -195,12 +192,7 @@ public class GenericStatusEffect : IStatusEffect
     }
 }
 
-public enum EffectLifecycle
-{
-    Instant = 0,   
-    Duration = 1,  
-    Channeled = 2  
-}
+
 
 public enum Layer1Target
 {

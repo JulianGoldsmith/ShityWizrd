@@ -111,46 +111,73 @@ public class SpellCreatedCore : NetworkBehaviour
 
     }
 
-    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, string nodeGuid, CoreExecutionPlan compliedExecutionPlan, CoreContext initialContext, int arrayIndex)
+    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, string nodeGuid, CoreContext initialContext, int arrayIndex)
     {
         // 1. If we were somehow already active (buffer overlap), clean up the old spell first!
         if (IsActiveInBuffer)
         {
             DeactivateCore();
         }
-        NodeArrayIndex = arrayIndex;
 
+        NodeArrayIndex = arrayIndex;
         ActiveCastID = castId;
         BlueprintID = blueprintId;
-
         NodeInstanceGuid = nodeGuid;
-
-        IsActiveInBuffer = true;
-        _myPlan = compliedExecutionPlan;
         Context = initialContext;
-
+        IsActiveInBuffer = true;
         NetworkVelocity = Vector3.zero;
-        _isInitialized = true;
 
-        // 3. Claim the Token for the NEW spell!
         ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
-        if (activeSpell != null)
-        {
-            activeSpell.AddToken();
-        }
+        if (activeSpell != null) activeSpell.AddToken();
 
-        if (_myPlan != null)
-        {
-            foreach (var behaviour in _myPlan.Behaviours)
-            {
-                behaviour.InitTick(this);
-            }
-            foreach (var trigger in _myPlan.Triggers)
-            {
-                trigger.InitTick(this);
-            }
-        }
+        // Host / Caster instantly initializes and predicts
+        SetupFromRAM();
+    }
 
+    private void SetupFromRAM()
+    {
+        if (SpellStateManager.instance.hydratedSpells.TryGetValue(BlueprintID, out RuntimeSpell runtimeSpell))
+        {
+            IRuntimeNode myLogic = runtimeSpell.HydratedNodes[NodeArrayIndex];
+
+            if (myLogic is RuntimeObjectCore runtimeCore)
+            {
+                _myPlan = new CoreExecutionPlan();
+                _myPlan.Behaviours = new List<IBehaviour>(runtimeCore.Behaviours);
+                _myPlan.Triggers = new List<ITrigger>(runtimeCore.Triggers);
+
+                SpellState myState = SpellStateManager.instance.GetActiveSpell(ActiveCastID)?.State;
+                SpellTriggerInfo evaluationInfo = new SpellTriggerInfo(
+                    isCast: false, source: gameObject, state: myState, position: Context.SpawnPosition,
+                    rotation: transform.rotation, triggerVector: Context.TriggerVector, hitObject: null
+                );
+
+                // 1. Initialise the base template defaults (Legacy bridge)
+                runtimeCore.Template.InitialisePhysicsObjectOnSpawn(Object, evaluationInfo);
+
+                // 2. DETERMINISTIC MATH (Host and Proxy both run this instantly!)
+                float finalSize = runtimeCore.size.GetValue(evaluationInfo);
+                float finalLifetime = runtimeCore.lifetime.GetValue(evaluationInfo);
+                PHYSICS_OBJECT_MATERIAL finalMat = runtimeCore.material.GetValue(evaluationInfo);
+
+                // 3. Write directly to [Networked] Variables! 
+                // (This is perfectly safe and predicts instantly thanks to Runner.SetIsSimulated)
+                var pop = GetComponent<PhysicsObjectProperties>();
+                if (pop != null)
+                {
+                    pop.Size = finalSize;
+                    pop.Material_label = finalMat;
+                    pop.GetComponent<PhysicsObject>().InitialisePhysicsObject();
+                }
+
+                var scpo = GetComponent<SpellCreatedPhysicsObject>();
+                if (scpo != null) scpo.lifetime_timer = TickTimer.CreateFromSeconds(Runner, finalLifetime);
+
+                foreach (var behaviour in _myPlan.Behaviours) behaviour.InitTick(this);
+                foreach (var trigger in _myPlan.Triggers) trigger.InitTick(this);
+            }
+            _isInitialized = true;
+        }
     }
 
     #region CollisionHandleing
@@ -199,9 +226,9 @@ public class SpellCreatedCore : NetworkBehaviour
     {
         ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
 
+        // 1. REBUILD THE PROXY STATE (If it doesn't exist)
         if (activeSpell == null)
         {
-
             if (SpellStateManager.instance.active_spellblueprints.TryGetValue(BlueprintID, out SpellGraph blueprint))
             {
                 if (Runner.TryFindObject(ActiveCastID.CasterId, out NetworkObject casterObj))
@@ -222,36 +249,24 @@ public class SpellCreatedCore : NetworkBehaviour
                         }
                         else
                         {
-                            Debug.LogWarning($"[Proxy Sync] Tracker had no data for Cast {ActiveCastID.CastNumber}. Was it already garbage collected?");
+                            Debug.LogWarning($"[Proxy Sync] Tracker had no data for Cast {ActiveCastID.CastNumber}.");
+                            return; // Try again next frame!
                         }
                     }
                 }
             }
             else
             {
-                Debug.LogWarning($"[Proxy Sync] Failed to load. Blueprint {BlueprintID.BlueprintNumber} not found on Proxy!");
-            }
-        }
-        if (_myPlan == null)
-        {
-            // 1. Attempt to grab the spell from RAM
-            if (SpellStateManager.instance.hydratedSpells.TryGetValue(BlueprintID, out RuntimeSpell runtimeSpell))
-            {
-                IRuntimeNode myLogic = runtimeSpell.HydratedNodes[NodeArrayIndex];
-
-                if (myLogic is RuntimeCoreBase runtimeCore)
-                {
-                    _myPlan = new CoreExecutionPlan();
-                    _myPlan.Behaviours = new List<IBehaviour>(runtimeCore.Behaviours);
-                    _myPlan.Triggers = new List<ITrigger>(runtimeCore.Triggers);
-                }
-
-                _isInitialized = true;
-            }
-            else
-            {
+                // The broadcast hasn't arrived yet! Try again next frame.
                 return;
             }
+        }
+
+        // 2. THE FIX: Pass off entirely to the Universal Setup!
+        // We delete the old manual _myPlan extraction block completely.
+        if (_myPlan == null)
+        {
+            SetupFromRAM();
         }
     }
 

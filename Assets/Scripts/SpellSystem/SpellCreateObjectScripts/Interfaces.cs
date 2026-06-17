@@ -111,3 +111,53 @@ public class RuntimeEntryPoint : IRuntimeNode
         else if (ConnectedLogic is IEffect effect) effect.Execute(null, new List<SpellTriggerInfo> { info });
     }
 }
+
+public interface IRuntimeValueNode : IRuntimeNode { }
+
+public interface IRuntimeValueNode<T> : IRuntimeValueNode
+{
+    // Evaluates instantly during combat!
+    ValueModifier<T> GetModifier(SpellTriggerInfo info);
+}
+
+// Allows the Hydrator to blindly inject nodes into ANY variable type
+public interface IRuntimeDataProperty
+{
+    void AddValueNode(IRuntimeValueNode node);
+}
+
+// THE WRAPPER: Replaces standard 'float' for promotable variables!
+public class RuntimeFloatProperty : IRuntimeDataProperty
+{
+    public float BaseValue;
+    public List<IRuntimeValueNode<float>> Modifiers;
+
+    public RuntimeFloatProperty(float baseValue) => BaseValue = baseValue;
+
+    public void AddValueNode(IRuntimeValueNode node)
+    {
+        if (node is IRuntimeValueNode<float> floatMod)
+        {
+            if (Modifiers == null) Modifiers = new List<IRuntimeValueNode<float>>();
+            Modifiers.Add(floatMod);
+        }
+    }
+
+    public float GetValue(SpellTriggerInfo info)
+    {
+        if (Modifiers == null) return BaseValue; // No wires? Just return the base instantly!
+
+        float finalValue = BaseValue;
+        float multiplyAgg = 1f;
+
+        // Apply all dynamic math plugged in by the player!
+        foreach (var mod in Modifiers)
+        {
+            var valMod = mod.GetModifier(info);
+            if (valMod.Type == ValueModifierType.Set) finalValue = valMod.Value;
+            else if (valMod.Type == ValueModifierType.Add) finalValue += valMod.Value;
+            else if (valMod.Type == ValueModifierType.Multiply) multiplyAgg *= valMod.Value;
+        }
+        return finalValue * multiplyAgg;
+    }
+}

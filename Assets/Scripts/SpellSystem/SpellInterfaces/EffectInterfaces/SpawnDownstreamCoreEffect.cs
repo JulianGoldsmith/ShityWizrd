@@ -71,7 +71,6 @@ public class SpawnDownstreamCoreEffect : IEffect
                     parentCore.ActiveCastID,
                     parentCore.BlueprintID,
                     ChildNodeGuid,
-                    ChildPlan,
                     childContext, 
                     0
                 );

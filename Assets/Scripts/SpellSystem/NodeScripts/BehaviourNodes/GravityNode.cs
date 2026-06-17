@@ -8,9 +8,9 @@ public class GravityNode : BehaviourNode
 
     public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
-        float finalGravity = GetFinalValue(nameof(gravityAdded), gravityAdded);
+       // float finalGravity = GetFinalValue(nameof(gravityAdded), gravityAdded);
 
-        sbyte bakedGravity = (sbyte)Mathf.Clamp(finalGravity, -125, 125);
+        sbyte bakedGravity = (sbyte)Mathf.Clamp(gravityAdded, -125, 125);
 
         return new GravityBehaviour()
         {

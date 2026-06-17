@@ -12,13 +12,12 @@ public class TimerTriggerNode : TriggerNode
 
     public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
-        float bakedDuration = GetFinalValue(nameof(duration_in_seconds), duration_in_seconds);
 
         int assignedBoolBit = context.ClaimBoolBit();
 
         return new TimerTrigger()
         {
-            DurationInSeconds = bakedDuration,
+            DurationInSeconds = new RuntimeFloatProperty(this.duration_in_seconds),
             MaxTriggerCount = repeated_trigger_count,
             HasFiredBitIndex = assignedBoolBit
         };
@@ -41,7 +40,7 @@ public class TimerTriggerNode : TriggerNode
 public class TimerTrigger : RuntimeTriggerBase
 {
 
-    public float DurationInSeconds;
+    public RuntimeFloatProperty DurationInSeconds;
     public int MaxTriggerCount;
     public int HasFiredBitIndex;
 
@@ -58,7 +57,7 @@ public class TimerTrigger : RuntimeTriggerBase
         triggerInfo =  new List<SpellTriggerInfo>();
         SpellTriggerInfo hitInfo = default;
         
-        if (core.GetBool(HasFiredBitIndex) == false && core.Context.AliveTime >= DurationInSeconds)
+        if (core.GetBool(HasFiredBitIndex) == false && core.Context.AliveTime >= DurationInSeconds.GetValue(default))
         {
       
             core.SetBool(HasFiredBitIndex, true);

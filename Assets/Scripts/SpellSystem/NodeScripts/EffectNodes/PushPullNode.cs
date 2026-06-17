@@ -144,13 +144,12 @@ public class PushPullNode : EffectNode
 
     public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
-        float bakedForce = GetFinalValue(nameof(pushPullForce), pushPullForce);
 
         return new PushPullEffect()
         {
             Direction = pushPullDirection,
             Scaling = forceScaling,
-            ForceMultiplier = bakedForce,
+            ForceMultiplier = new RuntimeFloatProperty(this.pushPullForce),
             ForceMode = forceMode,
             DistanceCurve = force_scaling_by_distance
         };
@@ -161,7 +160,7 @@ public class PushPullEffect : IEffect
 {
     public PushPullNode.PUSH_PULL_DIRECTION Direction;
     public PushPullNode.ForceScaling Scaling;
-    public float ForceMultiplier;
+    public RuntimeFloatProperty ForceMultiplier;
     public ForceMode ForceMode;
     public AnimationCurve DistanceCurve;
 
@@ -231,16 +230,16 @@ public class PushPullEffect : IEffect
         switch (Scaling)
         {
             case PushPullNode.ForceScaling.BY_TRIGGER_FORCE:
-                return info.TriggerVector.magnitude * ForceMultiplier;
+                return info.TriggerVector.magnitude * ForceMultiplier.GetValue(default);
 
             case PushPullNode.ForceScaling.BY_DISTANCE:
                 float distance = rawDirection.magnitude;
                 float distanceScale = (DistanceCurve != null) ? DistanceCurve.Evaluate(distance) : 1.0f;
-                return ForceMultiplier * distanceScale;
+                return ForceMultiplier.GetValue(default) * distanceScale;
 
             case PushPullNode.ForceScaling.STATIC:
             default:
-                return ForceMultiplier;
+                return ForceMultiplier.GetValue(default);
         }
     }
 }

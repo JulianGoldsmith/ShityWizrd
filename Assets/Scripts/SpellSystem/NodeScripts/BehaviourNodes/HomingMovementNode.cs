@@ -16,11 +16,9 @@ public class HomingMovementNode : BehaviourNode
     {
         int targetMemorySlot = context.ClaimIntSlot();
 
-        float bakedTurnRate = GetFinalValue(nameof(turn_rate), turn_rate);
-
         return new HomingBehaviour()
         {
-            TurnRate = bakedTurnRate,
+            TurnRate = new RuntimeFloatProperty(this.turn_rate),
             MaintainTarget = maintain_target,
             SearchRange = search_range,
             MinSpeed = min_speed,
@@ -43,7 +41,7 @@ public class HomingMovementNode : BehaviourNode
 
 public class HomingBehaviour : IBehaviour
 {
-    public float TurnRate;
+    public RuntimeFloatProperty TurnRate;
     public bool MaintainTarget;
     public float SearchRange;
     public float MinSpeed;
@@ -96,7 +94,7 @@ public class HomingBehaviour : IBehaviour
 
             if (currentVel.magnitude > 0.0001f || MinSpeed > 0)
             {
-                Vector3 newVel = Vector3.RotateTowards(currentVel, desiredVel, TurnRate * Mathf.Deg2Rad * deltaTime, float.MaxValue);
+                Vector3 newVel = Vector3.RotateTowards(currentVel, desiredVel, TurnRate.GetValue(default) * Mathf.Deg2Rad * deltaTime, float.MaxValue);
 
                 mover.ApplyForce(newVel - currentVel, ForceMode.VelocityChange);
             }

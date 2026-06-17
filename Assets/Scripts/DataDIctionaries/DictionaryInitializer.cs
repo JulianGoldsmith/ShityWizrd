@@ -5,19 +5,19 @@ public class DictionaryInitializer : MonoBehaviour
 {
     [Header("Master Data Assets")]
     public MasterNodeDictionary nodeDictionary;
-    // public MasterEffectDictionary effectDictionary; // We will migrate this later!
-
+    public MasterStatusDictionary statusDictionary; 
     private void Awake()
     {
         if (nodeDictionary != null)
         {
             NodeRegistry.Initialize(nodeDictionary);
         }
-        else
-        {
-            Debug.LogError("[DictionaryInitializer] Missing MasterNodeDictionary asset!");
-        }
+        else Debug.LogError("[DictionaryInitializer] Missing MasterNodeDictionary asset!");
 
-        // (We will add the Effect/Item registries here in the future to keep boot order perfect)
+        if (statusDictionary != null)
+        {
+            StatusEffectRegistry.Initialize(statusDictionary);
+        }
+        else Debug.LogError("[DictionaryInitializer] Missing MasterStatusDictionary asset!");
     }
 }

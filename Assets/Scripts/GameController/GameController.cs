@@ -58,7 +58,6 @@ public class GameController : MonoBehaviour
         {
             xPBDGlobalManager = GetComponent<XPBDGlobalManager>();
         }
-        StatusEffectRegistry.Initialize();
     }
 
     void Start()
