@@ -210,7 +210,6 @@ public class ActiveRagdollController : NetworkBehaviour
             bone.joint.zMotion = ConfigurableJointMotion.Locked;
 
             var drive = bone.joint.slerpDrive;
-            drive.mode = JointDriveMode.Position;
             drive.positionSpring = overrideAllSprings ? sharedSpringValue : bone.positionSpringForce;
             float criticalDampening = 2f * Mathf.Sqrt(drive.positionSpring * bone.rb.inertiaTensor.magnitude);
             drive.positionDamper = overrideAllSprings ? sharedDampPercent * criticalDampening : bone.criticalDamperMult * criticalDampening;

@@ -54,8 +54,8 @@ public class NPCAggroController : NetworkBehaviour
     public NetworkObject CurrentTarget { get; set; }
     public InterestPoint CurrentInterestPoint { get; set; }
     private float GeneralAggro { get; set; }
-    [SerializeField] private float UnattributedThreat { get; set; }
-    [SerializeField] private Vector3 UnattributedThreatDirection { get; set; }
+    public float UnattributedThreat { get; set; }
+    public Vector3 UnattributedThreatDirection { get; set; }
 
 
     private Dictionary<NetworkObject, ThreatInfo> _threatTable = new Dictionary<NetworkObject, ThreatInfo>();
