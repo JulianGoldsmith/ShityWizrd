@@ -28,27 +28,16 @@ public class LightEmiitingSB : SpellBehaviour
     public float lumens;
     public float radius;
 
-    private Light light;
-    private HDAdditionalLightData hdLight;
+ 
 
     public void Init(SpellTriggerInfo _triggerInfo, float _lumens, float _radius)
     {
         triggerInfo = _triggerInfo;
         lumens = _lumens;
         radius = _radius;
-        light = this.AddComponent<Light>();
-        light.type = LightType.Point;
-        light.range = _radius;
- 
+    
 
-        light.useColorTemperature = true;
-        light.colorTemperature = 3938f;
-
-        hdLight = gameObject.AddComponent<HDAdditionalLightData>();
-        hdLight.shapeRadius = 5;
-        light.lightUnit = LightUnit.Lumen; 
-        light.intensity = lumens; 
-        hdLight.EnableColorTemperature(true);
+        
     }
 
     void FixedUpdate()
