@@ -3,6 +3,7 @@ void CalculateToonLighting_float(
     float3 Base_Color,
     float3 Normal,
     float Smoothness,
+    float Metallic,
     float3 Emission,
     float AmbientOcclusion,
     float Steps,
@@ -15,13 +16,31 @@ void CalculateToonLighting_float(
     OutColor = float3(0, 0, 0);
 
 #ifndef SHADERGRAPH_PREVIEW
-    // Base accumulations
-    float3 diffuseAccumulation = float3(0, 0, 0);
+    // --- FIX 3: Safe Normalization ---
+    float3 N = SafeNormalize(Normal);
+    float3 V = SafeNormalize(ViewDirWS);
+
+    // --- FIX 2: Divide by Zero Safety ---
+    float safeSteps = max(Steps.x, 1.0);
+
+    // NATIVE URP AMBIENT LIGHTING
+#if defined(UNIVERSAL_PIPELINE_CORE_INCLUDED)            
+    float3 ambientLight = SampleSH(N);
+#else
+    float3 ambientLight = float3(0.1, 0.1, 0.15);
+#endif
+
+    // --- FIX 1: AO only affects Ambient Light ---
+    float3 diffuseAccumulation = ambientLight * AmbientOcclusion.x;
     float3 specularAccumulation = float3(0, 0, 0);
 
-    // Convert Unity's 0-1 Smoothness to a harsh Specular Power
-    float specPower = exp2(10 * Smoothness + 1);
-    float specMultiplier = step(0.001, Smoothness);
+    // --- FIX 6: Metallic Energy Conservation ---
+    // Metals dim the diffuse and strictly color the specular
+    float3 diffuseColor = Base_Color.rgb * lerp(1.0, 0.2, Metallic.x);
+    float3 specTint = lerp(float3(1, 1, 1), Base_Color.rgb, Metallic.x);
+
+    float specPower = exp2(10 * Smoothness.x + 1);
+    float specOpacity = Smoothness.x;
 
     // ----------------------------------------------------
     // 1. MAIN LIGHT (The Sun)
@@ -33,23 +52,22 @@ void CalculateToonLighting_float(
     Light mainLight = GetMainLight();
 #endif
 
-    // METHOD B: Force the URP Soft Shadow into a razor-sharp mask
-    float crispSunShadow = step(0.5, mainLight.shadowAttenuation);
-
-    // Main Light Diffuse
-    float mainNdotL = dot(Normal, mainLight.direction);
+    float sunShadowDelta = fwidth(mainLight.shadowAttenuation);
+    float crispSunShadow = smoothstep(0.5 - sunShadowDelta, 0.5 + sunShadowDelta, mainLight.shadowAttenuation);
+    float mainNdotL = dot(N, mainLight.direction);
     float mainAngle = saturate(mainNdotL * 0.5 + 0.5);
-    float mainBandedAngle = floor(mainAngle * Steps) / Steps;
+    
+    // --- FIX 4: Biased Banding (+0.5 trick) ---
+    float mainBandedAngle = floor(mainAngle * safeSteps + 0.5) / safeSteps;
         
-    diffuseAccumulation += mainLight.color * (mainBandedAngle * crispSunShadow);
+    diffuseAccumulation += mainLight.color.rgb * (mainBandedAngle * crispSunShadow);
 
-    // Main Light Specular
-    float3 mainHalfVector = SafeNormalize(mainLight.direction + ViewDirWS);
-    float mainNdotH = saturate(dot(Normal, mainHalfVector));
+    float3 mainHalfVector = SafeNormalize(mainLight.direction + V);
+    float mainNdotH = saturate(dot(N, mainHalfVector));
     float mainSpecRaw = pow(mainNdotH, specPower);
-    float mainSpecBanded = step(0.5, mainSpecRaw * crispSunShadow) * specMultiplier;
+    float mainSpecBanded = step(0.5, mainSpecRaw * crispSunShadow) * specOpacity;
         
-    specularAccumulation += mainLight.color * mainSpecBanded;
+    specularAccumulation += mainLight.color.rgb * specTint * mainSpecBanded;
 
     // ----------------------------------------------------
     // 2. ADDITIONAL LIGHTS (Spells, Torches)
@@ -61,41 +79,53 @@ void CalculateToonLighting_float(
         Light light = GetAdditionalLight(lightIndex, PositionWS);
         light.shadowAttenuation = AdditionalLightRealtimeShadow(lightIndex, PositionWS, light.direction);
                 
-        // METHOD B: Force the point light soft shadow into a sharp mask
-        float crispPointShadow = step(0.5, light.shadowAttenuation);
-                
-        // --- DISTANCE BANDING LOGIC ---
-        // 1. Calculate the smooth distance falloff
-        float smoothDist = light.distanceAttenuation * crispPointShadow;
-        // 2. Calculate the posterized, chunky ring falloff
-        float bandedDist = floor(smoothDist * Steps) / Steps;
-        // 3. Blend them together based on the Material Slider
-        float atten = lerp(smoothDist, bandedDist, DistanceBandingSlider);
-
-        // Point Light Diffuse
-        float NdotL = dot(Normal, light.direction);
+        float NdotL = dot(N, light.direction);
         float angle = saturate(NdotL * 0.5 + 0.5);
-        float bandedAngle = floor(angle * Steps) / Steps;
+        float dist = light.distanceAttenuation;
+        float shadow = light.shadowAttenuation;
 
-        diffuseAccumulation += light.color * (bandedAngle * atten);
+        float pointShadowDelta = fwidth(shadow);
+        float crispPointShadow = smoothstep(0.5 - pointShadowDelta, 0.5 + pointShadowDelta, shadow);
 
-        // Point Light Specular
-        float3 halfVector = SafeNormalize(light.direction + ViewDirWS);
-        float NdotH = saturate(dot(Normal, halfVector));
+        // STATE A: DECOUPLED (Biased)
+        float stateA_Diffuse = (floor(angle * safeSteps + 0.5) / safeSteps) * dist * crispPointShadow;
+
+        // STATE B: UNIFIED (Biased)
+        float totalIntensity = angle * dist * shadow; 
+        float stateB_Diffuse = floor(totalIntensity * safeSteps + 0.5) / safeSteps;
+
+        // DIFFUSE BLEND
+        float finalDiffuse = lerp(stateA_Diffuse, stateB_Diffuse, DistanceBandingSlider.x);
+        diffuseAccumulation += light.color.rgb * finalDiffuse;
+
+        // --- FIX 5: Pre-Threshold Specular Blending ---
+        float3 halfVector = SafeNormalize(light.direction + V);
+        float NdotH = saturate(dot(N, halfVector));
         float specRaw = pow(NdotH, specPower);
-        float specBanded = step(0.5, specRaw * atten) * specMultiplier;
+        
+        float specIntensityA = specRaw * dist * crispPointShadow;
+        float specIntensityB = specRaw * dist * shadow;
+        float blendedSpecIntensity = lerp(specIntensityA, specIntensityB, DistanceBandingSlider.x);
 
-        specularAccumulation += light.color * specBanded;
+        float finalSpec = step(0.5, blendedSpecIntensity) * specOpacity;
+
+        specularAccumulation += light.color.rgb * specTint * finalSpec;
+        
     LIGHT_LOOP_END
 #endif
 
-    // FINAL COMPOSITION
-    OutColor = (Base_Color * diffuseAccumulation * AmbientOcclusion) + specularAccumulation + Emission;
+    // ----------------------------------------------------
+    // 3. FINAL COMPOSITION
+    // ----------------------------------------------------
+    OutColor = (diffuseColor * diffuseAccumulation) + specularAccumulation + Emission.rgb;
 
 #else        
     // Fallback display for the Shader Graph preview window
-    float previewNdotL = saturate(dot(Normal, float3(0.5, 0.7, 0)));
-    float previewBanded = floor(previewNdotL * Steps) / Steps;
-    OutColor = (Base_Color * previewBanded * AmbientOcclusion) + Emission;
+    float3 N = SafeNormalize(Normal);
+    float safeSteps = max(Steps.x, 1.0);
+    float previewNdotL = saturate(dot(N, float3(0.5, 0.7, 0)));
+    float previewBanded = floor(previewNdotL * safeSteps + 0.5) / safeSteps;
+    float3 diffuseColor = Base_Color.rgb * lerp(1.0, 0.2, Metallic.x);
+    OutColor = (diffuseColor * previewBanded * AmbientOcclusion.x) + Emission.rgb;
 #endif
 }
