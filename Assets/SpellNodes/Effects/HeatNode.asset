@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3e6355992410234faa67b9b8a3a908e, type: 3}
+  m_Name: HeatNode
+  m_EditorClassIdentifier: Assembly-CSharp::GenericEffectNode
+  nodeName: HeatNode
+  description: 
+  category: 5
+  valueContainers: []
+  icon: {fileID: 2800000, guid: 4d44dc8980174f042b69bade35b542ff, type: 3}
+  overrideMesh: {fileID: 0}
+  overrideMaterial: {fileID: 0}
+  ovverideVisualScale: 1
+  NetworkNodeID: 35
+  casterTriggerMethod: 0
+  NetworkStatusID: 0
+  Lifecycle: 0
+  DurationTicks: 300
+  Components:
+  - Target: 0
+    Mutation: 0
+    BaseMagnitude: 0.5
+    AutoVFX: 0
+    effectsPlayerObjects: 0

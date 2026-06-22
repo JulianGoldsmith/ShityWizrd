@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: PlayerSkin 2
-  m_Shader: {fileID: -6465566751694194690, guid: f331e6fe9c68669459c4b90587c00fbb, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 0f227026b5f39ae4090e1ca0fb2c65bf, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -115,6 +115,7 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
+    - _DistanceFallOFf: 0.5
     - _DistanceFallOff: 0
     - _DstBlend: 0
     - _DstBlendAlpha: 0
@@ -129,12 +130,15 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _RimEdge: 1
+    - _RimPower: 4
     - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
+    - _Temprature: -0.31
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
@@ -142,6 +146,7 @@ Material:
     - _BaseColor: {r: 0.78867924, g: 0.25446063, b: 0.25446063, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _RimColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

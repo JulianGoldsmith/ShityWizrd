@@ -55,7 +55,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public NetworkObject currentThreatCause => (lastInteractor ?? creator)?? null;
 
 
-   
+    private Renderer[] _renderers;
+    private MaterialPropertyBlock _mpb;
+    public VisualStateData VisualState = new VisualStateData();
 
 
     #region Data Networking
@@ -86,7 +88,16 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     public override void Render()
     {
-        //transform.localScale = physicsObjectProperties.InitialEditorScale * physicsObjectProperties.CurrentSimData.Scale;
+        if (physicsObjectProperties == null || _renderers == null || physicsObjectProperties.physicsobjectmaterial == null)
+            return;
+
+        physicsObjectProperties.physicsobjectmaterial.UpdateVisuals(
+            this,
+            VisualState,
+            _mpb,
+            _renderers,
+            Time.deltaTime
+        );
     }
 
     #region Initialisation
@@ -94,7 +105,13 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public void InitilizeCoreInterfaces()
     {
         _movementHandler = GetComponent<IMovementHandler>();
-    }
+
+   
+        // Setup the visual bridge
+        _renderers = GetComponentsInChildren<Renderer>();
+        if (_mpb == null) _mpb = new MaterialPropertyBlock();
+    
+}
 
 
     public void InitialisePhysicsObject()

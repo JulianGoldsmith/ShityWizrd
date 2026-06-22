@@ -14,6 +14,8 @@ public class PhysicsObjectMaterial : ScriptableObject
     public Material vfx_material;
     public bool casts_shadows = true;
     public Color shatter_particle_color;
+    protected static readonly int TempID = Shader.PropertyToID("_CurrentTemp");
+    protected static readonly int WetID = Shader.PropertyToID("_CurrentWetness");
     #endregion
 
     #region Base Material Properties (Intensive)
@@ -176,6 +178,31 @@ public class PhysicsObjectMaterial : ScriptableObject
         return sim;
     }
     #endregion
+
+    #region ApplyVisuals
+    public virtual void UpdateVisuals(PhysicsObject context, VisualStateData visualState, MaterialPropertyBlock mpb, Renderer[] renderers, float deltaTime)
+    {
+        // 1. Get the authoritative networked state
+        MaterialState simState = context.physicsObjectProperties.CachedNetworkState.State;
+
+        // 2. Smoothly interpolate the visual state (This data lives safely on the instance!)
+        visualState.VisualTemperature = Mathf.Lerp(visualState.VisualTemperature, simState.Temperature, deltaTime * 10f);
+        visualState.VisualWetness = Mathf.Lerp(visualState.VisualWetness, simState.Wetness, deltaTime * 10f);
+
+        // 3. Inject into the MPB and apply to all renderers
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] == null) continue;
+
+            renderers[i].GetPropertyBlock(mpb);
+
+            mpb.SetFloat(TempID, visualState.VisualTemperature);
+            mpb.SetFloat(WetID, visualState.VisualWetness);
+
+            renderers[i].SetPropertyBlock(mpb);
+        }
+    }
+    #endregion
 }
 
 public enum PHYSICS_OBJECT_MATERIAL
@@ -239,4 +266,11 @@ public struct MaterialState : INetworkStruct
         DensityMultiplier = 1f;
         GravityMultiplier = 1f ;
     }
+}
+
+public class VisualStateData
+{
+    public float VisualTemperature;
+    public float VisualWetness;
+    public float VisualCharge;
 }
