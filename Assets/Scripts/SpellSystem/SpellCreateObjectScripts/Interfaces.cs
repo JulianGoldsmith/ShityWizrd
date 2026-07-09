@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 // --- 1. THE UMBRELLA (For the Hydrator) ---
 // This allows the Hydrator to hold everything in one temporary array while wiring
@@ -7,46 +8,62 @@ public interface IRuntimeNode { }
 
 // --- 2. THE CORE (The Container) ---
 // We add this because Cores need to accept the Triggers and Behaviours
+public interface ISpellExecutionCore
+{
+    ActiveCastID ActiveCastID { get; }
+    CoreContext Context { get; set; }
+
+    UnityEngine.GameObject SourceObject { get; }
+    UnityEngine.Vector3 Position { get; }
+    UnityEngine.Quaternion Rotation { get; }
+    Fusion.NetworkRunner Runner { get; }
+    Fusion.PlayerRef InputAuthority { get; }
+    Fusion.NetworkId CoreNetworkId { get; }
+    Dictionary<int, GameObject> ActiveVisuals { get; }
+    bool TryGetCoreComponent<T>(out T component) where T : class;
+
+    // Memory Sketchpads
+    bool GetBool(int bitIndex);
+    void SetBool(int bitIndex, bool value);
+    int GetInt(int index);
+    void SetInt(int index, int value);
+    float GetFloat(int index);
+    void SetFloat(int index, float value);
+    UnityEngine.Vector3 GetVector(int index);
+    void SetVector(int index, UnityEngine.Vector3 value);
+}
+
+
+// --- 3. THE CORE (The Container) ---
 public interface IRuntimeCore : IRuntimeNode
 {
-    // The Assembly Line wiring methods
     void AddTrigger(ITrigger trigger);
     void AddBehaviour(IBehaviour behaviour);
-    
-    // The Initial Spark
-    void ExecuteCore(SpellTriggerInfo info); 
+    void ExecuteCore(SpellTriggerInfo info);
 }
 
 
-// --- 3. THE BEHAVIOURS (Passive Modifiers) ---
+// --- 4. THE BEHAVIOURS (Passive Modifiers) ---
 public interface IBehaviour : IRuntimeNode
 {
-    // Runs exactly once on the first tick the core is pulled from the buffer
-    void InitTick(SpellCreatedCore core);
-
-    // Runs every tick to apply continuous math (Movement, Gravity)
-    void Tick(SpellCreatedCore core, float deltaTime);
-
-    void TickVFX(SpellCreatedCore core);
-    void CleanupVFX(SpellCreatedCore core);
+    // UPDATED: Now accepts the abstraction!
+    void InitTick(ISpellExecutionCore core);
+    void Tick(ISpellExecutionCore core, float deltaTime);
+    void TickVFX(ISpellExecutionCore core);
+    void CleanupVFX(ISpellExecutionCore core);
 }
 
 
-// --- 4. THE TRIGGERS (Event Listeners) ---
+// --- 5. THE TRIGGERS (Event Listeners) ---
 public interface ITrigger : IRuntimeNode
 {
-    
-    // The Assembly Line wiring method (The Hydrator puts the Effects in here!)
     void AddOutcome(IRuntimeNode outcome);
 
-    // Runs exactly once on the first tick
-    void InitTick(SpellCreatedCore core);
-
-    // Evaluates a condition. If true, outputs the HitInfo so the Effects know what happened!
-    bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos);
-
-    void TickVFX(SpellCreatedCore core);
-    void CleanupVFX(SpellCreatedCore core);
+    // UPDATED: Now accepts the abstraction!
+    void InitTick(ISpellExecutionCore core);
+    bool Tick(ISpellExecutionCore core, float deltaTime, out System.Collections.Generic.List<SpellTriggerInfo> hitInfos);
+    void TickVFX(ISpellExecutionCore core);
+    void CleanupVFX(ISpellExecutionCore core);
 }
 
 
@@ -54,7 +71,7 @@ public interface ITrigger : IRuntimeNode
 public interface IEffect : IRuntimeNode
 {
     // Runs instantly when a trigger fires. Takes the HitInfo from the trigger.
-    void Execute(SpellCreatedCore core, List<SpellTriggerInfo> hitInfos);
+    void Execute(ISpellExecutionCore core, List<SpellTriggerInfo> hitInfos);
 }
 
 public abstract class RuntimeCoreBase : IRuntimeCore
@@ -80,10 +97,10 @@ public abstract class RuntimeTriggerBase : ITrigger
     public void AddOutcome(IRuntimeNode outcome) => Outcomes.Add(outcome);
 
     // The unique logic each trigger must still define
-    public abstract void InitTick(SpellCreatedCore core);
-    public abstract bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos);
-    public abstract void TickVFX(SpellCreatedCore core);
-    public abstract void CleanupVFX(SpellCreatedCore core);
+    public abstract void InitTick(ISpellExecutionCore core);
+    public abstract bool Tick(ISpellExecutionCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos);
+    public abstract void TickVFX(ISpellExecutionCore core);
+    public abstract void CleanupVFX(ISpellExecutionCore core);
 
     // (Note: You can likely delete TriggerExecutionPlan entirely now, 
     // as the 'Outcomes' list perfectly replaces it!)

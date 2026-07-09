@@ -10,17 +10,25 @@ void CalculateToonLighting_float(
     UnityTexture2D ColorRamp,
     float DistanceBandingSlider,
     float FalloffPower,
-    float3 RimColor, // NEW
-    float RimPower, // NEW
-    float RimEdge, // NEW
+    float3 RimColor, 
+    float RimPower, 
+    float RimEdge, 
     float3 PositionWS,
     float3 ViewDirWS,
-    out float3 OutColor)
+    float4 ScreenPosition, 
+    out float3 OutColor,
+    out float3 OutEmission)
 {
-    
-    OutColor = float3(0, 0, 0);
+    // 1. Initialize outputs immediately for the Vertex Shader fallback
+    OutColor = Base_Color;
+    OutEmission = Emission;
 
 #ifndef SHADERGRAPH_PREVIEW
+
+    // --- PROTECT THE VERTEX SHADER ---
+    // Forces the expensive URP lighting loops to strictly run per-pixel.
+    #ifdef SHADER_STAGE_FRAGMENT
+
     float3 N = SafeNormalize(Normal);
     float3 V = SafeNormalize(ViewDirWS);
 
@@ -30,19 +38,18 @@ void CalculateToonLighting_float(
     float3 ambientLight = float3(0.1, 0.1, 0.15);
 #endif
 
-    float3 diffuseAccumulation = ambientLight * AmbientOcclusion.x;
+    float3 diffuseAccumulation = ambientLight * AmbientOcclusion;
     float3 specularAccumulation = float3(0, 0, 0);
+    float3 diffuseColor = Base_Color * lerp(1.0, 0.2, Metallic);
+    float3 specTint = lerp(float3(1, 1, 1), Base_Color, Metallic);
 
-    float3 diffuseColor = Base_Color.rgb * lerp(1.0, 0.2, Metallic.x);
-    float3 specTint = lerp(float3(1, 1, 1), Base_Color.rgb, Metallic.x);
-
-    float specPower = exp2(10 * Smoothness.x + 1);
-    float specOpacity = Smoothness.x;
+    float specPower = exp2(10 * Smoothness + 1);
+    float specOpacity = Smoothness;
 
     // ----------------------------------------------------
-    // 1. MAIN LIGHT (The Sun)
+    // 1. MAIN LIGHT
     // ----------------------------------------------------
-#if defined(UNIVERSAL_PIPELINE_CORE_INCLUDED)
+#if defined(UNIVERSAL_PIPELINE_CORE_INCLUDED)    
     float4 shadowCoord = TransformWorldToShadowCoord(PositionWS);
     Light mainLight = GetMainLight(shadowCoord);
 #else
@@ -55,7 +62,6 @@ void CalculateToonLighting_float(
 
     float intensity = NdotL * shadow;
     float banding = SAMPLE_TEXTURE2D(BandRamp.tex, RampSampler.samplerstate, float2(intensity, 0.5)).r;
-
     float3 finalDiffuse = SAMPLE_TEXTURE2D(ColorRamp.tex, RampSampler.samplerstate, float2(banding, 0.5)).rgb;
     diffuseAccumulation += mainLight.color.rgb * finalDiffuse;
 
@@ -67,37 +73,39 @@ void CalculateToonLighting_float(
     // 2. RIM LIGHTING
     // ----------------------------------------------------
     float fresnel = saturate(1.0 - dot(N, V));
-    
-    // RimPower controls how far the rim bleeds into the center of the mesh
-    float rawRim = pow(fresnel, RimPower.x);
-    
-    // RimEdge controls the sharpness of the anime cut
+    float rawRim = pow(fresnel, RimPower);
     float rimDelta = fwidth(rawRim) * 1.5;
-    float rimStep = smoothstep(RimEdge.x - rimDelta, RimEdge.x + rimDelta, rawRim);
-    
-    // Directional Mask: Wraps around the lit side, fades into the dark side
+    float rimStep = smoothstep(RimEdge - rimDelta, RimEdge + rimDelta, rawRim);
     float rimDirectionalMask = saturate(dot(N, mainLight.direction) + 0.5);
     
-    // Final Rim Calculation
-    float3 rimAccumulation = RimColor.rgb * rimStep * rimDirectionalMask * shadow * AmbientOcclusion.x;
+    float3 rimAccumulation = RimColor * rimStep * rimDirectionalMask * shadow * AmbientOcclusion;
 
     // ----------------------------------------------------
     // 3. ADDITIONAL LIGHTS
     // ----------------------------------------------------
 #if defined(_ADDITIONAL_LIGHTS) || defined(_CLUSTER_LIGHT_LOOP)
+    
     uint pixelLightCount = GetAdditionalLightsCount();
+
+    // Safely declare InputData whenever additional lights exist
+    #if defined(UNIVERSAL_PIPELINE_CORE_INCLUDED)
+    InputData inputData = (InputData)0;
+    inputData.normalizedScreenSpaceUV = ScreenPosition.xy; 
+    inputData.positionWS = PositionWS;
+    #endif
+
     LIGHT_LOOP_BEGIN(pixelLightCount)
         Light light = GetAdditionalLight(lightIndex, PositionWS);
+        light.shadowAttenuation = AdditionalLightRealtimeShadow(lightIndex, PositionWS, light.direction);
         
         float rawDist = light.distanceAttenuation;
-        float warpedDist = saturate(pow(rawDist, FalloffPower.x));
+        float warpedDist = saturate(pow(abs(rawDist), FalloffPower)); 
+        float atten = warpedDist * light.shadowAttenuation;
         
-        float atten = warpedDist * AdditionalLightRealtimeShadow(lightIndex, PositionWS, light.direction);
         float NdotL_Add = saturate(dot(N, light.direction) * 0.5 + 0.5);
-        
         float intensityA = NdotL_Add; 
         float intensityB = NdotL_Add * atten;
-        float finalIntensity = lerp(intensityA, intensityB, DistanceBandingSlider.x);
+        float finalIntensity = lerp(intensityA, intensityB, DistanceBandingSlider);
         
         float bandingAdd = SAMPLE_TEXTURE2D(BandRamp.tex, RampSampler.samplerstate, float2(finalIntensity, 0.5)).r;
         float3 colorAdd = SAMPLE_TEXTURE2D(ColorRamp.tex, RampSampler.samplerstate, float2(bandingAdd, 0.5)).rgb;
@@ -107,8 +115,16 @@ void CalculateToonLighting_float(
 #endif
 
     // --- FINAL COMPOSITION ---
-    OutColor = (diffuseColor * diffuseAccumulation) + specularAccumulation + rimAccumulation + Emission.rgb;
+    OutColor = (diffuseColor * diffuseAccumulation) + specularAccumulation + rimAccumulation;
+    OutEmission = Emission;
+
+    #endif // END SHADER_STAGE_FRAGMENT
+
 #else
-    OutColor = Base_Color.rgb;
+    // PREVIEW FALLBACK
+    float3 N_preview = SafeNormalize(Normal);
+    float3 NdotL_preview = saturate(dot(N_preview, normalize(float3(0.5, 0.5, 0.2))) * 0.5 + 0.5);
+    OutColor = Base_Color * NdotL_preview;
+    OutEmission = Emission;
 #endif
 }

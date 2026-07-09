@@ -28,9 +28,9 @@ public class GravityNode : BehaviourNode
 public class GravityBehaviour : IBehaviour
 {
     public sbyte GravityAdded;
-    public void InitTick(SpellCreatedCore core)
+    public void InitTick(ISpellExecutionCore core)
     {
-        if (core.TryGetComponent<PhysicsObject>(out var po))
+        if (core.TryGetCoreComponent<PhysicsObject>(out var po))
         {
             // Convert your old -125 to 125 system into a simple float multiplier
             float gravityModifier = GravityAdded / 100f;
@@ -40,15 +40,15 @@ public class GravityBehaviour : IBehaviour
         }
     }
 
-    public void Tick(SpellCreatedCore core, float deltaTime)
+    public void Tick(ISpellExecutionCore core, float deltaTime)
     {
 
     }
 
-    public void CleanupVFX(SpellCreatedCore core)
+    public void CleanupVFX(ISpellExecutionCore core)
     {
     }
-    public void TickVFX(SpellCreatedCore core)
+    public void TickVFX(ISpellExecutionCore core)
     {
     }
 }

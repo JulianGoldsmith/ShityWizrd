@@ -114,6 +114,15 @@ public class PlayerCastActionController : CastActionController
         }
     }
 
+    public override Vector3 GetAimOrigin()
+    {
+        return gameObject.GetComponent<HybridCharacterController>().hipsRb.transform.position;
+    }
+
+    public override Vector3 GetAimDir()
+    {
+        return (gameObject.GetComponent<HybridCharacterController>().GetLookRot() * Vector3.one);
+    }
 
     public override Vector3 GetAimTarget()
     {

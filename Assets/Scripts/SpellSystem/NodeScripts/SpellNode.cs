@@ -13,7 +13,7 @@ public abstract class SpellNode : ScriptableObject
      [System.NonSerialized] public string InstanceGuid;
     public string nodeName;
     public string description;
-    public RuneCategoryTag category;
+    public List<string> nodeTags = new List<string>();
     [HideInInspector]
     public abstract List<SocketDefinition> GetSockets();
     [HideInInspector]
@@ -30,6 +30,8 @@ public abstract class SpellNode : ScriptableObject
     [Header("Network Identity")]
     [Tooltip("Assigned by the Dictionary Publisher. Do not edit.")]
     public ushort NetworkNodeID = 0;
+
+    public bool showInSpellEditor = true;
 
     public virtual void Compile()
     {
@@ -171,19 +173,21 @@ public abstract class SpellNode : ScriptableObject
     }
 
 
+    public NodeType GetRuneType() => GetTypeCategory(this.GetType());
+    public static NodeType GetTypeCategory(System.Type type)
+    {
+        if (typeof(EntryPointNode).IsAssignableFrom(type)) return NodeType.System;
+        if (typeof(CoreNode).IsAssignableFrom(type)) return NodeType.Core;
+        if (typeof(BehaviourNode).IsAssignableFrom(type)) return NodeType.Behaviour;
+        if (typeof(TriggerNode).IsAssignableFrom(type)) return NodeType.Trigger;
+        if (typeof(EffectNode).IsAssignableFrom(type)) return NodeType.Effect;
+        if (typeof(ValueNode).IsAssignableFrom(type)) return NodeType.Value;
+        if (typeof(SubgraphNode).IsAssignableFrom(type)) return NodeType.Subgraph;
+        return NodeType.Misc;
+    }
 }
 
-public enum RuneCategoryTag
-{
-    Cast,
-    Core,
-    Behaviour,
-    Trigger,
-    Filter,
-    Effect,
-    Value, 
-    NPCCast
-}
+
 
 public enum CasterTriggerMethod
 {
@@ -191,7 +195,17 @@ public enum CasterTriggerMethod
     OnHitboxActivate  // Triggers when the hitbox is activated (e.g., "ActivateHitBox")
 }
 
-
+public enum NodeType
+{
+    System = 0,
+    Core = 1,
+    Behaviour = 2,
+    Trigger = 3,
+    Effect = 4,
+    Value = 5,
+    Subgraph = 6,
+    Misc = 7
+}
 
 
 

@@ -25,7 +25,8 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _FORWARD_PLUS
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -83,6 +84,14 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _CalculateToonLightingCustomFunction_1a12e46809224d91b9dff84ba95b0063_BandRamp_15_Texture2D:
+        m_Texture: {fileID: 2800000, guid: 0f61a16d34e2873419f41c4c90dbe8d5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _CalculateToonLightingCustomFunction_1a12e46809224d91b9dff84ba95b0063_ColorRamp_17_Texture2D:
+        m_Texture: {fileID: 2800000, guid: 3c0cbd3698aaead459ce8011f878f3e1, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _CalculateToonLightingCustomFunction_479e9421d11a4dfeaa5eb65b768b1ef8_BandRamp_15_Texture2D:
         m_Texture: {fileID: 2800000, guid: 0f61a16d34e2873419f41c4c90dbe8d5, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -93,6 +102,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _CalculateToonLightingCustomFunction_479e9421d11a4dfeaa5eb65b768b1ef8_New1_17_Texture2D:
         m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _CalculateToonLightingCustomFunction_54d06eb3a266402aa809cd014c2a70c7_ColorRamp_17_Texture2D:
+        m_Texture: {fileID: 2800000, guid: 3c0cbd3698aaead459ce8011f878f3e1, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ClippingMask:
@@ -305,7 +318,9 @@ Material:
     - _BlurLevelSGM: 0
     - _BumpScale: 1
     - _BumpScaleMatcap: 1
+    - _Burnt: 0
     - _CameraRolling_Stabilizer: 0
+    - _Charged: 0
     - _ClippingMatteMode: 0
     - _ClippingMode: 2
     - _Clipping_Level: 0
@@ -315,6 +330,8 @@ Material:
     - _ConservativeDepthOffsetEnable: 0
     - _CullMode: 2
     - _CullModeForward: 2
+    - _CurrentTemp: 0
+    - _CurrentWetness: 0
     - _Cutoff: 0.5
     - _DepthOffsetEnable: 0
     - _DetailAlbedoScale: 1
@@ -357,13 +374,19 @@ Material:
     - _EnableGeometricSpecularAA: 0
     - _EnergyConservingSpecularColor: 1
     - _ExcludeFromTUAndAA: 0
+    - _FORWARD_PLUS: 1
     - _Farthest_Distance: 100
     - _FirstShadeOverridden: 0
     - _FirstShadeVisible: 1
+    - _Frozen: 0
     - _GI_Intensity: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _Gooified: 0
+    - _GradHeight: 0.24
+    - _GradPivotStart: -0.12
+    - _Heated: 0
     - _HeightAmplitude: 0.02
     - _HeightCenter: 0.5
     - _HeightMapParametrization: 0
@@ -454,14 +477,14 @@ Material:
     - _RefractionModel: 0
     - _RenderQueueType: 1
     - _RequireSplitLighting: 0
-    - _RimEdge: 1
+    - _RimEdge: 0.01
     - _RimLight: 1
     - _RimLightOverridden: 0
     - _RimLightVisible: 1
     - _RimLight_FeatherOff: 0
     - _RimLight_InsideMask: 0.0001
     - _RimLight_Power: 1
-    - _RimPower: 4
+    - _RimPower: 0.15
     - _Rotate_EmissiveUV: 0
     - _Rotate_MatCapUV: 0
     - _Rotate_NormalMapForMatCapUV: 0
@@ -500,6 +523,7 @@ Material:
     - _StencilWriteMaskGBuffer: 15
     - _StencilWriteMaskMV: 43
     - _StepOffset: 0
+    - _Stoneified: 0
     - _SubsurfaceMask: 1
     - _SupportDecals: 1
     - _SurfaceType: 0
@@ -534,9 +558,11 @@ Material:
     - _UVSec: 0
     - _Unlit_Intensity: 0
     - _UseEmissiveIntensity: 0
+    - _UseGrad: 1
     - _UseShadowThreshold: 0
     - _Use_1stAs2nd: 1
     - _Use_BaseAs1st: 1
+    - _WorldGradient: 0
     - _ZOverDrawMode: 0
     - _ZTestDepthEqualForOpaque: 3
     - _ZTestGBuffer: 4
@@ -556,7 +582,7 @@ Material:
     - _AngelRingMaskColor: {r: 0, g: 1, b: 0, a: 1}
     - _AngelRing_Color: {r: 1, g: 1, b: 1, a: 1}
     - _Ap_RimLightColor: {r: 1, g: 1, b: 1, a: 1}
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.9622642, g: 0.9622642, b: 0.9622642, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _BaseColorMaskColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
@@ -568,6 +594,9 @@ Material:
     - _EmissiveColorLDR: {r: 0, g: 0, b: 0, a: 1}
     - _Emissive_Color: {r: 0, g: 0, b: 0, a: 1}
     - _FirstShadeMaskColor: {r: 0, g: 1, b: 1, a: 1}
+    - _GradAxis: {r: 0, g: 1, b: 0, a: 0}
+    - _GradEnd: {r: 0.33192512, g: 0.15419191, b: 0.7264151, a: 1}
+    - _GradStart: {r: 1, g: 0.9810683, b: 0.9575472, a: 1}
     - _HighColor: {r: 1, g: 1, b: 1, a: 1}
     - _HighlightMaskColor: {r: 1, g: 1, b: 0, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}

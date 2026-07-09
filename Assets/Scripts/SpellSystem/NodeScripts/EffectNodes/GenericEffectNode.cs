@@ -58,7 +58,7 @@ public class GenericRuntimeEffect : IEffect
     public int DurationTicks;
     public List<EffectComponent> Components;
 
-    public void Execute(SpellCreatedCore core, List<SpellTriggerInfo> hitInfos)
+    public void Execute(ISpellExecutionCore core, List<SpellTriggerInfo> hitInfos)
     {
         foreach (var info in hitInfos)
         {
@@ -67,14 +67,13 @@ public class GenericRuntimeEffect : IEffect
             GameObject target = info.HitObject;
             StatusEffectManager targetManager = null;
 
-            // Safely find the manager (handling SubObjects perfectly)
             if (target.TryGetComponent<StatusEffectManager>(out var effectManager))
             {
                 targetManager = effectManager;
             }
             else if (target.TryGetComponent<PhysicsSubObject>(out PhysicsSubObject pso) && pso.parent_physics_object != null)
             {
-                //pso.parent_physics_object.TryGetComponent<StatusEffectManager>(out targetManager);
+                // pso.parent_physics_object.TryGetComponent<StatusEffectManager>(out targetManager);
             }
 
             if (targetManager == null) continue;
@@ -92,8 +91,9 @@ public class GenericRuntimeEffect : IEffect
                 {
                     DurationInTicks = DurationTicks,
                     EffectType = LifeCycle,
-                    Magnitude = 0, 
-                    TargetId = core.Object.Id
+                    Magnitude = 0,
+                    // 2. ANCHOR BRIDGE (Safely handles null cores from Melee weapons!)
+                    TargetId = core != null ? core.CoreNetworkId : default
                 };
 
                 targetManager.AddEffect((byte)NetworkStatusID, payload);

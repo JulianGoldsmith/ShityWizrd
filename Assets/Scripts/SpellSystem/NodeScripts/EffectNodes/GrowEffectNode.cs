@@ -39,7 +39,7 @@ public class GrowRuntimeEffect : IEffect
 
     private const byte GROW_EFFECT_ID = 1;
 
-    public void Execute(SpellCreatedCore core, List<SpellTriggerInfo> hitInfos)
+    public void Execute(ISpellExecutionCore core, List<SpellTriggerInfo> hitInfos)
     {
         foreach (var info in hitInfos)
         {
@@ -54,7 +54,7 @@ public class GrowRuntimeEffect : IEffect
                     DurationInTicks = DurationTicks,
                     Magnitude = GrowthRate,
                     EffectType = EffectLifecycle.Duration,
-                    TargetId = core.Object.Id 
+                    TargetId = core.CoreNetworkId 
                 };
 
                 effectManager.AddEffect(GROW_EFFECT_ID, payload);
@@ -68,7 +68,7 @@ public class GrowRuntimeEffect : IEffect
                         DurationInTicks = DurationTicks,
                         Magnitude = GrowthRate,
                         EffectType = EffectLifecycle.Duration,
-                        TargetId = core.Object.Id
+                        TargetId = core.CoreNetworkId
                     };
 
                     parentManager.AddEffect(GROW_EFFECT_ID, payload);

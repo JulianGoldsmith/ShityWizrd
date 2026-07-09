@@ -30,16 +30,14 @@ public class CollisionEnterNode : TriggerNode
 
     public override void SetUp(GameObject spellCore, SpellState state)
     {
-        /*EnterCollisionST collisionChecker = spellCore.AddComponent<EnterCollisionST>();
-        collisionChecker.state = state;
-        collisionChecker.filterNodes = this.filterNodes;
-        collisionChecker.outcomeNodes = this.outcomeNodes;*/
+
     }
 }
 
 public class CollisionEnterTrigger : RuntimeTriggerBase
 {
-    public TriggerExecutioPlan Plan { get; set; }
+    // (Note: We deleted 'TriggerExecutionPlan' here because 'RuntimeTriggerBase' 
+    // now natively holds the 'Outcomes' list for us!)
 
     public int MaxContacts;
     public int HitMemorySlot;
@@ -49,13 +47,24 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
     public VFXContext VfxContext;
     public ModifierType VfxModType;
 
-    public override void InitTick(SpellCreatedCore core) { }
+    // 1. THE SIGNATURE UPDATE
+    public override void InitTick(ISpellExecutionCore core) { }
 
-    public override bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
+    // 1. THE SIGNATURE UPDATE
+    public override bool Tick(ISpellExecutionCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
     {
         hitInfos = new List<SpellTriggerInfo>();
 
-        if (core.TickContacts.Count == 0) return false;
+        // 2. THE CAPABILITIES BRIDGE!
+        // We ask the interface: "Do you have a physical SpellCreatedCore component?"
+        // If this is a Virtual Core (Ghost Beam), it gracefully returns false and skips the logic!
+        if (!core.TryGetCoreComponent<SpellCreatedCore>(out var physicalCore))
+        {
+            return false;
+        }
+
+        // Now we can safely use the physicalCore to read its Unity collisions!
+        if (physicalCore.TickContacts.Count == 0) return false;
 
         int currentHits = core.GetInt(HitMemorySlot);
         if (MaxContacts > 0 && currentHits >= MaxContacts) return false;
@@ -63,9 +72,9 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
         SpellState activeState = null;
         PhysicsObject instigator = null;
 
-        if (core.ActiveCastID.IsValid)
+        if (physicalCore.ActiveCastID.IsValid)
         {
-            ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(core.ActiveCastID);
+            ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(physicalCore.ActiveCastID);
             if (activeSpell != null)
             {
                 activeState = activeSpell.State;
@@ -77,18 +86,19 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
         }
 
         // 3. Process the hits!
-        foreach (var contact in core.TickContacts)
+        foreach (var contact in physicalCore.TickContacts)
         {
             GameObject targetObj = contact.Target;
 
-            if (targetObj == core.gameObject) continue;
+            // 3. THE ANCHOR BRIDGE
+            // Replaced 'core.gameObject' with 'core.SourceObject'
+            if (targetObj == core.SourceObject) continue;
             if (activeState != null && activeState.Caster != null && targetObj == activeState.Caster.gameObject) continue;
 
             if (targetObj.TryGetComponent<SpellCreatedCore>(out var targetCore))
             {
-                if (targetCore.ActiveCastID.Equals(core.ActiveCastID)) continue; 
+                if (targetCore.ActiveCastID.Equals(physicalCore.ActiveCastID)) continue;
             }
-
 
             bool isValid = true;
             if (Filters != null)
@@ -103,11 +113,11 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
             {
                 if (targetObj.TryGetComponent<PhysicsObject>(out var targetPO))
                 {
-                    float impactSpeed = core.NetworkVelocity.magnitude;
+                    // Use the physical core for network velocity!
+                    float impactSpeed = physicalCore.NetworkVelocity.magnitude;
                     if (impactSpeed < 1f) impactSpeed = 10f; // Fallback for stationary spells
 
-                    // (Optional: Pass core mass if you add it to CoreContext later!)
-                    targetPO.OnBonk(impactSpeed * 1f, instigator.Object, contact.Point);
+                    targetPO.OnBonk(impactSpeed * 1f, instigator != null ? instigator.Object : null, contact.Point);
                 }
 
                 // Package the Hit Info for the downstream Effects!
@@ -115,18 +125,19 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
                 {
                     IsValid = true,
                     IsCast = false,
-                    Source = core.gameObject,
+                    Source = core.SourceObject, // The Anchor Bridge!
                     State = activeState,
                     HasOverridePosition = true,
                     TriggerPoint = contact.Point,
                     TriggerRotation = contact.Normal.sqrMagnitude > 0 ? Quaternion.LookRotation(contact.Normal) : Quaternion.identity,
                     TriggerNormal = contact.Normal.sqrMagnitude > 0 ? Quaternion.LookRotation(contact.Normal) : Quaternion.identity,
-                    TriggerVector = core.NetworkVelocity,
+                    TriggerVector = physicalCore.NetworkVelocity, // Use the physical core for velocity
                     HitObject = targetObj
                 });
 
                 currentHits++;
-                core.SetInt(HitMemorySlot, currentHits);
+                core.SetInt(HitMemorySlot, currentHits); // We can still safely write to the memory sketchpad!
+
                 if (MaxContacts > 0 && currentHits >= MaxContacts)
                 {
                     break;
@@ -137,8 +148,9 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
         return hitInfos.Count > 0;
     }
 
-    public override void TickVFX(SpellCreatedCore core) { }
-    public override void CleanupVFX(SpellCreatedCore core) { }
+    // 1. THE SIGNATURE UPDATE
+    public override void TickVFX(ISpellExecutionCore core) { }
 
-    
+    // 1. THE SIGNATURE UPDATE
+    public override void CleanupVFX(ISpellExecutionCore core) { }
 }

@@ -1,7 +1,7 @@
 using Fusion;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "SimpleSpellItemAction",menuName = "ItemActions/Simple Spell")]
+[CreateAssetMenu(fileName = "SimpleSpellItemAction",menuName = "Items/Actions/Simple Spell")]
 public class SimpleSpellItemAction : ItemAction
 {
     [Header("Timings")]

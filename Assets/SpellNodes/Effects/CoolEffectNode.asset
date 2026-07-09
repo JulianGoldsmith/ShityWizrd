@@ -14,13 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GenericEffectNode
   nodeName: CoolEffectNode
   description: 
-  category: 5
+  nodeTags: []
   valueContainers: []
   icon: {fileID: 0}
   overrideMesh: {fileID: 0}
   overrideMaterial: {fileID: 0}
   ovverideVisualScale: 1
   NetworkNodeID: 36
+  showInSpellEditor: 1
   casterTriggerMethod: 0
   NetworkStatusID: 0
   Lifecycle: 0
@@ -28,6 +29,6 @@ MonoBehaviour:
   Components:
   - Target: 0
     Mutation: 0
-    BaseMagnitude: -0.5
+    BaseMagnitude: -10
     AutoVFX: 0
     effectsPlayerObjects: 0

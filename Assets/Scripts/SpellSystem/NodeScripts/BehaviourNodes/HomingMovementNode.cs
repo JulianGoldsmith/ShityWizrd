@@ -48,14 +48,14 @@ public class HomingBehaviour : IBehaviour
 
     public int TargetMemoryIndex;
 
-    public void InitTick(SpellCreatedCore core)
+    public void InitTick(ISpellExecutionCore core)
     {
         core.SetInt(TargetMemoryIndex, 0);
     }
 
-    public void Tick(SpellCreatedCore core, float deltaTime)
+    public void Tick(ISpellExecutionCore core, float deltaTime)
     {
-        if (!core.TryGetComponent<IMovementHandler>(out var mover)) return;
+        if (!core.TryGetCoreComponent<IMovementHandler>(out var mover)) return;
 
         NetworkObject targetNetObj = null;
 
@@ -69,7 +69,7 @@ public class HomingBehaviour : IBehaviour
 
         bool needsNewTarget = targetNetObj == null ||
                               !MaintainTarget ||
-                              Vector3.Distance(core.transform.position, targetNetObj.transform.position) > SearchRange;
+                              Vector3.Distance(core.Position, targetNetObj.transform.position) > SearchRange;
 
         if (needsNewTarget)
         {
@@ -88,7 +88,7 @@ public class HomingBehaviour : IBehaviour
         if (targetNetObj != null)
         {
             Vector3 currentVel = mover.CurrentVelocity;
-            Vector3 targetDir = (targetNetObj.transform.position - core.transform.position).normalized;
+            Vector3 targetDir = (targetNetObj.transform.position - core.Position).normalized;
 
             Vector3 desiredVel = targetDir * Mathf.Max(MinSpeed, currentVel.magnitude);
 
@@ -101,14 +101,14 @@ public class HomingBehaviour : IBehaviour
         }
     }
 
-    private NetworkObject FindNewTarget(SpellCreatedCore core)
+    private NetworkObject FindNewTarget(ISpellExecutionCore core)
     {
         // Use Fusion's Lag-Compensated sphere to safely check the past/future during rollbacks
         List<LagCompensatedHit> hits = new List<LagCompensatedHit>();
         int hitCount = core.Runner.LagCompensation.OverlapSphere(
-            core.transform.position,
+            core.Position,
             SearchRange,
-            core.Object.InputAuthority,
+            core.InputAuthority,
             hits,
             SpellSystemHelpers.GeneralCollisionLayerMask()
         );
@@ -117,7 +117,7 @@ public class HomingBehaviour : IBehaviour
         {
             var hitObj = hits[i].GameObject;
 
-            if (hitObj == core.gameObject) continue;
+            if (hitObj == core.SourceObject) continue;
 
             if (hitObj.TryGetComponent<NetworkObject>(out var netObj))
             {
@@ -129,10 +129,10 @@ public class HomingBehaviour : IBehaviour
         return null;
     }
 
-    public void CleanupVFX(SpellCreatedCore core)
+    public void CleanupVFX(ISpellExecutionCore core)
     {
     }
-    public void TickVFX(SpellCreatedCore core)
+    public void TickVFX(ISpellExecutionCore core)
     {
     }
 }

@@ -13,7 +13,7 @@ public class ActiveCastTracker : NetworkBehaviour
 
     public void RegisterNetworkedCast(NetworkCastData newCastData)
     {
-        if (!HasStateAuthority && !HasInputAuthority) return; //if we a proxy we dont add 
+        if (!HasStateAuthority && !HasInputAuthority) return;
 
         for (int i = 0; i < ActiveCastsData.Length; i++)
         {
@@ -30,7 +30,7 @@ public class ActiveCastTracker : NetworkBehaviour
     public void RemoveNetworkedCast(ActiveCastID castIdToWipe)
     {
 
-        if (!HasStateAuthority && !HasInputAuthority) return; //if we a proxy we dont take 
+        if (!HasStateAuthority && !HasInputAuthority) return;  
 
         for (int i = 0; i < ActiveCastsData.Length; i++)
         {

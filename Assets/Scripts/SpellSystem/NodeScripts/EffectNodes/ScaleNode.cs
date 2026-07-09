@@ -45,7 +45,7 @@ public class ScaleEffect : IEffect
 {
     public int ScaleChangeAmount;
 
-    public void Execute(SpellCreatedCore core, List<SpellTriggerInfo> hitInfos)
+    public void Execute(ISpellExecutionCore core, List<SpellTriggerInfo> hitInfos)
     {
         foreach (var info in hitInfos)
         {
@@ -59,7 +59,7 @@ public class ScaleEffect : IEffect
                 {
                     DurationInTicks = 0, // 0 = permanent until cleansed
                     Magnitude = ScaleChangeAmount / 100f, // Convert to a multiplier
-                    TargetId = core.Object != null ? core.Object.Id : default
+                    TargetId = core.CoreNetworkId
                 };
 
                 // 3. Send it to the engine! 

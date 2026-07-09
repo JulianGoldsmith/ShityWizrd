@@ -20,14 +20,7 @@ public class SpellGraphController : MonoBehaviour
 
     //list of all scriptable object made nodes some of these may be inherited classes.
     public List<SpellNode> availableNodeTemplates { get; private set; } = new List<SpellNode>();
-    public List<CasterNode> availableCasterNodes;
-    public List<CoreNode> availableCoreNodes;
-    public List<BehaviourNode> availableBehaviourNodes;
-    public List<TriggerNode> availableTriggerNodes;
-    public List<FilterNode> availableFilterNodes;
-    public List<EffectNode> availableEffectNodes;
-    public List<ValueNode> availableValueNodes;
-    public List<SubgraphNode> availableSubgraphNodes;
+    public MasterNodeDictionary masterNodeDictionary;
 
     public EntryPointNode entryPointTemplate;
     //the prefab for all runes,  RUNE = UI,      NODE = scriptableObect.  
@@ -49,10 +42,12 @@ public class SpellGraphController : MonoBehaviour
     private Transform ActiveGraphParent => isEditingSubgraph ? subgraphEditorParent : mainGraphParent;
 
 
+    public enum BaseNodeType { Core, Behaviour, Trigger, Effect, Value, Subgraph, EntryPoint }
+
     [System.Serializable]
     public class RuneAppearance
     {
-        public RuneCategoryTag category;
+        public NodeType nodeType; // Uses the Enum!
         public Mesh defaultMesh;
         public Material defaultMaterial;
         public float defaultScale = 1f;
@@ -61,7 +56,8 @@ public class SpellGraphController : MonoBehaviour
 
     [Header("Rune Appearance Defaults")]
     public List<RuneAppearance> runeAppearances;
-    private Dictionary<RuneCategoryTag, RuneAppearance> _appearanceMap;
+    private Dictionary<NodeType, RuneAppearance> _appearanceMap;
+
 
     [ColorUsage(true, true)]
     public UnityEngine.Color executionLinkColor = UnityEngine.Color.white;
@@ -121,10 +117,10 @@ public class SpellGraphController : MonoBehaviour
         currentGraph = ScriptableObject.CreateInstance<SpellGraph>();
         editorCamera = Camera.main;
 
-        _appearanceMap = new Dictionary<RuneCategoryTag, RuneAppearance>();
+        _appearanceMap = new Dictionary<NodeType, RuneAppearance>();
         foreach (var appearance in runeAppearances)
         {
-            _appearanceMap[appearance.category] = appearance;
+            _appearanceMap[appearance.nodeType] = appearance;
         }
 
         _propBlock = new MaterialPropertyBlock();
@@ -273,7 +269,7 @@ public class SpellGraphController : MonoBehaviour
 
         SubgraphNode newSubgraphAsset = ScriptableObject.CreateInstance<SubgraphNode>();
         newSubgraphAsset.nodeName = runeName;
-        newSubgraphAsset.category = _subgraphRootNodeUI.ReadOnlyTemplate.category;
+        newSubgraphAsset.nodeTags = new List<string>(_subgraphRootNodeUI.ReadOnlyTemplate.nodeTags);
 
         // Notice how clean this is now! We just copy the math array over!
         newSubgraphAsset.InternalGraph = currentGraph.Data;
@@ -719,6 +715,18 @@ public class SpellGraphController : MonoBehaviour
         return -1;
     }
 
+    private BaseNodeType GetBaseNodeType(SpellNode node)
+    {
+        if (node is CoreNode) return BaseNodeType.Core;
+        if (node is BehaviourNode) return BaseNodeType.Behaviour;
+        if (node is TriggerNode) return BaseNodeType.Trigger;
+        if (node is EffectNode) return BaseNodeType.Effect;
+        if (node is ValueNode) return BaseNodeType.Value;
+        if (node is SubgraphNode) return BaseNodeType.Subgraph;
+        if (node is EntryPointNode) return BaseNodeType.EntryPoint;
+        return BaseNodeType.Core;
+    }
+
     private RuneUI CreateRune(SpellNode nodeTemplate, Vector3 position, int forcedIndex = -1)
     {
         byte index = forcedIndex != -1 ? (byte)forcedIndex : GetFreeNodeIndex();
@@ -740,7 +748,9 @@ public class SpellGraphController : MonoBehaviour
 
         var meshFilter = runeObject.GetComponent<MeshFilter>();
         var meshRenderer = runeObject.GetComponent<MeshRenderer>();
-        _appearanceMap.TryGetValue(nodeTemplate.category, out RuneAppearance appearance);
+
+        BaseNodeType baseType = GetBaseNodeType(nodeTemplate);
+        _appearanceMap.TryGetValue(nodeTemplate.GetRuneType(), out RuneAppearance appearance);
 
         if (nodeTemplate.overrideMesh != null) meshFilter.mesh = nodeTemplate.overrideMesh;
         else if (appearance?.defaultMesh != null) meshFilter.mesh = appearance.defaultMesh;
@@ -761,16 +771,27 @@ public class SpellGraphController : MonoBehaviour
     private void PopulateAvailableTemplateNodesList()
     {
         availableNodeTemplates.Clear();
-  
-        availableNodeTemplates.AddRange(availableCasterNodes.Cast<SpellNode>());
-        availableNodeTemplates.AddRange(availableCoreNodes.Cast<SpellNode>());
-        availableNodeTemplates.AddRange(availableBehaviourNodes.Cast<SpellNode>());
-        availableNodeTemplates.AddRange(availableTriggerNodes.Cast<SpellNode>());
-        availableNodeTemplates.AddRange(availableFilterNodes.Cast<SpellNode>());
-        availableNodeTemplates.AddRange(availableEffectNodes.Cast<SpellNode>());
-        availableNodeTemplates.AddRange(availableValueNodes.Cast<SpellNode>());
-        availableNodeTemplates.AddRange(availableSubgraphNodes.Cast<SpellNode>());
-        availableNodeTemplates.Add(entryPointTemplate);
+
+        if (masterNodeDictionary == null)
+        {
+            Debug.LogError("[SpellGraphController] MasterNodeDictionary is missing! Please assign it in the inspector.");
+            return;
+        }
+
+        for (int i = 1; i < masterNodeDictionary.BakedNodes.Count; i++)
+        {
+            SpellNode node = masterNodeDictionary.BakedNodes[i];
+
+            if (node != null && node.showInSpellEditor)
+            {
+                availableNodeTemplates.Add(node);
+            }
+        }
+
+        if (entryPointTemplate != null && !availableNodeTemplates.Contains(entryPointTemplate))
+        {
+            availableNodeTemplates.Add(entryPointTemplate);
+        }
     }
 
     //helpers

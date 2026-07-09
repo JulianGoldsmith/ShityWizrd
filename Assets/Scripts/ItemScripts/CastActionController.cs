@@ -197,6 +197,11 @@ public abstract class CastActionController : NetworkBehaviour
         }
     }
 
+    #region Generic Aiming Getters
+    public virtual Vector3 GetAimOrigin() { return transform.position; }
+    public virtual Vector3 GetAimDir() { return transform.forward; }
+    #endregion
+
     public void SetCastTimer(float duration) //Sets a timer for the bool isCasting to be true;
     {
         isCasting = true;

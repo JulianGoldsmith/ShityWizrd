@@ -100,30 +100,24 @@ public class RuneLibraryUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void PopulateRuneLibrary()
     {
-        if (SpellGraphController.Instance == null)
-        {
-            Debug.LogError("SpellGraphController instance not found!");
-            return;
-        }
+        if (SpellGraphController.Instance == null) return;
 
-        foreach (Transform child in contentParent)
-        {
-            Destroy(child.gameObject);
-        }
+        foreach (Transform child in contentParent) Destroy(child.gameObject);
 
-        var allNodes = SpellGraphController.Instance.availableNodeTemplates;
-
-        var nodesByCategory = allNodes
-        .Where(n => n != null)
-        .GroupBy(n => n.category)
-        .OrderBy(g => (int)g.Key);
+        var nodesByCategory = SpellGraphController.Instance.availableNodeTemplates
+            .Where(n => n != null)
+            .GroupBy(n => n.GetRuneType())
+            .OrderBy(g => (int)g.Key);
 
         foreach (var group in nodesByCategory)
         {
-            string categoryTitle = group.Key.ToString() + "s"; 
-            List<SpellNode> nodesInGroup = group.ToList();
+            string title = group.Key.ToString();
+            if (group.Key != NodeType.System && group.Key != NodeType.Misc)
+            {
+                title += "s"; 
+            }
 
-            PopulateRuneCategory(categoryTitle, nodesInGroup);
+            PopulateRuneCategory(title, group.ToList());
         }
     }
 

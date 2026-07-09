@@ -39,36 +39,44 @@ public class TimerTriggerNode : TriggerNode
 
 public class TimerTrigger : RuntimeTriggerBase
 {
-
     public RuntimeFloatProperty DurationInSeconds;
     public int MaxTriggerCount;
     public int HasFiredBitIndex;
 
-    public TriggerExecutioPlan Plan { get; set; }
+    // 1. SIGNATURE UPDATE
+    public override void InitTick(ISpellExecutionCore core) { }
 
-    
-    public override void InitTick(SpellCreatedCore core)
+    // 1. SIGNATURE UPDATE
+    public override bool Tick(ISpellExecutionCore core, float deltaTime, out List<SpellTriggerInfo> triggerInfo)
     {
+        triggerInfo = new List<SpellTriggerInfo>();
 
-    }
-
-    public override bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> triggerInfo)
-    {
-        triggerInfo =  new List<SpellTriggerInfo>();
-        SpellTriggerInfo hitInfo = default;
-        
         if (core.GetBool(HasFiredBitIndex) == false && core.Context.AliveTime >= DurationInSeconds.GetValue(default))
         {
-      
             core.SetBool(HasFiredBitIndex, true);
 
-            hitInfo = new SpellTriggerInfo(isCast: false,
-                    source: core.gameObject,
-                    state: SpellStateManager.instance.GetActiveSpell(core.ActiveCastID).State,
-                    position: core.transform.position,
-                    rotation: core.transform.rotation,
-                    triggerVector: core.NetworkVelocity,
-                    hitObject: core.gameObject);
+            // 2. CAPABILITIES BRIDGE (Velocity Fallback)
+            // If it's a fireball, use its actual flying speed. 
+            // If it's a virtual beam, use the aim vector stored in its Context!
+            Vector3 triggerVel = Vector3.zero;
+            if (core.TryGetCoreComponent<SpellCreatedCore>(out var physicalCore))
+            {
+                triggerVel = physicalCore.NetworkVelocity;
+            }
+            else
+            {
+                triggerVel = core.Context.TriggerVector;
+            }
+
+            SpellTriggerInfo hitInfo = new SpellTriggerInfo(
+                isCast: false,
+                source: core.SourceObject, // ANCHOR BRIDGE
+                state: SpellStateManager.instance.GetActiveSpell(core.ActiveCastID).State,
+                position: core.Position,   // SPATIAL UPDATE
+                rotation: core.Rotation,   // SPATIAL UPDATE
+                triggerVector: triggerVel, // BRIDGED VELOCITY
+                hitObject: core.SourceObject // ANCHOR BRIDGE
+            );
 
             triggerInfo.Add(hitInfo);
 
@@ -78,11 +86,9 @@ public class TimerTrigger : RuntimeTriggerBase
         return false;
     }
 
-    public override void TickVFX(SpellCreatedCore core)
-    {
-    }
-    public override void CleanupVFX(SpellCreatedCore core)
-    {
-    }
+    // 1. SIGNATURE UPDATE
+    public override void TickVFX(ISpellExecutionCore core) { }
 
+    // 1. SIGNATURE UPDATE
+    public override void CleanupVFX(ISpellExecutionCore core) { }
 }

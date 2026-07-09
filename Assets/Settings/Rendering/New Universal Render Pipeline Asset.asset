@@ -34,9 +34,9 @@ MonoBehaviour:
   m_LODCrossFadeDitheringType: 1
   m_ShEvalMode: 0
   m_LightProbeSystem: 0
-  m_ProbeVolumeMemoryBudget: 1024
+  m_ProbeVolumeMemoryBudget: 2048
   m_ProbeVolumeBlendingMemoryBudget: 256
-  m_SupportProbeVolumeGPUStreaming: 0
+  m_SupportProbeVolumeGPUStreaming: 1
   m_SupportProbeVolumeDiskStreaming: 0
   m_SupportProbeVolumeScenarios: 0
   m_SupportProbeVolumeScenarioBlending: 0
@@ -45,7 +45,7 @@ MonoBehaviour:
   m_MainLightShadowsSupported: 1
   m_MainLightShadowmapResolution: 4096
   m_AdditionalLightsRenderingMode: 1
-  m_AdditionalLightsPerObjectLimit: 4
+  m_AdditionalLightsPerObjectLimit: 8
   m_AdditionalLightShadowsSupported: 1
   m_AdditionalLightsShadowmapResolution: 2048
   m_AdditionalLightsShadowResolutionTierLow: 256
@@ -101,10 +101,10 @@ MonoBehaviour:
       m_Keys: []
       m_Values: 
   m_PrefilteringModeMainLightShadows: 3
-  m_PrefilteringModeAdditionalLight: 3
+  m_PrefilteringModeAdditionalLight: 0
   m_PrefilteringModeAdditionalLightShadows: 2
   m_PrefilterXRKeywords: 1
-  m_PrefilteringModeForwardPlus: 0
+  m_PrefilteringModeForwardPlus: 2
   m_PrefilteringModeDeferredRendering: 0
   m_PrefilteringModeScreenSpaceOcclusion: 2
   m_PrefilterDebugKeywords: 1

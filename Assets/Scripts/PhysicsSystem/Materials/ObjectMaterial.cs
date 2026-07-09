@@ -10,13 +10,6 @@ public class ObjectMaterial : ScriptableObject
 
         SimProperties finalSim = defaultSimProperties;
 
-        float volumeScale = currentState.ScaleMultiplier * currentState.ScaleMultiplier;
-        finalSim.Mass = finalSim.Mass * currentState.DensityMultiplier * volumeScale;
-
-        finalSim.Friction -= currentState.Lubrication;
-        finalSim.Friction = Mathf.Max(0, finalSim.Friction);
-
-        finalSim.Restitution += currentState.Rubberization;
 
         return finalSim;
     }

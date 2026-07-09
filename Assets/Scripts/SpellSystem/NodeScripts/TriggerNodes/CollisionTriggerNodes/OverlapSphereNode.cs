@@ -37,65 +37,53 @@ public class OverlapSphereNode : TriggerNode
 
     public override void SetUp(GameObject spellCore, SpellState state)
     {
-        /*OverlapSphereST sphereChecker = spellCore.AddComponent<OverlapSphereST>();
-        sphereChecker.state = state;
-        sphereChecker.filterNodes = this.filterNodes;
-        sphereChecker.outcomeNodes = this.outcomeNodes;
-        sphereChecker.size = size;
-        sphereChecker.singleTrigger = singleTrigger;    
 
-        OnAttach(sphereChecker, size);*/
     }
 }
 
 public class OverlapSphereTrigger : RuntimeTriggerBase
 {
-    // Required by ITrigger
-    public TriggerExecutioPlan Plan { get; set; }
-
     public RuntimeFloatProperty Radius;
     public int TickDuration;
     public int StartTickMemoryIndex;
 
-    // Baked in by the Compiler
     public FilterNode[] Filters;
 
     public int VfxDictionaryId;
     public VFXContext VfxContext;
     public ModifierType VfxModType;
 
-    public override void InitTick(SpellCreatedCore core)
+    // 1. SIGNATURE UPDATE
+    public override void InitTick(ISpellExecutionCore core)
     {
-        // Record the exact tick this trigger was created (Rollback friendly!)
         core.SetInt(StartTickMemoryIndex, core.Runner.Tick);
     }
 
     private Collider[] _overlapResults = new Collider[64];
 
-    public override bool Tick(SpellCreatedCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
+    // 1. SIGNATURE UPDATE
+    public override bool Tick(ISpellExecutionCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
     {
         hitInfos = new List<SpellTriggerInfo>();
 
-        // 1. Check if the Field/Blast has expired
         int startTick = core.GetInt(StartTickMemoryIndex);
         if (TickDuration > 0 && (core.Runner.Tick - startTick) >= TickDuration)
         {
             return false;
         }
 
-        // 2. Standard Physics Spatial Query via the Runner's Physics Scene
-        // This ensures it works perfectly in Host Mode, Multi-Peer, and local prediction.
         PhysicsScene physicsScene = core.Runner.GetPhysicsScene();
 
+        // 2. SPATIAL UPDATE (Use core.Position)
         int hitCount = physicsScene.OverlapSphere(
-            core.transform.position,
+            core.Position,
             Radius.GetValue(default),
             _overlapResults,
             SpellSystemHelpers.GeneralCollisionLayerMask(),
             QueryTriggerInteraction.UseGlobal
         );
 
-        // 3. Fetch the networked State
+        // 3. USE THE INTERFACE FOR CAST ID
         SpellState activeState = null;
         if (core.ActiveCastID.IsValid)
         {
@@ -103,15 +91,13 @@ public class OverlapSphereTrigger : RuntimeTriggerBase
             if (activeSpell != null) activeState = activeSpell.State;
         }
 
-        // 4. Process Hits
         for (int i = 0; i < hitCount; i++)
         {
             GameObject targetObj = _overlapResults[i].gameObject;
 
-            // Ignore hitting ourselves
-            if (targetObj == core.gameObject) continue;
+            // 4. ANCHOR BRIDGE (Ignore ourselves)
+            if (targetObj == core.SourceObject) continue;
 
-            // Evaluate Filters
             bool isValid = true;
             if (Filters != null)
             {
@@ -123,16 +109,15 @@ public class OverlapSphereTrigger : RuntimeTriggerBase
 
             if (isValid)
             {
-    
                 Collider col = _overlapResults[i];
-                Vector3 hitPos = col.ClosestPoint(core.transform.position);
-                Vector3 hitNormal = (hitPos - core.transform.position).normalized;
+                Vector3 hitPos = col.ClosestPoint(core.Position); // SPATIAL UPDATE
+                Vector3 hitNormal = (hitPos - core.Position).normalized;
 
                 Quaternion hitRot = hitNormal.sqrMagnitude > 0 ? Quaternion.LookRotation(hitNormal) : Quaternion.identity;
 
                 hitInfos.Add(new SpellTriggerInfo(
                     isCast: false,
-                    source: core.gameObject,
+                    source: core.SourceObject, // ANCHOR BRIDGE
                     state: activeState,
                     position: hitPos,
                     rotation: hitRot,
@@ -142,53 +127,56 @@ public class OverlapSphereTrigger : RuntimeTriggerBase
             }
         }
 
-        // Clear the array references to avoid memory leaks of destroyed objects
         Array.Clear(_overlapResults, 0, hitCount);
 
         return hitInfos.Count > 0;
     }
 
-    public override void TickVFX(SpellCreatedCore core)
+    // 1. SIGNATURE UPDATE
+    public override void TickVFX(ISpellExecutionCore core)
     {
-        if(!core.HasStateAuthority && !core.HasInputAuthority)
-        {
-           // Debug.Log("VFX are running render on a proxy");
-        }
-
         if (VfxContext == null) return;
 
-        bool shouldBeActive = false;
-
-        if (core.IsActiveInBuffer)
+        // 5. CAPABILITIES BRIDGE (Only physical cores use ActiveVisuals dict)
+        if (core.TryGetCoreComponent<SpellCreatedCore>(out var physicalCore))
         {
-            int startTick = core.GetInt(StartTickMemoryIndex);
+            bool shouldBeActive = false;
 
-            if (TickDuration == 0 || (core.Runner.Tick - startTick) < TickDuration)
+            if (physicalCore.IsActiveInBuffer)
             {
-                shouldBeActive = true;
+                int startTick = core.GetInt(StartTickMemoryIndex);
+
+                if (TickDuration == 0 || (core.Runner.Tick - startTick) < TickDuration)
+                {
+                    shouldBeActive = true;
+                }
             }
-        }
 
-        bool currentlyExists = core.ActiveVisuals.TryGetValue(VfxDictionaryId, out GameObject currentVfx);
+            bool currentlyExists = physicalCore.ActiveVisuals.TryGetValue(VfxDictionaryId, out GameObject currentVfx);
 
-        if (shouldBeActive && !currentlyExists)
-        {
-            GameObject newVfx = SpellSystemHelpers.CreateVFX(VfxContext, VfxModType, core.transform, Radius.GetValue(default), true);
-            if (newVfx != null) core.ActiveVisuals[VfxDictionaryId] = newVfx;
-        }
-        else if (!shouldBeActive && currentlyExists)
-        {
-            if (currentVfx != null) GameObject.Destroy(currentVfx);
-            core.ActiveVisuals.Remove(VfxDictionaryId);
+            if (shouldBeActive && !currentlyExists)
+            {
+                GameObject newVfx = SpellSystemHelpers.CreateVFX(VfxContext, VfxModType, physicalCore.transform, Radius.GetValue(default), true);
+                if (newVfx != null) physicalCore.ActiveVisuals[VfxDictionaryId] = newVfx;
+            }
+            else if (!shouldBeActive && currentlyExists)
+            {
+                if (currentVfx != null) GameObject.Destroy(currentVfx);
+                physicalCore.ActiveVisuals.Remove(VfxDictionaryId);
+            }
         }
     }
 
-    public override void CleanupVFX(SpellCreatedCore core)
+    // 1. SIGNATURE UPDATE
+    public override void CleanupVFX(ISpellExecutionCore core)
     {
-        if (core.ActiveVisuals.TryGetValue(VfxDictionaryId, out GameObject currentVfx))
+        if (core.TryGetCoreComponent<SpellCreatedCore>(out var physicalCore))
         {
-            if (currentVfx != null) GameObject.Destroy(currentVfx);
-            core.ActiveVisuals.Remove(VfxDictionaryId);
+            if (physicalCore.ActiveVisuals.TryGetValue(VfxDictionaryId, out GameObject currentVfx))
+            {
+                if (currentVfx != null) GameObject.Destroy(currentVfx);
+                physicalCore.ActiveVisuals.Remove(VfxDictionaryId);
+            }
         }
     }
 }

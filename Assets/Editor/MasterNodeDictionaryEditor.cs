@@ -53,17 +53,33 @@ public class MasterNodeDictionaryEditor : Editor
 
             GUI.backgroundColor = rowColor;
             GUILayout.BeginHorizontal("box");
-            GUI.backgroundColor = Color.white; 
+            GUI.backgroundColor = Color.white;
 
-            GUILayout.Label($"[{i}] {node.nodeName}", GUILayout.ExpandWidth(true));
+            // 1. Draw the ID
+            GUILayout.Label($"[{i}]", GUILayout.Width(35));
 
+            // 2. THE NEW VISIBILITY TOGGLE
+            EditorGUI.BeginChangeCheck();
+            bool isVisible = GUILayout.Toggle(node.showInSpellEditor, new GUIContent("", "Show in Spell Editor UI"), GUILayout.Width(20));
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(node, "Toggle Spell Editor Visibility");
+                node.showInSpellEditor = isVisible;
+                EditorUtility.SetDirty(node);
+            }
+
+            // 3. Draw the Name
+            GUILayout.Label(node.nodeName, GUILayout.ExpandWidth(true));
+
+            // EDIT BUTTON
             if (GUILayout.Button("Edit", GUILayout.Width(60)))
             {
                 EditorGUIUtility.PingObject(node);
                 Selection.activeObject = node;
             }
 
-            GUI.backgroundColor = new Color(1f, 0.4f, 0.4f); 
+            // TOMBSTONE (REMOVE) BUTTON
+            GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
             if (GUILayout.Button("X", GUILayout.Width(30)))
             {
                 if (EditorUtility.DisplayDialog("Tombstone Rune?", $"Are you sure you want to remove '{node.nodeName}'?\n\nThis will safely leave an empty slot to protect Network IDs.", "Yes", "Cancel"))
@@ -96,8 +112,9 @@ public class MasterNodeDictionaryEditor : Editor
         menu.ShowAsContext();
     }
 
-    private void CreateNewNode(Type nodeType, MasterNodeDictionary dict)
+    private void CreateNewNode(System.Type nodeType, MasterNodeDictionary dict)
     {
+        // 1. Find the lowest available Tombstone slot, or add to the end
         int newId = -1;
         for (int i = 1; i < dict.BakedNodes.Count; i++)
         {
@@ -114,13 +131,14 @@ public class MasterNodeDictionaryEditor : Editor
             newId = dict.BakedNodes.Count - 1;
         }
 
-        string subFolder = "Misc";
-        if (typeof(CoreNode).IsAssignableFrom(nodeType)) subFolder = "Cores";
-        else if (typeof(BehaviourNode).IsAssignableFrom(nodeType)) subFolder = "Behaviours";
-        else if (typeof(TriggerNode).IsAssignableFrom(nodeType)) subFolder = "Triggers";
-        else if (typeof(EffectNode).IsAssignableFrom(nodeType)) subFolder = "Effects";
-        else if (typeof(ValueNode).IsAssignableFrom(nodeType)) subFolder = "Values";
+        // 2. Create the instance in memory FIRST so we can read its data
+        SpellNode newNode = (SpellNode)CreateInstance(nodeType);
 
+        // 3. Ask it what folder it belongs in using our new Enum!
+        string subFolder = newNode.GetRuneType().ToString() + "s"; // Pluralizes Enum (e.g., "Core" -> "Cores")
+        if (subFolder == "Systems" || subFolder == "Miscs") subFolder = "Misc"; // Keep the root system folders clean
+
+        // 4. Ensure the nested folder structure exists safely
         if (!AssetDatabase.IsValidFolder("Assets/SpellNodes"))
             AssetDatabase.CreateFolder("Assets", "SpellNodes");
 
@@ -128,7 +146,7 @@ public class MasterNodeDictionaryEditor : Editor
         if (!AssetDatabase.IsValidFolder(targetFolderPath))
             AssetDatabase.CreateFolder("Assets/SpellNodes", subFolder);
 
-        SpellNode newNode = (SpellNode)CreateInstance(nodeType);
+        // 5. Finalize the asset and save it to the hard drive
         newNode.nodeName = $"New {nodeType.Name}";
         newNode.NetworkNodeID = (ushort)newId;
 
@@ -137,9 +155,11 @@ public class MasterNodeDictionaryEditor : Editor
         AssetDatabase.CreateAsset(newNode, assetPath);
         AssetDatabase.SaveAssets();
 
+        // 6. Inject into the dictionary
         dict.BakedNodes[newId] = newNode;
         EditorUtility.SetDirty(dict);
 
+        // Highlight the new file for the designer
         EditorGUIUtility.PingObject(newNode);
         Selection.activeObject = newNode;
     }

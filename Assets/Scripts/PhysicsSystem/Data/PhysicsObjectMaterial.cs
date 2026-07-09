@@ -10,29 +10,33 @@ public class PhysicsObjectMaterial : ScriptableObject
     public string material_name;
     public PHYSICS_OBJECT_MATERIAL label;
 
-    [Header("Visuals")]
     public Material vfx_material;
     public bool casts_shadows = true;
     public Color shatter_particle_color;
-    protected static readonly int TempID = Shader.PropertyToID("_CurrentTemp");
-    protected static readonly int WetID = Shader.PropertyToID("_CurrentWetness");
+
+    protected static readonly int FrozenID = Shader.PropertyToID("_Frozen");
+    protected static readonly int HeatedID = Shader.PropertyToID("_Heated");
+    protected static readonly int BurntID = Shader.PropertyToID("_Burnt");
+    protected static readonly int GooifiedID = Shader.PropertyToID("_Gooified");
+    protected static readonly int StoneifiedID = Shader.PropertyToID("_Stoneified");
+    protected static readonly int ChargedID = Shader.PropertyToID("_Charged");
     #endregion
 
-    #region Base Material Properties (Intensive)
-    [Header("Base Physical Properties")]
-    public float density = 1.0f;
-    public float hardness = 1.0f;
-    public float elasticity = 0.0f;
-    public float brittleness = 0.1f;
-    [Range(0, 1)] public float stickiness = 0.0f;
-    [Range(0, 1)] public float friction = 0.0f;
-    #endregion
+    [Header("Core Data Profile")]
+    public MaterialData baseData;
 
-    
+    [Header("Warp Overrides")]
+    public MaterialData stoneifyOverride;
+    public MaterialData gooifyOverride;
 
-    #region 1. The Gatekeeper API (Mutations)
-    // Spells MUST call these. They cannot modify the state directly.
-    // Making these virtual allows a 'StoneMaterial' to override and ignore heat.
+    [Header("Base Evolution Rates")]
+    public float ambientCoolingRate = 5f;
+    public float naturalDryingRate = 0.05f;
+    public float warpDecayRate = 0.1f;
+
+
+
+    #region 1. For spell effects to mutate the material
 
     public virtual void MutateTemperature(ref MaterialState state, MutationType type, float value)
     {
@@ -59,10 +63,56 @@ public class PhysicsObjectMaterial : ScriptableObject
     #endregion
 
     #region 2. The Simulation Step
-    /// <summary>
-    /// Processes exactly one tick of time for this material state.
-    /// </summary>
-    public virtual void ResolveTick(int simTick, ref MaterialState state, NetworkArray<ActiveStatusEffectData> activeEffects, PhysicsObject target, NetworkedMemoryAllocator memory)
+
+    public virtual void ResolveTick(int simTick, in MaterialState prevState, ref MaterialState currentState, NetworkArray<ActiveStatusEffectData> activeEffects, PhysicsObject target, NetworkedMemoryAllocator memory)
+    {
+        float deltaTime = target.Runner.DeltaTime;
+        ProcessActiveEffects(simTick, ref currentState, activeEffects, target, memory);
+
+        // ==========================================
+        // PHASE 1: DRIVER EVOLUTION
+        // Evolve current state based on previous state
+        // ==========================================
+        float tempDelta = CalculateTemperatureDelta(in prevState, deltaTime);
+        float wetnessDelta = CalculateWetnessDelta(in prevState, deltaTime);
+        float stoneifyDelta = CalculateStoneifyDelta(in prevState, deltaTime);
+        float gooifyDelta = CalculateGooifyDelta(in prevState, deltaTime);
+
+        currentState.Temperature += tempDelta;
+        currentState.Wetness = Mathf.Clamp01(currentState.Wetness + wetnessDelta);
+        currentState.Stoneify = Mathf.Clamp01(currentState.Stoneify + stoneifyDelta);
+        currentState.Gooify = Mathf.Clamp01(currentState.Gooify + gooifyDelta);
+
+        // ==========================================
+        // PHASE 2: CONDITION EVALUATION (Chemistry)
+        // Read Previous Conditions -> Write Current Conditions
+        // ==========================================
+        ConditionAccumulator condAcc = new ConditionAccumulator();
+
+        // 1. Accumulate Base Material (Weight: 1.0)
+        if (baseData != null)
+        {
+            // We spoof 'applyWhenUsedAsWarp' to true here just for the base calculation, 
+            // ensuring the base material always calculates its conditions.
+            baseData.frozenCondition.applyWhenUsedAsWarp = true;
+            baseData.burningCondition.applyWhenUsedAsWarp = true;
+            baseData.heatedCondition.applyWhenUsedAsWarp = true;
+            baseData.conductiveCondition.applyWhenUsedAsWarp = true;
+            baseData.AccumulateConditions(ref condAcc, 1.0f, in prevState);
+        }
+
+        // 2. Accumulate Warps
+        if (currentState.Stoneify > 0f && stoneifyOverride != null) stoneifyOverride.AccumulateConditions(ref condAcc, currentState.Stoneify, in prevState);
+        if (currentState.Gooify > 0f && gooifyOverride != null) gooifyOverride.AccumulateConditions(ref condAcc, currentState.Gooify, in prevState);
+
+        // 3. Resolve and write to currentState
+        currentState.Frozen = condAcc.frozen.Resolve(0f);
+        currentState.Heated = condAcc.heated.Resolve(0f);
+        currentState.Burning = condAcc.burning.Resolve(0f);
+        currentState.Conductive = condAcc.conductive.Resolve(0f);
+    }
+
+    protected virtual void ProcessActiveEffects(int simTick, ref MaterialState currentState, NetworkArray<ActiveStatusEffectData> activeEffects, PhysicsObject target, NetworkedMemoryAllocator memory)
     {
         for (int i = 0; i < activeEffects.Length; i++)
         {
@@ -74,130 +124,116 @@ public class PhysicsObjectMaterial : ScriptableObject
 
             if (effect.IsExpired(simTick)) continue;
 
-            logic.Tick(simTick, target, memory, ref effect, ref state, this);
+            logic.Tick(simTick, target, memory, ref effect, ref currentState, this);
         }
-
-        ApplyNaturalDecay(ref state, target.Runner.DeltaTime);
     }
 
-    protected virtual void ApplyNaturalDecay(ref MaterialState state, float deltaTime)
+    #region State EVOLUTION calculates state decay / changes per tick
+    protected virtual float CalculateTemperatureDelta(in MaterialState previous, float deltaTime)
     {
-        // Example base decay: Everything slowly normalizes its temperature to 0
-        state.Temperature = Mathf.Lerp(state.Temperature, 0f, deltaTime * 0.5f);
-        state.Wetness = Mathf.Lerp(state.Wetness, 0f, deltaTime * 0.1f);
+        // Evaporative cooling: Being wet actively pulls heat out of the object
+        float evaporativeCooling = previous.Wetness > 0f ? 10f * deltaTime : 0f;
+
+        // Move towards 0 (Ambient)
+        float targetTemp = 0f;
+        float currentTemp = previous.Temperature;
+
+        float step = (ambientCoolingRate * deltaTime) + evaporativeCooling;
+        return Mathf.MoveTowards(currentTemp, targetTemp, step) - currentTemp; // Return the delta
+    }
+
+    protected virtual float CalculateWetnessDelta(in MaterialState previous, float deltaTime)
+    {
+        // Heat evaporation: High temps boil off water faster
+        float heatEvaporation = previous.Temperature > 50f ? (previous.Temperature / 50f) * deltaTime : 0f;
+
+        float step = (naturalDryingRate * deltaTime) + heatEvaporation;
+        return Mathf.MoveTowards(previous.Wetness, 0f, step) - previous.Wetness;
+    }
+
+    protected virtual float CalculateStoneifyDelta(in MaterialState previous, float deltaTime)
+    {
+        // Warps naturally decay over time unless sustained by a spell
+        return Mathf.MoveTowards(previous.Stoneify, 0f, warpDecayRate * deltaTime) - previous.Stoneify;
+    }
+
+    protected virtual float CalculateGooifyDelta(in MaterialState previous, float deltaTime)
+    {
+        return Mathf.MoveTowards(previous.Gooify, 0f, warpDecayRate * deltaTime) - previous.Gooify;
     }
     #endregion
 
-    #region 3. Layer 1 -> Layer 0 Translation
-    /// <summary>
-    /// Converts the base material properties and current magical state into raw mechanical physics values.
-    /// </summary>
-    public virtual SimProperties GetSimProperties(MaterialState state, float baseSize, float baseGravityMultiplier)
+
+
+    #region 3. Gets sim properties to pass to physics/ xpbd
+    public virtual SimProperties GetSimProperties(in MaterialState state, float baseSize, float baseGravityMultiplier)
     {
-        SimProperties sim = new SimProperties();
+        SimAccumulator acc = new SimAccumulator();
 
-        // --- 1. STATE FLAGS ---
-        // Define simple thresholds so we can easily check the object's current elemental state
-        bool isFrozen = state.Temperature < 0f;
-        bool isMelting = state.Temperature > 100f; // Arbitrary high heat threshold
-        bool isWet = state.Wetness > 0f;
+        if (baseData != null)
+        {
+            baseData.AccumulateProperties(ref acc, 1.0f, in state);
+        }
 
-        // --- 2. VOLUME & MASS ---
+        // Pushes any active Warps into the accumulator at their respective intensities
+        if (state.Stoneify > 0f && stoneifyOverride != null) stoneifyOverride.AccumulateProperties(ref acc, state.Stoneify, in state);
+        if (state.Gooify > 0f && gooifyOverride != null) gooifyOverride.AccumulateProperties(ref acc, state.Gooify, in state);
+
+        SimProperties finalProps = new SimProperties();
+
+        finalProps.Friction = Mathf.Max(0f, acc.friction.Resolve(0f));
+        finalProps.Bounce = Mathf.Clamp01(acc.restitution.Resolve(0f));
+        finalProps.Hardness = acc.hardness.Resolve(0f);
+        finalProps.Brittleness = acc.brittleness.Resolve(0f);
+        finalProps.Stickiness = Mathf.Clamp01(acc.stickiness.Resolve(0f));
+
+        float finalDensity = acc.density.Resolve(1f);
+
         float currentScale = baseSize * state.ScaleMultiplier;
-        float volume = currentScale * currentScale * currentScale; // Roughly size^3
-        float currentDensity = this.density * state.DensityMultiplier;
+        float volume = currentScale * currentScale * currentScale;
 
-        // Mass = Density * Volume. (We add water weight if it is wet, scaling with volume so giant wet objects are very heavy)
-        float waterWeight = state.Wetness * volume * 0.5f;
-        sim.Mass = Mathf.Max(0.01f, (currentDensity * volume) + waterWeight);
+        finalProps.Mass = Mathf.Max(0.01f, (finalDensity * volume) + (state.Wetness * volume * 0.5f));
+        finalProps.Scale = currentScale;
+        finalProps.GravityMultiplier = baseGravityMultiplier * state.GravityMultiplier;
+        finalProps.LinearDamping = finalProps.Hardness * 0.5f + (currentScale * 0.1f);
+        finalProps.AngularDamping = finalProps.Mass * 0.05f;
 
-        sim.Scale = currentScale;
-
-        // --- 3. FRICTION ---
-        sim.Friction = this.friction;
-        sim.Friction -= state.Lubrication;      // Grease makes it slippery
-        sim.Friction -= (state.Wetness * 0.2f); // Water makes it slightly slippery
-
-        if (isFrozen && isWet)
-        {
-            // WET + FREEZING = ICE. Massive drop in friction regardless of base material.
-            sim.Friction = 0.05f;
-        }
-        sim.Friction = Mathf.Max(0f, sim.Friction); // Cannot have negative friction
-
-        // --- 4. RESTITUTION (BOUNCE) ---
-        sim.Restitution = this.elasticity;
-        sim.Restitution += state.Rubberization; // Rubber spells make it bouncy
-
-        if (isFrozen)
-        {
-            // Frozen things thud, they don't bounce well
-            sim.Restitution *= 0.2f;
-        }
-        sim.Restitution = Mathf.Clamp01(sim.Restitution); // Keep between 0 and 1
-
-        // --- 5. HARDNESS & BRITTLENESS (Combat / Bonk Stats) ---
-        sim.Hardness = this.hardness;
-        sim.Brittleness = this.brittleness;
-
-        if (isFrozen)
-        {
-            sim.Hardness += 2f;    // Freezing makes it harder
-            sim.Brittleness += 3f; // But also shatters much easier
-        }
-        else if (isMelting)
-        {
-            sim.Hardness *= 0.5f;   // Heat softens objects
-            sim.Brittleness *= 0.1f; // Melting things don't shatter, they squish
-        }
-
-        // Rubber spells protect the object from shattering on impact
-        sim.Brittleness -= (state.Rubberization * 2f);
-        sim.Brittleness = Mathf.Max(0f, sim.Brittleness);
-
-        // --- 6. STICKINESS ---
-        sim.Stickiness = this.stickiness;
-        sim.Stickiness -= state.Lubrication; // Grease ruins stickiness
-
-        if (isMelting)
-        {
-            sim.Stickiness += 0.3f; // Partially melted objects get gummy/sticky
-        }
-
-        // Static Cling: High electrical charge creates a slight magnetic/static pull
-        sim.Stickiness += (state.Charge * 0.05f);
-        sim.Stickiness = Mathf.Clamp01(sim.Stickiness);
-
-        // --- 7. GRAVITY & DAMPING ---
-        sim.GravityMultiplier = baseGravityMultiplier * state.GravityMultiplier;
-
-        // Damping (Drag). Larger scale objects experience slightly more air resistance.
-        sim.LinearDamping = this.hardness * 0.5f + (currentScale * 0.1f);
-        sim.AngularDamping = sim.Mass * 0.05f;
-
-        return sim;
+        return finalProps;
     }
+
+    #endregion
+
     #endregion
 
     #region ApplyVisuals
     public virtual void UpdateVisuals(PhysicsObject context, VisualStateData visualState, MaterialPropertyBlock mpb, Renderer[] renderers, float deltaTime)
     {
-        // 1. Get the authoritative networked state
+        // 1. Grab the current networked physics state
         MaterialState simState = context.physicsObjectProperties.CachedNetworkState.State;
 
-        // 2. Smoothly interpolate the visual state (This data lives safely on the instance!)
-        visualState.VisualTemperature = Mathf.Lerp(visualState.VisualTemperature, simState.Temperature, deltaTime * 10f);
-        visualState.VisualWetness = Mathf.Lerp(visualState.VisualWetness, simState.Wetness, deltaTime * 10f);
+        // 2. Smoothly lerp the visual floats toward the rigid networked floats
+        // We map the "Conductive" condition to the "Charged" visual state
+        visualState.VisualFrozen = Mathf.Lerp(visualState.VisualFrozen, simState.Frozen, deltaTime * 10f);
+        visualState.VisualHeated = Mathf.Lerp(visualState.VisualHeated, simState.Heated, deltaTime * 10f);
+        visualState.VisualBurnt = Mathf.Lerp(visualState.VisualBurnt, simState.Burning, deltaTime * 10f);
+        visualState.VisualGooified = Mathf.Lerp(visualState.VisualGooified, simState.Gooify, deltaTime * 10f);
+        visualState.VisualStoneified = Mathf.Lerp(visualState.VisualStoneified, simState.Stoneify, deltaTime * 10f);
+        visualState.VisualCharged = Mathf.Lerp(visualState.VisualCharged, simState.Conductive, deltaTime * 10f);
 
-        // 3. Inject into the MPB and apply to all renderers
+        // 3. Inject into the Material Property Block and apply to all renderers
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i] == null) continue;
 
             renderers[i].GetPropertyBlock(mpb);
 
-            mpb.SetFloat(TempID, visualState.VisualTemperature);
-            mpb.SetFloat(WetID, visualState.VisualWetness);
+            // Feed the smoothed values into the shader
+            mpb.SetFloat(FrozenID, visualState.VisualFrozen);
+            mpb.SetFloat(HeatedID, visualState.VisualHeated);
+            mpb.SetFloat(BurntID, visualState.VisualBurnt);
+            mpb.SetFloat(GooifiedID, visualState.VisualGooified);
+            mpb.SetFloat(StoneifiedID, visualState.VisualStoneified);
+            mpb.SetFloat(ChargedID, visualState.VisualCharged);
 
             renderers[i].SetPropertyBlock(mpb);
         }
@@ -234,7 +270,7 @@ public struct SimProperties
     public float Mass;
     public float Scale;
     public float Friction;
-    public float Restitution; // Bounce
+    public float Bounce; // Bounce
     public float LinearDamping;
     public float AngularDamping;
     public float Brittleness;
@@ -248,8 +284,14 @@ public struct MaterialState : INetworkStruct
     public float Wetness;
     public float Charge;
 
-    public float Rubberization;
-    public float Lubrication;
+    public float Stoneify;
+    public float Gooify;
+
+    // --- NEW: Networked Conditions ---
+    public float Frozen;
+    public float Heated;
+    public float Burning;
+    public float Conductive;
 
     public float ScaleMultiplier;
     public float DensityMultiplier;
@@ -257,20 +299,35 @@ public struct MaterialState : INetworkStruct
 
     public void Reset()
     {
-        Temperature = 0f;
-        Wetness = 0f;
-        Charge = 0f;
-        Rubberization = 0f;
-        Lubrication = 0f;
-        ScaleMultiplier = 1f;
-        DensityMultiplier = 1f;
-        GravityMultiplier = 1f ;
+        Temperature = 0f; Wetness = 0f; Charge = 0f;
+        Stoneify = 0f; Gooify = 0f;
+        Frozen = 0f; Heated = 0f; Burning = 0f; Conductive = 0f;
+        ScaleMultiplier = 1f; DensityMultiplier = 1f; GravityMultiplier = 1f;
+    }
+
+    // Helper method allowing curves to seamlessly pull whatever they need
+    public float GetValue(DriverOrCondition target)
+    {
+        switch (target)
+        {
+            case DriverOrCondition.Temperature: return Temperature;
+            case DriverOrCondition.Wetness: return Wetness;
+            case DriverOrCondition.Charge: return Charge;
+            case DriverOrCondition.Frozen: return Frozen;
+            case DriverOrCondition.Heated: return Heated;
+            case DriverOrCondition.Burning: return Burning;
+            case DriverOrCondition.Conductive: return Conductive;
+            default: return 0f;
+        }
     }
 }
 
 public class VisualStateData
 {
-    public float VisualTemperature;
-    public float VisualWetness;
-    public float VisualCharge;
+    public float VisualFrozen;
+    public float VisualHeated;
+    public float VisualBurnt;
+    public float VisualGooified;
+    public float VisualStoneified;
+    public float VisualCharged;
 }

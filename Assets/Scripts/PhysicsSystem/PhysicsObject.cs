@@ -107,7 +107,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         _movementHandler = GetComponent<IMovementHandler>();
 
    
-        // Setup the visual bridge
         _renderers = GetComponentsInChildren<Renderer>();
         if (_mpb == null) _mpb = new MaterialPropertyBlock();
     
@@ -126,12 +125,8 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         _movementHandler = GetComponent<IMovementHandler>();
 
-        // 2. Setup the shaders/colors based on the material
         UpdateVisuals();
 
-        // 3. FORCE AN IMMEDIATE PHYSICS CALCULATION!
-        // This runs the rollback loop (for 0 ticks), gets the Layer 0 properties, 
-        // scales the Vector3, and applies the mass to the Rigidbody instantly.
         SimMaterialStateAndEffects();
     }
 
@@ -300,7 +295,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         {
             physicsMaterial.dynamicFriction = finalSim.Friction;
             physicsMaterial.staticFriction = finalSim.Friction;
-            physicsMaterial.bounciness = finalSim.Restitution;
+            physicsMaterial.bounciness = finalSim.Bounce;
         }
 
 
@@ -597,7 +592,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         float wall_or_floor_penalty = (other_properties == null)? 0.1f: 1.0f;
 
         return 150f * collision_impulse * hardness_factor * wall_or_floor_penalty *
-            physicsObjectProperties.brittleness /
+            physicsObjectProperties.brittleness *0.1f /
             mass;
     }
 

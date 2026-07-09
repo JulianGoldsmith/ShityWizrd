@@ -93,7 +93,8 @@ public class SpellNodeEditor : Editor
             "overrideMaterial",
             "ovverideVisualScale",
             "NetworkNodeID",
-            "NetworkStatusID");
+            "NetworkStatusID",
+            "showInSpellEditor");
 
         serializedObject.ApplyModifiedProperties();
 

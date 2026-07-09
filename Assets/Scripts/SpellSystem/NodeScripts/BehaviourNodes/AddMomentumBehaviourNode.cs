@@ -24,37 +24,29 @@ public class AddMomentumBehaviour : IBehaviour
 {
     public RuntimeFloatProperty ForceMultiplier;
 
-    public void InitTick(SpellCreatedCore core)
+    // 1. SIGNATURE UPDATE
+    public void InitTick(ISpellExecutionCore core)
     {
         float charge = core.Context.CastChargeLevel;
         Vector3 direction = core.Context.TriggerVector.normalized;
 
-        if (core.TryGetComponent<PhysicsObject>(out var po))
+        // 2. CAPABILITIES BRIDGE
+        if (core.TryGetCoreComponent<PhysicsObject>(out var po))
         {
             float calcMass = Mathf.Max(0.01f, po.physicsObjectProperties.mass);
 
-            po.ApplyForce((charge* direction * ForceMultiplier.GetValue(default)) / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
+            po.ApplyForce((charge * direction * ForceMultiplier.GetValue(default)) / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
         }
     }
 
-    public void Tick(SpellCreatedCore core, float deltaTime)
-    {
-        /*if (core.TryGetComponent<PhysicsObject>(out var po))
-        {
-            float calcMass = Mathf.Max(0.01f, po.currentProperties.mass);
+    // 1. SIGNATURE UPDATE
+    public void Tick(ISpellExecutionCore core, float deltaTime) { }
 
-            po.ApplyForce((Vector3.up * 100) / Mathf.Sqrt(calcMass), ForceMode.VelocityChange);
-        }*/
-        // Momentum is a one-shot application. We don't do anything every tick!
-    }
+    // 1. SIGNATURE UPDATE
+    public void CleanupVFX(ISpellExecutionCore core) { }
 
-    public void CleanupVFX(SpellCreatedCore core)
-    {
-    }
-    public void TickVFX(SpellCreatedCore core)
-    {
-    }
-
+    // 1. SIGNATURE UPDATE
+    public void TickVFX(ISpellExecutionCore core) { }
 }
 
 

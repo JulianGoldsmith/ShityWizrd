@@ -72,7 +72,7 @@ public class PhysicsObjectProperties : NetworkBehaviour
         debugState.Clear();
         debugState.Add($"Temp  = {CachedNetworkState.State.Temperature}");
         debugState.Add($"Wetness  = {CachedNetworkState.State.Wetness}");
-        debugState.Add($"Charge  = {CachedNetworkState.State.Charge}");
+        //debugState.Add($"Charge  = {CachedNetworkState.State.Charge}");
         debugState.Add($"Scale  = {CachedNetworkState.State.ScaleMultiplier}");
 
 
@@ -91,26 +91,28 @@ public class PhysicsObjectProperties : NetworkBehaviour
 
         // 2. THE CATCH-UP LOOP
         int ticksToSimulate = runner.Tick - CachedNetworkState.Tick;
-
         PhysicsObjectMaterial currentMaterial = physicsobjectmaterial;
 
-        // Replay only if needed
         if (ticksToSimulate > 0)
         {
-            for (int simTick = CachedNetworkState.Tick + 1;simTick <= runner.Tick; simTick++)
+            for (int simTick = CachedNetworkState.Tick + 1; simTick <= runner.Tick; simTick++)
             {
+                // Create strict previous and next buffers
+                MaterialState prevState = CachedNetworkState.State;
+                MaterialState nextState = prevState; // Start with a copy of previous
+
                 if (effectManager != null)
                 {
-                    currentMaterial.ResolveTick(simTick,ref CachedNetworkState.State,effectManager.ActiveEffects,
-                        target,memory);
+                    currentMaterial.ResolveTick(simTick, in prevState, ref nextState, effectManager.ActiveEffects, target, memory);
                 }
                 else
                 {
-                    currentMaterial.ResolveTick(simTick,ref CachedNetworkState.State,
-                        default,target,memory);
+                    currentMaterial.ResolveTick(simTick, in prevState, ref nextState, default, target, memory);
                 }
-            }
 
+                // Lock in the new state
+                CachedNetworkState.State = nextState;
+            }
             CachedNetworkState.Tick = runner.Tick;
         }
 
@@ -141,16 +143,13 @@ public class PhysicsObjectProperties : NetworkBehaviour
     #endregion
 
     #region Legacy Getters (The API Bridge)
-    // External scripts (like VFX or UI) can read these without breaking, 
-    // completely unaware that a rollback simulation is feeding them the numbers!
-
-    public float density => physicsobjectmaterial != null ? physicsobjectmaterial.density :1f;
+    public float density => physicsobjectmaterial != null && physicsobjectmaterial.baseData != null ? physicsobjectmaterial.baseData.baseProperties.Density : 1f;
 
     // Mass pulls directly from the newly calculated Layer 0 data
     public float mass => CurrentSimData.Mass > 0 ? CurrentSimData.Mass : 0.01f;
 
     public float hardness => CurrentSimData.Hardness;
-    public float elasticity => CurrentSimData.Restitution;
+    public float elasticity => CurrentSimData.Bounce;
     public float brittleness => CurrentSimData.Brittleness;
     public float stickiness => CurrentSimData.Stickiness;
     public float friction => CurrentSimData.Friction;

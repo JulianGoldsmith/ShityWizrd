@@ -164,7 +164,7 @@ public class PushPullEffect : IEffect
     public ForceMode ForceMode;
     public AnimationCurve DistanceCurve;
 
-    public void Execute(SpellCreatedCore core, List<SpellTriggerInfo> hitInfos)
+    public void Execute(ISpellExecutionCore core, List<SpellTriggerInfo> hitInfos)
     {
         foreach (var info in hitInfos)
         {

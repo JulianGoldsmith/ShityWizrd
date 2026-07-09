@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3e6355992410234faa67b9b8a3a908e, type: 3}
+  m_Name: Grow
+  m_EditorClassIdentifier: Assembly-CSharp::GenericEffectNode
+  nodeName: Grow
+  description: 
+  nodeTags: []
+  valueContainers: []
+  icon: {fileID: 2800000, guid: 1e18f85808152514d8feb2fe7228109a, type: 3}
+  overrideMesh: {fileID: 0}
+  overrideMaterial: {fileID: 0}
+  ovverideVisualScale: 1
+  NetworkNodeID: 31
+  showInSpellEditor: 1
+  casterTriggerMethod: 0
+  NetworkStatusID: 10
+  Lifecycle: 2
+  DurationTicks: 1
+  Components:
+  - Target: 5
+    Mutation: 0
+    BaseMagnitude: 0.2
+    AutoVFX: 0
+    effectsPlayerObjects: 0

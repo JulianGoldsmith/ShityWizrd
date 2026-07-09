@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class SpellCreatedCore : NetworkBehaviour
+public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 {
 
     //References to SpellGraph 
@@ -38,6 +38,18 @@ public class SpellCreatedCore : NetworkBehaviour
     private CoreExecutionPlan _myPlan;
 
     private bool _isInitialized;
+
+    public Vector3 Position => transform.position;
+    public Quaternion Rotation => transform.rotation;
+    public PlayerRef InputAuthority => Object.InputAuthority;
+
+    public GameObject SourceObject => gameObject;
+
+    public NetworkId CoreNetworkId => Object != null ? Object.Id : default;
+    public bool TryGetCoreComponent<T>(out T component) where T : class
+    {
+        return TryGetComponent<T>(out component);
+    }
 
     public override void Spawned()
     {
