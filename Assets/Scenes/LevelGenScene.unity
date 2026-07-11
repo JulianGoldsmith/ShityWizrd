@@ -6561,7 +6561,66 @@ MonoBehaviour:
   - {fileID: 1056853931}
   - {fileID: 1056853930}
   - {fileID: 1056853932}
+  - {fileID: 1056853939}
+  - {fileID: 1056853938}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &1056853938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1056853924}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  defaultGravityScale: 1
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  tPO: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
+  physicsSubObjects: []
+  _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1056853939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1056853924}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
 --- !u!1001 &1060422777
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7021,7 +7080,66 @@ MonoBehaviour:
   - {fileID: 1315371873}
   - {fileID: 1315371872}
   - {fileID: 1315371874}
+  - {fileID: 1315371881}
+  - {fileID: 1315371880}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &1315371880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1315371866}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  defaultGravityScale: 1
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  tPO: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
+  physicsSubObjects: []
+  _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1315371881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1315371866}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
 --- !u!1 &1324092239
 GameObject:
   m_ObjectHideFlags: 0
@@ -11334,7 +11452,66 @@ MonoBehaviour:
   - {fileID: 2075920575}
   - {fileID: 2075920574}
   - {fileID: 2075920576}
+  - {fileID: 2075920583}
+  - {fileID: 2075920582}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &2075920582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075920568}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  defaultGravityScale: 1
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  tPO: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  objectMaterial: {fileID: 0}
+  physicsSubObjects: []
+  _current_bonkedness: 0
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
+  OnZeroBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRecoverFromBonk_event:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &2075920583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075920568}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 0
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
 --- !u!1 &2079932203
 GameObject:
   m_ObjectHideFlags: 0
@@ -11886,6 +12063,10 @@ PrefabInstance:
       propertyPath: SortKey
       value: 1457454144
       objectReference: {fileID: 0}
+    - target: {fileID: 5367763451751236983, guid: 0c7d9fbe5c0d35748a058bf3856d18f7, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6429616436477943452, guid: 0c7d9fbe5c0d35748a058bf3856d18f7, type: 3}
       propertyPath: m_LocalPosition.x
       value: 10.14
@@ -11990,6 +12171,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1604012787256175901, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1734529907115670248, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       propertyPath: m_Layer
       value: 18
@@ -12222,6 +12407,14 @@ PrefabInstance:
       propertyPath: posAndRotSolver
       value: 
       objectReference: {fileID: 714877585}
+    - target: {fileID: 4108646796658362397, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4301945639742613977, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4500481752180423999, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       propertyPath: m_Name
       value: Target
@@ -12316,6 +12509,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8565161702506997383, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1315371875}
+    - targetCorrespondingSourceObject: {fileID: 8565161702506997383, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1315371881}
+    - targetCorrespondingSourceObject: {fileID: 8565161702506997383, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1315371880}
     - targetCorrespondingSourceObject: {fileID: 1734529907115670248, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1056853931}
@@ -12328,6 +12527,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1734529907115670248, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1056853933}
+    - targetCorrespondingSourceObject: {fileID: 1734529907115670248, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1056853939}
+    - targetCorrespondingSourceObject: {fileID: 1734529907115670248, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1056853938}
     - targetCorrespondingSourceObject: {fileID: 2040391503927402134, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2075920575}
@@ -12340,6 +12545,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2040391503927402134, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2075920577}
+    - targetCorrespondingSourceObject: {fileID: 2040391503927402134, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2075920583}
+    - targetCorrespondingSourceObject: {fileID: 2040391503927402134, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2075920582}
   m_SourcePrefab: {fileID: 100100000, guid: 21059682ae3f6d545ac7bf262736f2ec, type: 3}
 --- !u!4 &2145501634 stripped
 Transform:

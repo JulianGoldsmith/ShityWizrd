@@ -479,67 +479,78 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
     void UpdateAnimator(bool isSim)
     {
-        
         if (netAnimator == null) return;
-        
 
-        Vector3 flatVel = isSim ? hipsRb.linearVelocity : renderedVelocity;
-        flatVel.y = 0f;
-        if (flatVel.magnitude < 0.05f)
-            flatVel = Vector3.zero;
+        // 1. Get the Raw Physics Reality
+        Vector3 physicalVel = isSim ? hipsRb.linearVelocity : renderedVelocity;
+        physicalVel.y = 0f;
 
+        // 2. Get the Intended Movement (The perfect, snappy input)
+        Vector2 rawInput = moveInput;
+        float targetSpeed = sprint ? maxSprintSpeed : maxWalkSpeed;
+
+        // Calculate the world-space intended velocity based on where we are looking
         Quaternion rot = isSim ? hipsRb.transform.rotation : networkedRenderRoot.transform.rotation;
-
         Vector3 flatForward = Vector3.ProjectOnPlane(rot * Vector3.forward, Vector3.up).normalized;
         Vector3 flatRight = Vector3.Cross(Vector3.up, flatForward);
 
-        float forwardSpeed = Vector3.Dot(flatVel, flatForward);
-        float rightSpeed = Vector3.Dot(flatVel, flatRight);
+        Vector3 intendedVel = (flatForward * rawInput.y + flatRight * rawInput.x) * targetSpeed;
 
-        float targetForward = forwardSpeed / (maxWalkSpeed * 2f);
-        float targetRight = rightSpeed / (maxWalkSpeed * 2f);
+        // 3. THE HYBRID GATE: Compare Intent vs Reality
+        Vector3 finalAnimVelocity = Vector3.zero;
 
-        //if (Object.IsProxy)
-        //Debug.Log($"rendererVelocity x {rightSpeed} y {forwardSpeed} pos {networkedRenderRoot.position}");
+        // How far off is our physics from our input?
+        float velocityError = Vector3.Distance(intendedVel, physicalVel);
+
+        // If the error is massive (e.g., shoved sideways, or running into a brick wall)
+        // we let physics take over the animation.
+        float physicsOverrideThreshold = 1.5f;
+
+        if (velocityError > physicsOverrideThreshold)
+        {
+            // Reality wins (Stumbling, hitting walls, getting pushed)
+            finalAnimVelocity = physicalVel;
+        }
+        else
+        {
+            // Intent wins (Smooth, perfect walking)
+            // Note: We clamp the intended magnitude by the physical magnitude 
+            // so we don't "moonwalk" at full speed if we are pushing against a friend.
+            float clampedMagnitude = Mathf.Min(intendedVel.magnitude, physicalVel.magnitude * 1.2f);
+            finalAnimVelocity = intendedVel.normalized * clampedMagnitude;
+        }
+
+        if (finalAnimVelocity.magnitude < 0.05f) finalAnimVelocity = Vector3.zero;
+
+        // 4. Calculate Animator Parameters
+        float forwardSpeed = Vector3.Dot(finalAnimVelocity, flatForward);
+        float rightSpeed = Vector3.Dot(finalAnimVelocity, flatRight);
+
+        // Normalize to 0-1 based on Max Walk Speed
+        float targetForward = Mathf.Clamp(forwardSpeed / (maxWalkSpeed * 2), -2f, 2f);
+        float targetRight = Mathf.Clamp(rightSpeed / (maxWalkSpeed *2), -2f, 2f);
+
+        // 5. Apply to Animator
         if (isSim)
         {
             netAnimator.SetSimFloat("VelocityY", targetForward);
             netAnimator.SetSimFloat("VelocityX", targetRight);
-
             netAnimator.SetSimBool("IsGrounded", IsGrounded);
             netAnimator.SetSimFloat("VerticalVelocity", hipsRb.linearVelocity.y);
 
             netAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRotout, out Vector3 rmAbsPos, out Quaternion rmAbsRot);
-
-            //armatureRetargeter.animatedHipRootMotion = rmDeltaPos / Runner.DeltaTime;
         }
         else
         {
             netAnimator.SetRenderFloat("VelocityY", targetForward, 0.05f, Time.deltaTime);
             netAnimator.SetRenderFloat("VelocityX", targetRight, 0.05f, Time.deltaTime);
-
             netAnimator.SetRenderBool("IsGrounded", IsGrounded);
             netAnimator.SetRenderFloat("VerticalVelocity", renderedVelocity.y, 0.05f, Time.deltaTime);
 
             netAnimator.UpdateVisualAnimator(out Vector3 visualRmOffset, out Quaternion visualRmRot);
-
-            if (armatureRetargeter != null)
-            {
-                armatureRetargeter.animatedHipRootMotion = visualRmOffset;
-            }
         }
 
-
         UpdateAnimatorPos(isSim);
-
-        /*if (retargeter != null)
-        {
-            retargeter.animatedHipRootMotion = (new Vector3(armatureHipsRoot.transform.localPosition.x,
-                armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z) - armatureHipsStartOffset) * 0.01f;
-            retargeter.animatedHipRotation = armatureHipsRoot.transform.localRotation;
-        }*/
-
-        //armatureRetargeter.SetRagdollBlend(armatureRetargetingLerp);
     }
 
     void UpdateAnimatorPos(bool isSim)
