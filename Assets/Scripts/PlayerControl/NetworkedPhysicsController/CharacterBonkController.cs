@@ -20,7 +20,8 @@ public class CharacterBonkController : NetworkBehaviour
     public override void Spawned()
     {
         characterController = this.GetComponent<HybridCharacterController>();
-        ragDollSolver = characterController.xpbdJointSolver;
+        if(ragDollSolver == null)
+            ragDollSolver = characterController.xpbdJointSolver;
         EvaluateRagdollState();
     }
 

@@ -47,7 +47,7 @@ public class HitBoxCastNode : CasterNode
             castController.gameObject, 
             state,
             hitPoint,                  
-            Quaternion.LookRotation(castController.GetForward()),
+            Quaternion.LookRotation(castController.GetSpellCastDir()),
             swingMomentum, // will need changing to the hit direction/ momentum/ some calculation for hit direction
             hitObject              
         );

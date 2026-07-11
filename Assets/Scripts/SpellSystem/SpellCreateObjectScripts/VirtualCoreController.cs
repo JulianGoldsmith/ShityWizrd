@@ -23,8 +23,8 @@ public class VirtualCoreContext : ISpellExecutionCore
 
     public Dictionary<int, GameObject> ActiveVisuals { get; } = new Dictionary<int, GameObject>();
 
-    public Vector3 Position => Controller.CAC.GetAimOrigin();
-    public Quaternion Rotation => Quaternion.LookRotation(Controller.CAC.GetAimDir());
+    public Vector3 Position => Controller.CAC.GetSpellCastPoint();
+    public Quaternion Rotation => Quaternion.LookRotation(Controller.CAC.GetSpellCastDir());
 
     public NetworkRunner Runner => Controller.Runner;
     public PlayerRef InputAuthority => Controller.Object.InputAuthority;

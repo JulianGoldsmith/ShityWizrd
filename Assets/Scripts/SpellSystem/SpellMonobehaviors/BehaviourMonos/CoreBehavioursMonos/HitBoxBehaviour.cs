@@ -117,7 +117,7 @@ public class HitBoxBehaviour : MonoBehaviour
         else if (_npcCaster != null)
         {
             // OLD PATH: Tell the NPC Controller
-            _npcCaster.OnItemHit(_activeSpellState, hitObject, hitPoint, swingMomentum);
+            //_npcCaster.OnItemHit(_activeSpellState, hitObject, hitPoint, swingMomentum);
         }
     }
 }

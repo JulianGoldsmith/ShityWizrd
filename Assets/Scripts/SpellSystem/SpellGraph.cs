@@ -86,7 +86,7 @@ public class SpellGraph : ScriptableObject
             state: state,
             position: state.CastPosition,
             rotation: state.CastRotation,
-            triggerVector: caster.GetForward(),
+            triggerVector: caster.GetSpellCastDir(),
             hitObject: caster.gameObject
         );
         triggerInfo.State.CastAimTargetPos = caster.GetAimTarget();

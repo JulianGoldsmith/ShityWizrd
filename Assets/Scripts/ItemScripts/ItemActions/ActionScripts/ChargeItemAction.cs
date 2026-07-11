@@ -45,8 +45,8 @@ public class ChargeItemAction : ItemAction
 
         Item.EnterNewPhaseAtTick((int)Phase.Release, Item.Runner.Tick, comboIndex);
 
-        Item.activeCaster.SetCoolDown(cooldown);
-        Item.activeCaster.StartComboTimer(comboWindow);
+       // Item.activeCaster.SetCoolDown(cooldown);
+       // Item.activeCaster.StartComboTimer(comboWindow);
 
         
 
@@ -119,7 +119,7 @@ public class ChargeItemAction : ItemAction
         EyePosAndLookDir eyeInfo = controller.GetEyePosAndLookDir();
 
         Vector3 spawnPosition = eyeInfo.EyePosition + (eyeInfo.Forward * 1f);
-        Quaternion spawnRotation = Quaternion.LookRotation(controller.GetForward());
+        Quaternion spawnRotation = Quaternion.LookRotation(controller.GetSpellCastDir());
 
         var triggerInfo = new SpellTriggerInfo(
             true,
@@ -127,7 +127,7 @@ public class ChargeItemAction : ItemAction
             state,
             spawnPosition,
             spawnRotation,
-            controller.GetForward() * state.CastChargeLevel,
+            controller.GetSpellCastDir() * state.CastChargeLevel,
             controller.gameObject
         );
         triggerInfo.State.CastAimTargetPos = controller.GetAimTarget();

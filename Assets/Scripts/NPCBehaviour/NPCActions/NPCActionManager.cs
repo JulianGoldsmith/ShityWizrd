@@ -17,6 +17,8 @@ public class NPCActionManager : CastActionController
     public List<NPCAction> actionTemplates = new List<NPCAction>();
     private List<NPCAction> _runtimeActions = new List<NPCAction>();
 
+    public List<Vector3> spellCastPoints = new List<Vector3>();
+
     [Tooltip("Hitboxes for melee actions")]
     public List<HitBoxBehaviour> hitboxes = new List<HitBoxBehaviour>();
 
@@ -24,13 +26,11 @@ public class NPCActionManager : CastActionController
     [Networked] public NetworkNPCActionData ActionData { get; set; }
     [Networked] public ActiveCastID CurrentCastID { get; set; }
 
-
-
     public override void Spawned()
     {
         base.Spawned(); // This initializes CastTracker in the base class!
 
-        if(networkAnimator==null) networkAnimator = GetComponent<NetworkAnimator>();
+        if (networkAnimator == null) networkAnimator = GetComponent<NetworkAnimator>();
         if (movementManager == null) movementManager = GetComponent<NPCMovementManager>();
         if (aggroController == null) aggroController = GetComponent<NPCAggroController>();
         if (networkObjectBuffer == null) networkObjectBuffer = GetComponent<NetworkObjectBuffer>();
@@ -52,38 +52,27 @@ public class NPCActionManager : CastActionController
             runtimeInstance.InitializeRuntime(this, i);
             _runtimeActions.Add(runtimeInstance);
         }
+
+        // (Note: Static Spell Hydration Logic remains exactly as you had it!)
         foreach (var action in _runtimeActions)
         {
             if (action is NPCChargeSpellAction spellAction)
             {
                 SpellGraphId staticId = new SpellGraphId(PlayerRef.None, spellAction.staticSpellIndex + 1);
                 SpellGraph graph = SpellStateManager.instance.GetSpellGraph(staticId);
-
-                if (graph != null && networkObjectBuffer != null)
-                {
-                    networkObjectBuffer.Initialise(graph);
-                    Debug.Log($"[NPC] Hydrated Buffer for static spell {spellAction.staticSpellIndex}");
-                }
+                if (graph != null && networkObjectBuffer != null) networkObjectBuffer.Initialise(graph);
             }
-            else
-            if (action is NPCChargeAndJumpSpellAction spellAction2)
+            else if (action is NPCChargeAndJumpSpellAction spellAction2)
             {
                 SpellGraphId staticId = new SpellGraphId(PlayerRef.None, spellAction2.staticSpellIndex + 1);
                 SpellGraph graph = SpellStateManager.instance.GetSpellGraph(staticId);
-
-                if (graph != null && networkObjectBuffer != null)
-                {
-                    networkObjectBuffer.Initialise(graph);
-                    Debug.Log($"[NPC] Hydrated Buffer for static spell {spellAction2.staticSpellIndex}");
-                }
+                if (graph != null && networkObjectBuffer != null) networkObjectBuffer.Initialise(graph);
             }
         }
     }
 
-    public void Tick()
+    public override void FixedUpdateNetwork()
     {
-        base.FixedUpdateNetwork(); // Runs SimulateCasting in the base class (updates active casts!)
-
         // If we are currently executing an action, tick it!
         if (ActionData.actionID != -1 && ActionData.actionID < _runtimeActions.Count)
         {
@@ -96,9 +85,16 @@ public class NPCActionManager : CastActionController
         }
     }
 
-    public override void FixedUpdateNetwork()
+    public void Tick()
     {
-        
+        if (ActionData.actionID != -1 && ActionData.actionID < _runtimeActions.Count)
+        {
+            NPCAction activeAction = _runtimeActions[ActionData.actionID];
+            if (activeAction != null)
+            {
+                activeAction.Tick(ActionData.actionID, Runner.DeltaTime);
+            }
+        }
     }
 
     // ==========================================
@@ -110,7 +106,6 @@ public class NPCActionManager : CastActionController
         if (isCasting) return;
         if (actionID < 0 || actionID >= _runtimeActions.Count || _runtimeActions[actionID] == null) return;
 
-        // 1. Update the Networked Struct 
         if (HasStateAuthority)
         {
             ActionData = new NetworkNPCActionData
@@ -123,16 +118,7 @@ public class NPCActionManager : CastActionController
             };
         }
 
-        // Keep the base class informed so it doesn't try to double-cast
         isCasting = true;
-
-        // 2. Trigger the Visual Animation 
-        if (networkAnimator != null)
-        {
-            //networkAnimator.SetTrigger("Attack_" + actionID);
-        }
-
-        // 3. Let the specific Action Brain initialize
         _runtimeActions[actionID].OnStart(actionID);
     }
 
@@ -141,8 +127,6 @@ public class NPCActionManager : CastActionController
         if (!isCasting) return;
 
         int currentID = ActionData.actionID;
-
-        // Tell the Action Brain to clean up
         if (currentID >= 0 && currentID < _runtimeActions.Count && _runtimeActions[currentID] != null)
         {
             _runtimeActions[currentID].OnEnd(currentID);
@@ -150,6 +134,11 @@ public class NPCActionManager : CastActionController
 
         ClearActionState();
         isCasting = false;
+    }
+
+    public override void EndCast()
+    {
+        EndCurrentAction();
     }
 
     public void ClearActionState()
@@ -168,7 +157,7 @@ public class NPCActionManager : CastActionController
     }
 
     // ==========================================
-    // BASE CLASS IMPLEMENTATIONS
+    // THE SPATIAL CONTRACT (Fulfilling the Base)
     // ==========================================
 
     public override Vector3 GetAimTarget()
@@ -191,11 +180,15 @@ public class NPCActionManager : CastActionController
 
     public override Vector3 GetSpellCastPoint()
     {
-        if (spellCastPoints.Count <= 0) return activeRagdollController.coreRB.transform.position;
+        if (spellCastPoints != null && spellCastPoints.Count > 0)
+            return activeRagdollController.coreRB.transform.position + activeRagdollController.coreRB.transform.TransformDirection(spellCastPoints[0]);
 
-        return activeRagdollController.coreRB.transform.position + 
-            activeRagdollController.coreRB.transform.TransformDirection(spellCastPoints[0]);
+        return activeRagdollController.coreRB.transform.position;
     }
+
+    // ==========================================
+    // THE HARDWARE CONTRACT (Hitboxes)
+    // ==========================================
 
     public override void ActivateHitbox(int hitBoxID, SpellState state)
     {

@@ -43,8 +43,8 @@ public class MeeleItemAction : ItemAction
 
         Item.EnterNewPhaseAtTick((int)Phase.Release, Item.Runner.Tick, comboIndex);
 
-        Item.activeCaster.SetCoolDown(cooldown);
-        Item.activeCaster.StartComboTimer(comboWindow);
+        //Item.activeCaster.SetCoolDown(cooldown);
+        //Item.activeCaster.StartComboTimer(comboWindow);
 
     }
 
@@ -133,7 +133,7 @@ public class MeeleItemAction : ItemAction
         SpellGraph graph = Item.primaryActionSpell;
 
         Vector3 spawnPosition = Item.projectileSpawnPoint.position;
-        Quaternion spawnRotation = Quaternion.LookRotation(controller.GetForward());
+        Quaternion spawnRotation = Quaternion.LookRotation(controller.GetSpellCastDir());
 
         var triggerInfo = new SpellTriggerInfo(
             true,
@@ -141,7 +141,7 @@ public class MeeleItemAction : ItemAction
             state,
             spawnPosition,
             spawnRotation,
-            controller.GetForward() * state.CastChargeLevel,
+            controller.GetSpellCastDir() * state.CastChargeLevel,
             controller.gameObject
         );
         triggerInfo.State.CastAimTargetPos = controller.GetAimTarget();

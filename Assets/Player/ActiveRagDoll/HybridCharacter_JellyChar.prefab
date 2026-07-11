@@ -2794,7 +2794,7 @@ MonoBehaviour:
   maxSprintSpeed: 4.5
   acceleration: 2
   braking: 10
-  jumpForce: 5
+  jumpForce: 15
   turnStrength: 100
   turnDamping: 15
   turnBufferCurve:
@@ -3583,17 +3583,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b2ec359664fd9349b89e543c4ad7373, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inventory: {fileID: 3351947955755336054}
   isCasting: 0
-  isUpperBodyAction: 0
-  currentAttackCooldown: 0
-  primaryComboCounter: 0
-  comboTimer: 0
-  primaryAttackBuffered: 0
-  primaryAttackReleaseBuffered: 0
-  _nextActionId: 0
   _TotalSpellCasts: 0
-  spellCastPoints: []
+  inventory: {fileID: 3351947955755336054}
 --- !u!114 &5532856637667607981
 MonoBehaviour:
   m_ObjectHideFlags: 0

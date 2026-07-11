@@ -32,14 +32,20 @@ public class CharacterCustomization : NetworkBehaviour
         {
             IsHost = Object.HasInputAuthority;
         }
+        
+
         if (HasInputAuthority && !boolShowApparelOnLocalPlayer)
         {
-            modelRenderer.enabled = false;
             //robeRenderer.enabled = false;
-            foreach(var appa in apparel)
+            modelRenderer.enabled = false;
+            foreach (var appa in apparel)
             {
                 appa.enabled = false;
             }
+        }
+        else if (HasInputAuthority)
+        {
+            modelRenderer.enabled = false;
         }
         OnAppearanceStateChanged();
     }

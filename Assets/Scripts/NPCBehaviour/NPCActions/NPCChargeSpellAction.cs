@@ -143,7 +143,7 @@ public class NPCChargeSpellAction : NPCAction
 
 
         Vector3 spawnPosition = Manager.GetSpellCastPoint();
-        Quaternion spawnRotation = Quaternion.LookRotation(Manager.GetForward());
+        Quaternion spawnRotation = Quaternion.LookRotation(Manager.GetSpellCastDir());
 
         var triggerInfo = new SpellTriggerInfo(
             isCast: true,
@@ -151,7 +151,7 @@ public class NPCChargeSpellAction : NPCAction
             state: state,
             position: spawnPosition,
             rotation: spawnRotation,
-            triggerVector: Manager.GetForward() * state.CastChargeLevel,
+            triggerVector: Manager.GetSpellCastDir() * state.CastChargeLevel,
             hitObject: Manager.gameObject
         );
 

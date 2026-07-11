@@ -86,7 +86,7 @@ public class ChannelItemAction : ItemAction
             CoreContext context = new CoreContext()
             {
                 SpawnPosition = Item.projectileSpawnPoint != null ? Item.projectileSpawnPoint.position : Item.activeCaster.transform.position,
-                TriggerVector = Item.activeCaster.GetForward(),
+                TriggerVector = Item.activeCaster.GetSpellCastDir(),
                 CastChargeLevel = 1f,
                 OriginalCaster = Item.activeCaster.Object.Id,
                 AliveTime = 0f
