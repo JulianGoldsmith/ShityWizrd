@@ -23,8 +23,8 @@ public class CollisionEnterNode : TriggerNode
             Filters = this.filterNodes.ToArray(),
 
             VfxDictionaryId = vfxId,
-            VfxContext = this.vfx_context,
-            VfxModType = this.default_vfx_modifier_type
+            //VfxContext = this.vfx_context,
+            //VfxModType = this.default_vfx_modifier_type
         };
     }
 

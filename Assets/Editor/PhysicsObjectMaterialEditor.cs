@@ -12,7 +12,11 @@ public class PhysicsObjectMaterialEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Identity", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("material_name"));
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("label"));
+
+        // --- NEW: Display the Network ID as read-only ---
+        GUI.enabled = false;
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("NetworkMaterialID"), new GUIContent("Network ID"));
+        GUI.enabled = true;
 
         EditorGUILayout.Space(10);
 
@@ -38,16 +42,14 @@ public class PhysicsObjectMaterialEditor : Editor
 
         EditorGUILayout.Space(10);
 
-        EditorGUILayout.LabelField("Visuals (Legacy Testing)", EditorStyles.boldLabel);
-        EditorGUILayout.HelpBox("These fields exist temporarily on the housing to preserve dependencies.", MessageType.Info);
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("vfx_material"));
+        EditorGUILayout.LabelField("Visuals", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("visual_material"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("casts_shadows"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("shatter_particle_color"));
 
         serializedObject.ApplyModifiedProperties();
     }
 
-    // Safely draw warp override slots even if the variables haven't been added to the script yet
     private void DrawSafeSlot(string propertyName, string label)
     {
         SerializedProperty prop = serializedObject.FindProperty(propertyName);

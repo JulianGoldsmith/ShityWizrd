@@ -13,6 +13,9 @@ public abstract class EffectNode : SpellNode
     [Header("Execution Settings")]
     public EffectLifecycle Lifecycle = EffectLifecycle.Duration;
 
+    [Header("VFX Taxonomy")]
+    public VFXTheme Theme = VFXTheme.Fallback;
+
     public abstract override IRuntimeNode CompileNode(SpellCompilationContext context);
     public abstract void Execute( List<SpellTriggerInfo> triggerInfo);
 

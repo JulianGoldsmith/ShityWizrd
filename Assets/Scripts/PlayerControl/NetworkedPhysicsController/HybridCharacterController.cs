@@ -548,9 +548,20 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             netAnimator.SetRenderFloat("VerticalVelocity", renderedVelocity.y, 0.05f, Time.deltaTime);
 
             netAnimator.UpdateVisualAnimator(out Vector3 visualRmOffset, out Quaternion visualRmRot);
+
+            // ---> MISSING CODE RESTORED HERE <---
+            if (armatureRetargeter != null && armatureRetargeter.readRootMotion)
+            {
+                armatureRetargeter.animatedHipRootMotion = visualRmOffset;
+                armatureRetargeter.animatedHipRotation = visualRmRot;
+            }
         }
 
         UpdateAnimatorPos(isSim);
+
+
+
+        
     }
 
     void UpdateAnimatorPos(bool isSim)

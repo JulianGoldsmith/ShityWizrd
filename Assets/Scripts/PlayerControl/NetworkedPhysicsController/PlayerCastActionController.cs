@@ -9,10 +9,15 @@ public class PlayerCastActionController : CastActionController
     [Networked] NetworkButtons prior_buttons { get; set; }
     [Networked] Quaternion lookDirection { get; set; }
 
+    public Vector3 castPointOffset;
+
+    private HybridCharacterController hcc;
+
     public override void Spawned()
     {
         base.Spawned();
         if (inventory == null) inventory = GetComponent<NetworkedInventoryManager>();
+        if (hcc == null) hcc = GetComponent<HybridCharacterController>();
     }
 
     public override void FixedUpdateNetwork()
@@ -75,10 +80,10 @@ public class PlayerCastActionController : CastActionController
 
     public override Vector3 GetSpellCastPoint()
     {
-        return GetComponent<HybridCharacterController>().hipsRb.transform.position;
+        return hcc.hipsRb.transform.position + (hcc.lookRot * castPointOffset);
     }
 
-    public virtual Vector3 GetSpellCastDir()
+    public override Vector3 GetSpellCastDir()
     {
         return GetComponent<HybridCharacterController>().GetEyePosAndLookDir().Forward;
     }

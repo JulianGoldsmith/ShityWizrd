@@ -178,3 +178,11 @@ public class RuntimeFloatProperty : IRuntimeDataProperty
         return finalValue * multiplyAgg;
     }
 }
+
+public struct RuntimeVFXPlan
+{
+    public int VfxDictionaryId;
+    public VFXTheme Theme;
+    public VFXTopology Topology;
+    public VFXLifecycle Lifecycle;
+}

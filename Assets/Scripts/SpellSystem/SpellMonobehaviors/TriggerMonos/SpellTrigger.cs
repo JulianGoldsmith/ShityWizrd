@@ -10,13 +10,13 @@ public abstract class SpellTrigger : MonoBehaviour
     public virtual void OnAttach(TriggerNode node, float _size = 1) 
     {
         // override the vfx modifier type based on spell, at some point.
-        GameObject vfx = SpellSystemHelpers.CreateVFX(
+        /*GameObject vfx = SpellSystemHelpers.CreateVFX(
             node.vfx_context, 
             node.default_vfx_modifier_type, 
             transform, 
             _size, 
             true
-        );
+        );*/
     }
     public virtual void OnTick() { }
 }

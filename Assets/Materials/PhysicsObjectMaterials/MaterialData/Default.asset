@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WarpMaterial
   baseProperties:
     Density: 1
-    Friction: 0.5
+    Friction: 0.2
     Restitution: 0
     Hardness: 1
     Brittleness: 0.5
@@ -22,7 +22,7 @@ MonoBehaviour:
   frozenCondition:
     applyWhenUsedAsWarp: 1
     targetDriver: 1
-    beginThreshold: 0
+    beginThreshold: -5
     completeThreshold: -20
     transitionCurve:
       serializedVersion: 2
@@ -87,7 +87,7 @@ MonoBehaviour:
       m_RotationOrder: 4
   useHeatedBlock: 1
   heatedProperties:
-    Density: 0.43
+    Density: 1
     Friction: 0.5
     Restitution: 0
     Hardness: 1
@@ -167,6 +167,6 @@ MonoBehaviour:
     Hardness: 0
     Brittleness: 0
     Stickiness: 0
-  vfx_material: {fileID: -876546973899608171, guid: 1e1b7ab91ce1a9540bea233274891583, type: 3}
+  visual_material: {fileID: 0}
   casts_shadows: 1
   shatter_particle_color: {r: 1, g: 1, b: 1, a: 0}

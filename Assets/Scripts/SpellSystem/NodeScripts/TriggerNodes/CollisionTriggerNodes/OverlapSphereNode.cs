@@ -18,20 +18,30 @@ public class OverlapSphereNode : TriggerNode
     {
         // 2. Claim our single memory slot to track when this sphere was born
         int startTickSlot = context.ClaimIntSlot();
+
+        List<RuntimeVFXPlan> vfxPlans = new List<RuntimeVFXPlan>();
+        List<VFXTheme> discoveredThemes = GetDownstreamThemes(context);
+        foreach (var theme in discoveredThemes)
+        {
+            vfxPlans.Add(new RuntimeVFXPlan()
+            {
+                VfxDictionaryId = context.ClaimVFXId(),
+                Theme = theme,
+                Topology = this.Topology,
+                Lifecycle = this.Lifecycle
+            });
+        }
+
         int vfxId = context.ClaimVFXId();
 
-        // 3. Return the pure C# trigger. 
-        // Note: The base TriggerNode will automatically attach the Plan/Effects to this!
         return new OverlapSphereTrigger()
         {
             Radius = new RuntimeFloatProperty(this.radius),
             TickDuration = tickDuration,
             StartTickMemoryIndex = startTickSlot,
-            Filters = this.filterNodes.ToArray(), // Hand the filters directly to the stateless object
+            Filters = this.filterNodes.ToArray(),
 
-            VfxDictionaryId = vfxId,
-            VfxContext = this.vfx_context,
-            VfxModType = this.default_vfx_modifier_type
+            VfxPlans = vfxPlans
         };
     }
 
@@ -49,11 +59,8 @@ public class OverlapSphereTrigger : RuntimeTriggerBase
 
     public FilterNode[] Filters;
 
-    public int VfxDictionaryId;
-    public VFXContext VfxContext;
-    public ModifierType VfxModType;
+    public List<RuntimeVFXPlan> VfxPlans;
 
-    // 1. SIGNATURE UPDATE
     public override void InitTick(ISpellExecutionCore core)
     {
         core.SetInt(StartTickMemoryIndex, core.Runner.Tick);
@@ -61,7 +68,6 @@ public class OverlapSphereTrigger : RuntimeTriggerBase
 
     private Collider[] _overlapResults = new Collider[64];
 
-    // 1. SIGNATURE UPDATE
     public override bool Tick(ISpellExecutionCore core, float deltaTime, out List<SpellTriggerInfo> hitInfos)
     {
         hitInfos = new List<SpellTriggerInfo>();
@@ -132,50 +138,77 @@ public class OverlapSphereTrigger : RuntimeTriggerBase
         return hitInfos.Count > 0;
     }
 
-    // 1. SIGNATURE UPDATE
     public override void TickVFX(ISpellExecutionCore core)
     {
-        if (VfxContext == null) return;
+        if (VfxPlans == null || VfxPlans.Count == 0) return;
 
-        // 5. CAPABILITIES BRIDGE (Only physical cores use ActiveVisuals dict)
-        if (core.TryGetCoreComponent<SpellCreatedCore>(out var physicalCore))
+        bool shouldBeActive = true;
+        int startTick = core.GetInt(StartTickMemoryIndex);
+
+        if (TickDuration > 0 && (core.Runner.Tick - startTick) >= TickDuration)
         {
-            bool shouldBeActive = false;
+            shouldBeActive = false;
+        }
 
-            if (physicalCore.IsActiveInBuffer)
-            {
-                int startTick = core.GetInt(StartTickMemoryIndex);
+        float currentRadius = Radius.GetValue(default);
+        Vector3 currentPos = core.Position;
+        Quaternion currentRot = core.Rotation;
 
-                if (TickDuration == 0 || (core.Runner.Tick - startTick) < TickDuration)
-                {
-                    shouldBeActive = true;
-                }
-            }
-
-            bool currentlyExists = physicalCore.ActiveVisuals.TryGetValue(VfxDictionaryId, out GameObject currentVfx);
+        foreach (var plan in VfxPlans)
+        {
+            bool currentlyExists = core.ActiveVisuals.TryGetValue(plan.VfxDictionaryId, out GameObject currentVfx);
 
             if (shouldBeActive && !currentlyExists)
             {
-                GameObject newVfx = SpellSystemHelpers.CreateVFX(VfxContext, VfxModType, physicalCore.transform, Radius.GetValue(default), true);
-                if (newVfx != null) physicalCore.ActiveVisuals[VfxDictionaryId] = newVfx;
+                var vfxData = VFXRegistry.GetVFX(plan.Theme, plan.Topology, plan.Lifecycle);
+
+                if (vfxData.prefab != null)
+                {
+                    GameObject newVfx = GameObject.Instantiate(vfxData.prefab, currentPos, currentRot, null);
+
+                    if (newVfx.TryGetComponent<SpellVFX>(out var vfxController))
+                    {
+                        vfxController.Initialize(vfxData.tint);
+                        vfxController.UpdateSpatialData(currentRadius, 1.0f, currentPos, currentPos);
+                    }
+
+                    core.ActiveVisuals[plan.VfxDictionaryId] = newVfx;
+                }
+            }
+            else if (shouldBeActive && currentlyExists)
+            {
+                if (currentVfx != null && currentVfx.TryGetComponent<SpellVFX>(out var vfxController))
+                {
+                    vfxController.UpdateSpatialData(currentRadius, 1.0f, currentPos, currentPos);
+                }
             }
             else if (!shouldBeActive && currentlyExists)
             {
-                if (currentVfx != null) GameObject.Destroy(currentVfx);
-                physicalCore.ActiveVisuals.Remove(VfxDictionaryId);
+                if (currentVfx != null)
+                {
+                    if (currentVfx.TryGetComponent<SpellVFX>(out var vfxController)) vfxController.StopAndCleanup();
+                    else GameObject.Destroy(currentVfx);
+                }
+                core.ActiveVisuals.Remove(plan.VfxDictionaryId);
             }
         }
     }
 
-    // 1. SIGNATURE UPDATE
     public override void CleanupVFX(ISpellExecutionCore core)
     {
-        if (core.TryGetCoreComponent<SpellCreatedCore>(out var physicalCore))
+        if (VfxPlans == null) return;
+
+        foreach (var plan in VfxPlans)
         {
-            if (physicalCore.ActiveVisuals.TryGetValue(VfxDictionaryId, out GameObject currentVfx))
+            // Use the interface dictionary
+            if (core.ActiveVisuals.TryGetValue(plan.VfxDictionaryId, out GameObject currentVfx))
             {
-                if (currentVfx != null) GameObject.Destroy(currentVfx);
-                physicalCore.ActiveVisuals.Remove(VfxDictionaryId);
+                if (currentVfx != null)
+                {
+                    if (currentVfx.TryGetComponent<SpellVFX>(out var vfxController)) vfxController.StopAndCleanup();
+                    else GameObject.Destroy(currentVfx);
+                }
+                core.ActiveVisuals.Remove(plan.VfxDictionaryId);
             }
         }
     }

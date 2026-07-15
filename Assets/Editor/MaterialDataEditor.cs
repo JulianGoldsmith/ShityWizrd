@@ -55,7 +55,7 @@ public class MaterialDataEditor : Editor
 
         // --- 3. AUDIO & VISUALS ---
         EditorGUILayout.LabelField("Audio & Visuals", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("vfx_material"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("visual_material"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("casts_shadows"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("shatter_particle_color"));
 

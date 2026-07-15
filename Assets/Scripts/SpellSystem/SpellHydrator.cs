@@ -11,6 +11,9 @@ public static class SpellHydrator
     {
         IRuntimeNode[] compiledNodes = new IRuntimeNode[data.MaxNodeIndex + 1];
 
+        context.GraphData = data;
+        context.TemplateRegistry = templateRegistry;
+
         // ==========================================
         // PASS 1: INSTANTIATION (Read the Nodes)
         // ==========================================

@@ -8,9 +8,10 @@ public class PhysicsObjectMaterial : ScriptableObject
     #region Identity & Visuals
     [Header("Identity")]
     public string material_name;
-    public PHYSICS_OBJECT_MATERIAL label;
 
-    public Material vfx_material;
+    public ushort NetworkMaterialID;
+
+    public Material visual_material;
     public bool casts_shadows = true;
     public Color shatter_particle_color;
 
@@ -241,7 +242,7 @@ public class PhysicsObjectMaterial : ScriptableObject
     #endregion
 }
 
-public enum PHYSICS_OBJECT_MATERIAL
+/*public enum PHYSICS_OBJECT_MATERIAL
 {
 
     NULL = 0,
@@ -252,7 +253,7 @@ public enum PHYSICS_OBJECT_MATERIAL
     PLAYER = 4,
 
     MAX_N
-}
+}*/
 
 public enum MutationType
 {

@@ -79,7 +79,7 @@ public class MaterialData : ScriptableObject
     public PhysicsPropertyBlock conductiveProperties;
 
     [Header("Audio & Visuals")]
-    public Material vfx_material;
+    public Material visual_material;
     public bool casts_shadows = true;
     public Color shatter_particle_color;
 

@@ -16,9 +16,13 @@ public class PhysicsObjectProperties : NetworkBehaviour
     // By using { get; set; }, Fusion networks these automatically. 
     // Your updated SpellNode reflection will find them via GetProperties()!
 
+    [MaterialID] 
     [Promotable("Material", DataTypeTag.Material)]
     [Networked, OnChangedRender(nameof(OnMaterialChanged))]
-    public PHYSICS_OBJECT_MATERIAL Material_label { get; set; }
+    public ushort Material_label { get; set; }
+
+    [MaterialID]
+    public ushort innateMaterial; //this is used so we can have custom materials return to their default' albedo/ color etc... 
 
     [Promotable("Size", DataTypeTag.Radius)]
     [Networked] public float Size { get; set; } = 1f;
@@ -138,7 +142,7 @@ public class PhysicsObjectProperties : NetworkBehaviour
     #region Material Lookup
     public PhysicsObjectMaterial physicsobjectmaterial
     {
-        get { return POMLookUp.Get(Material_label); }
+        get { return MaterialRegistry.GetMaterial(Material_label); }
     }
     #endregion
 

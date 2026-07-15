@@ -174,16 +174,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultGravityScale: 1
   physicsObjectProperties: {fileID: 0}
-  currentProperties:
-    size: 0
-    density: 0
-    mass: 0
-    hardness: 0
-    elasticity: 0
-    brittleness: 0
-    stickiness: 0
-    friction: 0
-    gravityMultiplier: 0
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
@@ -303,6 +293,7 @@ MonoBehaviour:
     _length: 0
     _data:
       Data: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  _NodeArrayIndex: 0
   _NetworkVelocity: {x: 0, y: 0, z: 0}
   _IntMemory: 
   _FloatMemory: []
@@ -350,17 +341,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _Material_label: 0
+  _Material_label: 1
+  innateMaterial: 1
   _Size: 1
   _Base_gravity_multiplier: 1
   CurrentSimData:
     Mass: 0
+    Scale: 0
     Friction: 0
-    Restitution: 0
+    Bounce: 0
     LinearDamping: 0
     AngularDamping: 0
     Brittleness: 0
     Hardness: 0
     Stickiness: 0
     GravityMultiplier: 0
-  CachedTick: -1
+  debugState: []

@@ -5,7 +5,7 @@ using UnityEngine;
 [DefaultExecutionOrder(100)]
 public class CharacterBonkController : NetworkBehaviour
 {
-    [HideInInspector] public HybridCharacterController characterController;
+    public HybridCharacterController characterController;
     public List<StretchyArmIK> armIKs;
     public GameObject ragdollProxysRoot;
 
@@ -19,9 +19,9 @@ public class CharacterBonkController : NetworkBehaviour
 
     public override void Spawned()
     {
-        characterController = this.GetComponent<HybridCharacterController>();
-        if(ragDollSolver == null)
-            ragDollSolver = characterController.xpbdJointSolver;
+        //if(characterController != null)
+        ragDollSolver = this.GetComponent<XPBDPosAndRotSolver>();
+
         EvaluateRagdollState();
     }
 
@@ -86,11 +86,8 @@ public class CharacterBonkController : NetworkBehaviour
             foreach (StretchyArmIK ik in armIKs) ik.enabled = false;
             characterController.handController.DisableHands();
             characterController.armatureRetargetingLerp = 1f;
-
-            // Pass the snap instruction down to the solver
-            ragDollSolver.SetRagdollState(true, snapBones);
         }
-        
+        ragDollSolver.SetRagdollState(true, snapBones);
     }
 
     private void DeactivateRagDoll()
@@ -100,9 +97,8 @@ public class CharacterBonkController : NetworkBehaviour
             foreach (StretchyArmIK ik in armIKs) ik.enabled = true;
             characterController.armatureRetargetingLerp = 0f;
             characterController.handController.EnableHands();
-
-            ragDollSolver.SetRagdollState(false, false);
         }
+        ragDollSolver.SetRagdollState(false, false);
         if (ragdollProxysRoot != null) ragdollProxysRoot.SetActive(false);
     }
 }

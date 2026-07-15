@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb7dafeb9fe3f7b49807e9972f931d40, type: 3}
-  m_Name: POM-Null
+  m_Name: POM-Egg
   m_EditorClassIdentifier: 
-  material_name: NULL POM
-  label: 0
-  vfx_material: {fileID: 2100000, guid: 52a8d08a70fce1d419b8dfe7754c7f93, type: 2}
+  material_name: Player
+  NetworkMaterialID: 5
+  visual_material: {fileID: 0}
   casts_shadows: 1
-  shatter_particle_color: {r: 0.9924528, g: 0.8821564, b: 0.79208964, a: 1}
-  baseData: {fileID: 11400000, guid: 3f20083b2c6d87d49872c02218896344, type: 2}
-  stoneifyOverride: {fileID: 11400000, guid: 47aa31e1fc4955e42a875460bfea6b42, type: 2}
+  shatter_particle_color: {r: 1, g: 1, b: 1, a: 1}
+  baseData: {fileID: 11400000, guid: 16f043a21c9225a42bea261acc4bf43a, type: 2}
+  stoneifyOverride: {fileID: 0}
   gooifyOverride: {fileID: 0}
-  ambientCoolingRate: 1
+  ambientCoolingRate: 5
   naturalDryingRate: 0.05
   warpDecayRate: 0.1

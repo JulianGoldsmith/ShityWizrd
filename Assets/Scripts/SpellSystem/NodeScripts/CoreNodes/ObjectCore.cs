@@ -27,8 +27,9 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
     [Promotable("Size", DataTypeTag.Radius)] // (Use whatever tag you prefer)
     public float size = 1f;
 
+    [MaterialID]
     [Promotable("Material", DataTypeTag.Material)] // (Use whatever tag you prefer)
-    public PHYSICS_OBJECT_MATERIAL material;
+    public ushort material;
 
     private bool base_values_from_dependencies_stored = false;
 

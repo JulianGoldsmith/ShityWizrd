@@ -19,6 +19,8 @@ public class ArmatureRetargeter : MonoBehaviour
     public bool overRideAndInjectAnimatedHipsRootMotionToAll = false;
     public bool overRideAndKillInjectedMotion = false;
 
+    public bool readRootMotion = true;
+
     // --- DICTIONARY CACHE FOR VIRTUAL PARENTING ---
     private Dictionary<Transform, RetargetedBone> _sourceToBoneMap;
 
@@ -171,7 +173,7 @@ public class ArmatureRetargeter : MonoBehaviour
                 }
             }
 
-            if ((injectRootMotion) && hasActiveProxy)
+            if ((injectRootMotion) && hasActiveProxy && !bone.ragDollBone)
             {
                 bone.targetBone.position += animatedRootMotion;
             }

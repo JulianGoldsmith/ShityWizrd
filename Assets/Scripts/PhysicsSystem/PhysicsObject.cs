@@ -58,7 +58,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     private Renderer[] _renderers;
     private MaterialPropertyBlock _mpb;
     public VisualStateData VisualState = new VisualStateData();
-
+    private Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
 
     #region Data Networking
     public void OnPhysicsObjectPropertiesChanged()
@@ -108,6 +108,14 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
    
         _renderers = GetComponentsInChildren<Renderer>();
+
+        foreach (var r in _renderers)
+        {
+            if (r != null)
+            {
+                originalMaterials.Add(r, r.sharedMaterials);
+            }
+        }
         if (_mpb == null) _mpb = new MaterialPropertyBlock();
     
 }
@@ -143,17 +151,37 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (physicsObjectProperties.physicsobjectmaterial == null)
             return;
 
-        Material mat = physicsObjectProperties.physicsobjectmaterial.vfx_material;
+        Material mat = physicsObjectProperties.physicsobjectmaterial.visual_material;
         if (mat == null) 
             return;
         Renderer[] renderers = GetComponents<Renderer>();
         if (renderers == null || renderers.Length == 0) 
             return;
 
-        for (int i = 0; i < renderers.Length; i++)
+        for (int i = 0; i < _renderers.Length; i++)
         {
-            renderers[i].material = mat;
-            renderers[i].shadowCastingMode = physicsObjectProperties.physicsobjectmaterial.casts_shadows? 
+            Renderer r = _renderers[i];
+            if (r == null) continue;
+
+            if (physicsObjectProperties.Material_label == physicsObjectProperties.innateMaterial ||
+                physicsObjectProperties.Material_label == 0)
+            {
+                if (originalMaterials.TryGetValue(r, out var tmpMats))
+                {
+                    r.sharedMaterials = tmpMats;
+                }
+            }
+            else if (mat != null)
+            {
+                Material[] overrideMats = new Material[r.sharedMaterials.Length];
+                for (int j = 0; j < overrideMats.Length; j++)
+                {
+                    overrideMats[j] = mat;
+                }
+                r.sharedMaterials = overrideMats;
+            }
+
+            r.shadowCastingMode = physicsObjectProperties.physicsobjectmaterial.casts_shadows ?
                 UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
         }
     }

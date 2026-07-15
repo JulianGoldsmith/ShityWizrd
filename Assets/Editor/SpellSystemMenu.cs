@@ -5,7 +5,7 @@ using System.Linq;
 
 public class SpellSystemMenu
 {
-    [MenuItem("SpellSystem/Open Master Dictionary")]
+    [MenuItem("SpellSystem/Open Node Dictionary")]
     public static void OpenMasterNodeDictionary()
     {
         string[] guids = AssetDatabase.FindAssets("t:MasterNodeDictionary");
@@ -93,4 +93,42 @@ public class SpellSystemMenu
         Debug.Log($"<b>[Spell System] Mass Re-Bake Complete!</b>\nCleaned out tombstones and re-baked {nodeCounter - 1} Nodes and {statusCounter - 1} Status Effects.");
     }
 
+
+    [MenuItem("SpellSystem/Open Material Dictionary")]
+    public static void SelectMasterMaterialDictionary()
+    {
+        string[] guids = AssetDatabase.FindAssets("t:MasterMaterialDictionary");
+
+        if (guids.Length > 0)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            MasterMaterialDictionary dict = AssetDatabase.LoadAssetAtPath<MasterMaterialDictionary>(path);
+
+            Selection.activeObject = dict;
+            EditorGUIUtility.PingObject(dict); // Highlights it in the Project window
+        }
+        else
+        {
+            Debug.LogWarning("[Spell System] No MasterMaterialDictionary found in the project! Please create one via Right Click -> Create -> Dictionary.");
+        }
+    }
+
+    [MenuItem("SpellSystem/Open VFX Dictionary")]
+    public static void SelectMasterVFXDictionary()
+    {
+        string[] guids = AssetDatabase.FindAssets("t:MasterVFXDictionary");
+
+        if (guids.Length > 0)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            MasterVFXDictionary dict = AssetDatabase.LoadAssetAtPath<MasterVFXDictionary>(path);
+
+            Selection.activeObject = dict;
+            EditorGUIUtility.PingObject(dict);
+        }
+        else
+        {
+            Debug.LogWarning("[Spell System] No MasterVFXDictionary found in the project! Please create one via Right Click -> Create -> Dictionary.");
+        }
+    }
 }

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "MasterNodeDictionary", menuName = "Dictionary/Master Node Dictionary")]
+[CreateAssetMenu(fileName = "MasterNodeDictionary", menuName = "Dictionaries/Master Node Dictionary")]
 public class MasterNodeDictionary : ScriptableObject
 {
     [Tooltip("Do not edit manually! Use the UI buttons on the nodes.")]

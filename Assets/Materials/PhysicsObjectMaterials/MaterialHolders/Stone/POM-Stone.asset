@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: POM-Stone
   m_EditorClassIdentifier: 
   material_name: Stone
-  label: 1
-  density: 2
-  hardness: 1
-  elasticity: 0
-  brittleness: 0.1
-  stickiness: 0
-  vfx_material: {fileID: 2100000, guid: ac0b1e01a4291c24387ad55a8a8e816b, type: 2}
+  NetworkMaterialID: 3
+  visual_material: {fileID: 2100000, guid: ac0b1e01a4291c24387ad55a8a8e816b, type: 2}
   casts_shadows: 1
   shatter_particle_color: {r: 0.5471698, g: 0.48006403, b: 0.48006403, a: 1}
+  baseData: {fileID: 11400000, guid: 47aa31e1fc4955e42a875460bfea6b42, type: 2}
+  stoneifyOverride: {fileID: 0}
+  gooifyOverride: {fileID: 0}
+  ambientCoolingRate: 5
+  naturalDryingRate: 0.05
+  warpDecayRate: 0.1

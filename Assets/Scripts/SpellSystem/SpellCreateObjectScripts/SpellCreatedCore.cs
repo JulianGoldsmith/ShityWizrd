@@ -60,6 +60,14 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
     {
         base.Render();
 
+        /*if (!_isInitialized || _myPlan == null) return;*/
+
+       /* foreach (var behaviour in _myPlan.Behaviours) behaviour.TickVFX(this);
+        foreach (var trigger in _myPlan.Triggers) trigger.TickVFX(this);*/
+    }
+
+    public void LateUpdate()
+    {
         if (!_isInitialized || _myPlan == null) return;
 
         foreach (var behaviour in _myPlan.Behaviours) behaviour.TickVFX(this);
@@ -170,7 +178,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
                 // 2. DETERMINISTIC MATH (Host and Proxy both run this instantly!)
                 float finalSize = runtimeCore.size.GetValue(evaluationInfo);
                 float finalLifetime = runtimeCore.lifetime.GetValue(evaluationInfo);
-                PHYSICS_OBJECT_MATERIAL finalMat = runtimeCore.material.GetValue(evaluationInfo);
+                ushort finalMat = runtimeCore.material.GetValue(evaluationInfo);
 
                 // 3. Write directly to [Networked] Variables! 
                 // (This is perfectly safe and predicts instantly thanks to Runner.SetIsSimulated)
@@ -331,6 +339,9 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 public class SpellCompilationContext
 {
     public int CurrentNodeIndex { get; set; }
+
+    public SpellNetworkData GraphData;
+    public List<SpellNode> TemplateRegistry;
 
     private int _nextIntSlot = 0;
     private int _nextFloatSlot = 0;

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "MasterStatusDictionary", menuName = "SpellSystem/Master Status Dictionary")]
+[CreateAssetMenu(fileName = "MasterStatusDictionary", menuName = "Dictionaries/Master Status Dictionary")]
 public class MasterStatusDictionary : ScriptableObject
 {
     [Tooltip("Do not edit manually! Handled via the Rune Forge dual-publish.")]
