@@ -186,12 +186,50 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         }
     }
 
+    public void RegisterAttachedVisuals(AttatchedSpellComponent attachedData, PhysicsObjectMaterial activeMaterial)
+    {
+        Renderer[] autoRenderers = attachedData.GetAllRenderers();
+
+        if (autoRenderers == null || autoRenderers.Length == 0) return;
+
+        List<Renderer> updatedRenderers = new List<Renderer>(_renderers != null ? _renderers : new Renderer[0]);
+
+        foreach (var r in autoRenderers)
+        {
+            if (r == null) continue;
+
+            if (!originalMaterials.ContainsKey(r))
+            {
+                originalMaterials.Add(r, r.sharedMaterials);
+            }
+
+            if (attachedData.allowBaseMaterialOverride && activeMaterial != null && activeMaterial.visual_material != null)
+            {
+                Material[] overrideMats = new Material[r.sharedMaterials.Length];
+                for (int j = 0; j < overrideMats.Length; j++)
+                {
+                    overrideMats[j] = activeMaterial.visual_material;
+                }
+                r.sharedMaterials = overrideMats;
+
+                r.shadowCastingMode = activeMaterial.casts_shadows ?
+                    UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+
+            if (!updatedRenderers.Contains(r))
+            {
+                updatedRenderers.Add(r);
+            }
+        }
+
+        _renderers = updatedRenderers.ToArray();
+    }
+
     #endregion
 
 
     #region Collisions
-    // additional things to happen on collision.
-    // [placeholder]
+
 
     public event System.Action<UniversalCollisionData> OnPhysicsImpact;
 

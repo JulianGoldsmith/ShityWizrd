@@ -99,7 +99,7 @@ public class OverlapSphereTrigger : RuntimeTriggerBase
 
         for (int i = 0; i < hitCount; i++)
         {
-            GameObject targetObj = _overlapResults[i].gameObject;
+            GameObject targetObj = SpellSystemHelpers.GetHitGameObject(_overlapResults[i]);
 
             // 4. ANCHOR BRIDGE (Ignore ourselves)
             if (targetObj == core.SourceObject) continue;

@@ -123,7 +123,8 @@ public class BeamTrigger : RuntimeTriggerBase
 
         for (int i = 0; i < sortedHits.Length; i++)
         {
-            GameObject targetObj = sortedHits[i].collider.gameObject;
+            GameObject targetObj = SpellSystemHelpers.GetHitGameObject(sortedHits[i].collider);
+
             Debug.Log($"Beam hit : {targetObj.name}");
             if (targetObj == core.SourceObject) continue;
 
@@ -132,7 +133,7 @@ public class BeamTrigger : RuntimeTriggerBase
             {
                 foreach (var filter in Filters)
                 {
-                    if (!filter.Evaluate(targetObj)) { isValid = false; break; }
+                   // if (!filter.Evaluate(targetObj)) { isValid = false; break; }
                 }
             }
 

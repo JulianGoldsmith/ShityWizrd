@@ -19,6 +19,10 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 
     //This can be an rb core or a transform core
     public NetworkPrefabRef corePrefabRef;
+
+    [Header("The Payload")]
+    public GameObject attachedSpellComponentsPrefab;
+
     public NetworkPrefabRef prefabRefToBuffer { get { return corePrefabRef; } }
 
     [Promotable("Lifetime", DataTypeTag.Lifetime)]
@@ -112,6 +116,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
             ArrayIndex = context.CurrentNodeIndex,
             Template = this,
             PrefabRef = this.corePrefabRef,
+            AttachedSpellComponentsPrefab = this.attachedSpellComponentsPrefab, // Pass it down!
             CastSpawnPosition = this.CastSpawnPosition,
             CastSpawnRotation = this.CastSpawnRotation,
             TriggerSpawnPosition = this.TriggerSpawnPosition,
@@ -142,8 +147,9 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 public class RuntimeObjectCore : RuntimeCoreBase
 {
     public int ArrayIndex;
-    public ObjectCore Template; // Legacy reference for Promotables
+    public ObjectCore Template;
     public NetworkPrefabRef PrefabRef;
+    public GameObject AttachedSpellComponentsPrefab;
     public SpellPosition CastSpawnPosition;
     public SpellRotation CastSpawnRotation;
     public SpellPosition TriggerSpawnPosition;

@@ -9,7 +9,6 @@ public struct NetworkedMaterialState : INetworkStruct
     public MaterialState State;
 }
 
-[RequireComponent(typeof(PhysicsObject))]
 public class PhysicsObjectProperties : NetworkBehaviour
 {
     #region Base Networked Properties (Promotable)

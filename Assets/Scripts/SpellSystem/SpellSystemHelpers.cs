@@ -166,6 +166,26 @@ public static class SpellSystemHelpers
         return go;
     }
 
+    public static GameObject GetHitGameObject(Collider hitCollider)
+    {
+        if (hitCollider == null) return null;
+
+        if (hitCollider.TryGetComponent<AttatchedSpellComponent>(out var passenger))
+        {
+            if (passenger.parentSpellCore != null)
+            {
+                return passenger.parentSpellCore.gameObject;
+            }
+        }
+
+        if (hitCollider.attachedRigidbody != null)
+        {
+            return hitCollider.attachedRigidbody.gameObject;
+        }
+
+        return hitCollider.gameObject;
+    }
+
 }
 
 

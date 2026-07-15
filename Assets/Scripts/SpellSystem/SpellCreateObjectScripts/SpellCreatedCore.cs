@@ -6,7 +6,10 @@ using UnityEngine;
 public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 {
 
-    //References to SpellGraph 
+    private GameObject _attachedComponents;
+
+
+    //References to SpellGraph #
     [Networked] public ActiveCastID ActiveCastID { get; set; }
     [Networked] public SpellGraphId BlueprintID { get; set; }
     [Networked] public NetworkBool IsActiveInBuffer { get; set; }
@@ -180,13 +183,34 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
                 float finalLifetime = runtimeCore.lifetime.GetValue(evaluationInfo);
                 ushort finalMat = runtimeCore.material.GetValue(evaluationInfo);
 
-                // 3. Write directly to [Networked] Variables! 
-                // (This is perfectly safe and predicts instantly thanks to Runner.SetIsSimulated)
+                if (_attachedComponents == null && runtimeCore.AttachedSpellComponentsPrefab != null)
+                {
+                    _attachedComponents = Instantiate(runtimeCore.AttachedSpellComponentsPrefab, this.transform);
+                    _attachedComponents.transform.localPosition = Vector3.zero;
+                    _attachedComponents.transform.localRotation = Quaternion.identity;
+
+                    var attachedScript = _attachedComponents.GetComponent<AttatchedSpellComponent>();
+                    if (attachedScript != null) attachedScript.parentSpellCore = this;
+                }
+
                 var pop = GetComponent<PhysicsObjectProperties>();
                 if (pop != null)
                 {
                     pop.Size = finalSize;
                     pop.Material_label = finalMat;
+
+                    // --- THE VISUAL HANDSHAKE ---
+                    if (_attachedComponents != null)
+                    {
+                        var attachedScript = _attachedComponents.GetComponent<AttatchedSpellComponent>();
+                        var physObj = pop.GetComponent<PhysicsObject>();
+
+                        if (attachedScript != null && physObj != null)
+                        {
+                            physObj.RegisterAttachedVisuals(attachedScript, pop.physicsobjectmaterial);
+                        }
+                    }
+
                     pop.GetComponent<PhysicsObject>().InitialisePhysicsObject();
                 }
 
@@ -201,28 +225,31 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
     }
 
     #region CollisionHandleing
-    private void OnCollisionEnter(Collision collision)
+    public void OnCollisionEnter(Collision collision)
     {
         if (!_isInitialized || _myPlan == null) return;
+        Debug.Log("Registered Contact added pending contact");
+        GameObject coll = SpellSystemHelpers.GetHitGameObject(collision.collider);
         TickContacts.Add(new PendingContact
         {
-            Target = collision.gameObject,
+
+            Target = coll,
             Point = collision.contacts[0].point,
             Normal = collision.contacts[0].normal
         });
     }
 
-    private void OnTriggerEnter(Collider other)
+    public void OnTriggerEnter(Collider other)
     {
         if (!_isInitialized || _myPlan == null) return;
 
         Vector3 hitPoint = other.ClosestPoint(transform.position);
         Vector3 hitNormal = (transform.position - other.transform.position).normalized;
         if (hitNormal == Vector3.zero) hitNormal = Vector3.up;
-
+        GameObject coll = SpellSystemHelpers.GetHitGameObject(other);
         TickContacts.Add(new PendingContact
         {
-            Target = other.gameObject,
+            Target = coll,
             Point = hitPoint,
             Normal = hitNormal
         });
@@ -298,10 +325,25 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
             foreach (var trigger in _myPlan.Triggers) trigger.CleanupVFX(this);
         }
 
+        TickContacts.Clear();
+
         ActiveVisuals.Clear();
 
         ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
         if (activeSpell != null) activeSpell.RemoveToken();
+
+        if (_attachedComponents != null)
+        {
+            Destroy(_attachedComponents);
+            _attachedComponents = null;
+        }
+
+        if (TryGetComponent<Rigidbody>(out var rb))
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+        NetworkVelocity = Vector3.zero;
 
         ActiveCastID = default;
         BlueprintID = default;

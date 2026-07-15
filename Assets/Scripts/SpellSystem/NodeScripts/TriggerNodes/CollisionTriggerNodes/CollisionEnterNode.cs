@@ -90,6 +90,8 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
         {
             GameObject targetObj = contact.Target;
 
+            Debug.Log($"TargetObject {targetObj} and source object = {core.SourceObject}");
+
             // 3. THE ANCHOR BRIDGE
             // Replaced 'core.gameObject' with 'core.SourceObject'
             if (targetObj == core.SourceObject) continue;
