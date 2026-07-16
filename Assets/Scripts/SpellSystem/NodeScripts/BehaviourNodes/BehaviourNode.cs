@@ -7,8 +7,6 @@ using System;
 
 public abstract class BehaviourNode : SpellNode
 {
-    public VFXContext vfx_context;
-    public ModifierType default_vfx_modifier_type;
 
     public abstract override IRuntimeNode CompileNode(SpellCompilationContext context);
 

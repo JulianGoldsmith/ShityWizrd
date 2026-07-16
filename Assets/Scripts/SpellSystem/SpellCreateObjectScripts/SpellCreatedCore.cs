@@ -7,20 +7,18 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 {
 
     private GameObject _attachedComponents;
-
     //Debug
     public static int ActiveCount;
     public static int NetworkWritesThisSecond;
-
 
     //References to SpellGraph #
     [Networked] public ActiveCastID ActiveCastID { get; set; }
     [Networked] public SpellGraphId BlueprintID { get; set; }
     [Networked] public NetworkBool IsActiveInBuffer { get; set; }
-    //[Networked] public NetworkString<_64> NodeInstanceGuid { get; set; }
     [Networked] public int NodeArrayIndex { get; set; }
 
     [Networked] public int SpawnTick { get; set; }
+    [Networked] public TickTimer LifetimeTimer { get; set; }
 
     // current context / active variables
     [Networked] public CoreContext Context { get; set; }
@@ -29,11 +27,10 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 
 
     //networked varibale sketchpad - added to by behaviours and triggers for roll back friendly data
-    [Networked, Capacity(16)] public NetworkArray<int> IntMemory { get; }
-    [Networked, Capacity(16)] public NetworkArray<float> FloatMemory { get; }
-    [Networked, Capacity(8)] public NetworkArray<Vector3> VectorMemory { get; }
+    [Networked, Capacity(8)] public NetworkArray<int> IntMemory { get; }
+    [Networked, Capacity(8)] public NetworkArray<float> FloatMemory { get; }
+    [Networked, Capacity(4)] public NetworkArray<Vector3> VectorMemory { get; }
     [Networked] public int BoolMemory { get; set; }
-
 
 
     [Networked] public int GlobalBufferIndex { get; set; }
@@ -103,6 +100,11 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 
         if (!_isInitialized || _myPlan == null) return;
 
+        if (LifetimeTimer.Expired(Runner))
+        {
+            DeactivateCore();
+            return;
+        }
 
         foreach (var behaviour in _myPlan.Behaviours)
         {
@@ -190,7 +192,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
                 );
 
                 // 1. Initialise the base template defaults (Legacy bridge)
-                runtimeCore.Template.InitialisePhysicsObjectOnSpawn(Object, evaluationInfo);
+                //runtimeCore.Template.InitialisePhysicsObjectOnSpawn(Object, evaluationInfo);
 
                 // 2. DETERMINISTIC MATH (Host and Proxy both run this instantly!)
                 float finalSize = runtimeCore.size.GetValue(evaluationInfo);
@@ -228,11 +230,17 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
                     pop.GetComponent<PhysicsObject>().InitialisePhysicsObject();
                 }
 
-                var scpo = GetComponent<SpellCreatedPhysicsObject>();
-                if (scpo != null) scpo.lifetime_timer = TickTimer.CreateFromSeconds(Runner, finalLifetime);
+                LifetimeTimer = TickTimer.CreateFromSeconds(Runner, finalLifetime);
 
                 foreach (var behaviour in _myPlan.Behaviours) behaviour.InitTick(this);
                 foreach (var trigger in _myPlan.Triggers) trigger.InitTick(this);
+
+                var physOb = GetComponent<PhysicsObject>();
+                if (physOb != null)
+                {
+                    physOb.OnZeroBonk_event.RemoveListener(DeactivateCore);
+                    physOb.OnZeroBonk_event.AddListener(DeactivateCore);
+                }
             }
             _isInitialized = true;
         }

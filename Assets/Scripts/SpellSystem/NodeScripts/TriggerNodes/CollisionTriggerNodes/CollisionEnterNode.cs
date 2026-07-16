@@ -44,7 +44,6 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
     public FilterNode[] Filters;
 
     public int VfxDictionaryId;
-    public VFXContext VfxContext;
     public ModifierType VfxModType;
 
     // 1. THE SIGNATURE UPDATE

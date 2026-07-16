@@ -9,22 +9,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 75aa34b513bb336479feabcb84074cae, type: 3}
-  m_Name: OnBreakTrigger
-  m_EditorClassIdentifier: 
-  nodeName: On Break Trigger
+  m_Script: {fileID: 11500000, guid: bb66b1b42a0b4114684f0d253c7a07a9, type: 3}
+  m_Name: New BlastOnContactNode
+  m_EditorClassIdentifier: Assembly-CSharp::BlastOnContactNode
+  nodeName: New BlastOnContactNode
   description: 
   nodeTags: []
   valueContainers: []
-  icon: {fileID: 2800000, guid: bdab326d7980a1d49bdb9d4b6e29b5c4, type: 3}
+  icon: {fileID: 2800000, guid: 44de20a2bac870544afe1fae64348f76, type: 3}
   overrideMesh: {fileID: 0}
   overrideMaterial: {fileID: 0}
   ovverideVisualScale: 1
-  NetworkNodeID: 25
-  showInSpellEditor: 0
+  NetworkNodeID: 39
+  showInSpellEditor: 1
   filterNodes: []
   outcomeNodes: []
   Topology: 1
-  Lifecycle: 1
-  on_expire: 0
-  on_break: 1
+  Lifecycle: 0
+  radius: 2
+  maxContacts: 1

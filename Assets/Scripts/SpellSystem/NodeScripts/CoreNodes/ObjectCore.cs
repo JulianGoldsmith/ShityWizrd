@@ -45,7 +45,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
 
     
 
-    public void InitialisePhysicsObjectOnSpawn(NetworkObject spellCore, SpellTriggerInfo triggerInfo)
+    /*public void InitialisePhysicsObjectOnSpawn(NetworkObject spellCore, SpellTriggerInfo triggerInfo)
     {
         // This is called by the spawner before replicating the networkobject
         // across all instances.
@@ -104,8 +104,8 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         //{
         //    // To catch initial momenta, etc.
         //    physicsObject.InitialiseAfterBehavioursAndTriggers(this, triggerInfo.State);
-        //}
-    }
+        //}*/
+   // }
 
     
 

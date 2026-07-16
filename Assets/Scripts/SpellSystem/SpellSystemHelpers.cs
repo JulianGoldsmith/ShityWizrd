@@ -21,7 +21,7 @@ public static class SpellSystemHelpers
         );
         return _mask ?? LayerMask.GetMask("Item");
     }
-    public static GameObject CreateVFX(VFXContext context, ModifierType type, Transform parent, float sizeMult, bool ignore_parent_scale = false)
+   /* public static GameObject CreateVFX(VFXContext context, ModifierType type, Transform parent, float sizeMult, bool ignore_parent_scale = false)
     {
         if (GameController.Instance.vfxDatabase == null)
         {
@@ -66,7 +66,7 @@ public static class SpellSystemHelpers
         }
 
         return null;
-    }
+    }*/
 
     public static Vector3 GetSpellPosition(SpellPosition positionType, SpellTriggerInfo triggerInfo, List<Transform> targets = null)
     {

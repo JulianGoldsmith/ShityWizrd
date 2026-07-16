@@ -2721,6 +2721,7 @@ GameObject:
   - component: {fileID: 1760587690114921678}
   - component: {fileID: 492262295890835074}
   - component: {fileID: -1497651292432260581}
+  - component: {fileID: 2657514714551797806}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -3022,6 +3023,7 @@ MonoBehaviour:
   - {fileID: 3635803465142382114}
   - {fileID: 492262295890835074}
   - {fileID: -1497651292432260581}
+  - {fileID: 2657514714551797806}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2497915391348923376
 MonoBehaviour:
@@ -4461,6 +4463,21 @@ MonoBehaviour:
   _FloatMemory: []
   _VectorMemory: []
   _BoolMemory: 
+--- !u!114 &2657514714551797806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc6934a32f23ec547acdcb9a3e7fd632, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityVFXManager
+  SpatialMatchThreshold: 1.5
+  _NetworkHitBuffer: []
+  _NetworkHitCount: 0
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0

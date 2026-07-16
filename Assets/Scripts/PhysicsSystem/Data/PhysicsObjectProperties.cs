@@ -51,15 +51,7 @@ public class PhysicsObjectProperties : NetworkBehaviour
     public override void Spawned()
     {
         base.Spawned();
-        MaterialState startingState = new MaterialState();
-        startingState.Reset(); // Sets Scale and Density to 1f!
-
-        CheckpointState = new NetworkedMaterialState
-        {
-            Tick = Runner.Tick,
-            State = startingState
-        };
-        CachedNetworkState = CheckpointState;
+        ResetStateToTick(Runner.Tick);
 
         GetComponent<PhysicsObject>().InitialisePhysicsObject();
     }
@@ -85,6 +77,8 @@ public class PhysicsObjectProperties : NetworkBehaviour
     public void CalculateSimState(NetworkRunner runner, PhysicsObject target, NetworkedMemoryAllocator memory, StatusEffectManager effectManager)
     {
         if (physicsobjectmaterial == null) return;
+
+        
 
         // 1. ROLLBACK / LATE-JOIN DETECTION
         if (CachedNetworkState.Tick != runner.Tick - 1)
@@ -122,9 +116,14 @@ public class PhysicsObjectProperties : NetworkBehaviour
         CurrentSimData = currentMaterial.GetSimProperties(CachedNetworkState.State,Size,Base_gravity_multiplier);
 
         // 3. PERIODIC CHECKPOINTING
-        if ((runner.Tick - CheckpointState.Tick >= 30))
+        if (Object != null && Object.IsValid)
         {
-            ForceCheckpoint();
+            int staggerOffset = (int)Object.Id.Raw % 30;
+
+            if (runner.Tick - CheckpointState.Tick >= 30 + staggerOffset)
+            {
+                ForceCheckpoint();
+            }
         }
     }
 
@@ -135,6 +134,19 @@ public class PhysicsObjectProperties : NetworkBehaviour
             //CachedNetworkState.Tick = currentTick;
             CheckpointState = CachedNetworkState;
         
+    }
+
+    public void ResetStateToTick(int currentTick)
+    {
+        MaterialState startingState = new MaterialState();
+        startingState.Reset(); // Sets Scale and Density to 1f!
+
+        CheckpointState = new NetworkedMaterialState
+        {
+            Tick = currentTick,
+            State = startingState
+        };
+        CachedNetworkState = CheckpointState;
     }
     #endregion
 

@@ -16,6 +16,21 @@ public interface ISpellExecutionCore
     public int SpawnTick { get; set; }
     public float AliveTime => (Runner.Tick - SpawnTick) * Runner.DeltaTime;
     UnityEngine.GameObject SourceObject { get; }
+    EntityVFXManager VFXManager
+    {
+        get
+        {
+            if (ActiveCastID.IsValid)
+            {
+                ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
+                if (activeSpell != null && activeSpell.State != null && activeSpell.State.Caster != null)
+                {
+                    return activeSpell.State.Caster.GetComponent<EntityVFXManager>();
+                }
+            }
+            return null;
+        }
+    }
     UnityEngine.Vector3 Position { get; }
     UnityEngine.Quaternion Rotation { get; }
     Fusion.NetworkRunner Runner { get; }

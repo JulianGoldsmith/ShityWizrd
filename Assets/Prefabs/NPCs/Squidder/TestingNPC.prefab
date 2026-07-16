@@ -106,6 +106,7 @@ GameObject:
   - component: {fileID: 2033750985627491913}
   - component: {fileID: 6697534619558627041}
   - component: {fileID: 6211924996856723778}
+  - component: {fileID: 4644533653492926155}
   m_Layer: 0
   m_Name: TestingNPC
   m_TagString: Untagged
@@ -163,6 +164,7 @@ MonoBehaviour:
   - {fileID: 8778855457837639377}
   - {fileID: 2033750985627491913}
   - {fileID: 6211924996856723778}
+  - {fileID: 4644533653492926155}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &800159727264757731
 MonoBehaviour:
@@ -414,18 +416,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58c86d766e76b684a94d360ef3cca2b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inventory: {fileID: 0}
   isCasting: 0
-  isUpperBodyAction: 0
-  currentAttackCooldown: 0
-  primaryComboCounter: 0
-  comboTimer: 0
-  primaryAttackBuffered: 0
-  primaryAttackReleaseBuffered: 0
-  _nextActionId: 0
   _TotalSpellCasts: 0
-  spellCastPoints:
-  - {x: 0, y: -0.2, z: 0}
   networkAnimator: {fileID: 0}
   movementManager: {fileID: 0}
   aggroController: {fileID: 0}
@@ -433,6 +425,8 @@ MonoBehaviour:
   activeRagdollController: {fileID: 0}
   actionTemplates:
   - {fileID: 11400000, guid: 74430aab2fca6424aa8d7b0bed45eee3, type: 2}
+  spellCastPoints:
+  - {x: 0, y: -0.2, z: 0}
   hitboxes: []
 --- !u!114 &8674375420992578888
 MonoBehaviour:
@@ -493,16 +487,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultGravityScale: 1
   physicsObjectProperties: {fileID: 0}
-  currentProperties:
-    size: 0
-    density: 0
-    mass: 0
-    hardness: 0
-    elasticity: 0
-    brittleness: 0
-    stickiness: 0
-    friction: 0
-    gravityMultiplier: 0
   rb: {fileID: 0}
   tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
@@ -580,6 +564,7 @@ MonoBehaviour:
   m_Graph: {fileID: -2221796376738893910, guid: df9b629dcd808134eb4c190c43afc0d0, type: 2}
   m_BlackboardVariableOverridesList:
   - rid: 2425488155577156364
+  m_OriginalGraph: {fileID: 0}
   m_IsInitialised: 0
   m_IsStarted: 0
   references:
@@ -606,19 +591,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _Material_label: 0
+  innateMaterial: 0
   _Size: 1
   _Base_gravity_multiplier: 1
   CurrentSimData:
     Mass: 0
+    Scale: 0
     Friction: 0
-    Restitution: 0
+    Bounce: 0
     LinearDamping: 0
     AngularDamping: 0
     Brittleness: 0
     Hardness: 0
     Stickiness: 0
     GravityMultiplier: 0
-  CachedTick: -1
+  debugState: []
+--- !u!114 &4644533653492926155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4526936778991103423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc6934a32f23ec547acdcb9a3e7fd632, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityVFXManager
+  _RecentOneShots: []
+  _OneShotHeadIndex: 0
 --- !u!1 &4577340965753083559
 GameObject:
   m_ObjectHideFlags: 0
@@ -1668,6 +1669,7 @@ MonoBehaviour:
   lerpTProxy: 1
   overRideAndInjectAnimatedHipsRootMotionToAll: 0
   overRideAndKillInjectedMotion: 0
+  readRootMotion: 1
 --- !u!4 &7537459874393038386 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 452720090720547876, guid: 9dedb54c271db7543ba50c4df7d7a875, type: 3}

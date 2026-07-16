@@ -9,7 +9,6 @@ public class CoreBehaviourNode : BehaviourNode
 
     public float lifeTime = 5f;
 
-    public VFXContext coreVFX = VFXContext.None;
 
     public SpellPosition CastSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation CastSpawnRotation = SpellRotation.CasterRotation;
@@ -35,12 +34,7 @@ public class CoreBehaviourNode : BehaviourNode
         var coreController = spellCore.AddComponent<SpellLifeTimeBehaviour>();
         coreController.Init(finalLifeTime, false, triggerInfo);
 
-        if (coreVFX != VFXContext.None)
-        {
-            var vfx = SpellSystemHelpers.CreateVFX(coreVFX, ModifierType.Arcane, spellCore.transform, finalSize);
-            if (vfx != null)
-                spellCore.GetComponent<MeshRenderer>().enabled = false; //for now if we get the VFX we dont need the mesh renderer
-        }
+        
 
        
     }

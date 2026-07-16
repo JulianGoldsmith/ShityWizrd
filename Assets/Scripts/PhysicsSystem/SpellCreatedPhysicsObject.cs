@@ -50,6 +50,11 @@ public class SpellCreatedPhysicsObject : PhysicsObject
         gameObject.SetActive(true); //-------------------------------------------------------------------------------------------
         //Debug.Log($"{this.Id} initialising spawn as {node.InstanceGuid} {corresponding_node_instance_guid}");
 
+        if (physicsObjectProperties != null)
+        {
+            physicsObjectProperties.ResetStateToTick(Runner.Tick);
+        }
+
         // Communicate the details if we're the host.
         corresponding_spell_node = node as SpellNode;
         corresponding_node_instance_guid = node.InstanceGuid;

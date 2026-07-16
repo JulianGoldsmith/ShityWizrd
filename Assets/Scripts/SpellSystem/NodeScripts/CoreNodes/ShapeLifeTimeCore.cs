@@ -14,7 +14,6 @@ public class ShapeLifeTimeCore : CoreNode
     public float lifeTime = 5f;
     public bool destroyOnRelease = false; //used for channeled abilities
 
-    public VFXContext coreVFX = VFXContext.None;
 
     public SpellPosition CastSpawnPosition = SpellPosition.CasterPosition;
     public SpellRotation CastSpawnRotation = SpellRotation.CasterRotation;

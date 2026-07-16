@@ -663,14 +663,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 2854242619
@@ -1018,18 +1010,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 354539701
@@ -1041,11 +1021,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 112503595}
+      objectReference: {fileID: 112503594}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 112503594}
+      objectReference: {fileID: 112503601}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3699568948
@@ -1177,17 +1157,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &112503595 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 112503592}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 112503593}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &112503596 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7188558200159187996, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -1209,6 +1178,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &112503601 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 112503592}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 112503593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &139276618
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1918,18 +1898,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 1307217407
@@ -1941,11 +1909,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 380411821}
+      objectReference: {fileID: 380411820}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 380411820}
+      objectReference: {fileID: 380411827}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3699568948
@@ -2077,17 +2045,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &380411821 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 380411818}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 380411819}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &380411822 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7188558200159187996, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -2109,6 +2066,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &380411827 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 380411818}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 380411819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &382075589
 GameObject:
   m_ObjectHideFlags: 0
@@ -3131,18 +3099,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 47387161
@@ -3154,11 +3110,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 554050055}
+      objectReference: {fileID: 554050054}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 554050054}
+      objectReference: {fileID: 554050061}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3699568948
@@ -3290,17 +3246,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &554050055 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 554050052}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 554050053}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &554050056 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7188558200159187996, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -3322,6 +3267,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &554050061 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 554050052}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 554050053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &567739891 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1732152190372533093, guid: 1db987b8831312742ad8f19af426a920, type: 3}
@@ -3335,18 +3291,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 593360358
@@ -3358,11 +3302,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 588005653}
+      objectReference: {fileID: 588005652}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 588005652}
+      objectReference: {fileID: 588005658}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 8719265
@@ -3487,17 +3431,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &588005653 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 588005650}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 588005651}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!208 &588005654
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -3514,6 +3447,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &588005658 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 588005650}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588005651}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &601780713
 GameObject:
   m_ObjectHideFlags: 0
@@ -3749,18 +3693,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3298483246
@@ -3772,11 +3704,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 637980934}
+      objectReference: {fileID: 637980933}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 637980933}
+      objectReference: {fileID: 637980939}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 8719265
@@ -3901,17 +3833,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &637980934 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 637980931}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 637980932}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!208 &637980935
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -3928,6 +3849,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &637980939 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 637980931}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 637980932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &640266759 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5803248030640282916, guid: b3a246ed238d1ba428e26150eb2c31ba, type: 3}
@@ -4067,6 +3999,21 @@ MonoBehaviour:
   targetArmatureRoot: {fileID: 0}
   joints: []
   isRagdolling: 0
+--- !u!114 &649644648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 649644589}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc6934a32f23ec547acdcb9a3e7fd632, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityVFXManager
+  SpatialMatchThreshold: 1.5
+  _NetworkHitBuffer: []
+  _NetworkHitCount: 0
 --- !u!1 &652441988
 GameObject:
   m_ObjectHideFlags: 0
@@ -4666,18 +4613,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 933180705
@@ -4689,11 +4624,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 721753437}
+      objectReference: {fileID: 721753436}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 721753436}
+      objectReference: {fileID: 721753442}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 8719265
@@ -4838,17 +4773,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &721753437 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 721753434}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 721753435}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!208 &721753438
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -4865,6 +4789,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &721753442 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 721753434}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721753435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &765788057
 GameObject:
   m_ObjectHideFlags: 0
@@ -5737,18 +5672,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3451837165
@@ -5760,11 +5683,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 914922881}
+      objectReference: {fileID: 914922880}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 914922880}
+      objectReference: {fileID: 914922887}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3699568948
@@ -5896,17 +5819,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &914922881 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 914922878}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 914922879}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &914922882 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7188558200159187996, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -5928,6 +5840,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &914922887 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 914922878}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 914922879}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &935824954
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8110,18 +8033,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3236631075
@@ -8133,11 +8044,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 1482602192}
+      objectReference: {fileID: 1482602191}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 1482602191}
+      objectReference: {fileID: 1482602198}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3699568948
@@ -8269,17 +8180,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1482602192 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 1482602189}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1482602190}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &1482602193 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7188558200159187996, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -8301,6 +8201,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &1482602198 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 1482602189}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482602190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1545761846
 GameObject:
   m_ObjectHideFlags: 0
@@ -10151,18 +10062,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3128079286
@@ -10174,11 +10073,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 1700914068}
+      objectReference: {fileID: 1700914067}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 1700914067}
+      objectReference: {fileID: 1700914085}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3699568948
@@ -10310,17 +10209,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1700914068 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 1700914065}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1700914066}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!208 &1700914069
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -10342,6 +10230,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7188558200159187996, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
   m_PrefabInstance: {fileID: 1700914065}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1700914085 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 1700914065}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700914066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1709638285
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11182,7 +11081,6 @@ MonoBehaviour:
   spellEditorWorld: {fileID: 391796760}
   spellGraphController: {fileID: 391796761}
   isEditorActive: 0
-  vfxDatabase: {fileID: 11400000, guid: e5084e6ec1b43244a97c5659b7ca2744, type: 2}
   networkingController: {fileID: 1637512530}
   levelGenerator: {fileID: 41423583}
   levelNetworkController: {fileID: 1974162382}
@@ -11698,18 +11596,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.material_label
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8759002806252319658, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-      propertyPath: _physicsObjectProperties.base_gravity_multiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 1178022952
@@ -11721,11 +11607,11 @@ PrefabInstance:
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 2022244972}
+      objectReference: {fileID: 2022244971}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 2022244971}
+      objectReference: {fileID: 2022244978}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 3699568948
@@ -11857,17 +11743,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &2022244972 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3439672038872102933, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 2022244969}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2022244970}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc449ce5dfdc4b84597fd1a64fc9a122, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &2022244973 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7188558200159187996, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -11889,6 +11764,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &2022244978 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 2022244969}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2022244970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &2032644960 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1732152190372533093, guid: 1db987b8831312742ad8f19af426a920, type: 3}
@@ -13225,6 +13111,71 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b5abfaa759e6ea844be9ae49e92f2f36, type: 3}
+--- !u!1001 &4299553965905731312
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.98367
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 6.14888
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947029091725404266, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6086446814189593213, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6956632855768287560, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_Name
+      value: VFX_Fallback_Sphere_Blast
+      objectReference: {fileID: 0}
+    - target: {fileID: 6956632855768287560, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 398ca004810a26e47afbb00262d10a0a, type: 3}
 --- !u!1001 &5133168446978166615
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13433,7 +13384,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4146742062015676680, guid: 22a96fe224c5e6d409f303081b10c05e, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 13
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 4146742062015676680, guid: 22a96fe224c5e6d409f303081b10c05e, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[10]'
@@ -13447,6 +13398,10 @@ PrefabInstance:
       propertyPath: 'NetworkedBehaviours.Array.data[12]'
       value: 
       objectReference: {fileID: 649644604}
+    - target: {fileID: 4146742062015676680, guid: 22a96fe224c5e6d409f303081b10c05e, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[13]'
+      value: 
+      objectReference: {fileID: 649644648}
     - target: {fileID: 4361945682367613513, guid: 22a96fe224c5e6d409f303081b10c05e, type: 3}
       propertyPath: showDebug
       value: 0
@@ -13499,6 +13454,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 9055020635152288778, guid: 22a96fe224c5e6d409f303081b10c05e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 649644634}
+    - targetCorrespondingSourceObject: {fileID: 9055020635152288778, guid: 22a96fe224c5e6d409f303081b10c05e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 649644648}
   m_SourcePrefab: {fileID: 100100000, guid: 22a96fe224c5e6d409f303081b10c05e, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
@@ -13554,3 +13512,4 @@ SceneRoots:
   - {fileID: 940262223}
   - {fileID: 1576691055}
   - {fileID: 1269125000}
+  - {fileID: 4299553965905731312}

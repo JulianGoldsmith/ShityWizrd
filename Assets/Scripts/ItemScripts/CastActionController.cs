@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Fusion;
 
+[RequireComponent(typeof(EntityVFXManager))] 
 public abstract class CastActionController : NetworkBehaviour
 {
     public ActiveCastTracker CastTracker { get; private set; }

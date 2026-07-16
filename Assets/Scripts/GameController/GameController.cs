@@ -19,8 +19,6 @@ public class GameController : MonoBehaviour
 
     public bool isEditorActive = false;
 
-    public VFXDatabase vfxDatabase;
-
     public BasicSpawner networkingController;
 
     public LevelGenerator levelGenerator;
