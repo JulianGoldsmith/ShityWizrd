@@ -166,43 +166,45 @@ public class RuntimeObjectCore : RuntimeCoreBase
         Quaternion rot = SpellSystemHelpers.GetSpellRotation(triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
 
         PlayerRef casterRef = PlayerRef.None;
-        if (triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<NetworkObject>(out var sourceObj))
+        NetworkObject sourceObj = null;
+
+        if (triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<NetworkObject>(out sourceObj))
         {
-            // This flawlessly grabs the PlayerRef from the Weapon, the NPC, or the Parent Spell Core!
             casterRef = sourceObj.InputAuthority;
         }
 
-        // 2. Checkout the Spell Core from the Global Buffer!
-        int assignedGlobalIndex = -1;
-        NetworkObject spellCore = null;
-
-        if (GlobalSpellBuffer.Instance != null)
+        // Route to the allocator!
+        ObjectBuffer myBuffer = null;
+        if (ObjectBufferAllocator.Instance != null)
         {
-            spellCore = GlobalSpellBuffer.Instance.GetBufferedSpellCore(casterRef, pos, rot, out assignedGlobalIndex);
+            myBuffer = ObjectBufferAllocator.Instance.GetBufferForCaster(sourceObj);
+        }
+
+        NetworkObject spellCore = null;
+        int localBufferIndex = -1;
+
+        if (myBuffer != null)
+        {
+            spellCore = myBuffer.GetBufferedSpellCore(pos, rot, out localBufferIndex);
         }
         else
         {
-            // Ultimate Fallback (Just in case you run a test scene without the Game Manager)
+            // Ultimate fallback
             spellCore = BasicSpawner.Spawn(PrefabRef, pos, rot);
         }
 
-        // 3. Hand the keys (assignedGlobalIndex) to the Spell Core
-        if (spellCore != null)
+        if (spellCore != null && spellCore.TryGetComponent<SpellCreatedCore>(out var lifecycleManager))
         {
-            var lifecycleManager = spellCore.GetComponent<SpellCreatedCore>();
-            if (lifecycleManager != null)
+            CoreContext context = new CoreContext()
             {
-                CoreContext context = new CoreContext()
-                {
-                    SpawnPosition = pos,
-                    CastChargeLevel = triggerInfo.State.CastChargeLevel,
-                    TriggerVector = triggerInfo.TriggerVector,
-                    BufferSourceID = default // (This is now obsolete, you can remove it from CoreContext later!)
-                };
+                SpawnPosition = pos,
+                CastChargeLevel = triggerInfo.State.CastChargeLevel,
+                TriggerVector = triggerInfo.TriggerVector,
+                BufferSourceID = default
+            };
 
-                // Pass the assignedGlobalIndex down so it can return itself when it dies
-                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, context, ArrayIndex, assignedGlobalIndex);
-            }
+            // Pass 'ArrayIndex' (the Node index) so the core hydrates correctly
+            lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, context, ArrayIndex, localBufferIndex);
         }
     }
 }

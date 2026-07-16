@@ -6,7 +6,7 @@ VisualEffectResource:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: VFX_Fallback_Sphere_Channel
+  m_Name: VFX_Fallback_Sphere_Blast
   m_Graph: {fileID: 114350483966674976}
   m_Infos:
     m_RendererSettings:
@@ -29,7 +29,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d4c867f6b72b714dbb5fd1780afe208, type: 3}
-  m_Name: VFX_Fallback_Sphere_Channel
+  m_Name: VFX_Fallback_Sphere_Blast
   m_EditorClassIdentifier: 
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 0}
@@ -165,7 +165,7 @@ MonoBehaviour:
       x: 1050
       y: -994
       width: 1999
-      height: 1696
+      height: 1993
     contents:
     - model: {fileID: 114350483966675086}
       id: 0
@@ -206,40 +206,19 @@ MonoBehaviour:
     - model: {fileID: 114350483966675676}
       id: 0
       isStickyNote: 0
-    - model: {fileID: 114350483966675538}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 114350483966675505}
-      id: 0
-      isStickyNote: 0
     - model: {fileID: 114350483966675508}
       id: 0
       isStickyNote: 0
-    - model: {fileID: 114350483966675424}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 114350483966675630}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 114350483966675517}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 114350483966675453}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 114350483966675456}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 114350483966675463}
+    - model: {fileID: 114350483966674982}
       id: 0
       isStickyNote: 0
   - title: Ribbon
     position:
       serializedVersion: 2
-      x: 2999
-      y: -1081
+      x: 2605
+      y: -969
       width: 474
-      height: 1989
+      height: 293
     contents:
     - model: {fileID: 114350483966675554}
       id: 0
@@ -249,9 +228,9 @@ MonoBehaviour:
   uiBounds:
     serializedVersion: 2
     x: 921
-    y: -1081
-    width: 2552
-    height: 2080
+    y: -994
+    width: 2158
+    height: 1993
 --- !u!114 &114350483966674978
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -471,7 +450,7 @@ MonoBehaviour:
       inputSlot: {fileID: 114350483966675634}
     - outputSlot: {fileID: 114350483966674983}
       inputSlot: {fileID: 114350483966675540}
-    position: {x: 925, y: -414}
+    position: {x: 1760, y: -531}
     expandedSlots:
     - {fileID: 114350483966674983}
     expanded: 1
@@ -1354,7 +1333,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 3600
+      m_SerializableObject: 2
     m_Space: -1
   m_Property:
     name: _Lifetime
@@ -5306,7 +5285,7 @@ MonoBehaviour:
   m_Parent: {fileID: 114350483966674976}
   m_Children:
   - {fileID: 114350483966675556}
-  m_UIPosition: {x: 3024, y: -1022}
+  m_UIPosition: {x: 2630, y: -910}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots: []

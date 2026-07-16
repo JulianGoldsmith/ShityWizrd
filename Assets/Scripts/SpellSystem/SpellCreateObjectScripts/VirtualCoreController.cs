@@ -87,12 +87,16 @@ public class VirtualCoreController : NetworkBehaviour
     [Networked, Capacity(MAX_VIRTUAL_CORES)] public NetworkArray<int> BoolMemory { get; }
 
     private VirtualCoreContext[] _contexts;
-    private bool[] _wasActiveLocal; // Used for proxy VFX edge-detection
+
+    private VirtualCoreSlot[] _slots;
 
     public override void Spawned()
     {
         CAC = GetComponent<CastActionController>();
-        _wasActiveLocal = new bool[MAX_VIRTUAL_CORES];
+
+        _slots = new VirtualCoreSlot[MAX_VIRTUAL_CORES];
+        for (int i = 0; i < MAX_VIRTUAL_CORES; i++) _slots[i] = new VirtualCoreSlot();
+
         _contexts = new VirtualCoreContext[MAX_VIRTUAL_CORES];
 
         for (int i = 0; i < MAX_VIRTUAL_CORES; i++)
@@ -109,7 +113,7 @@ public class VirtualCoreController : NetworkBehaviour
     #region The Lifecycle API
     public void StartVirtualCore(ActiveCastID castId, SpellGraphId blueprintId, int rootNodeIndex, CoreContext initialContext)
     {
-        if (!Object.HasStateAuthority && !Object.HasInputAuthority) return;
+        //if (!Object.HasStateAuthority && !Object.HasInputAuthority) return;
 
         for (int i = 0; i < MAX_VIRTUAL_CORES; i++)
         {
@@ -128,8 +132,11 @@ public class VirtualCoreController : NetworkBehaviour
                 _contexts[i].Context = initialContext;
 
                 IRuntimeNode rootNode = GetLogicNode(i);
-                if (rootNode is ITrigger t) t.InitTick(_contexts[i]);
-                else if (rootNode is IBehaviour b) b.InitTick(_contexts[i]);
+                _slots[i].Logic = rootNode;
+                _slots[i].WasActive = true;
+                
+                if (_slots[i].Logic is ITrigger t) t.InitTick(_contexts[i]);
+                else if (_slots[i].Logic is IBehaviour b) b.InitTick(_contexts[i]);
 
                 return;
             }
@@ -143,11 +150,22 @@ public class VirtualCoreController : NetworkBehaviour
         {
             if (ActiveStates[i].IsActive && ActiveStates[i].CastID.Equals(castId))
             {
+                // 1. Wipe the state
                 ActiveStates.Set(i, default);
+
+                // 2. Explicitly scrub memory
+                ClearMemory(i);
             }
         }
     }
 
+    private void ClearMemory(int slotIndex)
+    {
+        for (int j = 0; j < INTS_PER_CORE; j++) IntMemory.Set((slotIndex * INTS_PER_CORE) + j, 0);
+        for (int j = 0; j < FLOATS_PER_CORE; j++) FloatMemory.Set((slotIndex * FLOATS_PER_CORE) + j, 0f);
+        for (int j = 0; j < VECTORS_PER_CORE; j++) VectorMemory.Set((slotIndex * VECTORS_PER_CORE) + j, Vector3.zero);
+        BoolMemory.Set(slotIndex, 0);
+    }
     public void StopAllCores()
     {
         for (int i = 0; i < MAX_VIRTUAL_CORES; i++) ActiveStates.Set(i, default);
@@ -193,24 +211,31 @@ public class VirtualCoreController : NetworkBehaviour
         // Proxies perfectly simulate the beam visuals here using local edge-detection!
         for (int i = 0; i < MAX_VIRTUAL_CORES; i++)
         {
-            bool isCurrentlyActive = ActiveStates[i].IsActive;
+            VirtualCoreState state = ActiveStates[i];
+            VirtualCoreSlot slot = _slots[i];
 
-            if (isCurrentlyActive)
+            // 1. TRANSITION: Running -> Stopped (The Cleanup)
+            if (!state.IsActive && slot.WasActive)
             {
-                IRuntimeNode rootNode = GetLogicNode(i);
-                if (rootNode is ITrigger t) t.TickVFX(_contexts[i]);
-                else if (rootNode is IBehaviour b) b.TickVFX(_contexts[i]);
+                // We don't need to look up anything, the Logic is cached!
+                if (slot.Logic is ITrigger t) t.CleanupVFX(_contexts[i]);
+                else if (slot.Logic is IBehaviour b) b.CleanupVFX(_contexts[i]);
 
-                _wasActiveLocal[i] = true;
+                slot.ClearSlot();
             }
-            else if (_wasActiveLocal[i])
-            {
-                // The slot JUST turned off this frame! Run cleanup!
-                IRuntimeNode rootNode = GetLogicNode(i);
-                if (rootNode is ITrigger t) t.CleanupVFX(_contexts[i]);
-                else if (rootNode is IBehaviour b) b.CleanupVFX(_contexts[i]);
 
-                _wasActiveLocal[i] = false;
+            // 2. TRANSITION: Stopped -> Running (The Init)
+            else if (state.IsActive && !slot.WasActive)
+            {
+                slot.Logic = GetLogicNode(i);
+                slot.WasActive = true;
+            }
+
+            // 3. CONTINUOUS: Running
+            if (state.IsActive && slot.Logic != null)
+            {
+                if (slot.Logic is ITrigger t) t.TickVFX(_contexts[i]);
+                else if (slot.Logic is IBehaviour b) b.TickVFX(_contexts[i]);
             }
         }
     }
@@ -231,4 +256,29 @@ public class VirtualCoreController : NetworkBehaviour
         return null;
     }
     #endregion
+}
+
+public class VirtualCoreSlot
+{
+    public IRuntimeNode Logic;      
+    public bool WasActive;          
+    public Dictionary<int, GameObject> ActiveVisuals = new Dictionary<int, GameObject>();
+
+    // Explicit clean method
+    public void ClearSlot()
+    {
+        Logic = null;
+        WasActive = false;
+
+        // Clean visuals
+        foreach (var visual in ActiveVisuals.Values)
+        {
+            if (visual != null)
+            {
+                if (visual.TryGetComponent<SpellVFX>(out var vfx)) vfx.StopAndCleanup();
+                else Object.Destroy(visual);
+            }
+        }
+        ActiveVisuals.Clear();
+    }
 }

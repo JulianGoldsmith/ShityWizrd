@@ -39,8 +39,6 @@ public class EquipableItem : InteractableItem, IAfterRender
     private bool _isHitboxActive = false;
     public bool IsHitboxActive => _isHitboxActive;
 
-    public NetworkObjectBuffer networkObjectBuffer;
-
     [Header("Pickup Variables")]
     public Transform visualModel;
 
@@ -115,11 +113,7 @@ public class EquipableItem : InteractableItem, IAfterRender
     {
         if (PrimarySpellID.NotNull() && primaryActionSpell != null)
         {
-            if (networkObjectBuffer != null)
-            {
-                networkObjectBuffer.Initialise(primaryActionSpell);
-                Debug.Log($"[Weapon] Buffer re-initialized for Spell {PrimarySpellID.BlueprintNumber}");
-            }
+          
         }
     }
     #endregion
@@ -141,7 +135,6 @@ public class EquipableItem : InteractableItem, IAfterRender
     {
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         networkedRB = this.GetComponent<NetworkRigidbody3D>();
-        networkObjectBuffer = this.GetComponent<NetworkObjectBuffer>();
 
         _hasLocalSimState = false;
         LinVel = Vector3.zero;

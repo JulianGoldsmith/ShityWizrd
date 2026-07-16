@@ -61,6 +61,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -82,9 +84,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &4839383806732061854
 GameObject:
@@ -197,7 +201,6 @@ GameObject:
   - component: {fileID: 2973735011368766121}
   - component: {fileID: 8305654668865484682}
   - component: {fileID: 5981614230997947567}
-  - component: {fileID: 1812851221460989918}
   - component: {fileID: 5900722414974312071}
   m_Layer: 16
   m_Name: UnEggWand_Heirachy
@@ -293,7 +296,6 @@ MonoBehaviour:
   - {fileID: 5868808666809287068}
   - {fileID: 2973735011368766121}
   - {fileID: 5981614230997947567}
-  - {fileID: 1812851221460989918}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2973735011368766121
 MonoBehaviour:
@@ -309,10 +311,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   networkedRB: {fileID: 0}
   itemName: EggWand
-  primarySpellID: RockerEgger
-  secondarySpellID: 
-  primaryActionSpell: {fileID: 0}
-  secondaryActionSpell: {fileID: 0}
   primaryActionsRef:
   - {fileID: 11400000, guid: a3f71c1f13b2e2f44bf05b4e08ecdf4e, type: 2}
   secondaryActionsRef: []
@@ -320,7 +318,7 @@ MonoBehaviour:
   primaryHandle: {fileID: 70880927531738438}
   secondaryHandle: {fileID: 0}
   hitboxes: []
-  networkObjectBuffer: {fileID: 1812851221460989918}
+  networkObjectBuffer: {fileID: 0}
   visualModel: {fileID: 5220390951732050473}
   weaponBase: {fileID: 0}
   weaponEnd: {fileID: 0}
@@ -374,22 +372,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   local_active_aura_ids: 0000000000000000000000000000000000000000000000000000000000000000
---- !u!114 &1812851221460989918
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6367780370427943061}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce08014abd62a7345b11ebdb9a342a68, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  prefab_ids: []
-  prefab_counts: 
-  _bufferSize: 8
-  thisNO: {fileID: 0}
 --- !u!95 &5900722414974312071
 Animator:
   serializedVersion: 7
@@ -473,6 +455,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -494,7 +478,9 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}

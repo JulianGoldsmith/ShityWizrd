@@ -57,13 +57,31 @@ MonoBehaviour:
     Brittleness: 0
     Stickiness: 0
   heatedCondition:
-    applyWhenUsedAsWarp: 0
-    targetDriver: 0
+    applyWhenUsedAsWarp: 1
+    targetDriver: 1
     beginThreshold: 0
-    completeThreshold: 0
+    completeThreshold: 20
     transitionCurve:
       serializedVersion: 2
-      m_Curve: []
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -149,6 +167,6 @@ MonoBehaviour:
     Hardness: 0
     Brittleness: 0
     Stickiness: 0
-  vfx_material: {fileID: -876546973899608171, guid: 1e1b7ab91ce1a9540bea233274891583, type: 3}
+  visual_material: {fileID: 0}
   casts_shadows: 1
   shatter_particle_color: {r: 1, g: 1, b: 1, a: 0}
