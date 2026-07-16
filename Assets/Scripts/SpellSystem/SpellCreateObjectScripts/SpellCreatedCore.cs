@@ -8,14 +8,19 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 
     private GameObject _attachedComponents;
 
+    //Debug
+    public static int ActiveCount;
+    public static int NetworkWritesThisSecond;
+
 
     //References to SpellGraph #
     [Networked] public ActiveCastID ActiveCastID { get; set; }
     [Networked] public SpellGraphId BlueprintID { get; set; }
     [Networked] public NetworkBool IsActiveInBuffer { get; set; }
-    [Networked] public NetworkString<_64> NodeInstanceGuid { get; set; }
+    //[Networked] public NetworkString<_64> NodeInstanceGuid { get; set; }
     [Networked] public int NodeArrayIndex { get; set; }
 
+    [Networked] public int SpawnTick { get; set; }
 
     // current context / active variables
     [Networked] public CoreContext Context { get; set; }
@@ -30,6 +35,8 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
     [Networked] public int BoolMemory { get; set; }
 
 
+
+    [Networked] public int GlobalBufferIndex { get; set; }
 
 
     public List<PendingContact> TickContacts = new List<PendingContact>();
@@ -80,14 +87,14 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
     public override void FixedUpdateNetwork()
     {
         // Proxies monitor this. When the Host sets IsActiveInBuffer = true, the Proxy wakes up.
-        foreach (var change in _changes.DetectChanges(this))
+        /*foreach (var change in _changes.DetectChanges(this))
         {
             if (change == nameof(IsActiveInBuffer))
             {
                 if (IsActiveInBuffer) WakeUp();
                 else GoToSleep();
             }
-        }
+        }*/
 
         if (IsActiveInBuffer && !_isInitialized)
         {
@@ -96,9 +103,6 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 
         if (!_isInitialized || _myPlan == null) return;
 
-        CoreContext tempContext = Context;
-        tempContext.AliveTime += Runner.DeltaTime;
-        Context = tempContext;
 
         foreach (var behaviour in _myPlan.Behaviours)
         {
@@ -122,6 +126,14 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
                         {
                             effect.Execute(this, hitInfos);
                         }
+                        if (outcome is IRuntimeCore downstreamCore)
+                        {
+                            // If a shotgun trigger hits 5 enemies, spawn 5 explosions!
+                            foreach (var hitInfo in hitInfos)
+                            {
+                                downstreamCore.ExecuteCore(hitInfo);
+                            }
+                        }
                         // (We will add the logic to spawn downstream Cores here later!)
                     }
                 }
@@ -134,18 +146,20 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 
     }
 
-    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, string nodeGuid, CoreContext initialContext, int arrayIndex)
+    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, CoreContext initialContext, int arrayIndex, int globalBufferIndex)
     {
         // 1. If we were somehow already active (buffer overlap), clean up the old spell first!
+        SpawnTick = Runner.Tick;
         if (IsActiveInBuffer)
         {
             DeactivateCore();
         }
+        GlobalBufferIndex = globalBufferIndex;
 
         NodeArrayIndex = arrayIndex;
         ActiveCastID = castId;
         BlueprintID = blueprintId;
-        NodeInstanceGuid = nodeGuid;
+        //NodeInstanceGuid = nodeGuid;
         Context = initialContext;
         IsActiveInBuffer = true;
         NetworkVelocity = Vector3.zero;
@@ -265,14 +279,23 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 
         if (!IsActiveInBuffer) return;
 
-        IsActiveInBuffer = false; // Replicates to proxies, triggering GoToSleep!
+        IsActiveInBuffer = false;
+
+        if (GlobalSpellBuffer.Instance != null)
+        {
+           // GlobalSpellBuffer.Instance.ReturnSpellCoreToBuffer(GlobalBufferIndex);
+        }
+
         GoToSleep();
+
+        if (HasStateAuthority)
+            Runner.Despawn(Object);
     }
 
     private void WakeUp()
     {
         ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
-
+        ActiveCount++;
         // 1. REBUILD THE PROXY STATE (If it doesn't exist)
         if (activeSpell == null)
         {
@@ -324,7 +347,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
             foreach (var behaviour in _myPlan.Behaviours) behaviour.CleanupVFX(this);
             foreach (var trigger in _myPlan.Triggers) trigger.CleanupVFX(this);
         }
-
+        ActiveCount--;
         TickContacts.Clear();
 
         ActiveVisuals.Clear();

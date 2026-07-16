@@ -20,6 +20,9 @@ public class FusionDebugOverlay : MonoBehaviour
     private MovingAverage _outBwAvg = new MovingAverage();
     private MovingAverage _resimAvg = new MovingAverage();
 
+    int totalObjects = 0;
+    int activeSpellCores = 0;
+
     private void Awake()
     {
         if (runner == null) runner = FindFirstObjectByType<NetworkRunner>();
@@ -96,15 +99,39 @@ public class FusionDebugOverlay : MonoBehaviour
             AppendHeader("=== Prediction ===");
             AppendStat("Forward Ticks", stats.CompleteSnapshot.ForwardTicks.ToString(), "white");
             AppendStat("Resims (Avg)", $"{_resimAvg.Value:0.0}", _resimAvg.Value < 1.0f ? "lime" : "yellow");
+
+            foreach (var no in runner.GetAllNetworkObjects())
+            {
+                totalObjects++;
+
+                if (no.TryGetComponent<SpellCreatedCore>(out var core))
+                {
+                    if (core.IsActiveInBuffer)
+                        activeSpellCores++;
+                }
+            }
+
+            _sb.AppendLine();
+            AppendHeader("=== Objects ===");
+            AppendStat("NetworkObjects", totalObjects.ToString(), "white");
+            AppendStat("Active Spell Cores", activeSpellCores.ToString(), activeSpellCores < 100 ? "lime" : "yellow");
+            activeSpellCores = 0;
+            totalObjects = 0;
+            AppendStat("Active Spell Cores ", SpellCreatedCore.ActiveCount.ToString(), "cyan");
         }
 
         _sb.AppendLine();
         long gc = System.GC.GetTotalMemory(false) / 1024 / 1024;
         AppendStat("GC Memory", $"{gc} MB", gc < 500 ? "lime" : "red");
 
+       
+
+
         string text = _sb.ToString();
         Vector2 size = _style.CalcSize(new GUIContent(text));
         GUI.Label(new Rect(Screen.width - size.x - 20, 20, size.x, size.y), text, _style);
+
+        
     }
 
     private void AppendHeader(string text) => _sb.AppendLine($"<color=#00FFFF><b>{text}</b></color>");

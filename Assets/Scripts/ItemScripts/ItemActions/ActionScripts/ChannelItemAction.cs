@@ -89,7 +89,6 @@ public class ChannelItemAction : ItemAction
                 TriggerVector = Item.activeCaster.GetSpellCastDir(),
                 CastChargeLevel = 1f,
                 OriginalCaster = Item.activeCaster.Object.Id,
-                AliveTime = 0f
             };
 
             vcc.StartVirtualCore(state.ActiveCastID, state.SpellGraphIdFrom, 0, context);

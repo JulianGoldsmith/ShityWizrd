@@ -165,40 +165,28 @@ public class RuntimeObjectCore : RuntimeCoreBase
         Vector3 pos = SpellSystemHelpers.GetSpellPosition(triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
         Quaternion rot = SpellSystemHelpers.GetSpellRotation(triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
 
-        NetworkObjectBuffer activeBuffer = null;
+        PlayerRef casterRef = PlayerRef.None;
+        if (triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<NetworkObject>(out var sourceObj))
+        {
+            // This flawlessly grabs the PlayerRef from the Weapon, the NPC, or the Parent Spell Core!
+            casterRef = sourceObj.InputAuthority;
+        }
+
+        // 2. Checkout the Spell Core from the Global Buffer!
+        int assignedGlobalIndex = -1;
         NetworkObject spellCore = null;
 
-        // 1. Try to pull from Weapon Buffer
-        if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.CastItem != null)
+        if (GlobalSpellBuffer.Instance != null)
         {
-            activeBuffer = triggerInfo.State.CastItem.GetComponent<NetworkObjectBuffer>();
-            if (activeBuffer != null) spellCore = activeBuffer.Get(PrefabRef, pos, rot);
+            spellCore = GlobalSpellBuffer.Instance.GetBufferedSpellCore(casterRef, pos, rot, out assignedGlobalIndex);
         }
-        // 2. Try to pull from NPC/Controller Buffer
-        else if (triggerInfo.IsValid && triggerInfo.State != null && triggerInfo.State.Controller != null)
+        else
         {
-            activeBuffer = triggerInfo.State.Controller.GetComponent<NetworkObjectBuffer>();
-            if (activeBuffer != null) spellCore = activeBuffer.Get(PrefabRef, pos, rot);
-        }
-        // 3. Try to pull from the Parent Core's Buffer (For downstream spawned projectiles)
-        else if (triggerInfo.IsValid && triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<SpellCreatedCore>(out var parentCore))
-        {
-            if (parentCore.Context.BufferSourceID.IsValid)
-            {
-                if (parentCore.Runner.TryFindObject(parentCore.Context.BufferSourceID, out NetworkObject bufferObj))
-                {
-                    activeBuffer = bufferObj.GetComponent<NetworkObjectBuffer>();
-                    if (activeBuffer != null) spellCore = activeBuffer.Get(PrefabRef, pos, rot);
-                }
-            }
-        }
-
-        // 4. Ultimate Fallback
-        if (spellCore == null)
-        {
+            // Ultimate Fallback (Just in case you run a test scene without the Game Manager)
             spellCore = BasicSpawner.Spawn(PrefabRef, pos, rot);
         }
 
+        // 3. Hand the keys (assignedGlobalIndex) to the Spell Core
         if (spellCore != null)
         {
             var lifecycleManager = spellCore.GetComponent<SpellCreatedCore>();
@@ -209,11 +197,11 @@ public class RuntimeObjectCore : RuntimeCoreBase
                     SpawnPosition = pos,
                     CastChargeLevel = triggerInfo.State.CastChargeLevel,
                     TriggerVector = triggerInfo.TriggerVector,
-                    AliveTime = 0f,
-                    BufferSourceID = activeBuffer != null ? activeBuffer.Object.Id : default
+                    BufferSourceID = default // (This is now obsolete, you can remove it from CoreContext later!)
                 };
 
-                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, OriginalTemplateGuid, context, ArrayIndex);
+                // Pass the assignedGlobalIndex down so it can return itself when it dies
+                lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, context, ArrayIndex, assignedGlobalIndex);
             }
         }
     }

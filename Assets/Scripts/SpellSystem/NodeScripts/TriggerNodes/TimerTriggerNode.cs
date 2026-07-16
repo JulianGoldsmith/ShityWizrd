@@ -51,7 +51,7 @@ public class TimerTrigger : RuntimeTriggerBase
     {
         triggerInfo = new List<SpellTriggerInfo>();
 
-        if (core.GetBool(HasFiredBitIndex) == false && core.Context.AliveTime >= DurationInSeconds.GetValue(default))
+        if (core.GetBool(HasFiredBitIndex) == false && core.AliveTime >= DurationInSeconds.GetValue(default))
         {
             core.SetBool(HasFiredBitIndex, true);
 

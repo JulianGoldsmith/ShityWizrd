@@ -227,7 +227,7 @@ public class NetworkObjectBuffer : NetworkBehaviour
 
         if (_bufferSize == 0 || prefab_ids == null || prefab_ids.Length == 0)
         {
-            Debug.Log($"Buffer not filled. _bufferSize {_bufferSize} pref count {prefab_ids.Length}");
+           // Debug.Log($"Buffer not filled. _bufferSize {_bufferSize} pref count {prefab_ids.Length}");
             return;
         }
 

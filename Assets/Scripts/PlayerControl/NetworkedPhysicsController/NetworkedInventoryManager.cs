@@ -1,4 +1,5 @@
 using Fusion;
+using System.Linq;
 using UnityEngine;
 
 [DefaultExecutionOrder(-10)]
@@ -102,14 +103,16 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         bool overrideUpdatePos = false;
 
-        if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hit, pickupRadius, itemLayer))
+        if (Physics.Raycast(characterController.GetEyePos(), characterController.GetLookRot() * Vector3.forward, out RaycastHit hit, pickupRadius, itemLayer)
+            && SpellSystemHelpers.GetHitGameObject(hit.collider).TryGetComponent<InteractableItem>(out bestCandidate))
         {
-            bestCandidate = hit.collider.GetComponent<InteractableItem>();
+            //bestCandidate = hit.collider.GetComponent<InteractableItem>();
             overrideUpdatePos = true; //if finding by raycast it should be more accurate
         }
         else
         {
             Collider[] nearbyItems = Physics.OverlapSphere(characterController.GetEyePos(), pickupRadius, itemLayer);
+
 
             float bestDot = -1f;
 
@@ -122,7 +125,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
                 if (dot > Mathf.Cos(pickupAngle * Mathf.Deg2Rad))
                 {
-                    if (dot > bestDot && col.TryGetComponent<InteractableItem>(out InteractableItem newBest))
+                    if (dot > bestDot && SpellSystemHelpers.GetHitGameObject(col).TryGetComponent<InteractableItem>(out var newBest))
                     {
                         bestDot = dot;
                         bestCandidate = newBest;

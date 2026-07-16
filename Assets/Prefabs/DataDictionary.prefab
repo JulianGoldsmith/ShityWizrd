@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8497987634788270896}
-  - component: {fileID: 4210461010986574593}
   - component: {fileID: 5099528393751400421}
+  - component: {fileID: 5730047868571876105}
   m_Layer: 0
   m_Name: DataDictionary
   m_TagString: Untagged
@@ -33,24 +33,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4210461010986574593
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6445999477124224864}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d464628388599f94a92e498824b45574, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  fallback_material: {fileID: 11400000, guid: f17056a00805d134da9359af37a90144, type: 2}
-  all_materials:
-  - {fileID: 11400000, guid: 9e1ef0f7d07f5e340b8ad894d797ec2e, type: 2}
-  - {fileID: 11400000, guid: 2462d99a30f721d4cb090a40b43e8d14, type: 2}
-  - {fileID: 11400000, guid: cb3dff19f5dd8894aa7410542958b5d9, type: 2}
-  - {fileID: 11400000, guid: 5516872d8dd18944a92a1b814e3d5ea0, type: 2}
 --- !u!114 &5099528393751400421
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65,3 +47,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   all_auras:
   - {fileID: 11400000, guid: 3afcaf91d4a1dd346917ca6ac7bb521f, type: 2}
+--- !u!114 &5730047868571876105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6445999477124224864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e66e0e7ff37cd8744be48d4e1024bbe6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nodeDictionary: {fileID: 11400000, guid: 5c4f9ecc54fd7b14bb01f1762f3cd7e5, type: 2}
+  statusDictionary: {fileID: 11400000, guid: 3da072268cf941349b51fc6ab03a46b3, type: 2}
+  materialDictionary: {fileID: 11400000, guid: 529ac37d7e223fa4f8a011f9bece08b9, type: 2}
+  vfxDictionary: {fileID: 11400000, guid: 6bda53bd5752c254fb472961a9b89d85, type: 2}

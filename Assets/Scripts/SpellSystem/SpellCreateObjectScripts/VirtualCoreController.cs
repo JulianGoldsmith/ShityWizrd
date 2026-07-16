@@ -20,6 +20,7 @@ public class VirtualCoreContext : ISpellExecutionCore
 {
     public VirtualCoreController Controller;
     public int SlotIndex;
+    public int SpawnTick { get; set; }
 
     public Dictionary<int, GameObject> ActiveVisuals { get; } = new Dictionary<int, GameObject>();
 
@@ -33,15 +34,14 @@ public class VirtualCoreContext : ISpellExecutionCore
     public ActiveCastID ActiveCastID => Controller.ActiveStates[SlotIndex].CastID;
 
     private CoreContext _context;
+
     public CoreContext Context
     {
-        get
-        {
-            _context.AliveTime = (Runner.Tick - Controller.ActiveStates[SlotIndex].StartTick) * Runner.DeltaTime;
-            return _context;
-        }
+        get => _context;
         set => _context = value;
     }
+
+    public float AliveTime => (Runner.Tick - Controller.ActiveStates[SlotIndex].StartTick) * Runner.DeltaTime;
 
     public bool TryGetCoreComponent<T>(out T component) where T : class
     {

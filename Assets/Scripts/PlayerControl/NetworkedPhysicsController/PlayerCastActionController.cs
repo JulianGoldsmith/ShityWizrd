@@ -18,6 +18,7 @@ public class PlayerCastActionController : CastActionController
         base.Spawned();
         if (inventory == null) inventory = GetComponent<NetworkedInventoryManager>();
         if (hcc == null) hcc = GetComponent<HybridCharacterController>();
+        GlobalSpellBuffer.Instance.AssignSliceToPlayer(Runner.LocalPlayer);
     }
 
     public override void FixedUpdateNetwork()

@@ -299,8 +299,8 @@ public class EquipableItem : InteractableItem, IAfterRender
         networkedRB.RBIsKinematic = true;
         networkedRB.GetComponent<Collider>().enabled = false;
 
-        networkedRB.Rigidbody.angularVelocity = Vector3.zero;
-        networkedRB.Rigidbody.linearVelocity = Vector3.zero;
+        //networkedRB.Rigidbody.angularVelocity = Vector3.zero;
+        //networkedRB.Rigidbody.linearVelocity = Vector3.zero;
 
         visualModel.localPosition = Vector3.zero;
         visualModel.localRotation = Quaternion.identity;

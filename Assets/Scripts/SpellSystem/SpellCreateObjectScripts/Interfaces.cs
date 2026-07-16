@@ -1,3 +1,4 @@
+using Fusion;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,7 +13,8 @@ public interface ISpellExecutionCore
 {
     ActiveCastID ActiveCastID { get; }
     CoreContext Context { get; set; }
-
+    public int SpawnTick { get; set; }
+    public float AliveTime => (Runner.Tick - SpawnTick) * Runner.DeltaTime;
     UnityEngine.GameObject SourceObject { get; }
     UnityEngine.Vector3 Position { get; }
     UnityEngine.Quaternion Rotation { get; }

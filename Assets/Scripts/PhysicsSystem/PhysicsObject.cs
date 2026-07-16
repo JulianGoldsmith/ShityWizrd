@@ -712,12 +712,17 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     #region Despawning
     protected virtual void DespawnObject()
     {
-        if(TryGetComponent<SpellCreatedCore>(out SpellCreatedCore CLM)){
+        if (TryGetComponent<SpellCreatedCore>(out SpellCreatedCore CLM))
+        {
+           
             CLM.DeactivateCore();
         }
-        if (HasStateAuthority)
-            Runner.Despawn(Object);
-        
+        else
+        {
+            if (HasStateAuthority)
+                Runner.Despawn(Object);
+        }
+
     }
     public override void Despawned(NetworkRunner runner, bool hasState)
     {

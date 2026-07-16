@@ -9,7 +9,6 @@ public struct CoreContext : INetworkStruct
 
     public NetworkId BufferSourceID;
 
-    public float AliveTime;
     public NetworkId CurrentTarget;
     public Vector3 TriggerVector { get; set; }
 }
