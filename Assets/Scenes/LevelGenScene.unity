@@ -4619,16 +4619,28 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 8
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
       value: 
-      objectReference: {fileID: 721753436}
+      objectReference: {fileID: 721753442}
     - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[3]'
       value: 
-      objectReference: {fileID: 721753442}
+      objectReference: {fileID: 721753441}
+    - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[4]'
+      value: 
+      objectReference: {fileID: 721753440}
+    - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[5]'
+      value: 
+      objectReference: {fileID: 721753439}
+    - target: {fileID: -6324647675338168165, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[6]'
+      value: 
+      objectReference: {fileID: 721753451}
     - target: {fileID: 2472905464452444636, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: SortKey
       value: 8719265
@@ -4653,6 +4665,10 @@ PrefabInstance:
       propertyPath: _physicsObjectProperties.material_label
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 6083580304054467513, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4711208715938537054, guid: bbdd720a578673e409f09a311f9ab06c, type: 3}
     - target: {fileID: 7188558200159187996, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
       propertyPath: m_LocalScale.x
       value: 4
@@ -4749,7 +4765,8 @@ PrefabInstance:
       propertyPath: _Material_label
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -5027240436109435661, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -4762,17 +4779,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7532608151074762406, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
   m_PrefabInstance: {fileID: 721753434}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &721753436 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: -5027240436109435661, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
-  m_PrefabInstance: {fileID: 721753434}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 721753435}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!208 &721753438
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -4789,6 +4795,39 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.043, z: 0.001}
   m_TimeToStationary: 0.5
+--- !u!114 &721753439 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8784290017043729233, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 721753434}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721753435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &721753440 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5750959168854019402, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 721753434}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721753435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02ff5681e3dd7ec4398ec076acedcdfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &721753441 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 32742562258277121, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 721753434}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721753435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62cabda8b18e61a4b8a28b98591eae75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &721753442 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: -8108757413318474618, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
@@ -4800,6 +4839,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 119e0ae8668d6fb4c99ce0429be8fa43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &721753451 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -7049394061269516983, guid: 444a1517848e2ee49be475b1d1432a95, type: 3}
+  m_PrefabInstance: {fileID: 721753434}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721753435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
 --- !u!1 &765788057
 GameObject:
   m_ObjectHideFlags: 0
