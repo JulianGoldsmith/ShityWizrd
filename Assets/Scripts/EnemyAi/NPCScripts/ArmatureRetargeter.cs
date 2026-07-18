@@ -45,7 +45,26 @@ public class ArmatureRetargeter : MonoBehaviour
             {
                 _sourceToBoneMap[b.sourceBone] = b;
             }
+
+            if(b.physicsProxy != null)
+            {
+                PhysicsObject po = b.physicsProxy.TryGetComponent<PhysicsObject>(out po) ? po:
+                    b.physicsProxy.TryGetComponent<LocalSmoothingForNetworkedRenderTarget>(out var lsnrt)? lsnrt.target.parent.GetComponent<PhysicsObject>() : null;
+
+
+                if (po != null)
+                {
+                    po.nonChildRenderers.Add(b.targetBone.GetComponent<Renderer>());
+                    Renderer[] renderers = b.targetBone.GetComponentsInChildren<Renderer>();
+                    foreach (var r in renderers)
+                    {
+                        if(!po.nonChildRenderers.Contains(r))
+                            po.nonChildRenderers.Add(r);
+                    }
+                }
+            }
         }
+       
     }
 
     [ContextMenu("Map Bones by Name")]

@@ -560,6 +560,7 @@ MonoBehaviour:
   lerpTProxy: 0
   overRideAndInjectAnimatedHipsRootMotionToAll: 0
   overRideAndKillInjectedMotion: 0
+  readRootMotion: 1
 --- !u!1 &635060877302287510
 GameObject:
   m_ObjectHideFlags: 0
@@ -1234,6 +1235,8 @@ SkinnedMeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1255,9 +1258,11 @@ SkinnedMeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -1701,14 +1706,12 @@ GameObject:
   - component: {fileID: 8859186013730870374}
   - component: {fileID: 2949232162196738072}
   - component: {fileID: 8126967731741084364}
-  - component: {fileID: 764547303363181115}
   - component: {fileID: 6718825358511771310}
   - component: {fileID: 232658919603037716}
   - component: {fileID: 3265330234082672118}
   - component: {fileID: 1585689525517121370}
   - component: {fileID: 1537595608460148306}
   - component: {fileID: 226515128592896572}
-  - component: {fileID: 1181774792633362585}
   - component: {fileID: 4558121905058620571}
   m_Layer: 0
   m_Name: TestingNPC 1
@@ -1757,10 +1760,8 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 2949232162196738072}
   - {fileID: 8126967731741084364}
-  - {fileID: 764547303363181115}
   - {fileID: 1537595608460148306}
   - {fileID: 226515128592896572}
-  - {fileID: 1181774792633362585}
   - {fileID: 4558121905058620571}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2949232162196738072
@@ -1831,32 +1832,6 @@ MonoBehaviour:
   _currentAbsoluteRM_Rot: {x: 0, y: 0, z: 0, w: 0}
   xpbdSolver: {fileID: 0}
   characterBonkController: {fileID: 0}
---- !u!114 &764547303363181115
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4800428965064687594}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 504b1784c3955f54a97c0d2a81c980cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _animator: {fileID: 455054832584376484}
-  _locomotionClipsConfig: []
-  _tPoseClip: {fileID: -6257937421963181302, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
-  _CurrentState: 0
-  _npcActionController: {fileID: 0}
-  _blendSpeed: 5
-  _actionBlendSpeed: 20
-  _locomotionBlendSpeed: 10
-  _ClipWeights: []
-  _ClipTimes: []
-  _ActiveClipIndex: -1
-  armatureRoot: {fileID: 7265867803234363795}
-  armatureLocalUpAxis: 1
-  armatureLocalForwardAxis: 2
 --- !u!114 &6718825358511771310
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1872,6 +1847,7 @@ MonoBehaviour:
   m_Graph: {fileID: -2221796376738893910, guid: 3ae8be7466d444247a031810599277e3, type: 2}
   m_BlackboardVariableOverridesList:
   - rid: 711863005192388747
+  m_OriginalGraph: {fileID: 0}
   m_IsInitialised: 0
   m_IsStarted: 0
   references:
@@ -1954,34 +1930,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55a47827fb9403844a902d3ec8175ced, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultGravityScale: 1
   physicsObjectProperties: {fileID: 0}
-  currentProperties:
-    size: 0
-    density: 0
-    mass: 0
-    hardness: 0
-    elasticity: 0
-    brittleness: 0
-    stickiness: 0
-    friction: 0
-    gravityMultiplier: 0
   rb: {fileID: 0}
-  tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
-  objectMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
   physicsSubObjects: []
-  _current_bonkedness: 0
   creator: {fileID: 0}
   lastInteractor: {fileID: 0}
+  defaultGravityScale: 1
   velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
-  OnZeroBonk_event:
-    m_PersistentCalls:
-      m_Calls: []
-  OnRecoverFromBonk_event:
-    m_PersistentCalls:
-      m_Calls: []
   bonkController: {fileID: 0}
 --- !u!114 &226515128592896572
 MonoBehaviour:
@@ -1996,37 +1954,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   local_active_aura_ids: 0000000000000000000000000000000000000000000000000000000000000000
---- !u!114 &1181774792633362585
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4800428965064687594}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0a0e2259777eba46ad4757f21112b5a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  inventory: {fileID: 0}
-  isCasting: 0
-  isUpperBodyAction: 0
-  currentAttackCooldown: 0
-  primaryComboCounter: 0
-  comboTimer: 0
-  primaryAttackBuffered: 0
-  primaryAttackReleaseBuffered: 0
-  _nextActionId: 0
-  _TotalSpellCasts: 0
-  spellCastPoints: []
-  agent: {fileID: 0}
-  targetVariableName: Target
-  canAttackVariableName: CanAttack
-  actions: []
-  hitboxes: []
-  _animStateController: {fileID: 0}
-  spellSpawnPoint: {fileID: 0}
-  activeRagdollController: {fileID: 0}
 --- !u!114 &4558121905058620571
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2040,19 +1967,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _Material_label: 0
+  innateMaterial: 0
   _Size: 1
   _Base_gravity_multiplier: 1
   CurrentSimData:
     Mass: 0
+    Scale: 0
     Friction: 0
-    Restitution: 0
+    Bounce: 0
     LinearDamping: 0
     AngularDamping: 0
     Brittleness: 0
     Hardness: 0
     Stickiness: 0
     GravityMultiplier: 0
-  CachedTick: -1
+  debugState: []
 --- !u!1 &4836704107927610604
 GameObject:
   m_ObjectHideFlags: 0
@@ -2845,6 +2774,8 @@ SkinnedMeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -2866,9 +2797,11 @@ SkinnedMeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0

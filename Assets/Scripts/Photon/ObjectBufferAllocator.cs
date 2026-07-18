@@ -14,8 +14,11 @@ public class ObjectBufferAllocator : NetworkBehaviour, IPlayerJoined, IPlayerLef
     public int PlayerBufferCapacity = 32;
     public int EnvironmentBufferCapacity = 32;
 
-    private Dictionary<PlayerRef, ObjectBuffer> _playerBuffers = new Dictionary<PlayerRef, ObjectBuffer>();
-    public ObjectBuffer EnvironmentBuffer { get; private set; }
+    [Networked, Capacity(16)]
+    public NetworkDictionary<PlayerRef, NetworkId> PlayerBufferMap { get; }
+    public NetworkId EnvironmentBufferId { get; set; }
+
+    private Dictionary<NetworkId, ObjectBuffer> _localBufferCache = new Dictionary<NetworkId, ObjectBuffer>();
 
     private void Awake()
     {
@@ -27,18 +30,17 @@ public class ObjectBufferAllocator : NetworkBehaviour, IPlayerJoined, IPlayerLef
     {
         if (HasStateAuthority)
         {
-            // Spawn the Environment Buffer
-            Runner.Spawn(BufferPrefab, Vector3.zero, Quaternion.identity, null, (runner, obj) =>
+            var envObj = Runner.Spawn(BufferPrefab, Vector3.zero, Quaternion.identity, null, (runner, obj) =>
             {
                 if (obj.TryGetComponent<ObjectBuffer>(out var envBuffer))
                 {
                     envBuffer.ActiveCapacity = EnvironmentBufferCapacity;
                     envBuffer.GenericSpellCorePrefab = GenericSpellCorePrefab;
                     envBuffer.Owner = PlayerRef.None;
-                    EnvironmentBuffer = envBuffer;
                     envBuffer.gameObject.name = "Environment_ObjectBuffer";
                 }
             });
+            EnvironmentBufferId = envObj.Id;
         }
     }
 
@@ -47,7 +49,7 @@ public class ObjectBufferAllocator : NetworkBehaviour, IPlayerJoined, IPlayerLef
         if (!HasStateAuthority) return;
 
         // Spawn a dedicated buffer for the new player
-        Runner.Spawn(BufferPrefab, Vector3.zero, Quaternion.identity, null, (runner, obj) =>
+        var bufferObj = Runner.Spawn(BufferPrefab, Vector3.zero, Quaternion.identity, null, (runner, obj) =>
         {
             if (obj.TryGetComponent<ObjectBuffer>(out var buffer))
             {
@@ -55,35 +57,62 @@ public class ObjectBufferAllocator : NetworkBehaviour, IPlayerJoined, IPlayerLef
                 buffer.GenericSpellCorePrefab = GenericSpellCorePrefab;
                 buffer.Owner = player;
                 buffer.gameObject.name = $"Player_{player.PlayerId}_ObjectBuffer";
-
-                _playerBuffers.Add(player, buffer);
             }
         });
+
+        PlayerBufferMap.Add(player, bufferObj.Id);
     }
 
     public void PlayerLeft(PlayerRef player)
     {
         if (!HasStateAuthority) return;
 
-        if (_playerBuffers.TryGetValue(player, out var buffer))
+        if (PlayerBufferMap.TryGet(player, out NetworkId bufferId))
         {
-            buffer.IsOrphaned = true;
-            buffer.gameObject.name += "_[ORPHANED]";
-            _playerBuffers.Remove(player);
+            if (Runner.TryFindObject(bufferId, out var bufferObj) && bufferObj.TryGetComponent<ObjectBuffer>(out var buffer))
+            {
+                buffer.IsOrphaned = true;
+                buffer.gameObject.name += "_[ORPHANED]";
+            }
+            PlayerBufferMap.Remove(player);
         }
     }
 
     public ObjectBuffer GetBufferForCaster(NetworkObject casterSource)
     {
-        if (casterSource == null) return EnvironmentBuffer;
-
-        if (casterSource.InputAuthority != PlayerRef.None)
+        if (casterSource == null || casterSource.InputAuthority == PlayerRef.None)
         {
-            if (_playerBuffers.TryGetValue(casterSource.InputAuthority, out var playerBuffer))
+            return GetCachedBuffer(EnvironmentBufferId);
+        }
+
+        if (PlayerBufferMap.TryGet(casterSource.InputAuthority, out NetworkId bufferId))
+        {
+            return GetCachedBuffer(bufferId);
+        }
+
+        return GetCachedBuffer(EnvironmentBufferId);
+    }
+
+    private ObjectBuffer GetCachedBuffer(NetworkId bufferId)
+    {
+        if (!bufferId.IsValid) return null;
+
+        if (_localBufferCache.TryGetValue(bufferId, out var buffer) && buffer != null)
+        {
+            return buffer;
+        }
+
+        if (Runner.TryFindObject(bufferId, out var netObj))
+        {
+            if (netObj.TryGetComponent<ObjectBuffer>(out var foundBuffer))
             {
-                return playerBuffer;
+                _localBufferCache[bufferId] = foundBuffer;
+                return foundBuffer;
             }
         }
-        return EnvironmentBuffer;
+
+        return null;
     }
+
+ 
 }

@@ -301,7 +301,9 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
                     if (TryGetComponent<PlayerPhysicsObject>(out PlayerPhysicsObject PPO))
                     {
                         //GetBonked();
-                        PPO.current_bonkedness = -50f;
+                        //PPO.current_bonkedness = -50f;
+
+                        //////////////////////////////////////////////////////NEED BONK LOGIC ///////////////////////////////////////////////////////////
                     }
                 }
                     //GetBonked(); //animation is applied in Render -> Update Animations()
@@ -311,7 +313,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             {
                 if (TryGetComponent<PlayerPhysicsObject>(out PlayerPhysicsObject PPO))
                 {
-                    PPO.current_bonkedness = 100f;
+                    //////////////////////////////////////////////////////NEED BONK LOGIC ///////////////////////////////////////////////////////////
                 }
                 //GetUnBonked(); //animation is applied in Render -> Update Animations()
             }

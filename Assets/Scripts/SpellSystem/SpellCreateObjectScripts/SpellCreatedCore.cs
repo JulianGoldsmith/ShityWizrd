@@ -238,8 +238,10 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
                 var physOb = GetComponent<PhysicsObject>();
                 if (physOb != null)
                 {
-                    physOb.OnZeroBonk_event.RemoveListener(DeactivateCore);
-                    physOb.OnZeroBonk_event.AddListener(DeactivateCore);
+                    //////////////////////////////////////////////////////NEED BONK LOGIC ///////////////////////////////////////////////////////////
+
+                    /*physOb.OnZeroBonk_event.RemoveListener(DeactivateCore);
+                    physOb.OnZeroBonk_event.AddListener(DeactivateCore);*/
                 }
             }
             _isInitialized = true;

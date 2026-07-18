@@ -13,7 +13,9 @@ public class RuneLibraryUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     [Header("UI References")]
     public Transform contentParent;
     public GameObject categoryHeaderPrefab; 
-    public GameObject runeItemPrefab; 
+    public GameObject runeItemPrefab;
+
+    public GameObject savedSpellButtonPrefab;
 
 
     public float panelWidth = 300f;
@@ -119,6 +121,8 @@ public class RuneLibraryUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
             PopulateRuneCategory(title, group.ToList());
         }
+
+       
     }
 
     void PopulateRuneCategory(string title, List<SpellNode> nodes)
@@ -157,4 +161,6 @@ public class RuneLibraryUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             }
         }
     }
+
+    
 }

@@ -324,14 +324,14 @@ public class SpellGraphController : MonoBehaviour
         }
         if (!isEditingSubgraph)
         {
-            if (Keyboard.current.nKey.wasPressedThisFrame)
+           /* if (Keyboard.current.nKey.wasPressedThisFrame)
             {
                 ClearAndCreateNewSpellOnActiveItem();
-            }
-            if (Keyboard.current.gKey.wasPressedThisFrame)
+            }*/
+            /*if (Keyboard.current.gKey.wasPressedThisFrame)
             {
                 ToggleEditorMode(!isEditingSubgraph);
-            }
+            }*/
         }
         if (Keyboard.current.deleteKey.wasPressedThisFrame)
         {
@@ -843,18 +843,19 @@ public class SpellGraphController : MonoBehaviour
     #region Save/load
 
 
-    public SpellGraph LoadSpellData(string savePath)
+    public SpellGraph LoadSpellData(string spellName)
     {
-        if (!System.IO.File.Exists(savePath))
+        // Load the JSON as a TextAsset directly from the Resources cache
+        TextAsset spellAsset = Resources.Load<TextAsset>($"BakedSpells/{spellName}");
+
+        if (spellAsset == null)
         {
-            Debug.LogError($"Save file not found: {savePath}");
+            Debug.LogError($"Save file not found in Resources/BakedSpells for: {spellName}");
             return null;
         }
 
-        string json = System.IO.File.ReadAllText(savePath);
-
         SpellGraph spell_graph = ScriptableObject.CreateInstance<SpellGraph>();
-        JsonUtility.FromJsonOverwrite(json, spell_graph);
+        JsonUtility.FromJsonOverwrite(spellAsset.text, spell_graph);
 
         return spell_graph;
     }
@@ -875,24 +876,24 @@ public class SpellGraphController : MonoBehaviour
     //Called from editor button
     public void SaveSpellToAssets(string spellName)
     {
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
+        string directoryPath = System.IO.Path.Combine(Application.dataPath, "Resources/BakedSpells");
 
-            string directoryPath = System.IO.Path.Combine(Application.dataPath, "Scripts/SpellSystem/SavedSpells");
+        if (!System.IO.Directory.Exists(directoryPath))
+        {
+            System.IO.Directory.CreateDirectory(directoryPath);
+        }
 
-            if (!System.IO.Directory.Exists(directoryPath))
-            {
-                System.IO.Directory.CreateDirectory(directoryPath);
-            }
+        string path = System.IO.Path.Combine(directoryPath, spellName + ".json");
 
-            string path = System.IO.Path.Combine(directoryPath, spellName + ".json");
-    
-            SaveCurrentGraph(path);
+        string json = JsonUtility.ToJson(currentGraph, true);
+        System.IO.File.WriteAllText(path, json);
+        Debug.Log($"Spell saved to Resources: {path}");
 
-            AssetDatabase.Refresh();
-        #else
-                //need to add other method for player saved spells 
-                Debug.Log("only implemented for use in Unity Editor.");
-        #endif
+        UnityEditor.AssetDatabase.Refresh();
+#else
+        Debug.LogWarning("Saving baked spells is only implemented for use in the Unity Editor.");
+#endif
     }
 
     public SpellGraph GetSpellFromAssestsByName(string spellName)
@@ -906,25 +907,14 @@ public class SpellGraphController : MonoBehaviour
     //called from editor button
     public void LoadSpellByNameToCurrentItem(string spellName)
     {
-        string path = GetSpellPathByName(spellName);
+        if (string.IsNullOrEmpty(spellName)) return;
 
-        SpellGraph loadedGraph = LoadSpellData(path);
-
-        EquipSpellToActiveItem(loadedGraph);
-    }
-
-    public string GetSpellPathByName(string spellName, bool fromAssets = true)
-    {
-        if (fromAssets)
+        SpellGraph loadedGraph = LoadSpellData(spellName);
+        if (loadedGraph != null)
         {
-            return System.IO.Path.Combine(Application.dataPath, "Scripts/SpellSystem/SavedSpells", spellName + ".json");
+            EquipSpellToActiveItem(loadedGraph);
+            BuildGraphView(loadedGraph); 
         }
-        else
-        {
-            Debug.LogWarning("Saving to other location not implemented yet, using Assets to find spell");
-            return System.IO.Path.Combine(Application.dataPath, "Scripts/SpellSystem/SavedSpells", spellName + ".json");
-        }
-        
     }
 
     //equip spell in to current item

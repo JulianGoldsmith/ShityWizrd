@@ -34,7 +34,8 @@ public class SpellStateManager : NetworkBehaviour
 
     private ChangeDetector _manifestChangeDetector;
 
-
+    private Dictionary<string, SpellGraphId> _cachedBakedSpells = new Dictionary<string, SpellGraphId>();
+    private int _bakedSpellCounter = 10000;
     private void Awake()
     {
         instance = this;
@@ -513,6 +514,46 @@ public class SpellStateManager : NetworkBehaviour
             }
         }
         
+    }
+
+    public SpellGraphId LoadBakedWeaponSpell(TextAsset spellJson)
+    {
+        if (!Object.HasStateAuthority) return default;
+        if (spellJson == null || string.IsNullOrEmpty(spellJson.text)) return default;
+
+        string spellName = spellJson.name;
+
+        if (_cachedBakedSpells.TryGetValue(spellName, out SpellGraphId existingId))
+        {
+            return existingId;
+        }
+
+        try
+        {
+            SpellGraph graph = ScriptableObject.CreateInstance<SpellGraph>();
+            JsonUtility.FromJsonOverwrite(spellJson.text, graph);
+
+            _bakedSpellCounter++;
+            SpellGraphId newId = new SpellGraphId(PlayerRef.None, _bakedSpellCounter);
+            graph.spellGraphId = newId;
+
+            active_spellblueprints[newId] = graph;
+            HydrateAndStoreSpell(newId, graph);
+            AddToManifest(newId);
+
+            _cachedBakedSpells[spellName] = newId;
+
+            byte[] compressedData = SerializeSpellData(graph.Data);
+            RPC_BroadcastSpell(newId, compressedData);
+
+            Debug.Log($"[SpellStateManager] Loaded and Cached new Baked Weapon Spell: {spellName}");
+            return newId;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SpellStateManager] Failed to parse baked spell {spellName}: {e.Message}");
+            return default;
+        }
     }
 
     #region Spell Graphs

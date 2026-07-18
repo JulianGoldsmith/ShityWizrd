@@ -15,6 +15,10 @@ public class EquipableItem : InteractableItem, IAfterRender
 {
     public string itemName;
 
+    [Header("Baked Spells (JSON)")]
+    public TextAsset defaultPrimarySpellJSON;
+    public TextAsset defaultSecondarySpellJSON;
+
     [Networked, OnChangedRender(nameof(OnPrimarySpellChanged))]
     public SpellGraphId PrimarySpellID { get; set; }
 
@@ -145,6 +149,11 @@ public class EquipableItem : InteractableItem, IAfterRender
 
         InitializeAnimClipSampler();
         Runner.SetIsSimulated(this.Object, true);
+
+        if (Object.HasStateAuthority)
+        {
+            InitializeBakedSpells();
+        }
     }
 
     public void UpdateModelVisuals()
@@ -806,10 +815,23 @@ public class EquipableItem : InteractableItem, IAfterRender
         }
     }
 
-  
+
 
     #endregion
 
+    private void InitializeBakedSpells()
+    {
+        if (SpellStateManager.instance == null) return;
+
+        if (defaultPrimarySpellJSON != null)
+        {
+            PrimarySpellID = SpellStateManager.instance.LoadBakedWeaponSpell(defaultPrimarySpellJSON);
+        }
+        if (defaultSecondarySpellJSON != null)
+        {
+            SecondarySpellID = SpellStateManager.instance.LoadBakedWeaponSpell(defaultSecondarySpellJSON);
+        }
+    }
 }
 
 public struct NetworkItemActionData : INetworkStruct

@@ -9,7 +9,7 @@ public class ObjectBuffer : NetworkBehaviour
     public NetworkPrefabRef GenericSpellCorePrefab;
 
     // Hard limit for memory allocation, but we use ActiveCapacity for loops
-    public const int MAX_CAPACITY = 128;
+    public const int MAX_CAPACITY = 32;
 
     [HideInInspector]
     [Networked] public int ActiveCapacity { get; set; }
@@ -27,6 +27,7 @@ public class ObjectBuffer : NetworkBehaviour
 
     public override void Spawned()
     {
+        
         if (HasStateAuthority)
         {
             for (int i = 0; i < ActiveCapacity; i++)
@@ -39,14 +40,13 @@ public class ObjectBuffer : NetworkBehaviour
         }
     }
 
+
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
 
-        // Drain logic for disconnected players
         if (IsOrphaned)
         {
-            // Optional: Add logic here to check if all spells are dead before despawning the buffer
             return;
         }
 
@@ -105,13 +105,10 @@ public class ObjectBuffer : NetworkBehaviour
         if (!HasStateAuthority) return null;
 
         var instance = Runner.Spawn(GenericSpellCorePrefab, new Vector3(0f, -1000f, 0f));
-
         if (instance.TryGetComponent<Rigidbody>(out var rb)) rb.isKinematic = true;
 
         Runner.SetIsSimulated(instance, false);
         instance.gameObject.SetActive(false);
-
-        // HIERARCHY CLEANUP: Keep the hierarchy clean!
         instance.transform.SetParent(this.transform, false);
 
         return instance;
@@ -132,12 +129,8 @@ public class ObjectBuffer : NetworkBehaviour
         {
             _buffer.Set(currentIndex, null);
         }
-
-        // Exact Prediction Head Advancement
-        if (HasStateAuthority || (Owner != PlayerRef.None && Owner == Runner.LocalPlayer))
-        {
-            HeadIndex = (currentIndex + 1) % ActiveCapacity;
-        }
+        
+        HeadIndex = (currentIndex + 1) % ActiveCapacity;
 
         if (!HasStateAuthority)
         {

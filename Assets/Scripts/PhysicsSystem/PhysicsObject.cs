@@ -1,6 +1,8 @@
 using Fusion;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
 using UnityEngine.Events;
@@ -10,63 +12,37 @@ using static Fusion.NetworkBehaviour;
 [RequireComponent(typeof(PhysicsObjectProperties))]
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
-    /* Defines interactions of physics objects in the physics system.
-     * Any object that is expected to interact with physics should have:
-     *  - This script
-     *  - A rigidbody
-     *  - A collider + physicsmaterial
-     *  
-     *  This script then contains the methods used for physics interactions
-     *      as well as the properties (PhysicsObjectProperties) used in those
-     *      calculations.
-     *  - PhysicsObjectProperties struct with values assigned, including
-     *      - PhysicsObjectMaterial (base material)
-     *  
-     *  Can be inherited to make special behavior for spells versus players, for
-     *      example.
-     *  
-     *  Relevant for spell-objects (e.g. tangible projectiles), 
-     *      players, enemies, world-objects.
-     */
 
-    [Header("Physics Settings")]
-    public float defaultGravityScale = 1f;
+   
 
     private IMovementHandler _movementHandler;
 
-    private ChangeDetector _changeDetector;
-
+    [Header("Dependancies")]
     public PhysicsObjectProperties physicsObjectProperties;
-
-
     public Rigidbody rb;
-    public SimulatedPhysicsObject tPO;
     public PhysicsMaterial physicsMaterial;
-    public ObjectMaterial objectMaterial;
+
+    [Header("Composure / Bonk System")]
+    public BonkManager bonkManager;
+
     [SerializeField] protected List<PhysicsSubObject> physicsSubObjects = new List<PhysicsSubObject>();
     protected Tick? tick_spawned = null;
-    // bonkedness is the standin for consciousness (player)
-    // and health (object).
-    [Networked] public float current_bonkedness { get; set; }
-    protected bool zero_bonkedness { get { return current_bonkedness <= 0.0f; } }
 
     public NetworkObject creator;
     public NetworkObject lastInteractor;
     public NetworkObject currentThreatCause => (lastInteractor ?? creator)?? null;
 
-
-    private Renderer[] _renderers;
+    [Header("Renderer Settings")]
+    private List<Renderer> _renderers = new List<Renderer>();
+    public List<Renderer> nonChildRenderers = new List<Renderer>();
     private MaterialPropertyBlock _mpb;
     public VisualStateData VisualState = new VisualStateData();
     private Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
 
+    [Header("Inate Physics Settings")]
+    public float defaultGravityScale = 1f;
+
     #region Data Networking
-    public void OnPhysicsObjectPropertiesChanged()
-    {
-        // Just re-init the object.
-        // This includes assigning properties as well
-        InitialisePhysicsObject();
-    }
     private void Awake()
     {
         physicsObjectProperties = GetComponent<PhysicsObjectProperties>();
@@ -80,8 +56,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         tick_spawned = Runner.Tick;
         //InitialisePhysicsObject();
-        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
-        current_bonkedness = starting_bonkedness;
     }
     #endregion
 
@@ -106,9 +80,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         _movementHandler = GetComponent<IMovementHandler>();
 
-   
-        _renderers = GetComponentsInChildren<Renderer>();
 
+        _renderers = GetComponentsInChildren<Renderer>().ToList();
+        _renderers.AddRange(nonChildRenderers);
         foreach (var r in _renderers)
         {
             if (r != null)
@@ -116,9 +90,11 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
                 originalMaterials.Add(r, r.sharedMaterials);
             }
         }
+
+      
         if (_mpb == null) _mpb = new MaterialPropertyBlock();
     
-}
+    }
 
 
     public void InitialisePhysicsObject()
@@ -158,7 +134,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         if (renderers == null || renderers.Length == 0) 
             return;
 
-        for (int i = 0; i < _renderers.Length; i++)
+        for (int i = 0; i < _renderers.Count; i++)
         {
             Renderer r = _renderers[i];
             if (r == null) continue;
@@ -222,7 +198,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             }
         }
 
-        _renderers = updatedRenderers.ToArray();
+        _renderers = updatedRenderers.ToList();
     }
 
     #endregion
@@ -233,62 +209,42 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     public event System.Action<UniversalCollisionData> OnPhysicsImpact;
 
- 
+
 
     public void OnCollisionEnter(Collision collision)
     {
-        /* if (collision.impulse.magnitude > 0.01f)
-         {
-             var impactData = new UniversalCollisionData
-             {
-                 HitObject = collision.gameObject,
-                 Point = collision.GetContact(0).point,
-                 Normal = collision.GetContact(0).normal,
-                 ImpulseMagnitude = collision.impulse.magnitude
-             };
-
-             // Pass it to the new universal system!
-             HandleUniversalImpact(impactData);
-         }*/
-        if (!HasStateAuthority)
+        if (Runner == null || Object == null || !Object.IsValid)
             return;
-
         OnBounce(collision);
 
-        // if this hasn't properly spawned yet, don't use collisions.
-        if (Object != null && Object.IsValid == false)
-            return;
+        if (Object != null && Object.IsValid == false) return;
 
-        PhysicsObject other = collision.gameObject.GetComponent<PhysicsObject>();
+        PhysicsObject otherPO = collision.gameObject.GetComponent<PhysicsObject>();
 
-        if (other == null || other.Object == null || other.Object.IsValid == false)
-            other = null;
-
-        float bonk_amount = BonkAmount(collision.impulse.magnitude, other?.physicsObjectProperties);
-
-        //Debug.Log($"OnCollisionEnter {collision.gameObject.name} {bonk_amount}");
-        if (IfGetBonked(bonk_amount))
+        if (bonkManager != null)
         {
-            NetworkObject instigatorOfBonk = null;
-            if (collision.gameObject.TryGetComponent<PhysicsObject>(out PhysicsObject otherPO))
-            {
-                instigatorOfBonk = otherPO.currentThreatCause;
-            }
-            OnBonk(bonk_amount, instigatorOfBonk, collision.contacts[0].point);
+            NetworkObject instigator = otherPO != null ? otherPO.currentThreatCause : null;
+            bonkManager.ReportCollision(this, collision, instigator);
+        }
+    }
+
+    // For spell explosions or forces that don't trigger a physical Unity Collision
+    public void ReportRawImpulse(float impulse, PhysicsObject otherPhysicsObject = null, NetworkObject instigator = null, Vector3? pos = null)
+    {
+        if (bonkManager != null)
+        {
+            bonkManager.ReportImpulse(
+                hitBone: this,
+                impulseMagnitude: impulse,
+                otherProperties: otherPhysicsObject != null ? otherPhysicsObject.physicsObjectProperties : null,
+                instigator: instigator,
+                contactPoint: pos ?? transform.position
+            );
         }
     }
     #endregion
 
     //This needs
-    public void BonkFromImpulse(float impulse, PhysicsObject otherPhysicsObject, NetworkObject bonk_instigator = null, Vector3? pos = null)
-    {
-        float bonk_amount = BonkAmount(impulse, otherPhysicsObject?.physicsObjectProperties);
-
-        if (IfGetBonked(bonk_amount))
-        {
-            OnBonk(bonk_amount , bonk_instigator, pos);
-        }
-    }
 
 
     public Vector3 velocity_before_physics_update;
@@ -303,18 +259,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         ApplyForce(Physics.gravity * physicsObjectProperties.CurrentSimData.GravityMultiplier, ForceMode.Acceleration);
         
-        foreach (var propertyname in _changeDetector.DetectChanges(this, out var previousBuffer, out var currentBuffer))
-        {
-            switch (propertyname)
-            {
-                case nameof(current_bonkedness):
-                    {
-                        OnBonkednessChanged(previousBuffer);
-                        break;
-                    }
-            }
-        }
-
 
         if (rb != null)
         {
@@ -411,7 +355,10 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     }
     bool PastInitialSpawnTick()
     {
-        return (Runner.Tick - tick_spawned) > 1;
+        if (Runner == null || tick_spawned == null)
+            return false;
+
+        return (Runner.Tick - tick_spawned.Value) > 1;
     }
     private void OnDrawGizmos()
     {
@@ -623,86 +570,8 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     #endregion
 
     #region Bonking
-    // [placeholder]
-    // what happens when the object is 'bonked' (hit in a collision).
-    // different implementations for players, enemies, objects, spells.
+    /////////////////////////////////////////Bonking is now managed in the Bonk Manager script, any object that can be bonked needs one of these (probably will make it an Interface eventually ///////////////////
 
-
-    
-    // Everything has 100 starting.
-    protected const float starting_bonkedness = 100f;
-    private const float bonk_threshold = 2.5f;
-
-    bool IfGetBonked(float bonk_amount)
-    {
-        // Consider what the threshold should be.
-        // Since, as is, a heavier object gets a greater bonk when it hits the ground...
-        // Should it just be velocity based?
-        // But then 
-        return bonk_amount > bonk_threshold;
-    }
-    float BonkAmount(float collision_impulse, PhysicsObjectProperties? other_properties)
-    {
-        // Depends on size and brittleness.
-        // - higher size means more effective health
-        // - higher brittleness means lower effective health.
-        float mass = physicsObjectProperties.mass > 0 ? physicsObjectProperties.mass : 1.0f;
-
-        // bonk is proportional to the hardness of both objects.
-        float hardness_factor = physicsObjectProperties.hardness > 0 ? physicsObjectProperties.hardness : 1;
-        if(other_properties != null)
-            hardness_factor *= (other_properties?.hardness > 0 ? other_properties?.hardness : 1) ?? 1;
-
-        // quadratic.
-        // this is a bad idea since falling on an object would come with a different bonk calc.
-        float wall_or_floor_penalty = (other_properties == null)? 0.1f: 1.0f;
-
-        return 150f * collision_impulse * hardness_factor * wall_or_floor_penalty *
-            physicsObjectProperties.brittleness *0.1f /
-            mass;
-    }
-
-    public virtual void OnBonk(float bonk_amount, NetworkObject bonk_instigator = null, Vector3? pos = null)
-    {
-        current_bonkedness -= bonk_amount;
-        //Debug.Log($"new bonkedness: {current_bonkedness} {bonk_amount}");
-
-        //OnBonkednessChanged();
-        // Do stuff when zero-bonkedness.
-        // Different for object versus player.
-
-        // instead now checking within fixedupdatenetwork 
-        // if zero bonkedness.
-    }
-
-    // allow other scripts to subcribe to these zero events.
-    public UnityEvent OnZeroBonk_event;
-    protected virtual void OnZeroBonk()
-    {
-        Debug.Log("OnZeroBonk");
-        OnZeroBonk_event.Invoke();
-    }
-    public UnityEvent OnRecoverFromBonk_event;
-    protected virtual void OnRecoverFromBonk()
-    {
-        Debug.Log("OnRecoverFromBank");
-        OnRecoverFromBonk_event.Invoke();
-    }
-    public virtual void OnBonkednessChanged(NetworkBehaviourBuffer previous)
-    {
-        var last_known_bonkedness = GetPropertyReader<float>(nameof(current_bonkedness)).Read(previous);
-        //Log.Info($"counter changed: {current_bonkedness}, prev: {last_known_bonkedness}");
-        if (zero_bonkedness && last_known_bonkedness > 0)
-        {
-            // got bonked
-            OnZeroBonk();
-        }
-        else if(!zero_bonkedness && last_known_bonkedness < 0)
-        {
-            // recovered from bonk
-            OnRecoverFromBonk();
-        }
-    }
     #endregion
 
     #region Sound

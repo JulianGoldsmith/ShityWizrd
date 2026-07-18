@@ -14,8 +14,6 @@ public class SimpleMovementNode : BehaviourNode
 
     public override void SetUp(GameObject spellCore, SpellTriggerInfo triggerInfo)
     {
-        var simpleMovement = spellCore.AddComponent<SimpleMovementSB>();
-        simpleMovement.triggerInfo = triggerInfo;
-        simpleMovement.speed = speed;
+        
     }
 }

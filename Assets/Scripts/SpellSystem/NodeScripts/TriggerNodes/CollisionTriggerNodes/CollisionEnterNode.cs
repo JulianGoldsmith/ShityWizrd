@@ -118,7 +118,9 @@ public class CollisionEnterTrigger : RuntimeTriggerBase
                     float impactSpeed = physicalCore.NetworkVelocity.magnitude;
                     if (impactSpeed < 1f) impactSpeed = 10f; // Fallback for stationary spells
 
-                    targetPO.OnBonk(impactSpeed * 1f, instigator != null ? instigator.Object : null, contact.Point);
+                    //targetPO.OnBonk(impactSpeed * 1f, instigator != null ? instigator.Object : null, contact.Point);
+                    //////////////////////////////////////////////////////NEED BONK LOGIC /////////////////////////////////////////////////////////////////////////////////////////////////
+
                 }
 
                 // Package the Hit Info for the downstream Effects!

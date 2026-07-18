@@ -79,7 +79,7 @@ public class ChargeItemAction : ItemAction
 
             case Phase.Release:
 
-                if (!pose.hasFired && (Item.activeCaster.HasInputAuthority || Item.HasStateAuthority))
+                if (!pose.hasFired/* && (Item.activeCaster.HasInputAuthority || Item.HasStateAuthority)*/)
                 {
                     if (currentAnim != null && currentAnim.HasPassedCastTick(ticksInPhase))
                     {

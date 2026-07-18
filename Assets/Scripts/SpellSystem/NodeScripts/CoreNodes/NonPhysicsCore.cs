@@ -125,7 +125,7 @@ public class NonPhysicsCore : CoreNode, IHasPrefabRefToBuffer
         List<SocketDefinition> sockets = base.GetSockets();
 
         // Append on sockets for additional promotable values from extra scripts.
-        var modifiableFields = typeof(SpellCreatedPhysicsObject).GetFields(BindingFlags.Public | BindingFlags.Instance);
+        /*var modifiableFields = typeof(SpellCreatedPhysicsObject).GetFields(BindingFlags.Public | BindingFlags.Instance);
         foreach (var field in modifiableFields)
         {
             var promotableAttr = field.GetCustomAttribute<PromotableAttribute>(); if (promotableAttr != null)
@@ -156,7 +156,7 @@ public class NonPhysicsCore : CoreNode, IHasPrefabRefToBuffer
                     targetFieldName: field.Name
                 ));
             }
-        }
+        }*/
 
         return sockets;
     }

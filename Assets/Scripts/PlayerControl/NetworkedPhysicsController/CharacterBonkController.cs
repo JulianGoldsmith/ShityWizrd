@@ -34,7 +34,9 @@ public class CharacterBonkController : NetworkBehaviour
     {
         bool shouldBeBonked = BonkTick > UnbonkTick;
 
-        if (_localRagdollActive != shouldBeBonked)
+        
+
+        if (ragdollProxysRoot.activeSelf != shouldBeBonked)
         {
             
             if (shouldBeBonked) ActivateRagDoll(snapBones: false);
@@ -55,7 +57,7 @@ public class CharacterBonkController : NetworkBehaviour
     {
         // 1. Immediately predict the visual and physics change locally! 
         // Pass TRUE to snap the rigidbodies to the current animation frame so they fall correctly.
-        if (!_localRagdollActive)
+        if (!ragdollProxysRoot.activeSelf)
         {
             ActivateRagDoll(snapBones: true);
             _localRagdollActive = true;
@@ -67,7 +69,7 @@ public class CharacterBonkController : NetworkBehaviour
 
     public void GetUnBonked()
     {
-        if (_localRagdollActive)
+        if (ragdollProxysRoot.activeSelf)
         {
             DeactivateRagDoll();
             _localRagdollActive = false;
@@ -88,6 +90,8 @@ public class CharacterBonkController : NetworkBehaviour
             characterController.armatureRetargetingLerp = 1f;
         }
         ragDollSolver.SetRagdollState(true, snapBones);
+        Debug.Log("Character Ragdoll deactivated");
+
     }
 
     private void DeactivateRagDoll()
@@ -100,5 +104,6 @@ public class CharacterBonkController : NetworkBehaviour
         }
         ragDollSolver.SetRagdollState(false, false);
         if (ragdollProxysRoot != null) ragdollProxysRoot.SetActive(false);
+        Debug.Log("Character Ragdoll deactivated");
     }
 }

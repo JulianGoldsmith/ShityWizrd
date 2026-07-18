@@ -170,11 +170,11 @@ public static class SpellSystemHelpers
     {
         if (hitCollider == null) return null;
 
-        if (hitCollider.TryGetComponent<AttatchedSpellComponent>(out var passenger))
+        if (hitCollider.TryGetComponent<AttatchedSpellComponent>(out var child))
         {
-            if (passenger.parentSpellCore != null)
+            if (child.parentSpellCore != null)
             {
-                return passenger.parentSpellCore.gameObject;
+                return child.parentSpellCore.gameObject;
             }
         }
 

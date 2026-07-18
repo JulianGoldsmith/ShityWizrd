@@ -16,8 +16,8 @@ MonoBehaviour:
     Density: 1
     Friction: 0.2
     Restitution: 0
-    Hardness: 0.5
-    Brittleness: 0.1
+    Hardness: 1
+    Brittleness: 0.5
     Stickiness: 0
   frozenCondition:
     applyWhenUsedAsWarp: 1
@@ -53,8 +53,8 @@ MonoBehaviour:
     Density: 1
     Friction: 0
     Restitution: 0
-    Hardness: 0.8
-    Brittleness: 0.05
+    Hardness: 1
+    Brittleness: 1.5
     Stickiness: 0
   heatedCondition:
     applyWhenUsedAsWarp: 1
@@ -94,7 +94,7 @@ MonoBehaviour:
     Brittleness: 0.3
     Stickiness: 0
   burningCondition:
-    applyWhenUsedAsWarp: 0
+    applyWhenUsedAsWarp: 1
     targetDriver: 0
     beginThreshold: 0
     completeThreshold: 0
@@ -131,7 +131,7 @@ MonoBehaviour:
     Brittleness: 0
     Stickiness: 0
   conductiveCondition:
-    applyWhenUsedAsWarp: 0
+    applyWhenUsedAsWarp: 1
     targetDriver: 0
     beginThreshold: 0
     completeThreshold: 0
