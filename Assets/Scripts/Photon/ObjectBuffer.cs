@@ -27,7 +27,7 @@ public class ObjectBuffer : NetworkBehaviour
 
     public override void Spawned()
     {
-        
+        Runner.SetIsSimulated(this.Object, true);
         if (HasStateAuthority)
         {
             for (int i = 0; i < ActiveCapacity; i++)

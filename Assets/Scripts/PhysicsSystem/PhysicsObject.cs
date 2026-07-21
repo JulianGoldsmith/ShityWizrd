@@ -13,7 +13,6 @@ using static Fusion.NetworkBehaviour;
 public class PhysicsObject : NetworkBehaviour, ISpawned
 {
 
-   
 
     private IMovementHandler _movementHandler;
 
@@ -215,7 +214,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         if (Runner == null || Object == null || !Object.IsValid)
             return;
-        OnBounce(collision);
+        //OnBounce(collision);
 
         if (Object != null && Object.IsValid == false) return;
 
@@ -239,6 +238,29 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
                 otherProperties: otherPhysicsObject != null ? otherPhysicsObject.physicsObjectProperties : null,
                 instigator: instigator,
                 contactPoint: pos ?? transform.position
+            );
+        }
+    }
+
+    public void OnCollisionStay(Collision collision)
+    {
+        if (Runner == null || Object == null || !Object.IsValid)
+            return;
+
+        PhysicsObject otherPO =
+            collision.gameObject.GetComponent<PhysicsObject>();
+
+        if (bonkManager != null)
+        {
+            NetworkObject instigator =
+                otherPO != null
+                    ? otherPO.currentThreatCause
+                    : null;
+
+            bonkManager.ReportCollisionStay(
+                this,
+                collision,
+                instigator
             );
         }
     }

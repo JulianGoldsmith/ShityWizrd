@@ -15,6 +15,20 @@ public class BonkManagerEditor : Editor
 
         EditorGUILayout.Space(10); // Add a little breathing room
 
+        GUI.backgroundColor = new Color(0.65f, 0.25f, 0.85f);
+
+        using (new EditorGUI.DisabledScope(!Application.isPlaying))
+        {
+            if (GUILayout.Button("Clear Bonk", GUILayout.Height(40)))
+            {
+                manager.ClearBonk();
+            }
+        }
+
+        GUI.backgroundColor = Color.white;
+
+        EditorGUILayout.Space(5);
+
         // 2. Set the button color based on whether bones are found
         if (manager.bones == null || manager.bones.Count == 0)
         {

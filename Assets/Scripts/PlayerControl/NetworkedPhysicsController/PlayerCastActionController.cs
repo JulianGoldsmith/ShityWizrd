@@ -76,7 +76,7 @@ public class PlayerCastActionController : CastActionController
 
     public override EyePosAndLookDir GetEyePosAndLookDir()
     {
-        return GetComponent<HybridCharacterController>().GetEyePosAndLookDir();
+        return hcc.GetEyePosAndLookDirSim();
     }
 
     public override Vector3 GetSpellCastPoint()
@@ -86,7 +86,7 @@ public class PlayerCastActionController : CastActionController
 
     public override Vector3 GetSpellCastDir()
     {
-        return GetComponent<HybridCharacterController>().GetEyePosAndLookDir().Forward;
+        return lookDirection * Vector3.forward;
     }
 
     // ==========================================

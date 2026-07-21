@@ -252,7 +252,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
     public void OnCollisionEnter(Collision collision)
     {
         if (!_isInitialized || _myPlan == null) return;
-        Debug.Log("Registered Contact added pending contact");
+        //Debug.Log("Registered Contact added pending contact");
         GameObject coll = SpellSystemHelpers.GetHitGameObject(collision.collider);
         TickContacts.Add(new PendingContact
         {

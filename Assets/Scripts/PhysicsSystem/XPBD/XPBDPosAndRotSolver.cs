@@ -1,7 +1,9 @@
 ﻿using Fusion.Addons.Physics;
 using System.Collections.Generic;
 using UnityEngine;
-#if UNITY_EDITOR 
+using Fusion;
+
+#if UNITY_EDITOR
 using UnityEditor; 
 #endif
 
@@ -72,6 +74,7 @@ public class XPBDTestJoint
     public float minTensionDistance = 0.05f;
     public float maxTensionDistance = 0.25f;
     public AnimationCurve tensionReleaseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
 
     public Vector3 GetAxisVector(JointAxisDirection axis)
     {
