@@ -14,11 +14,13 @@ public class PhysicsObjectMaterial : ScriptableObject
     public Material visual_material;
     public bool casts_shadows = true;
     public Color shatter_particle_color;
+    public float gooFlowSpeed = 0.1f;
 
     protected static readonly int FrozenID = Shader.PropertyToID("_Frozen");
     protected static readonly int HeatedID = Shader.PropertyToID("_Heated");
     protected static readonly int BurntID = Shader.PropertyToID("_Burnt");
     protected static readonly int GooifiedID = Shader.PropertyToID("_Gooified");
+    protected static readonly int GooFlowOffsetOSID = Shader.PropertyToID("_GooFlowOffsetOS");
     protected static readonly int StoneifiedID = Shader.PropertyToID("_Stoneified");
     protected static readonly int ChargedID = Shader.PropertyToID("_Charged");
 
@@ -335,6 +337,11 @@ public class PhysicsObjectMaterial : ScriptableObject
         visualState.VisualStoneified = Mathf.Lerp(visualState.VisualStoneified, simState.Stoneify, deltaTime * 10f);
         visualState.VisualCharged = Mathf.Lerp(visualState.VisualCharged, simState.Conductive, deltaTime * 10f);
 
+        if (visualState.VisualGooified > 0.001f)
+        {
+            visualState.VisualGooFlowOffsetOS -= context.transform.InverseTransformDirection(Physics.gravity.normalized) * gooFlowSpeed * deltaTime;
+        }
+
         for (int i = 0; i < renderers.Count; i++)
         {
             if (renderers[i] == null) continue;
@@ -347,6 +354,8 @@ public class PhysicsObjectMaterial : ScriptableObject
             mpb.SetFloat(GooifiedID, visualState.VisualGooified);
             mpb.SetFloat(StoneifiedID, visualState.VisualStoneified);
             mpb.SetFloat(ChargedID, visualState.VisualCharged);
+
+            mpb.SetVector(GooFlowOffsetOSID, visualState.VisualGooFlowOffsetOS);
 
             renderers[i].SetPropertyBlock(mpb);
         }
@@ -438,6 +447,7 @@ public class VisualStateData
     public float VisualHeated;
     public float VisualBurnt;
     public float VisualGooified;
+    public Vector3 VisualGooFlowOffsetOS;
     public float VisualStoneified;
     public float VisualCharged;
 }

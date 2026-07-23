@@ -48,6 +48,7 @@ public class PhysicsObjectMaterialEditor : Editor
         EditorGUILayout.PropertyField(serializedObject.FindProperty("visual_material"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("casts_shadows"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("shatter_particle_color"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("gooFlowSpeed"));
 
         serializedObject.ApplyModifiedProperties();
     }
