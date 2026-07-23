@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
 public enum DriverOrCondition
 {
     None,
@@ -55,26 +57,69 @@ public struct ConditionEvaluator
     }
 }
 
+public enum BonkStressType
+{
+    Hot,
+    Cold,
+    Burn,
+    Shock
+}
+
+[System.Serializable]
+public struct BonkResponse
+{
+    public bool addsBonk;
+    public BonkStressType stressType;
+    public float minBonk;
+    public float maxBonk;
+    public AnimationCurve responseCurve;
+
+    public float Evaluate(float conditionValue)
+    {
+        if (!addsBonk || conditionValue <= 0f) return 0f;
+
+        float normalizedCondition = Mathf.Clamp01(conditionValue);
+        float curveValue = responseCurve == null || responseCurve.length == 0 ? normalizedCondition : responseCurve.Evaluate(normalizedCondition);
+
+        return Mathf.Lerp(minBonk, maxBonk, Mathf.Clamp01(curveValue));
+    }
+
+    public static BonkResponse CreateDefault(BonkStressType stressType)
+    {
+        return new BonkResponse
+        {
+            addsBonk = false,
+            stressType = stressType,
+            minBonk = 0f,
+            maxBonk = 30f,
+            responseCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f)
+        };
+    }
+}
+
 [CreateAssetMenu(fileName = "NewMaterialData", menuName = "PhysicsSystem/MaterialData")]
 public class MaterialData : ScriptableObject
 {
     [Header("Base Properties")]
     public PhysicsPropertyBlock baseProperties;
 
-    [Header("Conditions (Interpreters)")]
     public ConditionEvaluator frozenCondition;
+    public BonkResponse frozenBonkResponse;
     [HideInInspector] public bool useFrozenBlock;
     public PhysicsPropertyBlock frozenProperties;
 
     public ConditionEvaluator heatedCondition;
+    public BonkResponse heatedBonkResponse;
     [HideInInspector] public bool useHeatedBlock;
     public PhysicsPropertyBlock heatedProperties;
 
     public ConditionEvaluator burningCondition;
+    public BonkResponse burningBonkResponse;
     [HideInInspector] public bool useBurningBlock;
     public PhysicsPropertyBlock burningProperties;
 
     public ConditionEvaluator conductiveCondition;
+    public BonkResponse conductiveBonkResponse;
     [HideInInspector] public bool useConductiveBlock;
     public PhysicsPropertyBlock conductiveProperties;
 
@@ -131,6 +176,11 @@ public class MaterialData : ScriptableObject
         heatedCondition.transitionCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         burningCondition.transitionCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         conductiveCondition.transitionCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+
+        frozenBonkResponse = BonkResponse.CreateDefault(BonkStressType.Cold);
+        heatedBonkResponse = BonkResponse.CreateDefault(BonkStressType.Hot);
+        burningBonkResponse = BonkResponse.CreateDefault(BonkStressType.Burn);
+        conductiveBonkResponse = BonkResponse.CreateDefault(BonkStressType.Shock);
     }
 }
 

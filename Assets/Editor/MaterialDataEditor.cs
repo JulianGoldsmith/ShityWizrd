@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(MaterialData))]
+[CustomEditor(typeof(MaterialData), true)]
 public class MaterialDataEditor : Editor
 {
     public override void OnInspectorGUI()
@@ -46,10 +46,10 @@ public class MaterialDataEditor : Editor
         Color softRed = new Color(1.0f, 0.7f, 0.7f, 1f);
         Color paleYellow = new Color(1.0f, 0.95f, 0.7f, 1f);
 
-        DrawCombinedModule("❄️ Frozen", "frozenCondition", "useFrozenBlock", "frozenProperties", paleBlue);
-        DrawCombinedModule("🔥 Heated", "heatedCondition", "useHeatedBlock", "heatedProperties", softOrange);
-        DrawCombinedModule("🌋 Burning", "burningCondition", "useBurningBlock", "burningProperties", softRed);
-        DrawCombinedModule("⚡ Conductive", "conductiveCondition", "useConductiveBlock", "conductiveProperties", paleYellow);
+        DrawCombinedModule("❄️ Frozen", "frozenCondition", "useFrozenBlock", "frozenProperties", "frozenBonkResponse", paleBlue);
+        DrawCombinedModule("🔥 Heated", "heatedCondition", "useHeatedBlock", "heatedProperties", "heatedBonkResponse", softOrange);
+        DrawCombinedModule("🌋 Burning", "burningCondition", "useBurningBlock", "burningProperties", "burningBonkResponse", softRed);
+        DrawCombinedModule("⚡ Conductive", "conductiveCondition", "useConductiveBlock", "conductiveProperties", "conductiveBonkResponse", paleYellow);
 
         EditorGUILayout.Space(10);
 
@@ -62,11 +62,12 @@ public class MaterialDataEditor : Editor
         serializedObject.ApplyModifiedProperties();
     }
 
-    private void DrawCombinedModule(string title, string condPropName, string usePropName, string blockPropName, Color boxColor)
+    private void DrawCombinedModule(string title, string condPropName, string usePropName, string blockPropName, string bonkResponsePropName, Color boxColor)
     {
         SerializedProperty condProp = serializedObject.FindProperty(condPropName);
         SerializedProperty useProp = serializedObject.FindProperty(usePropName);
         SerializedProperty blockProp = serializedObject.FindProperty(blockPropName);
+        SerializedProperty bonkResponseProp = serializedObject.FindProperty(bonkResponsePropName);
 
         if (condProp == null) return;
 
@@ -76,7 +77,6 @@ public class MaterialDataEditor : Editor
         EditorGUILayout.BeginVertical("box");
         GUI.backgroundColor = defaultColor;
 
-        // --- Header ---
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField(title, EditorStyles.boldLabel, GUILayout.Width(150));
         GUILayout.FlexibleSpace();
@@ -86,23 +86,18 @@ public class MaterialDataEditor : Editor
 
         EditorGUILayout.Space(2);
 
-        // --- Driver & Curve Row ---
         EditorGUILayout.BeginHorizontal();
         float originalLabelWidth = EditorGUIUtility.labelWidth;
         EditorGUIUtility.labelWidth = 50;
 
-        // Driver
         EditorGUILayout.PropertyField(condProp.FindPropertyRelative("targetDriver"), new GUIContent("Driver"), GUILayout.ExpandWidth(true));
-
-        // Curve (No label, fixed width)
         EditorGUILayout.PropertyField(condProp.FindPropertyRelative("transitionCurve"), GUIContent.none, GUILayout.Width(70));
 
         EditorGUIUtility.labelWidth = originalLabelWidth;
         EditorGUILayout.EndHorizontal();
 
-        // --- Min & Max Row ---
         EditorGUILayout.BeginHorizontal();
-        EditorGUIUtility.labelWidth = 35; // Short width so Min/Max fit nicely on one line
+        EditorGUIUtility.labelWidth = 35;
 
         EditorGUILayout.PropertyField(condProp.FindPropertyRelative("beginThreshold"), new GUIContent("Min"));
         EditorGUILayout.Space(10);
@@ -113,7 +108,10 @@ public class MaterialDataEditor : Editor
 
         EditorGUILayout.Space(5);
 
-        // --- Override Checkbox & Copy Button Row ---
+        DrawBonkResponse(bonkResponseProp);
+
+        EditorGUILayout.Space(5);
+
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.PropertyField(useProp, new GUIContent("Override Condition Properties"), GUILayout.ExpandWidth(true));
 
@@ -124,9 +122,9 @@ public class MaterialDataEditor : Editor
                 CopyBlock(serializedObject.FindProperty("baseProperties"), blockProp);
             }
         }
+
         EditorGUILayout.EndHorizontal();
 
-        // --- Draw the block if checked ---
         if (useProp.boolValue && blockProp != null)
         {
             EditorGUILayout.Space(2);
@@ -137,7 +135,31 @@ public class MaterialDataEditor : Editor
         EditorGUILayout.Space(5);
     }
 
-    // Helper to draw the physics floats clearly without foldout arrows
+    private void DrawBonkResponse(SerializedProperty bonkResponseProp)
+    {
+        if (bonkResponseProp == null) return;
+
+        SerializedProperty addsBonkProp = bonkResponseProp.FindPropertyRelative("addsBonk");
+
+        EditorGUILayout.PropertyField(addsBonkProp, new GUIContent("Adds Bonk", "Whether this material condition contributes to the persistent elemental Bonk floor."));
+
+        if (!addsBonkProp.boolValue) return;
+
+        EditorGUILayout.BeginHorizontal();
+
+        float originalLabelWidth = EditorGUIUtility.labelWidth;
+        EditorGUIUtility.labelWidth = 32;
+
+        EditorGUILayout.PropertyField(bonkResponseProp.FindPropertyRelative("stressType"), new GUIContent("Type"), GUILayout.MinWidth(105));
+        EditorGUILayout.PropertyField(bonkResponseProp.FindPropertyRelative("minBonk"), new GUIContent("Min"), GUILayout.Width(70));
+        EditorGUILayout.PropertyField(bonkResponseProp.FindPropertyRelative("maxBonk"), new GUIContent("Max"), GUILayout.Width(70));
+        EditorGUILayout.PropertyField(bonkResponseProp.FindPropertyRelative("responseCurve"), GUIContent.none, GUILayout.Width(65));
+
+        EditorGUIUtility.labelWidth = originalLabelWidth;
+
+        EditorGUILayout.EndHorizontal();
+    }
+
     private void DrawPropertyBlockFields(SerializedProperty blockProp)
     {
         EditorGUI.indentLevel++;
