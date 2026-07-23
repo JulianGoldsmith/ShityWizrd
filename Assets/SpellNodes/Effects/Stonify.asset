@@ -10,26 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3e6355992410234faa67b9b8a3a908e, type: 3}
-  m_Name: CoolEffectNode
+  m_Name: Stonify
   m_EditorClassIdentifier: Assembly-CSharp::GenericEffectNode
-  nodeName: CoolEffectNode
+  nodeName: Stonify
   description: 
   nodeTags: []
   valueContainers: []
-  icon: {fileID: 2800000, guid: 35be859cae25e2a4b8c061040374999f, type: 3}
+  icon: {fileID: 2800000, guid: 0c88b2fc921382049a0ab24f806f5475, type: 3}
   overrideMesh: {fileID: 0}
   overrideMaterial: {fileID: 0}
   ovverideVisualScale: 1
-  NetworkNodeID: 36
+  NetworkNodeID: 41
   showInSpellEditor: 1
   casterTriggerMethod: 0
-  NetworkStatusID: 11
+  NetworkStatusID: 13
   Lifecycle: 2
-  Theme: 1
+  Theme: 3
   DurationTicks: 300
   Components:
-  - Target: 0
+  - Target: 3
     Mutation: 0
-    BaseMagnitude: -10
+    BaseMagnitude: 0.1
     AutoVFX: 0
     effectsPlayerObjects: 0

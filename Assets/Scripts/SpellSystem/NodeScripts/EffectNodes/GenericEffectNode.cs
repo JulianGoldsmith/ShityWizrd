@@ -122,6 +122,8 @@ public class GenericRuntimeEffect : IEffect
         {
             case Layer1Target.Temperature: mat.MutateTemperature(ref state, comp.Mutation, magnitude); break;
             case Layer1Target.Wetness: mat.MutateWetness(ref state, comp.Mutation, magnitude); break;
+            case Layer1Target.Stonification: mat.MutateStoneification(ref state, comp.Mutation, magnitude); break;
+            case Layer1Target.Gooification: mat.MutateGooification(ref state, comp.Mutation, magnitude); break;
             case Layer1Target.ScaleMultiplier: mat.MutateScale(ref state, comp.Mutation, magnitude); break;
             case Layer1Target.DensityMultiplier: mat.MutateDensity(ref state, comp.Mutation, magnitude); break;
         }
@@ -199,6 +201,8 @@ public enum Layer1Target
     Temperature,
     Wetness,
     Charge,
+    Stonification,
+    Gooification,
     Rubberization,
     Lubrication,
     ScaleMultiplier,

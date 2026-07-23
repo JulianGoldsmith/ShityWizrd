@@ -1,7 +1,4 @@
-using System.Collections.Generic;
 using UnityEngine;
-
-
 
 public enum DriverOrCondition
 {
@@ -18,24 +15,76 @@ public enum DriverOrCondition
 [System.Serializable]
 public struct PhysicsPropertyBlock
 {
+    public bool useDensity;
     public float Density;
+
+    public bool useFriction;
     public float Friction;
+
+    public bool useRestitution;
     public float Restitution;
+
+    public bool useHardness;
     public float Hardness;
+
+    public bool useBrittleness;
     public float Brittleness;
+
+    public bool useStickiness;
     public float Stickiness;
 
-    public static PhysicsPropertyBlock Lerp(PhysicsPropertyBlock a, PhysicsPropertyBlock b, float t)
+    public void SetAllInvolved(bool involved)
     {
-        return new PhysicsPropertyBlock
+        useDensity = involved;
+        useFriction = involved;
+        useRestitution = involved;
+        useHardness = involved;
+        useBrittleness = involved;
+        useStickiness = involved;
+    }
+
+    public static PhysicsPropertyBlock ApplyConditionOverride(PhysicsPropertyBlock currentBlock, in PhysicsPropertyBlock overrideBlock, float intensity)
+    {
+        float clampedIntensity = Mathf.Clamp01(intensity);
+        PhysicsPropertyBlock result = currentBlock;
+
+        if (overrideBlock.useDensity)
         {
-            Density = Mathf.Lerp(a.Density, b.Density, t),
-            Friction = Mathf.Lerp(a.Friction, b.Friction, t),
-            Restitution = Mathf.Lerp(a.Restitution, b.Restitution, t),
-            Hardness = Mathf.Lerp(a.Hardness, b.Hardness, t),
-            Brittleness = Mathf.Lerp(a.Brittleness, b.Brittleness, t),
-            Stickiness = Mathf.Lerp(a.Stickiness, b.Stickiness, t)
-        };
+            result.useDensity = true;
+            result.Density = Mathf.Lerp(currentBlock.Density, overrideBlock.Density, clampedIntensity);
+        }
+
+        if (overrideBlock.useFriction)
+        {
+            result.useFriction = true;
+            result.Friction = Mathf.Lerp(currentBlock.Friction, overrideBlock.Friction, clampedIntensity);
+        }
+
+        if (overrideBlock.useRestitution)
+        {
+            result.useRestitution = true;
+            result.Restitution = Mathf.Lerp(currentBlock.Restitution, overrideBlock.Restitution, clampedIntensity);
+        }
+
+        if (overrideBlock.useHardness)
+        {
+            result.useHardness = true;
+            result.Hardness = Mathf.Lerp(currentBlock.Hardness, overrideBlock.Hardness, clampedIntensity);
+        }
+
+        if (overrideBlock.useBrittleness)
+        {
+            result.useBrittleness = true;
+            result.Brittleness = Mathf.Lerp(currentBlock.Brittleness, overrideBlock.Brittleness, clampedIntensity);
+        }
+
+        if (overrideBlock.useStickiness)
+        {
+            result.useStickiness = true;
+            result.Stickiness = Mathf.Lerp(currentBlock.Stickiness, overrideBlock.Stickiness, clampedIntensity);
+        }
+
+        return result;
     }
 }
 
@@ -51,9 +100,12 @@ public struct ConditionEvaluator
     public float Evaluate(float targetValue)
     {
         if (beginThreshold == completeThreshold) return 0f;
-        float t = Mathf.InverseLerp(beginThreshold, completeThreshold, targetValue);
-        if (transitionCurve == null || transitionCurve.length == 0) return t;
-        return transitionCurve.Evaluate(t);
+
+        float normalizedValue = Mathf.InverseLerp(beginThreshold, completeThreshold, targetValue);
+
+        if (transitionCurve == null || transitionCurve.length == 0) return normalizedValue;
+
+        return transitionCurve.Evaluate(normalizedValue);
     }
 }
 
@@ -97,6 +149,100 @@ public struct BonkResponse
     }
 }
 
+[System.Serializable]
+public struct CalculatedConditionState
+{
+    public bool useFrozen;
+    public float Frozen;
+
+    public bool useHeated;
+    public float Heated;
+
+    public bool useBurning;
+    public float Burning;
+
+    public bool useConductive;
+    public float Conductive;
+}
+
+[System.Serializable]
+public struct BonkBreakdown
+{
+    public float Hot;
+    public float Cold;
+    public float Burn;
+    public float Shock;
+
+    public float Total => Hot + Cold + Burn + Shock;
+
+    public void Add(BonkStressType stressType, float value)
+    {
+        switch (stressType)
+        {
+            case BonkStressType.Hot: Hot += value; break;
+            case BonkStressType.Cold: Cold += value; break;
+            case BonkStressType.Burn: Burn += value; break;
+            case BonkStressType.Shock: Shock += value; break;
+        }
+    }
+}
+
+[System.Serializable]
+public struct BonkBreakdownInvolvement
+{
+    public bool Hot;
+    public bool Cold;
+    public bool Burn;
+    public bool Shock;
+
+    public void SetInvolved(BonkStressType stressType, bool involved)
+    {
+        switch (stressType)
+        {
+            case BonkStressType.Hot: Hot = involved; break;
+            case BonkStressType.Cold: Cold = involved; break;
+            case BonkStressType.Burn: Burn = involved; break;
+            case BonkStressType.Shock: Shock = involved; break;
+        }
+    }
+}
+
+[System.Serializable]
+public struct CalculatedMaterialState
+{
+    public CalculatedConditionState Conditions;
+    public PhysicsPropertyBlock Properties;
+    public BonkBreakdown Bonk;
+    public BonkBreakdownInvolvement BonkInvolvement;
+
+    public static CalculatedMaterialState CreateDefault()
+    {
+        PhysicsPropertyBlock defaultProperties = new PhysicsPropertyBlock
+        {
+            Density = 1f,
+            Friction = 0.5f,
+            Restitution = 0.2f,
+            Hardness = 0.5f,
+            Brittleness = 0.1f,
+            Stickiness = 0f
+        };
+
+        defaultProperties.SetAllInvolved(true);
+
+        return new CalculatedMaterialState
+        {
+            Conditions = new CalculatedConditionState
+            {
+                useFrozen = true,
+                useHeated = true,
+                useBurning = true,
+                useConductive = true
+            },
+            Properties = defaultProperties
+        };
+    }
+}
+
 [CreateAssetMenu(fileName = "NewMaterialData", menuName = "PhysicsSystem/MaterialData")]
 public class MaterialData : ScriptableObject
 {
@@ -128,48 +274,76 @@ public class MaterialData : ScriptableObject
     public bool casts_shadows = true;
     public Color shatter_particle_color;
 
-    // Automatically applies sensible defaults when creating a new asset in the project
-   
-
-    public virtual void AccumulateConditions(ref ConditionAccumulator acc, float intensity, in MaterialState prevState)
+    public virtual CalculatedMaterialState CalculateMaterialState(in MaterialState materialState, bool isBaseMaterial)
     {
-        if (intensity <= 0f) return;
+        CalculatedMaterialState calculatedMaterialState = new CalculatedMaterialState();
 
-        if (frozenCondition.applyWhenUsedAsWarp) acc.frozen.Add(frozenCondition.Evaluate(prevState.GetValue(frozenCondition.targetDriver)), intensity);
-        if (heatedCondition.applyWhenUsedAsWarp) acc.heated.Add(heatedCondition.Evaluate(prevState.GetValue(heatedCondition.targetDriver)), intensity);
-        if (burningCondition.applyWhenUsedAsWarp) acc.burning.Add(burningCondition.Evaluate(prevState.GetValue(burningCondition.targetDriver)), intensity);
-        if (conductiveCondition.applyWhenUsedAsWarp) acc.conductive.Add(conductiveCondition.Evaluate(prevState.GetValue(conductiveCondition.targetDriver)), intensity);
+        calculatedMaterialState.Conditions = CalculateConditions(in materialState, isBaseMaterial);
+        calculatedMaterialState.Properties = CalculateProperties(in calculatedMaterialState.Conditions, isBaseMaterial);
+
+        AddBonkResponse(ref calculatedMaterialState, in frozenBonkResponse, calculatedMaterialState.Conditions.Frozen, calculatedMaterialState.Conditions.useFrozen);
+        AddBonkResponse(ref calculatedMaterialState, in heatedBonkResponse, calculatedMaterialState.Conditions.Heated, calculatedMaterialState.Conditions.useHeated);
+        AddBonkResponse(ref calculatedMaterialState, in burningBonkResponse, calculatedMaterialState.Conditions.Burning, calculatedMaterialState.Conditions.useBurning);
+        AddBonkResponse(ref calculatedMaterialState, in conductiveBonkResponse, calculatedMaterialState.Conditions.Conductive, calculatedMaterialState.Conditions.useConductive);
+
+        return calculatedMaterialState;
     }
 
-    public virtual void AccumulateProperties(ref SimAccumulator acc, float intensity, in MaterialState currentState)
+    private CalculatedConditionState CalculateConditions(in MaterialState materialState, bool isBaseMaterial)
     {
-        if (intensity <= 0f) return;
+        CalculatedConditionState calculatedConditions = new CalculatedConditionState();
 
+        calculatedConditions.useFrozen = isBaseMaterial || frozenCondition.applyWhenUsedAsWarp;
+        calculatedConditions.useHeated = isBaseMaterial || heatedCondition.applyWhenUsedAsWarp;
+        calculatedConditions.useBurning = isBaseMaterial || burningCondition.applyWhenUsedAsWarp;
+        calculatedConditions.useConductive = isBaseMaterial || conductiveCondition.applyWhenUsedAsWarp;
+
+        if (calculatedConditions.useFrozen) calculatedConditions.Frozen = Mathf.Clamp01(frozenCondition.Evaluate(materialState.GetValue(frozenCondition.targetDriver)));
+        if (calculatedConditions.useHeated) calculatedConditions.Heated = Mathf.Clamp01(heatedCondition.Evaluate(materialState.GetValue(heatedCondition.targetDriver)));
+        if (calculatedConditions.useBurning) calculatedConditions.Burning = Mathf.Clamp01(burningCondition.Evaluate(materialState.GetValue(burningCondition.targetDriver)));
+        if (calculatedConditions.useConductive) calculatedConditions.Conductive = Mathf.Clamp01(conductiveCondition.Evaluate(materialState.GetValue(conductiveCondition.targetDriver)));
+
+        return calculatedConditions;
+    }
+
+    private PhysicsPropertyBlock CalculateProperties(in CalculatedConditionState calculatedConditions, bool isBaseMaterial)
+    {
         PhysicsPropertyBlock workingBlock = baseProperties;
 
-        if (useFrozenBlock && currentState.Frozen > 0f) workingBlock = PhysicsPropertyBlock.Lerp(workingBlock, frozenProperties, currentState.Frozen);
-        if (useHeatedBlock && currentState.Heated > 0f) workingBlock = PhysicsPropertyBlock.Lerp(workingBlock, heatedProperties, currentState.Heated);
-        if (useBurningBlock && currentState.Burning > 0f) workingBlock = PhysicsPropertyBlock.Lerp(workingBlock, burningProperties, currentState.Burning);
-        if (useConductiveBlock && currentState.Conductive > 0f) workingBlock = PhysicsPropertyBlock.Lerp(workingBlock, conductiveProperties, currentState.Conductive);
+        if (isBaseMaterial) workingBlock.SetAllInvolved(true);
 
-        acc.density.Add(workingBlock.Density, intensity);
-        acc.friction.Add(workingBlock.Friction, intensity);
-        acc.restitution.Add(workingBlock.Restitution, intensity);
-        acc.hardness.Add(workingBlock.Hardness, intensity);
-        acc.brittleness.Add(workingBlock.Brittleness, intensity);
-        acc.stickiness.Add(workingBlock.Stickiness, intensity);
+        if (useFrozenBlock && calculatedConditions.useFrozen && calculatedConditions.Frozen > 0f) workingBlock = PhysicsPropertyBlock.ApplyConditionOverride(workingBlock, in frozenProperties, calculatedConditions.Frozen);
+        if (useHeatedBlock && calculatedConditions.useHeated && calculatedConditions.Heated > 0f) workingBlock = PhysicsPropertyBlock.ApplyConditionOverride(workingBlock, in heatedProperties, calculatedConditions.Heated);
+        if (useBurningBlock && calculatedConditions.useBurning && calculatedConditions.Burning > 0f) workingBlock = PhysicsPropertyBlock.ApplyConditionOverride(workingBlock, in burningProperties, calculatedConditions.Burning);
+        if (useConductiveBlock && calculatedConditions.useConductive && calculatedConditions.Conductive > 0f) workingBlock = PhysicsPropertyBlock.ApplyConditionOverride(workingBlock, in conductiveProperties, calculatedConditions.Conductive);
+
+        return workingBlock;
+    }
+
+    private void AddBonkResponse(ref CalculatedMaterialState calculatedMaterialState, in BonkResponse bonkResponse, float conditionValue, bool conditionIsInvolved)
+    {
+        if (!conditionIsInvolved || !bonkResponse.addsBonk) return;
+
+        calculatedMaterialState.Bonk.Add(bonkResponse.stressType, bonkResponse.Evaluate(conditionValue));
+        calculatedMaterialState.BonkInvolvement.SetInvolved(bonkResponse.stressType, true);
     }
 
     private void Reset()
     {
         baseProperties = new PhysicsPropertyBlock
         {
-            Density = 1.0f,
+            useDensity = true,
+            Density = 1f,
+            useFriction = true,
             Friction = 0.5f,
+            useRestitution = true,
             Restitution = 0.2f,
+            useHardness = true,
             Hardness = 0.5f,
+            useBrittleness = true,
             Brittleness = 0.1f,
-            Stickiness = 0.0f
+            useStickiness = true,
+            Stickiness = 0f
         };
 
         frozenCondition.transitionCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
@@ -182,33 +356,4 @@ public class MaterialData : ScriptableObject
         burningBonkResponse = BonkResponse.CreateDefault(BonkStressType.Burn);
         conductiveBonkResponse = BonkResponse.CreateDefault(BonkStressType.Shock);
     }
-}
-
-public struct WeightedProperty
-{
-    private float valueSum;
-    private float weightSum;
-
-    public void Add(float targetValue, float weight)
-    {
-        valueSum += targetValue * weight;
-        weightSum += weight;
-    }
-
-    public float Resolve(float baseValue)
-    {
-        if (weightSum <= 0f) return baseValue;
-        if (weightSum >= 1f) return valueSum / weightSum;
-        return valueSum + (baseValue * (1f - weightSum));
-    }
-}
-
-public struct SimAccumulator
-{
-    public WeightedProperty density, friction, restitution, hardness, brittleness, stickiness;
-}
-
-public struct ConditionAccumulator
-{
-    public WeightedProperty frozen, heated, burning, conductive;
 }

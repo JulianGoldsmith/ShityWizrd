@@ -13,7 +13,6 @@ public class PhysicsObjectMaterialEditor : Editor
         EditorGUILayout.LabelField("Identity", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("material_name"));
 
-        // --- NEW: Display the Network ID as read-only ---
         GUI.enabled = false;
         EditorGUILayout.PropertyField(serializedObject.FindProperty("NetworkMaterialID"), new GUIContent("Network ID"));
         GUI.enabled = true;
@@ -21,17 +20,20 @@ public class PhysicsObjectMaterialEditor : Editor
         EditorGUILayout.Space(10);
 
         EditorGUILayout.LabelField("Core Data Profile", EditorStyles.boldLabel);
-        EditorGUILayout.HelpBox("The mathematical foundation of this object.", MessageType.None);
+        EditorGUILayout.HelpBox("The complete underlying material used before transformations and coatings are calculated.", MessageType.None);
         EditorGUILayout.PropertyField(serializedObject.FindProperty("baseData"), new GUIContent("Base Data Asset"));
 
         EditorGUILayout.Space(10);
 
-        EditorGUILayout.LabelField("Warp Overrides", EditorStyles.boldLabel);
-        EditorGUILayout.HelpBox("Slot in specific MaterialData assets for custom reactions. Leave blank to use global defaults.", MessageType.None);
+        EditorGUILayout.LabelField("Transform Warp Overrides", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox("Transform warps compete with the base material. At a value of one, an involved property is completely transformed.", MessageType.None);
         DrawSafeSlot("stoneifyOverride", "Stoneify");
+
+        EditorGUILayout.Space(10);
+
+        EditorGUILayout.LabelField("Coating Warp Overrides", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox("Coatings modify the already-transformed material. Only checked properties and involved conditions participate.", MessageType.None);
         DrawSafeSlot("gooifyOverride", "Gooify");
-        DrawSafeSlot("rubberifyOverride", "Rubberify");
-        DrawSafeSlot("oilifyOverride", "Oilify");
 
         EditorGUILayout.Space(10);
 
@@ -52,11 +54,9 @@ public class PhysicsObjectMaterialEditor : Editor
 
     private void DrawSafeSlot(string propertyName, string label)
     {
-        SerializedProperty prop = serializedObject.FindProperty(propertyName);
-        if (prop != null)
-        {
-            EditorGUILayout.PropertyField(prop, new GUIContent(label));
-        }
+        SerializedProperty property = serializedObject.FindProperty(propertyName);
+
+        if (property != null) EditorGUILayout.PropertyField(property, new GUIContent(label));
     }
 }
 #endif

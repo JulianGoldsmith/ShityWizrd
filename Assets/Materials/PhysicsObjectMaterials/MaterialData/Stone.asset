@@ -13,11 +13,17 @@ MonoBehaviour:
   m_Name: Stone
   m_EditorClassIdentifier: Assembly-CSharp::WarpMaterial
   baseProperties:
-    Density: 1
+    useDensity: 1
+    Density: 50
+    useFriction: 1
     Friction: 0.5
+    useRestitution: 1
     Restitution: 0.2
-    Hardness: 0.5
-    Brittleness: 0.1
+    useHardness: 1
+    Hardness: 1
+    useBrittleness: 1
+    Brittleness: 0.05
+    useStickiness: 1
     Stickiness: 0
   frozenCondition:
     applyWhenUsedAsWarp: 1
@@ -48,13 +54,48 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-  useFrozenBlock: 0
+  frozenBonkResponse:
+    addsBonk: 1
+    stressType: 1
+    minBonk: 0
+    maxBonk: 100
+    responseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  useFrozenBlock: 1
   frozenProperties:
-    Density: 0
-    Friction: 0
-    Restitution: 0
-    Hardness: 0
-    Brittleness: 0
+    useDensity: 0
+    Density: 3
+    useFriction: 1
+    Friction: 0.5
+    useRestitution: 0
+    Restitution: 0.2
+    useHardness: 0
+    Hardness: 1
+    useBrittleness: 1
+    Brittleness: 0.2
+    useStickiness: 0
     Stickiness: 0
   heatedCondition:
     applyWhenUsedAsWarp: 1
@@ -85,13 +126,48 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-  useHeatedBlock: 0
+  heatedBonkResponse:
+    addsBonk: 1
+    stressType: 0
+    minBonk: 0
+    maxBonk: 100
+    responseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  useHeatedBlock: 1
   heatedProperties:
-    Density: 0
-    Friction: 0
-    Restitution: 0
-    Hardness: 0
-    Brittleness: 0
+    useDensity: 0
+    Density: 3
+    useFriction: 0
+    Friction: 0.5
+    useRestitution: 0
+    Restitution: 0.2
+    useHardness: 1
+    Hardness: 0.6
+    useBrittleness: 0
+    Brittleness: 0.05
+    useStickiness: 0
     Stickiness: 0
   burningCondition:
     applyWhenUsedAsWarp: 1
@@ -122,13 +198,30 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  burningBonkResponse:
+    addsBonk: 0
+    stressType: 0
+    minBonk: 0
+    maxBonk: 0
+    responseCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   useBurningBlock: 0
   burningProperties:
+    useDensity: 0
     Density: 0
+    useFriction: 0
     Friction: 0
+    useRestitution: 0
     Restitution: 0
+    useHardness: 0
     Hardness: 0
+    useBrittleness: 0
     Brittleness: 0
+    useStickiness: 0
     Stickiness: 0
   conductiveCondition:
     applyWhenUsedAsWarp: 1
@@ -159,13 +252,30 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  conductiveBonkResponse:
+    addsBonk: 0
+    stressType: 0
+    minBonk: 0
+    maxBonk: 0
+    responseCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   useConductiveBlock: 0
   conductiveProperties:
+    useDensity: 0
     Density: 0
+    useFriction: 0
     Friction: 0
+    useRestitution: 0
     Restitution: 0
+    useHardness: 0
     Hardness: 0
+    useBrittleness: 0
     Brittleness: 0
+    useStickiness: 0
     Stickiness: 0
   visual_material: {fileID: 0}
   casts_shadows: 1

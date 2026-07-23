@@ -13,11 +13,17 @@ MonoBehaviour:
   m_Name: Player
   m_EditorClassIdentifier: Assembly-CSharp::MaterialData
   baseProperties:
+    useDensity: 1
     Density: 1
+    useFriction: 1
     Friction: 0.2
+    useRestitution: 1
     Restitution: 0
+    useHardness: 1
     Hardness: 1
+    useBrittleness: 1
     Brittleness: 0.5
+    useStickiness: 1
     Stickiness: 0
   frozenCondition:
     applyWhenUsedAsWarp: 1
@@ -48,13 +54,30 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  frozenBonkResponse:
+    addsBonk: 0
+    stressType: 0
+    minBonk: 0
+    maxBonk: 0
+    responseCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   useFrozenBlock: 1
   frozenProperties:
+    useDensity: 1
     Density: 1
+    useFriction: 1
     Friction: 0
+    useRestitution: 1
     Restitution: 0
+    useHardness: 1
     Hardness: 1
+    useBrittleness: 1
     Brittleness: 1.5
+    useStickiness: 1
     Stickiness: 0
   heatedCondition:
     applyWhenUsedAsWarp: 1
@@ -85,13 +108,30 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  heatedBonkResponse:
+    addsBonk: 0
+    stressType: 0
+    minBonk: 0
+    maxBonk: 0
+    responseCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   useHeatedBlock: 1
   heatedProperties:
+    useDensity: 1
     Density: 1
+    useFriction: 1
     Friction: 1
+    useRestitution: 1
     Restitution: 0.2
+    useHardness: 1
     Hardness: 0.3
+    useBrittleness: 1
     Brittleness: 0.3
+    useStickiness: 1
     Stickiness: 0
   burningCondition:
     applyWhenUsedAsWarp: 1
@@ -122,13 +162,30 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  burningBonkResponse:
+    addsBonk: 0
+    stressType: 0
+    minBonk: 0
+    maxBonk: 0
+    responseCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   useBurningBlock: 0
   burningProperties:
+    useDensity: 0
     Density: 0
+    useFriction: 0
     Friction: 0
+    useRestitution: 0
     Restitution: 0
+    useHardness: 0
     Hardness: 0
+    useBrittleness: 0
     Brittleness: 0
+    useStickiness: 0
     Stickiness: 0
   conductiveCondition:
     applyWhenUsedAsWarp: 1
@@ -159,13 +216,30 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  conductiveBonkResponse:
+    addsBonk: 0
+    stressType: 0
+    minBonk: 0
+    maxBonk: 0
+    responseCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   useConductiveBlock: 0
   conductiveProperties:
+    useDensity: 0
     Density: 0
+    useFriction: 0
     Friction: 0
+    useRestitution: 0
     Restitution: 0
+    useHardness: 0
     Hardness: 0
+    useBrittleness: 0
     Brittleness: 0
+    useStickiness: 0
     Stickiness: 0
   visual_material: {fileID: 0}
   casts_shadows: 1
