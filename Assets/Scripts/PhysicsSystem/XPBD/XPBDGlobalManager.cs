@@ -58,6 +58,9 @@ public class XPBDGlobalManager : NetworkBehaviour
         float dt = Runner.DeltaTime;
         if (dt <= 0f) return;
 
+        RemoveInvalidRagdollRegistrations();
+
+
         SyncHydratedTmpJoints();
         SyncHydratedGrabs();
 
@@ -244,6 +247,8 @@ public class XPBDGlobalManager : NetworkBehaviour
 
     // --- TEMPORARY JOINT MATH (Matches Ragdoll Math exactly) ---
 
+    #region solver              /////////////////////////////SOLVER///////////////////////////////
+
     private void SolveTempDistance(HydratedTempJoint grab, float dt, Dictionary<Rigidbody, XPBDState> states)
     {
         var pState = states[grab.parentRb];
@@ -349,26 +354,32 @@ public class XPBDGlobalManager : NetworkBehaviour
         }
     }
 
+    #endregion
+
+    #region registration   /////////////////////////////Registration///////////////////////////////
+
 
     public void RegisterRagdoll(XPBDPosAndRotSolver solver)
     {
-        if (!registeredRagdolls.Contains(solver))
-        {
-            registeredRagdolls.Add(solver);
+        RemoveInvalidRagdollRegistrations();
 
-            //this means they are the same order in the list on all inspite of join order
-            registeredRagdolls.Sort((a, b) =>
-                a.GetComponent<NetworkObject>().Id.Raw.CompareTo(b.GetComponent<NetworkObject>().Id.Raw));
-        }
+        if (IsInvalidRagdoll(solver) || registeredRagdolls.Contains(solver))
+            return;
+
+        registeredRagdolls.Add(solver);
+
+        // Network IDs are replicated, so this produces the same ragdoll order
+        // on every peer regardless of local Spawned() callback order.
+        registeredRagdolls.Sort((a, b) =>
+            a.Object.Id.Raw.CompareTo(b.Object.Id.Raw));
     }
 
     public void UnregisterRagdoll(XPBDPosAndRotSolver solver)
     {
-        if (registeredRagdolls.Contains(solver))
-        {
-            registeredRagdolls.Remove(solver);
-        }
+        // List.Remove is idempotent: removing an absent solver is harmless.
+        registeredRagdolls.Remove(solver);
     }
+
 
 
     public bool AddTempJoint(NetworkTempJoint newJoint)
@@ -439,4 +450,210 @@ public class XPBDGlobalManager : NetworkBehaviour
         Debug.LogWarning($"XPBDGlobalManager: Could not find joint between Parent {grabberId} and Child {itemId} to remove.");
         return false;
     }
+
+
+    private static bool IsInvalidRagdoll(XPBDPosAndRotSolver ragdoll)
+    {
+        return ragdoll == null ||
+               ragdoll.Object == null ||
+               !ragdoll.Object.IsValid;
+    }
+
+    private void RemoveInvalidRagdollRegistrations()
+    {
+        for (int i = registeredRagdolls.Count - 1; i >= 0; i--)
+        {
+            if (IsInvalidRagdoll(registeredRagdolls[i]))
+            {
+                registeredRagdolls.RemoveAt(i);
+            }
+        }
+    }
+
+
+    private HashSet<NetworkId> CollectDepartingPlayerIds(NetworkObject playerRoot)
+    {
+        var departingIds = new HashSet<NetworkId>();
+
+        AddNetworkObjectId(departingIds, playerRoot);
+
+        // Covers objects which are still beneath the player hierarchy.
+        foreach (var networkObject in playerRoot.GetComponentsInChildren<NetworkObject>(true))
+        {
+            AddNetworkObjectId(departingIds, networkObject);
+        }
+
+        // The ragdoll root is detached during NetworkedRagDoll.Spawned(),
+        // so collect every body referenced by the XPBD solver as well.
+        if (playerRoot.TryGetComponent(out XPBDPosAndRotSolver solver))
+        {
+            foreach (var joint in solver.joints)
+            {
+                AddRigidbodyNetworkId(departingIds, joint.parent);
+                AddRigidbodyNetworkId(departingIds, joint.child);
+            }
+        }
+
+        // Additional protection for bodies explicitly stored by the
+        // HybridCharacterController.
+        if (playerRoot.TryGetComponent(out HybridCharacterController controller))
+        {
+            foreach (var nrb in controller.networkRigidbody3Ds)
+            {
+                if (nrb != null)
+                    AddNetworkObjectId(departingIds, nrb.Object);
+            }
+
+            foreach (var nrb in controller.networkRagdollRigidbody3Ds)
+            {
+                if (nrb != null)
+                    AddNetworkObjectId(departingIds, nrb.Object);
+            }
+        }
+
+        return departingIds;
+    }
+
+    private static void AddNetworkObjectId(HashSet<NetworkId> ids,NetworkObject networkObject)
+    {
+        if (networkObject != null && networkObject.IsValid)
+            ids.Add(networkObject.Id);
+    }
+
+    private static void AddRigidbodyNetworkId(HashSet<NetworkId> ids,Rigidbody rigidbody)
+    {
+        if (rigidbody == null)
+            return;
+
+        if (rigidbody.TryGetComponent(out NetworkObject networkObject))
+            AddNetworkObjectId(ids, networkObject);
+    }
+
+    public bool CleanupDepartingPlayer(NetworkObject playerRoot)
+    {
+        if (!HasStateAuthority)
+            return false;
+
+
+        if (playerRoot == null || !playerRoot.IsValid)
+            return false;
+        
+
+        HashSet<NetworkId> departingIds = CollectDepartingPlayerIds(playerRoot);
+
+        var heldItemIds = new HashSet<NetworkId>();
+
+        NetworkedInventoryManager inventory = null;
+
+        if (playerRoot.TryGetComponent(out inventory))
+        {
+            AddNetworkObjectId(heldItemIds, inventory.currentItemInHand);
+        }
+
+        // Also reconcile equipable items through their replicated holder.
+        // This catches an item even if the inventory reference became stale.
+        foreach (var equipable in FindObjectsByType<EquipableItem>(FindObjectsInactive.Include,FindObjectsSortMode.None))
+        {
+            if (equipable == null || equipable.Object == null ||!equipable.Object.IsValid)
+            {
+                continue;
+            }
+
+            if (equipable.HoldingPlayer == playerRoot)
+                heldItemIds.Add(equipable.Object.Id);
+        }
+
+        // 1. Remove every grab owned by the departing player.
+        // Capture its item first so it can be restored afterward.
+        for (int i = 0; i < NetworkedGrabJoints.Length; i++)
+        {
+            NetworkGrabJoint grab = NetworkedGrabJoints[i];
+
+            if (!grab.grabberId.IsValid)
+                continue;
+
+            if (!departingIds.Contains(grab.grabberId))
+                continue;
+
+            if (grab.itemId.IsValid)
+                heldItemIds.Add(grab.itemId);
+
+            NetworkedGrabJoints.Set(i, default);
+
+            _hydratedGrabJoints[i]?.Clear();
+        }
+
+        // 2. Remove temporary joints touching the root or any bone.
+        for (int i = 0; i < NetworkedTempJoints.Length; i++)
+        {
+            NetworkTempJoint joint = NetworkedTempJoints[i];
+
+            bool parentIsDeparting = joint.parentId.IsValid && departingIds.Contains(joint.parentId);
+
+            bool childIsDeparting = joint.childId.IsValid && departingIds.Contains(joint.childId);
+
+            if (!parentIsDeparting && !childIsDeparting)
+                continue;
+
+            NetworkedTempJoints.Set(i, default);
+
+            _hydratedTempJoints[i]?.Clear();
+        }
+
+        var sortedHeldItemIds = new List<NetworkId>(heldItemIds);
+
+        sortedHeldItemIds.Sort((a, b) => a.Raw.CompareTo(b.Raw));
+
+        foreach (NetworkId itemId in sortedHeldItemIds)
+        {
+            // Do not attempt to preserve an object which belongs to the departing player's own ragdoll.
+            if (departingIds.Contains(itemId))
+                continue;
+
+            if (!Runner.TryFindObject(itemId, out NetworkObject itemObject))
+                continue;
+
+            if (itemObject.TryGetComponent(out InteractableItem item))
+            {
+                item.ForceReleaseForDisconnect(playerRoot);
+            }
+            else if (itemObject.HasStateAuthority)
+            {
+
+                itemObject.RemoveInputAuthority();
+
+                if (itemObject.TryGetComponent(out Rigidbody rigidbody))
+                {
+                    rigidbody.isKinematic = false;
+                    rigidbody.detectCollisions = true;
+                    rigidbody.WakeUp();
+                }
+            }
+        }
+
+        // Clear player inventory references while the root remains valid.
+        if (inventory != null)
+        {
+            inventory.currentItemInHand = null;
+            inventory.potentialItemToPickup = null;
+            inventory.activeItem = null;
+        }
+
+        // 4. Remove this player's solver from the local ordered registry.
+        // Despawned() will attempt this again, which is safe and idempotent.
+        for (int i = registeredRagdolls.Count - 1; i >= 0; i--)
+        {
+            XPBDPosAndRotSolver ragdoll = registeredRagdolls[i];
+
+            if (IsInvalidRagdoll(ragdoll) ||
+                departingIds.Contains(ragdoll.Object.Id))
+            {
+                registeredRagdolls.RemoveAt(i);
+            }
+        }
+
+        return true;
+    }
+
+    #endregion
 }

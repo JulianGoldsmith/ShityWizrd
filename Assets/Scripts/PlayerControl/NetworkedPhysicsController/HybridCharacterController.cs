@@ -230,7 +230,6 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         if (xpbdJointSolver == null)
         {
             xpbdJointSolver = this.GetComponent<XPBDPosAndRotSolver>();
-            GameController.Instance.xPBDGlobalManager.RegisterRagdoll(xpbdJointSolver);
         }
     }
 

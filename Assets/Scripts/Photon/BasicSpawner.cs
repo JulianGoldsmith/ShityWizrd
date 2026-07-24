@@ -108,11 +108,44 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
-        if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
+
+        if (!runner.IsServer)
+            return;
+
+        NetworkObject playerRoot;
+
+        // Prefer the spawner's record, but use Fusion's player-object
+        // mapping as a defensive fallback.
+        if (!_spawnedCharacters.TryGetValue(player, out playerRoot) && !runner.TryGetPlayerObject(player,out playerRoot))
         {
-            runner.Despawn(networkObject);
-            _spawnedCharacters.Remove(player);
+            Debug.LogWarning( $"Could not find the player object for departing player {player}.");
+            return;
         }
+
+        if (playerRoot == null || !playerRoot.IsValid || !playerRoot.HasStateAuthority)
+        {
+            Debug.LogWarning($"Cannot clean up player {player}: this peer does not own the valid player root.");
+            return;
+        }
+
+        XPBDGlobalManager xpbdManager = GameController.Instance != null ? GameController.Instance.xPBDGlobalManager : null;
+
+        if (xpbdManager == null)
+        {
+            Debug.LogError($"Cannot safely despawn player {player}: XPBDGlobalManager was not found.");
+            return;
+        }
+
+        // Everything above Runner.Despawn is one synchronous
+        // state-authority cleanup transaction.
+        if (!xpbdManager.CleanupDepartingPlayer(playerRoot))
+            return;
+
+        // Only despawn after all references to the player and its bones
+        // have been removed.
+        runner.Despawn(playerRoot);
+
+        _spawnedCharacters.Remove(player);
     }
     public void OnInput(NetworkRunner runner, NetworkInput input) { }
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }

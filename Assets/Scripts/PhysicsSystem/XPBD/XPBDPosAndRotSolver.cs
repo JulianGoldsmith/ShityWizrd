@@ -181,7 +181,8 @@ public class XPBDTestJoint
     }
 }
 
-public class XPBDPosAndRotSolver : MonoBehaviour
+[RequireComponent(typeof(NetworkObject))]
+public class XPBDPosAndRotSolver : NetworkBehaviour
 {
     [Header("Compliance curve 0 = 0 1 = 180 higher is weaker")]
     public AnimationCurve complianceCurve = new AnimationCurve(
@@ -196,7 +197,64 @@ public class XPBDPosAndRotSolver : MonoBehaviour
 
     public bool isRagdolling = false;
 
-    // 1. POPULATE THE SHARED GLOBAL DICTIONARY
+    private XPBDGlobalManager _registeredManager;
+
+    public override void Spawned()
+    {
+        base.Spawned();
+
+        EnableNetworkSimulation();
+
+        XPBDGlobalManager manager = GameController.Instance != null
+            ? GameController.Instance.xPBDGlobalManager
+            : null;
+
+        if (manager == null)
+        {
+            Debug.LogError(
+                $"[{nameof(XPBDPosAndRotSolver)}] Cannot register '{name}' because no " +
+                $"{nameof(XPBDGlobalManager)} is available.",
+                this);
+            return;
+        }
+
+        manager.RegisterRagdoll(this);
+        _registeredManager = manager;
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        if (_registeredManager != null)
+        {
+            _registeredManager.UnregisterRagdoll(this);
+            _registeredManager = null;
+        }
+
+        base.Despawned(runner, hasState);
+    }
+
+    private void EnableNetworkSimulation()
+    {
+        Runner.SetIsSimulated(Object, true);
+
+        var simulatedObjects = new HashSet<NetworkObject>();
+
+        foreach (var joint in joints)
+        {
+            SetBodySimulated(joint.parent, simulatedObjects);
+            SetBodySimulated(joint.child, simulatedObjects);
+        }
+    }
+
+    private void SetBodySimulated(Rigidbody rb, HashSet<NetworkObject> simulatedObjects)
+    {
+        if (rb == null || !rb.TryGetComponent(out NetworkObject networkObject))
+            return;
+
+        if (simulatedObjects.Add(networkObject))
+            Runner.SetIsSimulated(networkObject, true);
+    }
+
     public void InitializeStates(float dt, Dictionary<Rigidbody, XPBDState> globalStates)
     {
         foreach (var joint in joints)

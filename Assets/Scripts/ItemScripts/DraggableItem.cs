@@ -113,5 +113,26 @@ public class DraggableItem : InteractableItem
 
     }
 
+    public override void ForceReleaseForDisconnect(NetworkObject playerObject)
+    {
+        if (Object == null || !Object.IsValid || !Object.HasStateAuthority)
+            return;
+
+        // The XPBD grab joint has already been removed by the transaction.
+        // Ensure the item is left as a normal physical object.
+        if (networkedRB != null)
+        {
+            networkedRB.RBIsKinematic = false;
+
+            if (networkedRB.Rigidbody != null)
+            {
+                networkedRB.Rigidbody.detectCollisions = true;
+                networkedRB.Rigidbody.WakeUp();
+            }
+        }
+
+        Object.RemoveInputAuthority();
+    }
+
 
 }
