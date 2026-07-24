@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2810064353326582334}
-  m_Layer: 19
+  m_Layer: 16
   m_Name: BottomTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -50,7 +50,7 @@ GameObject:
   - component: {fileID: 1579648759395604178}
   - component: {fileID: 7545822523488590561}
   - component: {fileID: 9179748892895728131}
-  m_Layer: 19
+  m_Layer: 16
   m_Name: Middle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -473,7 +473,7 @@ GameObject:
   - component: {fileID: 7459575425054021831}
   - component: {fileID: 7084902129387686209}
   - component: {fileID: 5197869098973389188}
-  m_Layer: 19
+  m_Layer: 16
   m_Name: Bottom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -960,7 +960,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8702905474639452412}
-  m_Layer: 19
+  m_Layer: 16
   m_Name: TopTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1371,7 +1371,7 @@ GameObject:
   - component: {fileID: 7411313372412243011}
   - component: {fileID: 7968544703509675986}
   - component: {fileID: 8781152767865248102}
-  m_Layer: 19
+  m_Layer: 16
   m_Name: Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1604,7 +1604,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5396310678822227309}
-  m_Layer: 19
+  m_Layer: 16
   m_Name: MiddleTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1721,9 +1721,6 @@ PrefabInstance:
       addedObject: {fileID: 3443278293078884297}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3d379358e9dd0c44fa40aaf1e1c5b7d7, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3975009649393423880}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3d379358e9dd0c44fa40aaf1e1c5b7d7, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 6530871595289252983}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3d379358e9dd0c44fa40aaf1e1c5b7d7, type: 3}
       insertIndex: -1
@@ -1825,8 +1822,8 @@ MonoBehaviour:
     parentTarget: {fileID: 2229127166033235630}
     childTarget: {fileID: 3698984405333044369}
     isRagdollJoint: 0
-    muscleCompliance: 0.0005
-    muscleDamping: 0.5
+    muscleCompliance: 0.005
+    muscleDamping: 0.08
     enablePosition: 1
     enableRotation: 1
     enableAngularLimits: 0
@@ -1840,8 +1837,8 @@ MonoBehaviour:
     limitDamping: 10
     drawLimitGizmos: 1
     gizmoSize: 0.25
-    lambdaPosition: {x: 0, y: 0, z: 0}
-    lambdaRotation: {x: 0.000507509, y: -0.000011715045, z: -0.001601273}
+    lambdaPosition: {x: -0.00000022781154, y: 0.004767669, z: 0.00000053156026}
+    lambdaRotation: {x: 0.00000012173871, y: 4.576945e-10, z: -0.000000119195484}
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1.441368, y: 1.4413683, z: 1.441368}
     bakedChildScale: {x: 1.531454, y: 1.5314541, z: 1.531454}
@@ -1849,8 +1846,8 @@ MonoBehaviour:
     twistAxisParent: {x: 0, y: 1, z: 0}
     swing1AxisParent: {x: -1, y: 0, z: 0}
     swing2AxisParent: {x: 0, y: 0, z: 1}
-    leverArmScale: 1
-    parentRotationInfluence: 1
+    leverArmScale: 0
+    parentRotationInfluence: 0
     parentPositionInfluence: 1
     scaleForceByTension: 0
     minTensionDistance: 0.05
@@ -1888,8 +1885,8 @@ MonoBehaviour:
     parentTarget: {fileID: 3698984405333044369}
     childTarget: {fileID: 5277838912451825449}
     isRagdollJoint: 0
-    muscleCompliance: 0.0005
-    muscleDamping: 0.5
+    muscleCompliance: 0.005
+    muscleDamping: 0.08
     enablePosition: 1
     enableRotation: 1
     enableAngularLimits: 0
@@ -1903,8 +1900,8 @@ MonoBehaviour:
     limitDamping: 10
     drawLimitGizmos: 1
     gizmoSize: 0.25
-    lambdaPosition: {x: 0, y: 0, z: 0}
-    lambdaRotation: {x: 0.000507509, y: -0.000011715045, z: -0.001601273}
+    lambdaPosition: {x: 0.00000022944883, y: 0.0023839935, z: -0.00000005045049}
+    lambdaRotation: {x: 0.00000018084329, y: 0.000000047339768, z: -0.00000018142127}
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1.531454, y: 1.5314541, z: 1.531454}
     bakedChildScale: {x: 1.92693, y: 1.9269297, z: 1.92693}
@@ -1912,8 +1909,8 @@ MonoBehaviour:
     twistAxisParent: {x: 0, y: 1, z: 0}
     swing1AxisParent: {x: -1, y: 0, z: 0}
     swing2AxisParent: {x: 0, y: 0, z: 1}
-    leverArmScale: 1
-    parentRotationInfluence: 1
+    leverArmScale: 0.2
+    parentRotationInfluence: 0.2
     parentPositionInfluence: 1
     scaleForceByTension: 0
     minTensionDistance: 0.05
@@ -1943,19 +1940,6 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   isRagdolling: 0
---- !u!114 &3975009649393423880
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4500481752180423999}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ee20dde271a9c54ea99de1601f34dfa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  posAndRotSolver: {fileID: 3443278293078884297}
 --- !u!114 &6530871595289252983
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1977,7 +1961,6 @@ MonoBehaviour:
   - {fileID: 3673367540887867315}
   NetworkedBehaviours:
   - {fileID: 3443278293078884297}
-  - {fileID: 3975009649393423880}
   - {fileID: 4950420358079765805}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4950420358079765805
@@ -2024,7 +2007,7 @@ MonoBehaviour:
   hotUI: {fileID: 0}
   coldUI: {fileID: 0}
   burnUI: {fileID: 0}
-  baseSmoothingFactor: 5
+  baseSmoothingFactor: 15
   scaleByPing: 1
   pingScalar: 5
   smoothingEnabled: 1
