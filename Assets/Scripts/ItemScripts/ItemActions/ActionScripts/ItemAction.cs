@@ -6,16 +6,14 @@ public abstract class ItemAction : ScriptableObject
 {
     [NonSerialized] public int ComboIndex;
     [NonSerialized] public EquipableItem Item;
-
-    public virtual void InitializeRuntimeForItem(EquipableItem item, int comboIndex)
+    [NonSerialized] public ItemActionChannel Channel;
+    public virtual void InitializeRuntimeForItem(EquipableItem item, int comboIndex, ItemActionChannel channel)
     {
         Item = item;
         ComboIndex = comboIndex;
-        // Let derived classes init their own animations
-        float dt = (Item != null && Item.Runner != null)
-            ? Item.Runner.DeltaTime
-            : Time.fixedDeltaTime;
+        Channel = channel;
 
+        float dt = Item != null && Item.Runner != null ? Item.Runner.DeltaTime : Time.fixedDeltaTime;
         InitializeAnimationTickCache(dt);
     }
 
@@ -37,29 +35,32 @@ public abstract class ItemAction : ScriptableObject
 
     protected virtual void CreateAndRegisterSpellState(int comboIndex)
     {
-        if (Item == null || Item.primaryActionSpell == null) return;
+        if (Item == null || Item.activeCaster == null || Channel == ItemActionChannel.Feed)
+            return;
 
-        SpellGraph graph = Item.primaryActionSpell;
-        //graph.CompileSpell();
+        SpellGraphId spellId = Channel == ItemActionChannel.Secondary ? Item.SecondarySpellID : Item.PrimarySpellID;
+        SpellGraph legacyGraph = Channel == ItemActionChannel.Secondary ? Item.secondaryActionSpell : Item.primaryActionSpell;
 
-        var controller = Item.activeCaster;
-        var netObj = controller.GetComponent<NetworkObject>();
+        if (spellId.IsNull())
+            return;
 
+        if (SpellStateManager.instance.GetHydratedSpell(spellId) == null)
+        {
+            Debug.LogWarning($"[ItemAction] Spell {spellId.BlueprintNumber} is not hydrated.");
+            return;
+        }
+
+        CastActionController controller = Item.activeCaster;
+        NetworkObject casterObject = controller.GetComponent<NetworkObject>();
         ActiveCastID newCastID = controller.GenerateNewCastID();
-        SpellState newCast = new SpellState(newCastID,controller, Item, graph, null, netObj);
-        newCast.CastPosition = newCast.Controller.transform.position;
+
+        SpellState newCast = new SpellState(newCastID, controller, Item, spellId, casterObject);
+        newCast.CastPosition = controller.transform.position;
         newCast.ComboIndex = comboIndex;
         newCast.isHeld = true;
 
-        /*ActiveSpell newActiveSpell = new ActiveSpell(newCastID, graph, newCast);
-
-        newActiveSpell.AddToken();
-
-        SpellStateManager.instance.RegisterNewCast(newCastID, newActiveSpell);*/
-        controller.RegisterAndTrackCast(newCast, graph);
-
+        controller.RegisterAndTrackCast(newCast, legacyGraph);
         Item.CurrentCastID = newCastID;
-
     }
 
     protected virtual void RemoveCastingToken(SpellState state)
@@ -81,24 +82,17 @@ public abstract class ItemAction : ScriptableObject
 
     protected void ExecuteHydratedSpell(SpellTriggerInfo triggerInfo)
     {
-        if (Item == null) return;
+        if (Item == null || Channel == ItemActionChannel.Feed)
+            return;
 
-        IRuntimeNode rootNode = SpellStateManager.instance.GetHydratedSpell(Item.PrimarySpellID);
+        SpellGraphId spellId = Channel == ItemActionChannel.Secondary ? Item.SecondarySpellID : Item.PrimarySpellID;
+        IRuntimeNode rootNode = SpellStateManager.instance.GetHydratedSpell(spellId);
 
-        if (rootNode != null)
-        {
-            if (rootNode is RuntimeEntryPoint entryPoint)
-            {
-                entryPoint.Execute(triggerInfo);
-            }
-            else if (rootNode is IRuntimeCore core)
-            {
-                core.ExecuteCore(triggerInfo);
-            }
-        }
+        if (rootNode is RuntimeEntryPoint entryPoint)
+            entryPoint.Execute(triggerInfo);
+        else if (rootNode is IRuntimeCore core)
+            core.ExecuteCore(triggerInfo);
         else
-        {
-            Debug.LogError($"[ItemAction] Failed to execute! Spell {Item.PrimarySpellID.BlueprintNumber} is not hydrated in RAM.");
-        }
+            Debug.LogError($"[ItemAction] Failed to execute spell {spellId.BlueprintNumber}.");
     }
 }

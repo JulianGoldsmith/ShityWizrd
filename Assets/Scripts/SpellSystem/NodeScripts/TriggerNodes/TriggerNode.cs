@@ -19,37 +19,40 @@ public abstract class TriggerNode : SpellNode
     public List<VFXTheme> GetDownstreamThemes(SpellCompilationContext context)
     {
         List<VFXTheme> themes = new List<VFXTheme>();
+        List<SpellNode> downstreamNodes = new List<SpellNode>();
 
-        if (context.GraphData.Wires != null && context.TemplateRegistry != null)
+        if (context.DownstreamNodeDefinitions != null)
+        {
+            downstreamNodes.AddRange(context.GetDownstreamDefinitions());
+        }
+        else if (context.GraphData.Wires != null && context.TemplateRegistry != null) ///legacy if using graph wires 
         {
             for (int i = 0; i <= context.GraphData.MaxWireIndex; i++)
             {
-                var wire = context.GraphData.Wires[i];
+                WireData wire = context.GraphData.Wires[i];
 
-                if (wire.FromSocketIndex != 255 && wire.FromNodeIndex == context.CurrentNodeIndex)
-                {
-                    var targetNodeData = context.GraphData.Nodes[wire.ToNodeIndex];
+                if (wire.FromSocketIndex == 255 || wire.FromNodeIndex != context.CurrentNodeIndex)
+                    continue;
 
-                    SpellNode targetTemplate = context.TemplateRegistry.FirstOrDefault(n => n.NetworkNodeID == targetNodeData.TemplateID);
+                NetworkNodeData targetNodeData = context.GraphData.Nodes[wire.ToNodeIndex];
+                SpellNode targetDefinition = context.TemplateRegistry.FirstOrDefault(node => node.NetworkNodeID == targetNodeData.TemplateID);
 
-                    if (targetTemplate is EffectNode effectNode)
-                    {
-                        Debug.Log($"[Bake] Found Effect via Wire! Theme: {effectNode.Theme}");
-                        if (!themes.Contains(effectNode.Theme))
-                        {
-                            themes.Add(effectNode.Theme);
-                        }
-                    }
-                }
+                if (targetDefinition != null)
+                    downstreamNodes.Add(targetDefinition);
             }
         }
 
-        // Fallback if no effects were found
-        if (themes.Count == 0)
+        foreach (SpellNode downstreamNode in downstreamNodes)
         {
-            Debug.Log("[Bake] WARNING: No effect themes found! Defaulting to Fallback (White).");
-            themes.Add(VFXTheme.Fallback);
+            if (downstreamNode is not EffectNode effectNode)
+                continue;
+
+            if (!themes.Contains(effectNode.Theme))
+                themes.Add(effectNode.Theme);
         }
+
+        if (themes.Count == 0)
+            themes.Add(VFXTheme.Fallback);
 
         return themes;
     }

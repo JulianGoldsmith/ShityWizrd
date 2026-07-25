@@ -309,37 +309,40 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
         // 1. REBUILD THE PROXY STATE (If it doesn't exist)
         if (activeSpell == null)
         {
-            if (SpellStateManager.instance.active_spellblueprints.TryGetValue(BlueprintID, out SpellGraph blueprint))
+            if (!SpellStateManager.instance.hydratedSpells.ContainsKey(BlueprintID))
+                return;
+
+            if (!Runner.TryFindObject(ActiveCastID.CasterId, out NetworkObject casterObject))
+                return;
+
+            if (!casterObject.TryGetComponent(out ActiveCastTracker tracker))
+                return;
+
+            NetworkCastData syncedData = tracker.GetCastData(ActiveCastID);
+
+            if (!syncedData.CastID.IsValid)
             {
-                if (Runner.TryFindObject(ActiveCastID.CasterId, out NetworkObject casterObj))
-                {
-                    if (casterObj.TryGetComponent<ActiveCastTracker>(out var tracker))
-                    {
-                        NetworkCastData syncedData = tracker.GetCastData(ActiveCastID);
-
-                        if (syncedData.CastID.IsValid)
-                        {
-                            SpellState dummyProxyState = new SpellState(Runner, syncedData, blueprint);
-
-                            activeSpell = new ActiveSpell(ActiveCastID, blueprint, dummyProxyState);
-                            SpellStateManager.instance.RegisterNewCast(ActiveCastID, activeSpell);
-
-                            Debug.Log($"[Proxy Sync] Rehydrated Cast {ActiveCastID.CastNumber} from Player {casterObj.name}!");
-                            if (activeSpell != null) activeSpell.AddToken();
-                        }
-                        else
-                        {
-                            Debug.LogWarning($"[Proxy Sync] Tracker had no data for Cast {ActiveCastID.CastNumber}.");
-                            return; // Try again next frame!
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // The broadcast hasn't arrived yet! Try again next frame.
+                Debug.LogWarning($"[Proxy Sync] Tracker had no data for Cast {ActiveCastID.CastNumber}.");
                 return;
             }
+
+            SpellGraph legacyBlueprint = SpellStateManager.instance.GetSpellGraph(BlueprintID);
+            SpellState proxyState;
+
+            if (legacyBlueprint != null)
+                proxyState = new SpellState(Runner, syncedData, legacyBlueprint);
+            else
+                proxyState = new SpellState(Runner, syncedData);
+
+            if (legacyBlueprint != null)
+                activeSpell = new ActiveSpell(ActiveCastID, legacyBlueprint, proxyState);
+            else
+                activeSpell = new ActiveSpell(ActiveCastID, BlueprintID, proxyState);
+
+            SpellStateManager.instance.RegisterNewCast(ActiveCastID, activeSpell);
+            activeSpell.AddToken();
+
+            Debug.Log($"[Proxy Sync] Rehydrated cast {ActiveCastID.CastNumber} using blueprint {BlueprintID.BlueprintNumber}.");
         }
 
         // 2. THE FIX: Pass off entirely to the Universal Setup!
@@ -417,24 +420,34 @@ public class SpellCompilationContext
 
     public SpellNetworkData GraphData;
     public List<SpellNode> TemplateRegistry;
+    public List<SpellNode>[] DownstreamNodeDefinitions;
 
     private int _nextIntSlot = 0;
     private int _nextFloatSlot = 0;
     private int _nextVectorSlot = 0;
-
     private int _nextBoolBit = 0;
+    private int _nextVfxId = 0;
+
     public int ClaimIntSlot() => _nextIntSlot++;
     public int ClaimFloatSlot() => _nextFloatSlot++;
     public int ClaimVectorSlot() => _nextVectorSlot++;
+    public int ClaimVFXId() => _nextVfxId++;
 
     public int ClaimBoolBit()
     {
-        if (_nextBoolBit >= 32) Debug.LogError("Too many booleans on this core!");
+        if (_nextBoolBit >= 32)
+            Debug.LogError("Too many booleans on this core!");
+
         return _nextBoolBit++;
     }
 
-    private int _nextVfxId = 0;
-    public int ClaimVFXId() => _nextVfxId++;
+    public IEnumerable<SpellNode> GetDownstreamDefinitions()
+    {
+        if (DownstreamNodeDefinitions == null || CurrentNodeIndex < 0 || CurrentNodeIndex >= DownstreamNodeDefinitions.Length)
+            return Enumerable.Empty<SpellNode>();
+
+        return DownstreamNodeDefinitions[CurrentNodeIndex];
+    }
 }
 
 public struct PendingContact

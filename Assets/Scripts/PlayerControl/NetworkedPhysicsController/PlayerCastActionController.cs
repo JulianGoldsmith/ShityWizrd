@@ -27,35 +27,47 @@ public class PlayerCastActionController : CastActionController
 
         if (GetInput(out NetworkInputData data))
         {
-            if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
-                OnInputEvent(true);
-
             if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
-                OnInputEvent(false);
+                OnInputEvent(ItemActionChannel.Primary, false, default);
+
+            if (data.buttons.WasReleased(prior_buttons, EInputButton.RIGHT_CLICK))
+                OnInputEvent(ItemActionChannel.Feed, false, default);
+
+            if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
+                OnInputEvent(ItemActionChannel.Primary, true, data.interactionTarget);
+
+            if (data.buttons.WasPressed(prior_buttons, EInputButton.RIGHT_CLICK))
+                OnInputEvent(ItemActionChannel.Feed, true, data.interactionTarget);
 
             prior_buttons = data.buttons;
             lookDirection = data.lookRotation;
         }
     }
 
-    private void OnInputEvent(bool isPress)
+    private void OnInputEvent(ItemActionChannel channel, bool isPress, NetworkInteractionTarget target)
     {
-        if (inventory == null || inventory.activeItem == null) return;
-        if (!inventory.activeItem.TryGetComponent<EquipableItem>(out var item)) return;
+        if (inventory == null || inventory.activeItem == null)
+            return;
 
-        var actions = item.primaryActions;
-        if (actions == null || actions.Count == 0 || actions[0] == null) return;
+        if (!inventory.activeItem.TryGetComponent(out EquipableItem item))
+            return;
 
-        // Hardcoded to index 0 for now. Combos will be managed by ItemActions in the future!
-        ItemAction action = actions[0];
-
-        if (isPress) action.OnPress(0, false);
-        else action.OnRelease(0);
+        if (isPress)
+            item.TryPressAction(channel, 0, target);
+        else
+            item.TryReleaseAction(channel);
     }
 
     public override void EndCast()
     {
-        OnInputEvent(false); // Force a release
+        if (inventory != null && inventory.activeItem != null && inventory.activeItem.TryGetComponent(out EquipableItem item))
+        {
+            ItemActionChannel channel = item.ItemActionData.channel;
+
+            if (channel != ItemActionChannel.None)
+                item.TryReleaseAction(channel);
+        }
+
         isCasting = false;
     }
 

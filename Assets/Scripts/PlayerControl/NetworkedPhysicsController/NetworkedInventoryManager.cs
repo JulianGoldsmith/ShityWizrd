@@ -64,6 +64,11 @@ public class NetworkedInventoryManager : NetworkBehaviour
                 LookForItems();
             }
 
+            if (currentItemInHand == null && data.buttons.WasPressed(Prior_buttons, EInputButton.RIGHT_CLICK) && data.interactionTarget.Type == InteractionTargetType.RuneNode)
+            {
+                TryDetachRuneFromInput(data.interactionTarget);
+            }
+
             if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP)  )
             {
                 if(characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
@@ -72,7 +77,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
             if (data.buttons.WasReleased(Prior_buttons, EInputButton.DROP)  )
             {
                 if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
-                    DropItem();
+                    DropItem(data);
             }
             Prior_buttons = data.buttons;
         }
@@ -81,7 +86,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
         {
             if (currentItemInHand != null)
             {
-                DropItem();
+                DropItem(default);
             }
             if (potentialItemToPickup != null)
             {
@@ -192,16 +197,79 @@ public class NetworkedInventoryManager : NetworkBehaviour
         currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>());
     }
 
-    private void DropItem() 
+
+    private void DropItem(NetworkInputData data)
     {
-        if (currentItemInHand == null) return;
+        if (currentItemInHand == null)
+            return;
 
-        InteractableItem droppedItem = currentItemInHand.GetComponent<InteractableItem>();
+        NetworkObject droppedObject = currentItemInHand;
+        InteractableItem droppedItem = droppedObject.GetComponent<InteractableItem>();
 
-        droppedItem.DropItem(this.GetComponent<NetworkObject>(), HasInputAuthority, HasStateAuthority);
+        droppedItem.DropItem(GetComponent<NetworkObject>(), HasInputAuthority, HasStateAuthority);
+
+        if (droppedItem is RuneRigObject runeRig && data.interactionTarget.Type == InteractionTargetType.RuneBay && data.interactionTarget.ObjectId.IsValid)
+        {
+            runeRig.TryAttachToBay(data.interactionTarget.ObjectId, data.interactionTarget.PartIndex, data.interactionTarget.BayIndex);
+        }
 
         handController.DragDistance = 0;
-
         currentItemInHand = null;
+    }
+
+   
+
+    private void TryDetachRuneFromInput(NetworkInteractionTarget target)
+    {
+        if (!target.IsValid || target.Type != InteractionTargetType.RuneNode)
+            return;
+
+        if (!Runner.TryFindObject(target.ObjectId, out NetworkObject rigObject))
+            return;
+
+        if (!rigObject.TryGetComponent(out RuneRigObject runeRig))
+            return;
+
+        RuneObject selectedRune = runeRig.GetRuneObject(target.PartIndex);
+
+        if (selectedRune == null)
+            return;
+
+        runeRig.TryDetachRune(target.PartIndex, Object.InputAuthority, selectedRune.transform.position, selectedRune.transform.rotation);
+    }
+
+    public bool TryGetLookedAtInteractionTarget(out NetworkInteractionTarget target)
+    {
+        target = default;
+
+        Vector3 origin = characterController.GetEyePos();
+        Vector3 direction = characterController.GetLookRot() * Vector3.forward;
+
+        if (!Physics.Raycast(origin, direction, out RaycastHit hit, pickupRadius * 2f, itemLayer))
+            return false;
+
+        RuneObject runeObject = hit.collider.GetComponentInParent<RuneObject>();
+
+        if (runeObject != null && runeObject.OwningRig != null)
+        {
+            RuneRigObject runeRig = runeObject.OwningRig;
+
+            if (runeRig.HasRigData && runeRig.Object != null && runeRig.Object.IsValid)
+            {
+                target = NetworkInteractionTarget.CreateRuneNode(runeRig.Object.Id, (byte)runeObject.NodeIndex);
+                return true;
+            }
+        }
+
+        GameObject hitObject = SpellSystemHelpers.GetHitGameObject(hit.collider);
+
+        if (hitObject == null || !hitObject.TryGetComponent(out InteractableItem interactableItem))
+            return false;
+
+        if (interactableItem.Object == null || !interactableItem.Object.IsValid)
+            return false;
+
+        target = NetworkInteractionTarget.CreateItem(interactableItem.Object.Id);
+        return true;
     }
 }

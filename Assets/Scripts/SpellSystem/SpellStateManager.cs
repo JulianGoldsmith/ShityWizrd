@@ -19,7 +19,10 @@ public class SpellStateManager : NetworkBehaviour
 
     public static SpellStateManager instance;
 
-    public Dictionary<SpellGraphId, SpellGraph> active_spellblueprints = new Dictionary<SpellGraphId, SpellGraph>();
+    public Dictionary<SpellGraphId, SpellGraph> active_spellblueprints = new Dictionary<SpellGraphId, SpellGraph>(); //legacy graph
+
+    public Dictionary<SpellGraphId, RuneSpellBlueprintData> activeRuneSpellBlueprints = new Dictionary<SpellGraphId, RuneSpellBlueprintData>(); //new spellRig
+
 
     public Dictionary<SpellGraphId, int> active_spellgraph_instances = new Dictionary<SpellGraphId, int>();
 
@@ -41,6 +44,8 @@ public class SpellStateManager : NetworkBehaviour
         instance = this;
         //curr_spell_state_id = new Dictionary<NetworkBehaviourId, int>();
         active_spellblueprints = new Dictionary<SpellGraphId, SpellGraph>();
+        activeRuneSpellBlueprints = new Dictionary<SpellGraphId, RuneSpellBlueprintData>();
+
         active_spellgraph_instances = new Dictionary<SpellGraphId, int>();
         timestamp = Time.time;
         
@@ -146,6 +151,58 @@ public class SpellStateManager : NetworkBehaviour
         }
         return null;
     }
+    public SpellGraphId RegisterRuneSpellOnHost(RuneSpellBlueprintData blueprint)
+    {
+        return RegisterRuneSpellOnHost(blueprint, Runner.LocalPlayer, default);
+    }
+    public SpellGraphId RegisterRuneSpellOnHost(RuneSpellBlueprintData blueprint, PlayerRef author)
+    {
+        return RegisterRuneSpellOnHost(blueprint, author, default);
+    }
+
+    private SpellGraphId RegisterRuneSpellOnHost(RuneSpellBlueprintData blueprint, PlayerRef author, NetworkId targetWeapon)
+    {
+        if (!Object.HasStateAuthority)
+        {
+            Debug.LogError("[RuneSpell] Only the host can register a rune spell.");
+            return default;
+        }
+
+        RuneSpellBlueprintData storedBlueprint = new RuneSpellBlueprintData(blueprint.CreateNodeCopy());
+        byte[] compressedData = RuneSpellBlueprintSerializer.Serialize(storedBlueprint);
+
+        _hostMasterBlueprintCounter++;
+        SpellGraphId newId = new SpellGraphId(author, _hostMasterBlueprintCounter);
+
+        HydrateAndStoreRuneSpell(newId, storedBlueprint);
+        activeRuneSpellBlueprints[newId] = storedBlueprint;
+        AddToManifest(newId);
+        RPC_BroadcastRuneSpell(newId, compressedData);
+
+        if (targetWeapon.IsValid && Runner.TryFindObject(targetWeapon, out NetworkObject weaponObject))
+        {
+            EquipableItem item = weaponObject.GetComponent<EquipableItem>();
+
+            if (item != null)
+                item.PrimarySpellID = newId;
+        }
+
+        Debug.Log($"[RuneSpell] Host registered rune spell {newId.BlueprintNumber} from {author}. Runes: {storedBlueprint.NodeCount}.");
+        return newId;
+    }
+
+
+
+    public bool TryGetRuneSpellBlueprint(SpellGraphId id, out RuneSpellBlueprintData blueprint)
+    {
+        if (id.IsNull())
+        {
+            blueprint = default;
+            return false;
+        }
+
+        return activeRuneSpellBlueprints.TryGetValue(id, out blueprint);
+    }
 
     private Dictionary<SpellGraphId, float> _requestTimestamps = new Dictionary<SpellGraphId, float>();
 
@@ -162,7 +219,7 @@ public class SpellStateManager : NetworkBehaviour
 
             if (id.IsNull()) continue;
 
-            if (!active_spellblueprints.ContainsKey(id))
+            if (!active_spellblueprints.ContainsKey(id) && !activeRuneSpellBlueprints.ContainsKey(id))
             {
                 bool shouldRequest = true;
 
@@ -219,6 +276,35 @@ public class SpellStateManager : NetworkBehaviour
             active_spellblueprints.Remove(key);
             Debug.Log($"[Manifest] Host deleted Blueprint {key.BlueprintNumber}. Removed from local RAM.");
         }
+
+        keysToDelete.Clear();
+
+        foreach (SpellGraphId localKey in activeRuneSpellBlueprints.Keys)
+        {
+            if (localKey.AuthorRef == PlayerRef.None)
+                continue;
+
+            bool foundInManifest = false;
+
+            for (int i = 0; i < ActiveManifest.Length; i++)
+            {
+                if (ActiveManifest[i].Equals(localKey))
+                {
+                    foundInManifest = true;
+                    break;
+                }
+            }
+
+            if (!foundInManifest)
+                keysToDelete.Add(localKey);
+        }
+
+        foreach (SpellGraphId key in keysToDelete)
+        {
+            activeRuneSpellBlueprints.Remove(key);
+            hydratedSpells.Remove(key);
+            Debug.Log($"[Manifest] Host deleted rune blueprint {key.BlueprintNumber}. Removed from local RAM.");
+        }
     }
 
     public void AddToManifest(SpellGraphId newId)
@@ -241,10 +327,9 @@ public class SpellStateManager : NetworkBehaviour
         if (!Object.HasStateAuthority) return;
 
         // 1. Remove it from the Host's Master Library
-        if (active_spellblueprints.ContainsKey(idToRemove))
-        {
-            active_spellblueprints.Remove(idToRemove);
-        }
+        active_spellblueprints.Remove(idToRemove);
+        activeRuneSpellBlueprints.Remove(idToRemove);
+        hydratedSpells.Remove(idToRemove);
 
         // 2. Find it in the Networked Manifest and wipe the slot clean
         for (int i = 0; i < ActiveManifest.Length; i++)
@@ -273,10 +358,18 @@ public class SpellStateManager : NetworkBehaviour
     public void RPC_RequestSpellBlueprint(SpellGraphId missingId, RpcInfo info = default)
     {
         PlayerRef requester = info.Source;
+
         if (active_spellblueprints.TryGetValue(missingId, out SpellGraph graph))
         {
             byte[] compressedData = SerializeSpellData(graph.Data);
-            RPC_DeliverSpell(requester, missingId, compressedData); // 1 single packet!
+            RPC_DeliverSpell(requester, missingId, compressedData);
+            return;
+        }
+
+        if (activeRuneSpellBlueprints.TryGetValue(missingId, out RuneSpellBlueprintData runeBlueprint))
+        {
+            byte[] compressedData = RuneSpellBlueprintSerializer.Serialize(runeBlueprint);
+            RPC_DeliverRuneSpell(requester, missingId, compressedData);
         }
     }
 
@@ -307,6 +400,34 @@ public class SpellStateManager : NetworkBehaviour
             Debug.LogError($"[Client] Failed to build requested Blueprint {sgid.BlueprintNumber}!");
         }
     }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_DeliverRuneSpell(PlayerRef targetPlayer, SpellGraphId spellId, byte[] compressedData)
+    {
+        if (Runner.LocalPlayer.PlayerId != targetPlayer.PlayerId)
+            return;
+
+        try
+        {
+            RuneSpellBlueprintData blueprint = RuneSpellBlueprintSerializer.Deserialize(compressedData);
+            activeRuneSpellBlueprints[spellId] = blueprint;
+            HydrateAndStoreRuneSpell(spellId, blueprint);
+
+            EquipableItem[] allItems = FindObjectsOfType<EquipableItem>();
+
+            foreach (EquipableItem item in allItems)
+            {
+                if (item.PrimarySpellID.Equals(spellId))
+                    item.OnPrimarySpellChanged();
+            }
+
+            Debug.Log($"[RuneSpell] Downloaded rune spell {spellId.BlueprintNumber} containing {blueprint.NodeCount} runes.");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"[RuneSpell] Failed to download rune spell {spellId.BlueprintNumber}: {exception.Message}");
+        }
+    }
     public void SubmitNewSpellToHost(SpellGraph graph, NetworkId targetWeapon)
     {
         if (Object.HasStateAuthority)
@@ -329,6 +450,40 @@ public class SpellStateManager : NetworkBehaviour
             // Instantly compress and send in 1 packet!
             byte[] compressedData = SerializeSpellData(graph.Data);
             RPC_SubmitSpellToHost(Runner.LocalPlayer, compressedData, targetWeapon);
+        }
+    }
+
+    public void SubmitRuneSpellToHost(RuneSpellBlueprintData blueprint, NetworkId targetWeapon)
+    {
+        if (Object.HasStateAuthority)
+        {
+            RegisterRuneSpellOnHost(blueprint, Runner.LocalPlayer, targetWeapon);
+            return;
+        }
+
+        try
+        {
+            byte[] compressedData = RuneSpellBlueprintSerializer.Serialize(blueprint);
+            RPC_SubmitRuneSpellToHost(compressedData, targetWeapon);
+            Debug.Log($"[RuneSpell] Submitted {blueprint.NodeCount}-rune spell to host.");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"[RuneSpell] Failed to submit rune spell: {exception.Message}");
+        }
+    }
+
+    [Rpc(RpcSources.Proxies | RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    public void RPC_SubmitRuneSpellToHost(byte[] compressedData, NetworkId targetWeapon, RpcInfo info = default)
+    {
+        try
+        {
+            RuneSpellBlueprintData blueprint = RuneSpellBlueprintSerializer.Deserialize(compressedData);
+            RegisterRuneSpellOnHost(blueprint, info.Source, targetWeapon);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"[RuneSpell] Host rejected rune spell from {info.Source}: {exception.Message}");
         }
     }
 
@@ -393,6 +548,34 @@ public class SpellStateManager : NetworkBehaviour
         catch (Exception e)
         {
             Debug.LogError($"[Client] Failed to build Broadcasted Spell: {e.Message}");
+        }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_BroadcastRuneSpell(SpellGraphId spellId, byte[] compressedData)
+    {
+        if (Object.HasStateAuthority)
+            return;
+
+        try
+        {
+            RuneSpellBlueprintData blueprint = RuneSpellBlueprintSerializer.Deserialize(compressedData);
+            activeRuneSpellBlueprints[spellId] = blueprint;
+            HydrateAndStoreRuneSpell(spellId, blueprint);
+
+            EquipableItem[] allItems = FindObjectsOfType<EquipableItem>();
+
+            foreach (EquipableItem item in allItems)
+            {
+                if (item.PrimarySpellID.Equals(spellId))
+                    item.OnPrimarySpellChanged();
+            }
+
+            Debug.Log($"[RuneSpell] Broadcast received. Hydrated rune spell {spellId.BlueprintNumber} containing {blueprint.NodeCount} runes.");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"[RuneSpell] Failed to receive broadcast rune spell {spellId.BlueprintNumber}: {exception.Message}");
         }
     }
     #endregion
@@ -712,9 +895,10 @@ public class SpellStateManager : NetworkBehaviour
         // 2. Store the whole package in RAM
         hydratedSpells[id] = new RuntimeSpell()
         {
+            Format = SpellBlueprintFormat.LegacyGraph,
             Blueprint = graph,
             HydratedNodes = hydratedGraph,
-            RootNode = hydratedGraph[0] // Entry Point is always index 0!
+            RootNode = hydratedGraph[0]
         };
     }
 
@@ -727,6 +911,19 @@ public class SpellStateManager : NetworkBehaviour
             return runtimeSpell.RootNode;
         }
         return null;
+    }
+
+    public void HydrateAndStoreRuneSpell(SpellGraphId id, RuneSpellBlueprintData blueprint)
+    {
+        IRuntimeNode[] hydratedNodes = RuneSpellHydrator.Hydrate(blueprint);
+
+        hydratedSpells[id] = new RuntimeSpell()
+        {
+            Format = SpellBlueprintFormat.RuneRig,
+            RuneBlueprint = blueprint,
+            HydratedNodes = hydratedNodes,
+            RootNode = hydratedNodes[0]
+        };
     }
 
 }
@@ -763,9 +960,17 @@ public struct SpellGraphId : INetworkStruct, IEquatable<SpellGraphId>
 
 }
 
+public enum SpellBlueprintFormat : byte
+{
+    LegacyGraph,
+    RuneRig
+}
+
 public class RuntimeSpell
 {
+    public SpellBlueprintFormat Format;
     public SpellGraph Blueprint;
-    public IRuntimeNode[] HydratedNodes; // The whole graph in RAM!
-    public IRuntimeNode RootNode;        // Entry Point (Node 0)
+    public RuneSpellBlueprintData RuneBlueprint;
+    public IRuntimeNode[] HydratedNodes;
+    public IRuntimeNode RootNode;
 }

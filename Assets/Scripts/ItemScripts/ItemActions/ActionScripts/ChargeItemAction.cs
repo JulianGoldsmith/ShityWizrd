@@ -113,8 +113,6 @@ public class ChargeItemAction : ItemAction
         state.CastChargeLevel = Mathf.Clamp01(chargeT) * chargeMult;
         state.isHeld = false;
 
-        // Fire Logic
-        SpellGraph graph = Item.primaryActionSpell;
 
         EyePosAndLookDir eyeInfo = controller.GetEyePosAndLookDir();
 

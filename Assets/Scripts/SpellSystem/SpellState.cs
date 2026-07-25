@@ -84,69 +84,74 @@ public class SpellState
         get => NetCastData.SpawnedCoresCounter;
         set => NetCastData.SpawnedCoresCounter = value;
     }
-    public SpellState(ActiveCastID spellID, CastActionController controller, EquipableItem item, SpellGraph spell, CasterNode originalCasterNode, NetworkObject caster)
+    public SpellState(ActiveCastID spellID, CastActionController controller, EquipableItem item, SpellGraphId blueprintID, NetworkObject caster)
     {
-        // 1. Initialize the internal struct
         NetCastData = new NetworkCastData();
 
-        // 2. Set the facade references (so your Enemy AI / Player UI doesn't break)
-        this.Controller = controller;
-        this.CastItem = item;
-        this.Spell = spell;
-        this.OriginalCasterNode = originalCasterNode;
-        this.Caster = caster;
+        Controller = controller;
+        CastItem = item;
+        Caster = caster;
+        Spell = null;
+        OriginalCasterNode = null;
 
-        // 3. Populate the network struct with the pass-throughs
-        this.ActiveCastID = spellID;
-        this.SpellGraphIdFrom = spell.spellGraphId;
+        ActiveCastID = spellID;
+        SpellGraphIdFrom = blueprintID;
 
-        // 4. Safely extract network IDs for the struct
-        if (caster != null) NetCastData.CasterId = caster.Id;
-        if (item != null && item.TryGetComponent<NetworkObject>(out var itemNet))
-        {
-            NetCastData.WeaponId = itemNet.Id;
-        }
+        if (caster != null)
+            NetCastData.CasterId = caster.Id;
 
-        // 5. Initial Positioning
+        if (item != null && item.TryGetComponent(out NetworkObject itemNetworkObject))
+            NetCastData.WeaponId = itemNetworkObject.Id;
+
         if (item != null && item.projectileSpawnPoint != null)
         {
-            this.CastPosition = item.projectileSpawnPoint.position;
-            this.CastRotation = item.projectileSpawnPoint.rotation;
+            CastPosition = item.projectileSpawnPoint.position;
+            CastRotation = item.projectileSpawnPoint.rotation;
         }
         else if (controller != null)
         {
-            this.CastPosition = controller.transform.position;
-            this.CastRotation = controller.transform.rotation;
+            CastPosition = controller.transform.position;
+            CastRotation = controller.transform.rotation;
         }
 
-        this.SpawnedCoresCounter = 0;
+        SpawnedCoresCounter = 0;
     }
 
-    public SpellState(NetworkRunner runner, NetworkCastData syncedData, SpellGraph blueprint)
+    public SpellState(ActiveCastID spellID, CastActionController controller, EquipableItem item, SpellGraph spell, CasterNode originalCasterNode, NetworkObject caster)
+        : this(spellID, controller, item, spell != null ? spell.spellGraphId : default, caster)
     {
-        this.NetCastData = syncedData;
-        this.Spell = blueprint;
+        Spell = spell;
+        OriginalCasterNode = originalCasterNode;
+    }
 
-        if (syncedData.CasterId.IsValid && runner.TryFindObject(syncedData.CasterId, out NetworkObject casterObj))
+    public SpellState(NetworkRunner runner, NetworkCastData syncedData)
+    {
+        NetCastData = syncedData;
+        Spell = null;
+
+        if (syncedData.CasterId.IsValid && runner.TryFindObject(syncedData.CasterId, out NetworkObject casterObject))
         {
-            this.Caster = casterObj;
-            this.Controller = casterObj.GetComponent<CastActionController>();
+            Caster = casterObject;
+            Controller = casterObject.GetComponent<CastActionController>();
         }
         else
         {
-            this.Caster = null;
-            this.Controller = null;
+            Caster = null;
+            Controller = null;
         }
 
-        if (syncedData.WeaponId.IsValid && runner.TryFindObject(syncedData.WeaponId, out NetworkObject weaponObj))
-        {
-            this.CastItem = weaponObj.GetComponent<EquipableItem>();
-        }
+        if (syncedData.WeaponId.IsValid && runner.TryFindObject(syncedData.WeaponId, out NetworkObject weaponObject))
+            CastItem = weaponObject.GetComponent<EquipableItem>();
         else
-        {
-            this.CastItem = null;
-        }
-        this.OriginalCasterNode = null;
+            CastItem = null;
+
+        OriginalCasterNode = null;
+    }
+
+    public SpellState(NetworkRunner runner, NetworkCastData syncedData, SpellGraph legacyBlueprint)
+        : this(runner, syncedData)
+    {
+        Spell = legacyBlueprint;
     }
 
     public bool CanSpawnAnotherCore()

@@ -185,7 +185,7 @@ public class RuntimeObjectCore : RuntimeCoreBase
 
         if (myBuffer != null)
         {
-            spellCore = myBuffer.GetBufferedSpellCore(pos, rot, out localBufferIndex);
+            spellCore = myBuffer.GetBufferedObject(pos, rot, out localBufferIndex);
         }
         else
         {

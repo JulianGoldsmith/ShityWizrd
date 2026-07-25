@@ -202,6 +202,7 @@ GameObject:
   - component: {fileID: 8305654668865484682}
   - component: {fileID: 5981614230997947567}
   - component: {fileID: 5900722414974312071}
+  - component: {fileID: 885623255093435865}
   m_Layer: 16
   m_Name: UnEggWand_Heirachy
   m_TagString: Untagged
@@ -316,6 +317,7 @@ MonoBehaviour:
   primaryActionsRef:
   - {fileID: 11400000, guid: a3f71c1f13b2e2f44bf05b4e08ecdf4e, type: 2}
   secondaryActionsRef: []
+  feedActionRef: {fileID: 0}
   heldHandState: {fileID: 11400000, guid: 903f93413bbf6744f8f636324924477b, type: 2}
   primaryHandle: {fileID: 70880927531738438}
   secondaryHandle: {fileID: 0}
@@ -395,6 +397,22 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &885623255093435865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6367780370427943061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 437439dce9e8be94fb6698758b9c8ed2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RuneSpellContainer
+  IntakePoint: {fileID: 8047021178530276143}
+  EjectionPoint: {fileID: 8047021178530276143}
+  FeedRange: 4
+  EjectionSpeed: 2
 --- !u!1 &8259225603984381408
 GameObject:
   m_ObjectHideFlags: 0

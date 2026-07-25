@@ -28,12 +28,16 @@ public class EquipableItem : InteractableItem, IAfterRender
     public SpellGraph primaryActionSpell => SpellStateManager.instance.GetSpellGraph(PrimarySpellID);
     public SpellGraph secondaryActionSpell => SpellStateManager.instance.GetSpellGraph(SecondarySpellID);
 
+
+
     [Header("Item Actions (Templates)")]
     public List<ItemAction> primaryActionsRef = new List<ItemAction>();
     public List<ItemAction> secondaryActionsRef = new List<ItemAction>();
+    public ItemAction feedActionRef;
 
     [NonSerialized] public List<ItemAction> primaryActions = new List<ItemAction>();
     [NonSerialized] public List<ItemAction> secondaryActions = new List<ItemAction>();
+    [NonSerialized] public ItemAction feedAction;
 
     public HandState heldHandState;
 
@@ -253,20 +257,11 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     public void TickActions()
     {
-        for (int i = 0; i < primaryActions.Count; i++)
-        {
-            var action = primaryActions[i];
-            if (action == null) continue;
+        NetworkItemActionData data = ItemActionData;
+        ItemAction action = GetAction(data.channel, data.actionID);
 
-            action.Tick(i, Runner.DeltaTime);
-        }
-        for (int i = 0; i < secondaryActions.Count; i++)
-        {
-            var action = secondaryActions[i];
-            if (action == null) continue;
-
-            action.Tick(i, Runner.DeltaTime);
-        }
+        if (action != null)
+            action.Tick(data.actionID, Runner.DeltaTime);
     }
 
     #region PickUpDrop
@@ -393,28 +388,83 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     #region ActionsAndCasting
 
-    public void InitialiseRuntimeActions()
+    public bool TryPressAction(ItemActionChannel channel, int actionIndex, NetworkInteractionTarget target)
     {
-        primaryActions = CloneActionList(primaryActionsRef);
-        secondaryActions = CloneActionList(secondaryActionsRef);
+        if (channel == ItemActionChannel.None || ItemActionData.channel != ItemActionChannel.None)
+            return false;
+
+        ItemAction action = GetAction(channel, actionIndex);
+
+        if (action == null)
+            return false;
+
+        SetItemActionData(new NetworkItemActionData
+        {
+            channel = channel,
+            actionID = actionIndex,
+            phaseID = -1,
+            phaseStartTick = Runner.Tick,
+            chargeStartTick = Runner.Tick,
+            hasFired = false,
+            interactionTarget = target
+        });
+
+        action.OnPress(actionIndex, false);
+        return true;
     }
 
-    private List<ItemAction> CloneActionList(List<ItemAction> templates)
+    public void TryReleaseAction(ItemActionChannel channel)
+    {
+        NetworkItemActionData data = ItemActionData;
+
+        if (data.channel != channel)
+            return;
+
+        ItemAction action = GetAction(channel, data.actionID);
+
+        if (action != null)
+            action.OnRelease(data.actionID);
+    }
+
+    private void SetItemActionData(NetworkItemActionData data)
+    {
+        if (HasInputAuthority || IsLocalPlayerHoldingThisItem())
+            localItemActionData = data;
+
+        ItemActionData = data;
+    }
+
+    public void InitialiseRuntimeActions()
+    {
+        primaryActions = CloneActionList(primaryActionsRef, ItemActionChannel.Primary);
+        secondaryActions = CloneActionList(secondaryActionsRef, ItemActionChannel.Secondary);
+
+        if (feedActionRef != null)
+        {
+            feedAction = Instantiate(feedActionRef);
+            feedAction.InitializeRuntimeForItem(this, 0, ItemActionChannel.Feed);
+        }
+    }
+
+    private List<ItemAction> CloneActionList(List<ItemAction> templates, ItemActionChannel channel)
     {
         var list = new List<ItemAction>();
-        if (templates == null) return list;
+
+        if (templates == null)
+            return list;
 
         for (int i = 0; i < templates.Count; i++)
         {
-            var template = templates[i];
+            ItemAction template = templates[i];
+
             if (template == null)
             {
                 list.Add(null);
                 continue;
             }
 
-            var clone = Instantiate(template);
-            clone.InitializeRuntimeForItem( this, i);
+            ItemAction clone = Instantiate(template);
+            clone.InitializeRuntimeForItem(this, i, channel);
             list.Add(clone);
         }
 
@@ -425,17 +475,41 @@ public class EquipableItem : InteractableItem, IAfterRender
     {
         for (int i = 0; i < primaryActions.Count; i++)
         {
-            var prima = primaryActions[i];
-            if (prima != null)
-                prima.InitializeRuntimeForItem( this, i);
+            if (primaryActions[i] != null)
+                primaryActions[i].InitializeRuntimeForItem(this, i, ItemActionChannel.Primary);
         }
 
         for (int i = 0; i < secondaryActions.Count; i++)
         {
-            var seconda = secondaryActions[i];
-            if (seconda != null)
-                seconda.InitializeRuntimeForItem( this, i);
+            if (secondaryActions[i] != null)
+                secondaryActions[i].InitializeRuntimeForItem(this, i, ItemActionChannel.Secondary);
         }
+
+        if (feedAction != null)
+            feedAction.InitializeRuntimeForItem(this, 0, ItemActionChannel.Feed);
+    }
+
+    public ItemAction GetAction(ItemActionChannel channel, int actionIndex)
+    {
+        switch (channel)
+        {
+            case ItemActionChannel.Primary:
+                if (actionIndex >= 0 && actionIndex < primaryActions.Count)
+                    return primaryActions[actionIndex];
+                break;
+
+            case ItemActionChannel.Secondary:
+                if (actionIndex >= 0 && actionIndex < secondaryActions.Count)
+                    return secondaryActions[actionIndex];
+                break;
+
+            case ItemActionChannel.Feed:
+                if (actionIndex == 0)
+                    return feedAction;
+                break;
+        }
+
+        return null;
     }
 
     #endregion
@@ -549,21 +623,16 @@ public class EquipableItem : InteractableItem, IAfterRender
 
         int actionIndex = data.actionID;
         int phaseIndex = data.phaseID;
+        ItemAction action = GetAction(data.channel, actionIndex);
 
-        if (actionIndex < 0 || phaseIndex < 0 || primaryActions == null || actionIndex >= primaryActions.Count)
-        {
-            pos = idleWorldPos;
-            rot = idleWorldRot;
-            return true; 
-        }
-
-        ItemAction action = primaryActions[actionIndex];
-        if (action == null)
+        if (actionIndex < 0 || phaseIndex < 0 || action == null)
         {
             pos = idleWorldPos;
             rot = idleWorldRot;
             return true;
         }
+
+       
 
         ItemAnimation anim = action.GetAnimationForPhase(phaseIndex);
 
@@ -597,66 +666,39 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     public void EnterNewPhaseAtTick(int phase, int tick, int actionId = -1, int chargeStart = -1)
     {
-        if (HasInputAuthority || IsLocalPlayerHoldingThisItem())
-        {
-            var currentlocal = localItemActionData;
-            localItemActionData = new NetworkItemActionData()
-            {
-                actionID = actionId == -1 ? currentlocal.actionID : actionId,
-                phaseID = phase,
-                phaseStartTick = tick,
-                chargeStartTick = chargeStart == -1 ? currentlocal.chargeStartTick : chargeStart,
-                hasFired = currentlocal.hasFired
-            };
-        }
+        NetworkItemActionData data = ItemActionData;
 
-        var current = ItemActionData;
-        ItemActionData = new NetworkItemActionData()
-        {
-            actionID = actionId == -1 ? current.actionID : actionId,
-            phaseID = phase,
-            phaseStartTick = tick,
-            chargeStartTick = chargeStart == -1 ? current.chargeStartTick : chargeStart,
-            hasFired = current.hasFired
-        };
+        if (actionId != -1)
+            data.actionID = actionId;
+
+        data.phaseID = phase;
+        data.phaseStartTick = tick;
+
+        if (chargeStart != -1)
+            data.chargeStartTick = chargeStart;
+
+        SetItemActionData(data);
     }
 
     public void MarkFired()
     {
-        if (HasInputAuthority || IsLocalPlayerHoldingThisItem())
-        {
-            var currentlocal = localItemActionData;
-            currentlocal.hasFired = true;
-            localItemActionData = currentlocal;
-        }
-
-        var current = ItemActionData;
-        current.hasFired = true;
-        ItemActionData = current;
+        NetworkItemActionData data = ItemActionData;
+        data.hasFired = true;
+        SetItemActionData(data);
     }
 
     public void ClearItemActionData()
     {
-        if (HasInputAuthority || IsLocalPlayerHoldingThisItem())
+        SetItemActionData(new NetworkItemActionData
         {
-            localItemActionData = new NetworkItemActionData()
-            {
-                actionID = -1,
-                phaseID = -1,
-                phaseStartTick = 0,
-                hasFired = false,
-                chargeStartTick = 0
-            };
-        }
-
-        ItemActionData = new NetworkItemActionData()
-        {
+            channel = ItemActionChannel.None,
             actionID = -1,
             phaseID = -1,
             phaseStartTick = 0,
+            chargeStartTick = 0,
             hasFired = false,
-            chargeStartTick = 0
-        };
+            interactionTarget = default
+        });
     }
 
 
@@ -836,11 +878,22 @@ public class EquipableItem : InteractableItem, IAfterRender
 
 public struct NetworkItemActionData : INetworkStruct
 {
+    public ItemActionChannel channel;
+
     public int actionID;
     public int phaseID;
     public int phaseStartTick;
-
     public int chargeStartTick;
 
     public NetworkBool hasFired;
+
+    public NetworkInteractionTarget interactionTarget;
+}
+
+public enum ItemActionChannel : byte
+{
+    None,
+    Primary,
+    Secondary,
+    Feed
 }

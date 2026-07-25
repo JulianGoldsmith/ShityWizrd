@@ -33,6 +33,9 @@ public abstract class SpellNode : ScriptableObject
 
     public bool showInSpellEditor = true;
 
+    [Header("Physical Rune")]
+    public PhysicalRuneSettings PhysicalRune = new PhysicalRuneSettings();
+
     public virtual void Compile()
     {
         ApplyPromotableValues();

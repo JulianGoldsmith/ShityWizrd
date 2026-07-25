@@ -278,7 +278,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         previousLookRot = lookRot;
         //Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
         DetectVariablesChangedOnNetwork();
-        if (GetInput(out NetworkInputData data) && HasStateAuthority || HasInputAuthority)
+        if (GetInput(out NetworkInputData data) && (HasStateAuthority || HasInputAuthority))
         {
 
             data.direction.Normalize();

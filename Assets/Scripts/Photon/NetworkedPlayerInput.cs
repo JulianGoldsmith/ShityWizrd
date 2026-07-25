@@ -144,6 +144,8 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
 
     private void OnInput(NetworkRunner runner, NetworkInput networkInput)
     {
+        _accumulatedInput.interactionTarget = default;
+
         var playerObj = runner.GetPlayerObject(runner.LocalPlayer);
         if (playerObj != null &&
             playerObj.TryGetComponent(out NetworkedHandsController hands) &&
@@ -182,8 +184,17 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.dragTargetPos = Vector3.zero;
                 _accumulatedInput.dragFacingDir = Vector3.zero;
             }
-           
-           // Debug.Log($"drag pos {_accumulatedInput.dragTargetPos} drag rot {_accumulatedInput.dragFacingDir}");
+
+            if (inv.currentItemInHand != null && inv.currentItemInHand.TryGetComponent(out RuneRigObject heldRuneRig) && heldRuneRig.TryFindClosestAttachment(out NetworkId targetRigId, out byte targetNodeIndex, out byte targetBayIndex))
+            {
+                _accumulatedInput.interactionTarget = NetworkInteractionTarget.CreateRuneBay(targetRigId, targetNodeIndex, targetBayIndex);
+            }
+            else if (inv.TryGetLookedAtInteractionTarget(out NetworkInteractionTarget interactionTarget))
+            {
+                _accumulatedInput.interactionTarget = interactionTarget;
+            }
+
+            // Debug.Log($"drag pos {_accumulatedInput.dragTargetPos} drag rot {_accumulatedInput.dragFacingDir}");
         }
 
         // Fusion polls accumulated input. This callback can be executed multiple times in a row if there is a performance spike.

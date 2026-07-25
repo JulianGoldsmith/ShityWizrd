@@ -27,19 +27,21 @@ public abstract class CastActionController : NetworkBehaviour
         return new ActiveCastID(this.Object.Id, TotalSpellCasts);
     }
 
-    public void RegisterAndTrackCast(SpellState newCast, SpellGraph graph)
+    public void RegisterAndTrackCast(SpellState newCast, SpellGraph legacyGraph = null)
     {
         if (!activeCasts.Contains(newCast))
-        {
             activeCasts.Add(newCast);
-        }
 
         if (CastTracker != null)
-        {
             CastTracker.RegisterNetworkedCast(newCast.NetCastData);
-        }
 
-        ActiveSpell newActiveSpell = new ActiveSpell(newCast.ActiveCastID, graph, newCast);
+        ActiveSpell newActiveSpell;
+
+        if (legacyGraph != null)
+            newActiveSpell = new ActiveSpell(newCast.ActiveCastID, legacyGraph, newCast);
+        else
+            newActiveSpell = new ActiveSpell(newCast.ActiveCastID, newCast.SpellGraphIdFrom, newCast);
+
         newActiveSpell.AddToken();
         SpellStateManager.instance.RegisterNewCast(newCast.ActiveCastID, newActiveSpell);
     }
