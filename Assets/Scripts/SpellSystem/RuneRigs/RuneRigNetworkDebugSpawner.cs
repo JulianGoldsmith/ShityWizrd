@@ -95,7 +95,7 @@ public class RuneRigNetworkDebugSpawner : MonoBehaviour
             Debug.LogError("[RuneRigSpawner] The RuneRig buffer returned an invalid object.", this);
             return;
         }
-
+        runeRig.StopLevitation();
         if (!runeRig.TryWriteRigData(rigData, out string error))
         {
             Debug.LogError($"[RuneRigSpawner] Failed to initialize rig: {error}", this);

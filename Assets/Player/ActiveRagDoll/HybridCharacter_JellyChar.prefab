@@ -2675,6 +2675,7 @@ GameObject:
   - component: {fileID: 2204065667809111582}
   - component: {fileID: 7708030507857023425}
   - component: {fileID: 3253866803604232212}
+  - component: {fileID: 6813547189123401123}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -3011,7 +3012,7 @@ MonoBehaviour:
   minGrabDistance: 0.5
   maxGrabDistance: 20
   grabScrollSensitivity: 0.05
-  grabRotationSensitivity: 0.15
+  grabRotationSensitivity: -0.15
   grabTetherStiffness: 80
   grabTetherDamping: 0.6
   maxGrabTetherForce: 300
@@ -4441,9 +4442,21 @@ MonoBehaviour:
   CharacterController: {fileID: 4480425943024258786}
   SpawnDistance: 2
   SpawnHeight: 0
-  testRuneDefinition: {fileID: 11400000, guid: 785a79c7aaed22643b66f57a6fb82786, type: 2}
-  testRuneBayCapacity: 1
   _LastProcessedSpawnSequence: 0
+--- !u!114 &6813547189123401123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8adca4282a34d04b07980aa9859e8e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RuneRigPlacementController
+  Inventory: {fileID: 0}
+  GhostMaterial: {fileID: 2100000, guid: b8885579b826e6140861b4c8ab5c65df, type: 2}
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0

@@ -69,12 +69,21 @@ public class NetworkedInventoryManager : NetworkBehaviour
                 TryDetachRuneFromInput(data.interactionTarget);
             }
 
-            if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP)  )
+            if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP))
             {
-                if(characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
+                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
                     PickupItem();
             }
-            if (data.buttons.WasReleased(Prior_buttons, EInputButton.DROP)  )
+
+            bool beganLevitation = false;
+
+            if (currentItemInHand != null && data.buttons.WasPressed(Prior_buttons, EInputButton.LEVITATE))
+            {
+                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
+                    beganLevitation = TryLevitateHeldRuneRig();
+            }
+
+            if (!beganLevitation && data.buttons.WasReleased(Prior_buttons, EInputButton.DROP))
             {
                 if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
                     DropItem(data);
@@ -217,7 +226,18 @@ public class NetworkedInventoryManager : NetworkBehaviour
         currentItemInHand = null;
     }
 
-   
+    private bool TryLevitateHeldRuneRig()
+    {
+        if (currentItemInHand == null || !currentItemInHand.TryGetComponent(out RuneRigObject runeRig))
+            return false;
+
+        runeRig.DropItem(Object, HasInputAuthority, HasStateAuthority);
+        runeRig.BeginLevitation();
+
+        handController.DragDistance = 0;
+        currentItemInHand = null;
+        return true;
+    }
 
     private void TryDetachRuneFromInput(NetworkInteractionTarget target)
     {

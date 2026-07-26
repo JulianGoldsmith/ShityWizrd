@@ -118,7 +118,9 @@ public class RuneRigSpawnController : NetworkBehaviour
         if (networkObject == null || !networkObject.TryGetComponent(out RuneRigObject runeRig))
             return;
 
-        RuneRigData rigData = new RuneRigData(new[] { RuneNodeData.CreateLooseRoot(definitionId,bayCapacity)});
+        runeRig.StopLevitation();
+
+        RuneRigData rigData = new RuneRigData(new[] { RuneNodeData.CreateLooseRoot(definitionId, bayCapacity) });
 
         if (!runeRig.TryWriteRigData(rigData, out string error) && HasStateAuthority)
             Debug.LogError($"Rune spawn failed: {error}", runeRig);

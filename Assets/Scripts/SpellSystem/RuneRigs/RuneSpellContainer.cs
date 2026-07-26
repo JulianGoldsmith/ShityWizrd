@@ -137,6 +137,7 @@ public class RuneSpellContainer : MonoBehaviour
 
             return false;
         }
+        ejectedRig.StopLevitation();
 
         if (!ejectedRig.TryWriteRigData(looseRig, out string writeError))
         {

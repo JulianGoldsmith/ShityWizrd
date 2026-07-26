@@ -15,6 +15,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
     private Quaternion _localGrabRotationOffset = Quaternion.identity;
 
     private RuneRigSpawnController _runeRigSpawnController;
+    private RuneRigPlacementController _runeRigPlacementController;
 
     public override void Spawned()
     {
@@ -23,6 +24,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         var networkEvents = Runner.GetComponent<NetworkEvents>();
         networkEvents.OnInput.AddListener(OnInput);
         _runeRigSpawnController = GetComponent<RuneRigSpawnController>();
+        _runeRigPlacementController = GetComponent<RuneRigPlacementController>();
 
         GameController.Instance.playerInput = GetComponent<PlayerInput>();
 
@@ -91,7 +93,8 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
-                _accumulatedInput.buttons.Set(EInputButton.SELF_BONK, keyboard.rKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.LEVITATE, keyboard.rKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.SELF_BONK, keyboard.tKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.UN_SELF_BONK, keyboard.fKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.TEST_COUNT, keyboard.cKey.isPressed);
 
@@ -212,9 +215,9 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.dragFacingDir = Vector3.zero;
             }
 
-            if (inv.currentItemInHand != null && inv.currentItemInHand.TryGetComponent(out RuneRigObject heldRuneRig) && heldRuneRig.TryFindClosestAttachment(out NetworkId targetRigId, out byte targetNodeIndex, out byte targetBayIndex))
+            if (_runeRigPlacementController != null && _runeRigPlacementController.TryGetAttachmentTarget(out NetworkInteractionTarget runePlacementTarget))
             {
-                _accumulatedInput.interactionTarget = NetworkInteractionTarget.CreateRuneBay(targetRigId, targetNodeIndex, targetBayIndex);
+                _accumulatedInput.interactionTarget = runePlacementTarget;
             }
             else if (inv.TryGetLookedAtInteractionTarget(out NetworkInteractionTarget interactionTarget))
             {

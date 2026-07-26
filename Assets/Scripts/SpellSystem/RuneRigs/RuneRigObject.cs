@@ -33,6 +33,23 @@ public class RuneRigObject : DraggableItem
     public bool HasRigData => NetworkNodeCount > 0 && !IsConsumed;
     public int NodeCount => NetworkNodeCount;
     public RuneObject[] RuneObjects => _runeObjects;
+    public Transform GeneratedVisualRoot => _generatedVisualRootObject != null ? _generatedVisualRootObject.transform : null;
+
+
+
+    [Header("Levitation Position")]
+    [Min(0f)] public float LevitationPositionStrength = 20f;
+    [Min(0f)] public float LevitationPositionDamping = 8f;
+    [Min(0f)] public float MaximumLevitationAcceleration = 30f;
+
+    [Header("Levitation Rotation")]
+    [Min(0f)] public float LevitationRotationStrength = 15f;
+    [Min(0f)] public float LevitationRotationDamping = 6f;
+    [Min(0f)] public float MaximumLevitationAngularAcceleration = 25f;
+
+    [Networked] public NetworkBool IsLevitating { get; set; }
+    [Networked] public Vector3 LevitationTargetPosition { get; set; }
+    [Networked] public Quaternion LevitationTargetRotation { get; set; }
 
     public override void Spawned()
     {
@@ -76,6 +93,8 @@ public class RuneRigObject : DraggableItem
 
         if (_lastBuiltHash != RigDataHash)
             ReadNetworkDataAndRebuild();
+
+        ApplyLevitationDrive();
     }
 
 
@@ -151,10 +170,11 @@ public class RuneRigObject : DraggableItem
         RuneRigData sourceData = GetRigDataCopy();
         RuneObject sourceRoot = _runeObjects[0];
 
-        if (sourceRoot == null || !NodeRegistry.TryGetNodeTemplate(sourceData.Nodes[0].RuneDefinitionId, out SpellNode sourceDefinition))
+        if (sourceRoot == null || sourceRoot.RootConnectionTransform == null || !NodeRegistry.TryGetNodeTemplate(sourceData.Nodes[0].RuneDefinitionId, out SpellNode sourceDefinition))
             return false;
 
-        Vector3 sourcePlugPosition = sourceRoot.transform.position;
+        Vector3 sourcePlugPosition = sourceRoot.RootConnectionTransform.position;
+
         RuneRigObject bestTarget = null;
         int bestTargetNodeIndex = -1;
         byte bestTargetBayIndex = 0;
@@ -276,10 +296,10 @@ public class RuneRigObject : DraggableItem
             RuneObject targetRune = targetRig.GetRuneObject(targetNodeIndex);
             RuneBay targetBay = targetRune != null ? targetRune.GetBay(targetBayIndex) : null;
 
-            if (sourceRoot == null || targetBay == null || targetBay.BayTransform == null)
+            if (sourceRoot == null || sourceRoot.RootConnectionTransform == null || targetBay == null || targetBay.BayTransform == null)
                 return false;
 
-            float distance = Vector3.Distance(sourceRoot.transform.position, targetBay.BayTransform.position);
+            float distance = Vector3.Distance(sourceRoot.RootConnectionTransform.position, targetBay.BayTransform.position);
 
             if (distance > AttachmentDistance + AttachmentValidationTolerance)
             {
@@ -364,7 +384,7 @@ public class RuneRigObject : DraggableItem
 
             return false;
         }
-
+        detachedRig.StopLevitation();
         if (!detachedRig.TryWriteRigData(splitResult.DetachedRig, out string detachedError))
         {
             Debug.LogWarning($"[RuneRigObject] Detached rig could not be initialized: {detachedError}", this);
@@ -451,12 +471,13 @@ public class RuneRigObject : DraggableItem
             if (definition.PhysicalRune == null || definition.PhysicalRune.PhysicalPrefab == null)
                 return StopBuild($"'{definition.nodeName}' has no physical prefab.", out error);
 
+            RuneBay parentBay = null;
             Transform parentTransform = rootParent;
 
             if (nodeIndex > 0)
             {
                 RuneObject parentRune = _runeObjects[nodeData.ParentNodeIndex];
-                RuneBay parentBay = parentRune.GetBay(nodeData.ParentBayIndex);
+                parentBay = parentRune.GetBay(nodeData.ParentBayIndex);
 
                 if (parentBay == null || parentBay.BayTransform == null)
                     return StopBuild($"Node {nodeData.ParentNodeIndex} has no valid bay {nodeData.ParentBayIndex}.", out error);
@@ -475,6 +496,19 @@ public class RuneRigObject : DraggableItem
 
             if (!runeGameObject.TryGetComponent(out RuneObject runeObject))
                 return StopBuild($"The physical prefab for '{definition.nodeName}' needs RuneObject on its root.", out error);
+
+            if (runeObject.RootConnectionTransform == null)
+                return StopBuild($"The physical prefab for '{definition.nodeName}' needs a RootConnectionTransform.", out error);
+
+            if (nodeIndex > 0)
+            {
+                Transform targetConnection = parentBay.BayTransform;
+                Transform sourceConnection = runeObject.RootConnectionTransform;
+
+                Quaternion rotationDelta = targetConnection.rotation * Quaternion.Inverse(sourceConnection.rotation);
+                runeGameObject.transform.rotation = rotationDelta * runeGameObject.transform.rotation;
+                runeGameObject.transform.position += targetConnection.position - sourceConnection.position;
+            }
 
             if (runeObject.VisualRoot == null || runeObject.VisualRoot == runeObject.transform)
                 return StopBuild($"The physical prefab for '{definition.nodeName}' needs a child assigned as its VisualRoot.", out error);
@@ -566,4 +600,66 @@ public class RuneRigObject : DraggableItem
             return hash;
         }
     }
+
+    #region Levataion
+
+    public override void PickUpItem(NetworkObject playerObject)
+    {
+        StopLevitation();
+        base.PickUpItem(playerObject);
+    }
+
+    public void BeginLevitation()
+    {
+        if (rb == null)
+            return;
+
+        LevitationTargetPosition = rb.position;
+        LevitationTargetRotation = rb.rotation;
+        IsLevitating = true;
+
+        rb.useGravity = false;
+        rb.WakeUp();
+    }
+
+    public void StopLevitation()
+    {
+        IsLevitating = false;
+
+        if (rb == null)
+            return;
+
+        rb.useGravity = true;
+        rb.WakeUp();
+    }
+
+    private void ApplyLevitationDrive()
+    {
+        if (rb == null)
+            return;
+
+        rb.useGravity = !IsLevitating;
+
+        if (!IsLevitating)
+            return;
+
+        Vector3 positionError = LevitationTargetPosition - rb.position;
+        Vector3 positionAcceleration = positionError * LevitationPositionStrength - rb.linearVelocity * LevitationPositionDamping;
+        positionAcceleration = Vector3.ClampMagnitude(positionAcceleration, MaximumLevitationAcceleration);
+
+        rb.AddForce(positionAcceleration, ForceMode.Acceleration);
+
+        Quaternion rotationError = Quaternion.Normalize(LevitationTargetRotation * Quaternion.Inverse(rb.rotation));
+
+        if (rotationError.w < 0f)
+            rotationError = new Quaternion(-rotationError.x, -rotationError.y, -rotationError.z, -rotationError.w);
+
+        rotationError.ToAngleAxis(out float angleDegrees, out Vector3 rotationAxis);
+
+        Vector3 angularAcceleration = rotationAxis * angleDegrees * Mathf.Deg2Rad * LevitationRotationStrength - rb.angularVelocity * LevitationRotationDamping;
+        angularAcceleration = Vector3.ClampMagnitude(angularAcceleration, MaximumLevitationAngularAcceleration);
+
+        rb.AddTorque(angularAcceleration, ForceMode.Acceleration);
+    }
+    #endregion
 }
