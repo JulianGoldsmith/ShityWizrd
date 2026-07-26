@@ -2674,6 +2674,7 @@ GameObject:
   - component: {fileID: 2657514714551797806}
   - component: {fileID: 2204065667809111582}
   - component: {fileID: 7708030507857023425}
+  - component: {fileID: 3253866803604232212}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -2930,6 +2931,7 @@ MonoBehaviour:
   - {fileID: 2657514714551797806}
   - {fileID: 2204065667809111582}
   - {fileID: 7708030507857023425}
+  - {fileID: 3253866803604232212}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &7409370852185625710
 MonoBehaviour:
@@ -3001,11 +3003,20 @@ MonoBehaviour:
   rideSpringStrength: 100
   rideSpringDamper: 10
   suspensionCastRadius: 0.125
-  grabStiffness: 75
-  grabDamping: 0.6
-  maxHorizontalGrabForce: 350
-  maxLiftGrabForce: 250
+  grabAimStiffness: 50
+  grabAimDamping: 0.6
+  maxGrabAimHorizontalForce: 40
+  maxGrabAimLiftForce: 30
+  maxGrabAimTorque: 20
+  minGrabDistance: 0.5
+  maxGrabDistance: 20
+  grabScrollSensitivity: 0.05
+  grabRotationSensitivity: 0.15
+  grabTetherStiffness: 80
+  grabTetherDamping: 0.6
+  maxGrabTetherForce: 300
   grabReactionScale: 1
+  grabTetherReelSpeed: 2
   maxWalkSpeed: 2.25
   maxSprintSpeed: 4.5
   acceleration: 2
@@ -3141,6 +3152,13 @@ MonoBehaviour:
   _LastJumpTick: 0
   jumpSuspensionDuration: 0.2
   _sprint: 0
+  _GrabControlItemId:
+    Raw: 0
+  _GrabTargetDistance: 0
+  _PreviousGrabTargetDistance: 0
+  _GrabRotationOffset: {x: 0, y: 0, z: 0, w: 0}
+  _PreviousGrabRotationOffset: {x: 0, y: 0, z: 0, w: 0}
+  _GrabTetherLength: 0
   networkedRenderRoot: {fileID: 5162603037753169754}
   smoothedNetworkedRenderRoot: {fileID: 8932821910823328615}
   rendererPos: {x: 0, y: 0, z: 0}
@@ -3541,6 +3559,7 @@ MonoBehaviour:
   finalYaw: 0
   finalPitch: 0
   camActive: 1
+  grabRotationActive: 0
   isLocalAuthority: 0
   cameraTransform: {fileID: 0}
 --- !u!114 &3351947955755336054
@@ -4407,6 +4426,24 @@ MonoBehaviour:
   scaleByPing: 1
   pingScalar: 5
   smoothingEnabled: 1
+--- !u!114 &3253866803604232212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2834382f9d32954e932c6b621b38030, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RuneRigSpawnController
+  CharacterController: {fileID: 4480425943024258786}
+  SpawnDistance: 2
+  SpawnHeight: 0
+  testRuneDefinition: {fileID: 11400000, guid: 785a79c7aaed22643b66f57a6fb82786, type: 2}
+  testRuneBayCapacity: 1
+  _LastProcessedSpawnSequence: 0
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0

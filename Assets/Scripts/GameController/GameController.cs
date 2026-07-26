@@ -14,10 +14,14 @@ public class GameController : MonoBehaviour
 
     //public CharacterCameraController mainCameraController;
 
-    public GameObject spellEditorWorld; 
+    [Header("Spell Editing")]
+    [SerializeField] private bool _useLegacyEditor = false;
+    [SerializeField] private GameObject runeSpawnerUI;
+
+    public GameObject spellEditorWorld;
     public SpellGraphController spellGraphController;
 
-    public bool isEditorActive = false;
+    public bool isEditorActive;
 
     public BasicSpawner networkingController;
 
@@ -60,8 +64,13 @@ public class GameController : MonoBehaviour
 
     void Start()
     {
-        if(spellEditorWorld != null)
+        if (spellEditorWorld != null)
             spellEditorWorld.SetActive(false);
+
+        if (runeSpawnerUI != null)
+            runeSpawnerUI.SetActive(false);
+
+        isEditorActive = false;
 
         if (playerInput != null)
             EnableGameplayInput();
@@ -120,30 +129,43 @@ public class GameController : MonoBehaviour
 
     public void ToggleSpellEditor()
     {
-        isEditorActive = !spellEditorWorld.activeSelf;
-        spellEditorWorld.SetActive(isEditorActive);
-        Debug.Log("ToggleSpellEditor");
-        if (isEditorActive)
+        GameObject selectedInterface = _useLegacyEditor ? spellEditorWorld : runeSpawnerUI;
+
+        if (selectedInterface == null)
         {
-            Vector3 pos = Vector3.zero;
-            if(networkingController._runner.TryGetPlayerObject(networkingController._runner.LocalPlayer, out NetworkObject player))
-            {
-                //HybridCharacterController hcc = player.GetComponent<HybridCharacterController>();
-                //pos = hcc.hipsRb.transform.position;
-                //pos.y -= 0.58f;
-
-                pos = Camera.main.transform.position + Camera.main.transform.forward * 1.5f; 
-
-            }
-            SpellGraphController.Instance.EditSpellFromActiveItem(pos);
-            EnableUIInput();
-            //mainCameraController.SwitchToEditorView();
+            Debug.LogError(_useLegacyEditor ? "Legacy spell editor is not assigned." : "Rune spawner UI is not assigned.", this);
+            return;
         }
-        else
+
+        bool shouldOpen = !selectedInterface.activeSelf;
+
+        if (spellEditorWorld != null)
+            spellEditorWorld.SetActive(false);
+
+        if (runeSpawnerUI != null)
+            runeSpawnerUI.SetActive(false);
+
+        isEditorActive = shouldOpen;
+
+        if (!shouldOpen)
         {
             EnableGameplayInput();
-            //mainCameraController.SwitchToGameplayView();
+            return;
         }
+
+        selectedInterface.SetActive(true);
+        EnableUIInput();
+
+        if (!_useLegacyEditor)
+            return;
+
+        Vector3 position = Vector3.zero;
+
+        if (networkingController != null && networkingController._runner != null && networkingController._runner.TryGetPlayerObject(networkingController._runner.LocalPlayer, out NetworkObject player))
+            position = Camera.main.transform.position + Camera.main.transform.forward * 1.5f;
+
+        if (SpellGraphController.Instance != null)
+            SpellGraphController.Instance.EditSpellFromActiveItem(position);
     }
 
     private void TeleportExistingPlayers()

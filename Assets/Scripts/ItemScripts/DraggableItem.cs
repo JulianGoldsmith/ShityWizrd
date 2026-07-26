@@ -67,6 +67,10 @@ public class DraggableItem : InteractableItem
         return dragTargetPos;
     }
 
+    protected virtual Vector3 GetLocalManipulationAnchor(Vector3 handWorldPosition) {
+        return transform.InverseTransformPoint(handWorldPosition);
+    }
+
     public override void PickUpItem(NetworkObject playerObject)
     {
        // networkedRB.RBIsKinematic = false; // (Or true, depending on if you want unity physics off)
@@ -77,10 +81,12 @@ public class DraggableItem : InteractableItem
             hands.RightHandMode = TargetingMode.DRAGG;
 
             Vector3 handPos = hands.rightHand.transformNet.transform.position;
-            Vector3 localGrabPos = transform.InverseTransformPoint(handPos);
+            Vector3 localGrabPos = GetLocalManipulationAnchor(handPos);
+            Vector3 worldGrabPoint = transform.TransformPoint(localGrabPos);
             Vector3 eyePos = controller.GetEyePosSim();
-            float distance = Vector3.Distance(eyePos, rb.worldCenterOfMass);
+            float distance = Vector3.Distance(eyePos, worldGrabPoint);
             Quaternion snapshotRot = Quaternion.Inverse(controller.lookRot) * rb.rotation;
+            float initialTetherLength = Vector3.Distance(controller.hipsRb.worldCenterOfMass, worldGrabPoint);
 
             NetworkGrabJoint newGrab = new NetworkGrabJoint()
             {
@@ -88,31 +94,39 @@ public class DraggableItem : InteractableItem
                 itemId = Object.Id,
                 localGrabOffset = localGrabPos,
                 grabDistance = distance,
+                initialTetherLength = initialTetherLength,
                 targetLocalRotation = snapshotRot,
-                grabStiffness = controller.grabStiffness,
-                grabDamping = controller.grabDamping,
-                maxHorizontalForce = controller.maxHorizontalGrabForce,
-                maxLiftForce = controller.maxLiftGrabForce,
+
+                aimStiffness = controller.grabAimStiffness,
+                aimDamping = controller.grabAimDamping,
+                maxAimHorizontalForce = controller.maxGrabAimHorizontalForce,
+                maxAimLiftForce = controller.maxGrabAimLiftForce,
+                maxAimTorque = controller.maxGrabAimTorque,
+
+                tetherStiffness = controller.grabTetherStiffness,
+                tetherDamping = controller.grabTetherDamping,
+                maxTetherForce = controller.maxGrabTetherForce,
                 reactionScale = controller.grabReactionScale
             };
 
-            _globalManager.AddGrabJoint(newGrab);
+            if (_globalManager.AddGrabJoint(newGrab))
+                controller.BeginGrabControl(Object.Id, distance, initialTetherLength);
         }
     }
 
     public override void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority)
     {
         if (_globalManager != null)
-        {
-            _globalManager.RemoveGrabJoint(playerObject.Id, this.Object.Id);
-        }
+            _globalManager.RemoveGrabJoint(playerObject.Id, Object.Id);
 
-        if (playerObject.TryGetComponent<NetworkedHandsController>(out var hands))
+        if (playerObject.TryGetComponent(out HybridCharacterController controller))
+            controller.EndGrabControl(Object.Id);
+
+        if (playerObject.TryGetComponent(out NetworkedHandsController hands))
         {
             hands.RightHandMode = TargetingMode.ARMATURE;
             hands.SetHandTarget_ToArmature(false);
         }
-
     }
 
     public override void ForceReleaseForDisconnect(NetworkObject playerObject)
@@ -120,6 +134,8 @@ public class DraggableItem : InteractableItem
         if (Object == null || !Object.IsValid || !Object.HasStateAuthority)
             return;
 
+        if (playerObject.TryGetComponent(out HybridCharacterController controller))
+            controller.EndGrabControl(Object.Id);
         // The XPBD grab joint has already been removed by the transaction.
         // Ensure the item is left as a normal physical object.
         if (networkedRB != null)

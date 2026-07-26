@@ -168,12 +168,7 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
     {
         if (IsProxy) return;
         if (!isInitilized) return;
-        if (GetInput(out NetworkInputData data) && HasStateAuthority)
-        {
-            DragDistance += data.scroll;
-            if(DragDistance > 20) DragDistance = 20;
-            if (DragDistance < -0.85f) DragDistance = -0.85f;
-        }
+        
         
         CalculateHandTarget(leftHand, false);
         ApplyHandPhysics(leftHand, leftHand.transformNet, out Quaternion newRotLNet, out Vector3 newPosLNet, true);

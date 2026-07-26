@@ -134,6 +134,11 @@ public class RuneRigObject : DraggableItem
         return _runeObjects[nodeIndex];
     }
 
+    protected override Vector3 GetLocalManipulationAnchor(Vector3 handWorldPosition) {
+        if (rb != null) return rb.centerOfMass;
+        return base.GetLocalManipulationAnchor(handWorldPosition);
+    }
+
     public bool TryFindClosestAttachment(out NetworkId targetRigId, out byte targetNodeIndex, out byte targetBayIndex)
     {
         targetRigId = default;

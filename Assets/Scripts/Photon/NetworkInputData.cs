@@ -20,6 +20,11 @@ public struct NetworkInputData : INetworkInput
     public Vector3 direction;
     public Quaternion lookRotation;
     public NetworkButtons buttons;
+
+    public NetworkId grabControlItemId;
+    public float grabTargetDistance;
+    public Quaternion grabRotationOffset;
+
     public Vector2 yawpitch;
     public float scroll;
 
@@ -27,6 +32,8 @@ public struct NetworkInputData : INetworkInput
     public Vector3 dragFacingDir;
 
     public NetworkInteractionTarget interactionTarget;
+
+    public uint runeRigSpawnCommand;
 }
 
 public enum InteractionTargetType : byte

@@ -141,7 +141,8 @@ public class XPBDGlobalManager : NetworkBehaviour
             itemState.invMass = 1f / itemRb.mass;
             itemState.invInertiaLocal = new Vector3(1f / itemRb.inertiaTensor.x, 1f / itemRb.inertiaTensor.y, 1f / itemRb.inertiaTensor.z);
             itemState.qInertia = itemRb.inertiaTensorRotation;
-            itemState.p_prev = itemRb.position;
+            grab.centerOfMassLocal = itemRb.centerOfMass;
+            itemState.p_prev = itemRb.worldCenterOfMass;
             itemState.q_prev = itemRb.rotation;
             itemState.p = itemState.p_prev;
             itemState.q = itemState.q_prev;
@@ -149,17 +150,43 @@ public class XPBDGlobalManager : NetworkBehaviour
             itemState.w = itemRb.angularVelocity;
 
             grab.torsoPositionBeforePhysics = grab.torsoRb.position;
+            grab.tetherAnchorPositionBeforePhysics = grab.torsoRb.worldCenterOfMass;
+            grab.tetherLengthBeforePhysics = grab.grabberController.GrabTetherLength;
 
             Quaternion previousLookRotation = grab.grabberController.previousLookRot;
             Vector3 previousEyePosition = grab.grabberController.GetEyePosSim(grab.torsoPositionBeforePhysics, previousLookRotation);
 
-            targetState.p_prev = previousEyePosition + previousLookRotation * Vector3.forward * grab.networkedData.grabDistance;
-            targetState.q_prev = previousLookRotation * grab.networkedData.targetLocalRotation;
+            float previousGrabDistance = grab.networkedData.grabDistance;
+            Quaternion previousGrabRotationOffset = Quaternion.identity;
+            bool hasGrabControl = grab.grabberController.GrabControlItemId == grab.networkedData.itemId;
+
+            if (hasGrabControl)
+            {
+                bool observingProxy = !grab.grabberController.HasStateAuthority && !grab.grabberController.HasInputAuthority;
+
+                if (observingProxy)
+                {
+                    previousGrabDistance = grab.grabberController.GrabTargetDistance;
+                    previousGrabRotationOffset = grab.grabberController.GrabRotationOffset;
+                }
+                else
+                {
+                    previousGrabDistance = grab.grabberController.PreviousGrabTargetDistance;
+                    previousGrabRotationOffset = grab.grabberController.PreviousGrabRotationOffset;
+                }
+            }
+
+            Vector3 previousDesiredTarget = previousEyePosition + previousLookRotation * Vector3.forward * previousGrabDistance;
+
+            targetState.p_prev = previousDesiredTarget;
+            targetState.q_prev = previousLookRotation * previousGrabRotationOffset * grab.networkedData.targetLocalRotation;
             targetState.p = targetState.p_prev;
             targetState.q = targetState.q_prev;
 
             grab.lambdaPosition = Vector3.zero;
             grab.lambdaRotation = Vector3.zero;
+            grab.lambdaTether = 0f;
+            grab.tetherDirection = Vector3.zero;
             grab.preparedForPostPhysics = true;
         }
     }
@@ -188,14 +215,32 @@ public class XPBDGlobalManager : NetworkBehaviour
             XPBDState itemState = grab.itemState;
             XPBDKinematicTargetState targetState = grab.targetState;
 
-            itemState.p = grab.itemRb.position;
+            itemState.p = grab.itemRb.worldCenterOfMass;
             itemState.q = grab.itemRb.rotation;
 
             Quaternion currentLookRotation = grab.grabberController.lookRot;
             Vector3 currentEyePosition = grab.grabberController.GetEyePosSim(grab.torsoRb.position, currentLookRotation);
 
-            targetState.p = currentEyePosition + currentLookRotation * Vector3.forward * grab.networkedData.grabDistance;
-            targetState.q = currentLookRotation * grab.networkedData.targetLocalRotation;
+            float currentGrabDistance = grab.networkedData.grabDistance;
+            Quaternion currentGrabRotationOffset = Quaternion.identity;
+            bool hasGrabControl = grab.grabberController.GrabControlItemId == grab.networkedData.itemId;
+
+            if (hasGrabControl)
+            {
+                currentGrabDistance = grab.grabberController.GrabTargetDistance;
+                currentGrabRotationOffset = grab.grabberController.GrabRotationOffset;
+
+                float aimDistanceChange = currentGrabDistance - grab.networkedData.grabDistance;
+                float desiredTetherLength = grab.networkedData.initialTetherLength + aimDistanceChange;
+                desiredTetherLength = Mathf.Max(0.1f, desiredTetherLength);
+
+                float maximumReelMovement = Mathf.Max(0f, grab.grabberController.grabTetherReelSpeed) * dt;
+
+                grab.grabberController.GrabTetherLength = Mathf.MoveTowards(grab.grabberController.GrabTetherLength, desiredTetherLength, maximumReelMovement);
+            }
+
+            targetState.p = currentEyePosition + currentLookRotation * Vector3.forward * currentGrabDistance;
+            targetState.q = currentLookRotation * currentGrabRotationOffset * grab.networkedData.targetLocalRotation;
         }
 
         // Solve the grab constraint.
@@ -208,10 +253,11 @@ public class XPBDGlobalManager : NetworkBehaviour
 
                 SolvePostPhysicsGrabRotation(grab, dt);
                 SolvePostPhysicsGrabPosition(grab, dt);
+                SolvePostPhysicsGrabTether(grab, dt);
             }
         }
 
-        // Apply the solved item pose and reciprocal player reaction.
+        // Apply the solved item pose and reciprocal tether reaction.
         foreach (var grab in _hydratedGrabJoints)
         {
             if (!grab.preparedForPostPhysics || !grab.IsValid())
@@ -223,24 +269,18 @@ public class XPBDGlobalManager : NetworkBehaviour
             itemState.v = (itemState.p - itemState.p_prev) / dt;
             itemState.w = XPBDMath.GetDeltaTheta(itemState.q_prev, itemState.q) / dt;
 
-            grab.itemRb.position = itemState.p;
+            grab.itemRb.position = itemState.p - itemState.q * grab.centerOfMassLocal;
             grab.itemRb.rotation = itemState.q;
             grab.itemRb.linearVelocity = itemState.v;
             grab.itemRb.angularVelocity = itemState.w;
 
-            Vector3 tensionForce = grab.lambdaPosition / (dt * dt);
-            Vector3 horizontalTension = Vector3.ProjectOnPlane(tensionForce, Vector3.up);
-
-            float maxHorizontalForce = Mathf.Max(0f, grab.networkedData.maxHorizontalForce);
-            float verticalForceLimit = tensionForce.y >= 0f ? Mathf.Max(0f, grab.networkedData.maxLiftForce) : maxHorizontalForce;
-
-            float horizontalLoad = maxHorizontalForce > 0f ? horizontalTension.magnitude / maxHorizontalForce : 0f;
-            float verticalLoad = verticalForceLimit > 0f ? Mathf.Abs(tensionForce.y) / verticalForceLimit : 0f;
-            float normalizedLoad = Mathf.Clamp01(Mathf.Sqrt(horizontalLoad * horizontalLoad + verticalLoad * verticalLoad));
-
+            float tetherForce = Mathf.Max(0f, -grab.lambdaTether / (dt * dt));
+            float maxTetherForce = Mathf.Max(0.01f, grab.networkedData.maxTetherForce);
+            float normalizedLoad = Mathf.Clamp01(tetherForce / maxTetherForce);
             float reactionMultiplier = Mathf.Clamp01(recoilTensionCurve.Evaluate(normalizedLoad) * grab.networkedData.reactionScale);
-            Vector3 constraintImpulse = grab.lambdaPosition / dt;
-            Vector3 playerReactionImpulse = -constraintImpulse * reactionMultiplier;
+
+            Vector3 itemTetherImpulse = grab.lambdaTether * grab.tetherDirection / dt;
+            Vector3 playerReactionImpulse = -itemTetherImpulse * reactionMultiplier;
 
             float playerMass = grab.grabberController.totalMass > 0f ? grab.grabberController.totalMass : grab.torsoRb.mass;
             Vector3 reactionVelocityChange = playerReactionImpulse / Mathf.Max(0.01f, playerMass);
@@ -250,7 +290,7 @@ public class XPBDGlobalManager : NetworkBehaviour
 
             grab.torsoRb.linearVelocity += reactionVelocityChange;
 
-            debugTensionForce = tensionForce.magnitude;
+            debugTensionForce = tetherForce;
             debugNormalizedLoad = normalizedLoad;
             debugReactionMultiplier = reactionMultiplier;
             debugReactionVelocityChange = reactionVelocityChange;
@@ -342,6 +382,8 @@ public class XPBDGlobalManager : NetworkBehaviour
                 // Reset XPBD lambdas for the fresh grab
                 localGrab.lambdaPosition = Vector3.zero;
                 localGrab.lambdaRotation = Vector3.zero;
+                localGrab.lambdaTether = 0f;
+                localGrab.tetherDirection = Vector3.zero;
             }
             else
             {
@@ -421,23 +463,24 @@ public class XPBDGlobalManager : NetworkBehaviour
     {
         XPBDState itemState = grab.itemState;
         XPBDKinematicTargetState targetState = grab.targetState;
+        Vector3 itemAnchorFromCenterOfMassLocal = grab.networkedData.localGrabOffset - grab.centerOfMassLocal;
 
-        Vector3 currentGrabPoint = itemState.p + itemState.q * grab.networkedData.localGrabOffset;
+        Vector3 currentGrabPoint = itemState.p + itemState.q * itemAnchorFromCenterOfMassLocal;
         float errorDistance = Vector3.Distance(currentGrabPoint, targetState.p);
         float normalizedDistance = Mathf.Clamp01(errorDistance / Mathf.Max(0.01f, dragRange));
 
-        float stiffness = Mathf.Max(0.01f, grab.networkedData.grabStiffness);
+        float stiffness = Mathf.Max(0.01f, grab.networkedData.aimStiffness);
         float stretchMultiplier = distanceComplianceCurve.Evaluate(normalizedDistance);
         float alpha = (1f / stiffness) * stretchMultiplier / (dt * dt);
-        float gamma = alpha * (0.5f * dt * grab.networkedData.grabDamping) / dt;
+        float gamma = alpha * (0.5f * dt * grab.networkedData.aimDamping) / dt;
 
         Vector3 positionBeforeSolve = itemState.p;
         Vector3 lambdaBeforeSolve = grab.lambdaPosition;
 
-        XPBDMath.SolveKinematicGrabPosition(targetState, itemState, grab.networkedData.localGrabOffset, alpha, gamma, ref grab.lambdaPosition);
+        XPBDMath.SolveKinematicGrabPosition(targetState, itemState, itemAnchorFromCenterOfMassLocal, alpha, gamma, ref grab.lambdaPosition);
 
-        float maxHorizontalLambda = Mathf.Max(0f, grab.networkedData.maxHorizontalForce) * dt * dt;
-        float maxLiftLambda = Mathf.Max(0f, grab.networkedData.maxLiftForce) * dt * dt;
+        float maxHorizontalLambda = Mathf.Max(0f, grab.networkedData.maxAimHorizontalForce) * dt * dt;
+        float maxLiftLambda = Mathf.Max(0f, grab.networkedData.maxAimLiftForce) * dt * dt;
 
         Vector3 clampedLambda = grab.lambdaPosition;
         Vector3 horizontalLambda = new Vector3(clampedLambda.x, 0f, clampedLambda.z);
@@ -453,15 +496,87 @@ public class XPBDGlobalManager : NetworkBehaviour
         grab.lambdaPosition = clampedLambda;
     }
 
+    private void SolvePostPhysicsGrabTether(HydratedGrabJoint grab, float dt)
+    {
+        XPBDState itemState = grab.itemState;
+
+        Vector3 tetherAnchorPosition = grab.torsoRb.worldCenterOfMass;
+        Vector3 itemAnchorFromCenterOfMassLocal = grab.networkedData.localGrabOffset - grab.centerOfMassLocal;
+        Vector3 leverArm = itemState.q * itemAnchorFromCenterOfMassLocal;
+        Vector3 currentGrabPoint = itemState.p + leverArm;
+        Vector3 previousGrabPoint = itemState.p_prev + itemState.q_prev * itemAnchorFromCenterOfMassLocal;
+
+        Vector3 tetherOffset = currentGrabPoint - tetherAnchorPosition;
+        float tetherDistance = tetherOffset.magnitude;
+
+        if (tetherDistance < 0.0001f)
+            return;
+
+        Vector3 tetherDirection = tetherOffset / tetherDistance;
+        float constraintError = tetherDistance - grab.grabberController.GrabTetherLength;
+
+        if (constraintError <= 0f && grab.lambdaTether >= 0f)
+            return;
+
+        Vector3 grabPointDisplacement = currentGrabPoint - previousGrabPoint;
+        Vector3 tetherAnchorDisplacement = tetherAnchorPosition - grab.tetherAnchorPositionBeforePhysics;
+        float tetherLengthDisplacement = grab.grabberController.GrabTetherLength - grab.tetherLengthBeforePhysics;
+
+        float radialDisplacement = Vector3.Dot(grabPointDisplacement - tetherAnchorDisplacement, tetherDirection) - tetherLengthDisplacement;
+
+        Vector3 angularGradient = Vector3.Cross(leverArm, tetherDirection);
+        Vector3 inverseInertiaAngularGradient = XPBDMath.ApplyInvInertiaWorld(angularGradient, itemState.q, itemState.qInertia, itemState.invInertiaLocal);
+
+        float linearInverseMass = itemState.invMass;
+        float angularInverseMass = Vector3.Dot(angularGradient, inverseInertiaAngularGradient);
+        float effectiveInverseMass = linearInverseMass + angularInverseMass;
+
+        if (effectiveInverseMass < 0.000001f)
+            return;
+
+        float stiffness = Mathf.Max(0.01f, grab.networkedData.tetherStiffness);
+        float alpha = (1f / stiffness) / (dt * dt);
+        float gamma = alpha * (0.5f * dt * grab.networkedData.tetherDamping) / dt;
+
+        float deltaLambda = -(constraintError + alpha * grab.lambdaTether + gamma * radialDisplacement) / ((1f + gamma) * effectiveInverseMass + alpha);
+
+        float previousLambda = grab.lambdaTether;
+        float maximumLambda = Mathf.Max(0f, grab.networkedData.maxTetherForce) * dt * dt;
+        float newLambda = Mathf.Clamp(previousLambda + deltaLambda, -maximumLambda, 0f);
+        float appliedDeltaLambda = newLambda - previousLambda;
+
+        itemState.p += linearInverseMass * appliedDeltaLambda * tetherDirection;
+
+        Vector3 angularCorrection = XPBDMath.ApplyInvInertiaWorld(appliedDeltaLambda * angularGradient, itemState.q, itemState.qInertia, itemState.invInertiaLocal);
+        XPBDMath.ApplyDeltaRotation(itemState, angularCorrection);
+
+        grab.lambdaTether = newLambda;
+        grab.tetherDirection = tetherDirection;
+    }
+
     private void SolvePostPhysicsGrabRotation(HydratedGrabJoint grab, float dt)
     {
         XPBDState itemState = grab.itemState;
         XPBDKinematicTargetState targetState = grab.targetState;
 
-        float alpha = 1f / Mathf.Max(0.01f, grab.networkedData.grabStiffness) / (dt * dt);
-        float gamma = alpha * (0.5f * dt * grab.networkedData.grabDamping) / dt;
+        float alpha = 1f / Mathf.Max(0.01f, grab.networkedData.aimStiffness) / (dt * dt);
+        float gamma = alpha * (0.5f * dt * grab.networkedData.aimDamping) / dt;
+
+        Quaternion rotationBeforeSolve = itemState.q;
+        Vector3 lambdaBeforeSolve = grab.lambdaRotation;
 
         XPBDMath.SolveKinematicGrabRotation(targetState, itemState, alpha, gamma, ref grab.lambdaRotation);
+
+        float maxRotationLambda = Mathf.Max(0f, grab.networkedData.maxAimTorque) * dt * dt;
+        Vector3 clampedLambda = Vector3.ClampMagnitude(grab.lambdaRotation, maxRotationLambda);
+        Vector3 appliedDeltaLambda = clampedLambda - lambdaBeforeSolve;
+
+        itemState.q = rotationBeforeSolve;
+
+        Vector3 angularCorrection = XPBDMath.ApplyInvInertiaWorld(-appliedDeltaLambda, itemState.q, itemState.qInertia, itemState.invInertiaLocal);
+        XPBDMath.ApplyDeltaRotation(itemState, angularCorrection);
+
+        grab.lambdaRotation = clampedLambda;
     }
     // --- FINAL VELOCITY DERIVATION ---
 

@@ -70,12 +70,18 @@ public struct NetworkGrabJoint : INetworkStruct
 
     public Vector3 localGrabOffset;
     public float grabDistance;
+    public float initialTetherLength;
     public Quaternion targetLocalRotation;
 
-    public float grabStiffness;
-    public float grabDamping;
-    public float maxHorizontalForce;
-    public float maxLiftForce;
+    public float aimStiffness;
+    public float aimDamping;
+    public float maxAimHorizontalForce;
+    public float maxAimLiftForce;
+    public float maxAimTorque;
+
+    public float tetherStiffness;
+    public float tetherDamping;
+    public float maxTetherForce;
     public float reactionScale;
 }
 
@@ -90,11 +96,17 @@ public class HydratedGrabJoint
 
     public XPBDState itemState = new XPBDState();
     public XPBDKinematicTargetState targetState = new XPBDKinematicTargetState();
+    public Vector3 centerOfMassLocal;
 
     public Vector3 torsoPositionBeforePhysics;
     public Vector3 lambdaPosition;
     public Vector3 lambdaRotation;
     public bool preparedForPostPhysics;
+
+    public Vector3 tetherAnchorPositionBeforePhysics;
+    public float lambdaTether;
+    public Vector3 tetherDirection;
+    public float tetherLengthBeforePhysics;
 
     public bool IsValid() => grabberController != null && itemRb != null && torsoRb != null;
 
@@ -103,10 +115,14 @@ public class HydratedGrabJoint
         grabberController = null;
         torsoRb = null;
         itemRb = null;
+        centerOfMassLocal = Vector3.zero;
         networkedData = default(NetworkGrabJoint);
         lambdaPosition = Vector3.zero;
         lambdaRotation = Vector3.zero;
+        lambdaTether = 0f;
+        tetherDirection = Vector3.zero;
         preparedForPostPhysics = false;
+        tetherLengthBeforePhysics = 0f;
     }
 }
 
@@ -255,7 +271,7 @@ public static class XPBDMath
             if (!cState.isKinematic) ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * -cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
         }
     }
-    public static void SolveKinematicGrabPosition(XPBDKinematicTargetState targetState, XPBDState itemState, Vector3 itemAnchorLocal, float alpha, float gamma, ref Vector3 lambdaPosition)
+    public static void SolveKinematicGrabPosition(XPBDKinematicTargetState targetState, XPBDState itemState, Vector3 itemAnchorFromCenterOfMassLocal, float alpha, float gamma, ref Vector3 lambdaPosition)
     {
         Vector3 targetDisplacement = targetState.p - targetState.p_prev;
 
@@ -263,8 +279,8 @@ public static class XPBDMath
         {
             Vector3 axis = i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
 
-            Vector3 currentGrabPoint = itemState.p + itemState.q * itemAnchorLocal;
-            Vector3 previousGrabPoint = itemState.p_prev + itemState.q_prev * itemAnchorLocal;
+            Vector3 currentGrabPoint = itemState.p + itemState.q * itemAnchorFromCenterOfMassLocal;
+            Vector3 previousGrabPoint = itemState.p_prev + itemState.q_prev * itemAnchorFromCenterOfMassLocal;
             Vector3 grabPointDisplacement = currentGrabPoint - previousGrabPoint;
 
             float C = Vector3.Dot(currentGrabPoint - targetState.p, axis);

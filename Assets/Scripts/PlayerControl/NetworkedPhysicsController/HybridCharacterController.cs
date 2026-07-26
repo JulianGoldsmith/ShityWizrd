@@ -40,14 +40,25 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     public float rideSpringDamper = 10f; // How much the spring is damped to prevent bouncing
     public float suspensionCastRadius = 0.25f; // The radius of the spherecast
 
-    [Header("Item Grab Settings")]
-    public float grabStiffness = 50f;
-    public float grabDamping = 0.6f;
-    public float maxHorizontalGrabForce = 350f;
-    public float maxLiftGrabForce = 250f;
+    [Header("Grab Aim Motor")]
+    public float grabAimStiffness = 50f;
+    public float grabAimDamping = 0.6f;
+    public float maxGrabAimHorizontalForce = 40f;
+    public float maxGrabAimLiftForce = 30f;
+    public float maxGrabAimTorque = 20f;
 
-    [Range(0f, 1f)]
-    public float grabReactionScale = 1f;
+    [Header("Grab Manipulation")]
+    public float minGrabDistance = 0.5f;
+    public float maxGrabDistance = 20f;
+    public float grabScrollSensitivity = 0.0025f;
+    public float grabRotationSensitivity = 0.15f;
+
+    [Header("Grab Tether")]
+    public float grabTetherStiffness = 80f;
+    public float grabTetherDamping = 0.6f;
+    public float maxGrabTetherForce = 300f;
+    [Range(0f, 1f)] public float grabReactionScale = 1f;
+    public float grabTetherReelSpeed = 2f;
 
     [Header("Movement Settings")]
     public float maxWalkSpeed = 3f, maxSprintSpeed = 5f;
@@ -94,6 +105,12 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     [Networked] public bool sprint { get; set; }
     private int _lastVisibleJump;
 
+    [Networked] public NetworkId GrabControlItemId { get; set; }
+    [Networked] public float GrabTargetDistance { get; set; }
+    [Networked] public float PreviousGrabTargetDistance { get; set; }
+    [Networked] public Quaternion GrabRotationOffset { get; set; }
+    [Networked] public Quaternion PreviousGrabRotationOffset { get; set; }
+    [Networked] public float GrabTetherLength { get; set; }
 
     [Header("Network Pos")]
     [SerializeField] public Transform networkedRenderRoot;
@@ -281,8 +298,18 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             disableCC--; 
             return;      // Skip ALL simulation logic for this tick
         }
+
         if (HasStateAuthority || HasInputAuthority)
-            previousLookRot = lookRot;        //Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
+        {
+            previousLookRot = lookRot;
+
+            if (GrabControlItemId.IsValid)
+            {
+                PreviousGrabTargetDistance = GrabTargetDistance;
+                PreviousGrabRotationOffset = GrabRotationOffset;
+            }
+        }
+
         DetectVariablesChangedOnNetwork();
         if (GetInput(out NetworkInputData data) && (HasStateAuthority || HasInputAuthority))
         {
@@ -290,6 +317,11 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             data.direction.Normalize();
             moveInput = new Vector2(data.direction.x, data.direction.z);
             lookRot = IsFinite(data.lookRotation) ? data.lookRotation : Quaternion.identity;
+
+            if (GrabControlItemId.IsValid && data.grabControlItemId == GrabControlItemId) {
+                GrabTargetDistance = Mathf.Clamp(data.grabTargetDistance, minGrabDistance, maxGrabDistance);
+                GrabRotationOffset = IsFinite(data.grabRotationOffset) ? Quaternion.Normalize(data.grabRotationOffset) : Quaternion.identity;
+            }
 
             sprint = data.buttons.IsSet(EInputButton.SPRINT);
 
@@ -991,6 +1023,29 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         xpbdSolver.ApplyRotationalPD(bonkController.BonkedState == BONKEDSTATE.ALIVE? strenght: 0f, dt);
         xpbdSolver.Solve(dt, bonkController.BonkedState != BONKEDSTATE.ALIVE);
        // xpbdSolver.ApplyAnchorTorqueFromLambda(1, dt);
+    }
+
+    public void BeginGrabControl(NetworkId itemId, float initialDistance, float initialTetherLength)
+    {
+        GrabControlItemId = itemId;
+        GrabTargetDistance = Mathf.Clamp(initialDistance, minGrabDistance, maxGrabDistance);
+        PreviousGrabTargetDistance = GrabTargetDistance;
+        GrabRotationOffset = Quaternion.identity;
+        PreviousGrabRotationOffset = Quaternion.identity;
+        GrabTetherLength = Mathf.Max(0f, initialTetherLength);
+    }
+
+    public void EndGrabControl(NetworkId itemId)
+    {
+        if (GrabControlItemId != itemId)
+            return;
+
+        GrabControlItemId = default;
+        GrabTargetDistance = 0f;
+        PreviousGrabTargetDistance = 0f;
+        GrabRotationOffset = Quaternion.identity;
+        PreviousGrabRotationOffset = Quaternion.identity;
+        GrabTetherLength = 0f;
     }
 
     public Quaternion GetLookRot()

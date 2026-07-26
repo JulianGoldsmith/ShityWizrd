@@ -3,12 +3,18 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 using UnityEngine.Windows;
+using System.Collections.Generic;
 
 [DefaultExecutionOrder(-10)]
 public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
 {
     private NetworkInputData _accumulatedInput;
-   // private CharacterCameraController _characterCameraController;
+    // private CharacterCameraController _characterCameraController;
+    private NetworkId _localGrabItemId;
+    private float _localGrabTargetDistance;
+    private Quaternion _localGrabRotationOffset = Quaternion.identity;
+
+    private RuneRigSpawnController _runeRigSpawnController;
 
     public override void Spawned()
     {
@@ -16,6 +22,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         // Register to Fusion input poll callback.
         var networkEvents = Runner.GetComponent<NetworkEvents>();
         networkEvents.OnInput.AddListener(OnInput);
+        _runeRigSpawnController = GetComponent<RuneRigSpawnController>();
 
         GameController.Instance.playerInput = GetComponent<PlayerInput>();
 
@@ -45,38 +52,8 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         if (HasInputAuthority == false)
             return;
 
-        //// Enter key is used for locking/unlocking cursor in game view.
         var keyboard = Keyboard.current;
         var mouse = Mouse.current;
-        //if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame))
-        //{
-        //    if (Cursor.lockState == CursorLockMode.Locked)
-        //    {
-        //        Cursor.lockState = CursorLockMode.None;
-        //        Cursor.visible = true;
-        //    }
-        //    else
-        //    {
-        //        Cursor.lockState = CursorLockMode.Locked;
-        //        Cursor.visible = false;
-        //    }
-        //}
-
-        //// Accumulate input only if the cursor is locked.
-        //if (Cursor.lockState != CursorLockMode.Locked)
-        //    return;
-
-        //var mouse = Mouse.current;
-        //if (mouse != null)
-        //{
-        //    var mouseDelta = mouse.delta.ReadValue();
-
-        //    var lookRotationDelta = new Vector2(-mouseDelta.y, mouseDelta.x);
-        //    lookRotationDelta *= LookSensitivity / 60f;
-        //    _lookRotationAccumulator.Accumulate(lookRotationDelta);
-
-        //    _accumulatedInput.Buttons.Set(EInputButton.Fire, mouse.leftButton.isPressed);
-        //}
 
         if (keyboard != null)
         {
@@ -96,29 +73,13 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             moveDirection = moveDirection.normalized;
             _accumulatedInput.direction = moveDirection;
 
-            //float sens = _characterCameraController != null ? _characterCameraController.cameraLookSensitivity : 2f;
-            //Vector2 lookInput = PlayerInputController.global_look;
-
-            //float yaw = _accumulatedInput.yawpitch.x + lookInput.x * sens;// * Time.deltaTime;
-            //float pitch = _accumulatedInput.yawpitch.y - lookInput.y * sens;// * Time.deltaTime;
-
-            //_accumulatedInput.yawpitch = new Vector2(yaw, pitch);
-
-            //Vector3 camForward = _characterCameraController.transform.forward;
-            //Vector3 camRight = _characterCameraController.transform.right;
-
-            //camForward.y = 0;
-            //camRight.y = 0;
-            //camForward.Normalize();
-            //camRight.Normalize();
-            //moveDirection = (camForward * moveDirection.z + camRight * moveDirection.x).normalized;
 
             if (keyboard.tabKey.wasPressedThisFrame)
             {
                 GameController.Instance.ToggleSpellEditor();
             }
 
-            Vector2 scroll = Mouse.current?.scroll.ReadValue() ?? Vector2.zero;
+            //Vector2 scroll = Mouse.current?.scroll.ReadValue() ?? Vector2.zero;
 
             
 
@@ -134,11 +95,77 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.buttons.Set(EInputButton.UN_SELF_BONK, keyboard.fKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.TEST_COUNT, keyboard.cKey.isPressed);
 
-                _accumulatedInput.scroll = scroll.y/5f;
+               // _accumulatedInput.scroll = scroll.y/5f;
             }
 
-            
         }
+
+        NetworkObject playerObject = Runner.GetPlayerObject(Runner.LocalPlayer);
+        if (!GameController.Instance.isEditorActive &&
+            playerObject != null &&
+            playerObject.TryGetComponent(out NetworkedHandsController hands) &&
+            playerObject.TryGetComponent(out HybridCharacterController controller) &&
+            playerObject.TryGetComponent(out NetworkedInventoryManager inventory) &&
+            hands.RightHandMode == TargetingMode.DRAGG &&
+            inventory.currentItemInHand != null)
+        {
+
+            NetworkId heldItemId = inventory.currentItemInHand.Id;
+
+            if (_localGrabItemId != heldItemId)
+            {
+                _localGrabItemId = heldItemId;
+
+                if (controller.GrabControlItemId == heldItemId) {
+                    _localGrabTargetDistance = controller.GrabTargetDistance;
+                    _localGrabRotationOffset = controller.GrabRotationOffset;
+                }
+                else {
+                    _localGrabTargetDistance = Vector3.Distance(controller.GetEyePos(), inventory.currentItemInHand.transform.position);
+                    _localGrabRotationOffset = Quaternion.identity;
+                }
+            }
+
+            float scrollDelta = mouse != null ? mouse.scroll.ReadValue().y : 0f;
+            _localGrabTargetDistance += scrollDelta * controller.grabScrollSensitivity;
+            _localGrabTargetDistance = Mathf.Clamp(_localGrabTargetDistance, controller.minGrabDistance, controller.maxGrabDistance);
+
+            bool rotatingGrab = mouse != null && mouse.middleButton.isPressed;
+            bool rollingGrab = rotatingGrab && keyboard != null && keyboard.shiftKey.isPressed;
+            controller.camController.grabRotationActive = rotatingGrab;
+
+            if (rotatingGrab)
+            {
+                Vector2 mouseDelta = mouse.delta.ReadValue();
+
+                Vector3 horizontalRotationAxis = rollingGrab ? Vector3.forward : Vector3.up;
+
+                Quaternion horizontalDelta = Quaternion.AngleAxis(mouseDelta.x * controller.grabRotationSensitivity, horizontalRotationAxis);
+                Quaternion verticalDelta = Quaternion.AngleAxis(-mouseDelta.y * controller.grabRotationSensitivity, Vector3.right);
+
+                _localGrabRotationOffset = Quaternion.Normalize(horizontalDelta * verticalDelta * _localGrabRotationOffset);
+
+                if (rollingGrab)
+                    _accumulatedInput.buttons.Set(EInputButton.SPRINT, false);
+            }
+
+            _accumulatedInput.grabControlItemId = heldItemId;
+            _accumulatedInput.grabTargetDistance = _localGrabTargetDistance;
+            _accumulatedInput.grabRotationOffset = _localGrabRotationOffset;
+        }
+        else
+        {
+            if (playerObject != null && playerObject.TryGetComponent(out HybridCharacterController inactiveController))
+                inactiveController.camController.grabRotationActive = false;
+
+            _localGrabItemId = default;
+            _localGrabTargetDistance = 0f;
+            _localGrabRotationOffset = Quaternion.identity;
+            _accumulatedInput.grabControlItemId = default;
+            _accumulatedInput.grabTargetDistance = 0f;
+            _accumulatedInput.grabRotationOffset = Quaternion.identity;
+        }
+
         _accumulatedInput.lookRotation = Camera.main.transform.rotation;
     }
 
@@ -198,6 +225,13 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         }
 
         // Fusion polls accumulated input. This callback can be executed multiple times in a row if there is a performance spike.
+        _accumulatedInput.runeRigSpawnCommand = 0u;
+
+        if (_runeRigSpawnController != null && _runeRigSpawnController.TryGetNextSpawnCommand(out uint command))
+            _accumulatedInput.runeRigSpawnCommand = command;
+
         networkInput.Set(_accumulatedInput);
+
+        _accumulatedInput.runeRigSpawnCommand = 0u;
     }
 }

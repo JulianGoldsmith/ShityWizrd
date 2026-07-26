@@ -33,6 +33,7 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
     public float finalYaw;
     public float finalPitch;
     public bool camActive = true;
+    [HideInInspector] public bool grabRotationActive;
     public bool isLocalAuthority = false;
 
     // Internal references
@@ -72,6 +73,9 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
     private void UpdateCam()
     {
         if (!isLocalAuthority || cameraTransform == null || followTarget == null) return;
+
+        if (grabRotationActive)
+            lookInput = Vector2.zero;
 
         // 1. Process Input
         targetYaw += lookInput.x * mouseSensitivity;
@@ -140,7 +144,7 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
     {
         if (!isLocalAuthority) return;
 
-        if (camActive)
+        if (camActive && !grabRotationActive)
         {
             lookInput = context.ReadValue<Vector2>();
         }
