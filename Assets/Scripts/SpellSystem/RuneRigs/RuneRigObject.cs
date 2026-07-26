@@ -6,6 +6,7 @@ public class RuneRigObject : DraggableItem
 {
     [Header("Rune Rig")]
     public Transform RuneContainer;
+    public Transform VisualContainer;
 
     [Header("Attachment")]
     public float AttachmentDistance = 0.3f;
@@ -23,6 +24,7 @@ public class RuneRigObject : DraggableItem
     private RuneRigData _rigData;
     private RuneObject[] _runeObjects;
     private GameObject _generatedRootObject;
+    private GameObject _generatedVisualRootObject;
     private bool _hasRigData;
     private bool _wasConsumed;
     private bool _isSpawned;
@@ -47,9 +49,9 @@ public class RuneRigObject : DraggableItem
         base.Despawned(runner, hasState);
     }
 
-    public override void Render()
+    public override void FixedUpdateNetwork()
     {
-        base.Render();
+        base.FixedUpdateNetwork();
 
         if (!_isSpawned)
             return;
@@ -76,7 +78,6 @@ public class RuneRigObject : DraggableItem
             ReadNetworkDataAndRebuild();
     }
 
-   
 
     public bool TryWriteRigData(RuneRigData rigData, out string error)
     {
@@ -425,7 +426,14 @@ public class RuneRigObject : DraggableItem
     {
         ClearRuneObjects();
 
+        if (VisualContainer == null)
+            return StopBuild("RuneRigObject has no VisualContainer assigned.", out error);
+
         Transform rootParent = RuneContainer != null ? RuneContainer : transform;
+
+        _generatedVisualRootObject = new GameObject("GeneratedRuneVisuals");
+        _generatedVisualRootObject.transform.SetParent(VisualContainer, false);
+
         _runeObjects = new RuneObject[_rigData.NodeCount];
 
         for (int nodeIndex = 0; nodeIndex < _rigData.NodeCount; nodeIndex++)
@@ -463,9 +471,16 @@ public class RuneRigObject : DraggableItem
             if (!runeGameObject.TryGetComponent(out RuneObject runeObject))
                 return StopBuild($"The physical prefab for '{definition.nodeName}' needs RuneObject on its root.", out error);
 
+            if (runeObject.VisualRoot == null || runeObject.VisualRoot == runeObject.transform)
+                return StopBuild($"The physical prefab for '{definition.nodeName}' needs a child assigned as its VisualRoot.", out error);
+
             runeObject.OwningRig = this;
             runeObject.NodeIndex = nodeIndex;
             _runeObjects[nodeIndex] = runeObject;
+
+            Transform runeVisual = runeObject.VisualRoot;
+            runeVisual.name = $"Visual_{nodeIndex}_{definition.nodeName}";
+            runeVisual.SetParent(_generatedVisualRootObject.transform, true);
         }
 
         if (rb != null)
@@ -498,7 +513,18 @@ public class RuneRigObject : DraggableItem
                 DestroyImmediate(_generatedRootObject);
         }
 
+        if (_generatedVisualRootObject != null)
+        {
+            _generatedVisualRootObject.SetActive(false);
+
+            if (Application.isPlaying)
+                Destroy(_generatedVisualRootObject);
+            else
+                DestroyImmediate(_generatedVisualRootObject);
+        }
+
         _generatedRootObject = null;
+        _generatedVisualRootObject = null;
         _runeObjects = null;
     }
 

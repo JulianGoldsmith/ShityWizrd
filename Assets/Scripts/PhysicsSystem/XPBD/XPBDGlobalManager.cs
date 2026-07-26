@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
+using Fusion.Addons.Physics;
 
 public class XPBDGlobalManager : NetworkBehaviour
 {
     [Header("Global Settings")]
     public int iterations = 4;
     public bool enableSolver = true;
-
     public List<XPBDPosAndRotSolver> registeredRagdolls = new List<XPBDPosAndRotSolver>();
 
     [Networked, Capacity(32)]
@@ -21,20 +21,26 @@ public class XPBDGlobalManager : NetworkBehaviour
     private int _lastGrabCount = -1;
 
     private Dictionary<Rigidbody, XPBDState> _globalStates = new Dictionary<Rigidbody, XPBDState>();
+    private RunnerSimulatePhysics3D _physicsSimulator;
 
     [Header("Grab Curve")]
     [Tooltip("0 = 0 distance error, 1 = max dragRange error. Value is Compliance Multiplier (Higher = Softer/Weaker).")]
-    public AnimationCurve distanceComplianceCurve = new AnimationCurve(
-        new Keyframe(0f, 1f),
-        new Keyframe(1f, 10f)
-    );
+    public AnimationCurve distanceComplianceCurve = new AnimationCurve(new Keyframe(0f, 1f),new Keyframe(1f, 10f));
 
-    [Header("Recoil Curve")]
-    [Tooltip("X-Axis: Tension Force (Newtons). Y-Axis: Recoil Multiplier (0 to 1).")]
-    public AnimationCurve recoilTensionCurve = new AnimationCurve(
-        new Keyframe(0f, 0f),    // 0 Newtons = 0% Recoil (Tiny objects feel weightless)
-        new Keyframe(500f, 1f)   // 500+ Newtons = 100% Recoil (Heavy objects drag you)
-    );
+    [Header("Grab Reaction")]
+    [Tooltip("X is normalized grab load from 0 to 1. Y is the fraction of reciprocal impulse applied to the player.")]
+    public AnimationCurve recoilTensionCurve = new AnimationCurve(new Keyframe(0f, 0f),new Keyframe(0.2f, 0f),new Keyframe(0.6f, 0.35f),new Keyframe(1f, 1f));
+
+
+
+    [Tooltip("Safety limit for the velocity change applied to the player by one grab during one simulation tick.")]
+    public float maxPlayerReactionVelocityChangePerTick = 0.5f;
+
+    [Header("Grab Debug")]
+    public float debugTensionForce;
+    public float debugNormalizedLoad;
+    public float debugReactionMultiplier;
+    public Vector3 debugReactionVelocityChange;
 
     public float dragRange = 10f;
 
@@ -50,75 +56,207 @@ public class XPBDGlobalManager : NetworkBehaviour
         {
             _hydratedTempJoints[i] = new HydratedTempJoint();
         }
+        if (Runner.TryGetComponent(out _physicsSimulator))
+        {
+            _physicsSimulator.OnBeforeSimulate += BeforePhysicsSimulation;
+            _physicsSimulator.OnAfterSimulate += AfterPhysicsSimulation;
+        }
+        else
+        {
+            Debug.LogError("[XPBDGlobalManager] RunnerSimulatePhysics3D was not found.", this);
+        }
     }
 
-    public override void FixedUpdateNetwork()
+    private void BeforePhysicsSimulation()
     {
-        if (!enableSolver) return;
+        if (!enableSolver)
+            return;
+
+        SolveRegularConstraintsBeforePhysics();
+        PreparePostPhysicsGrabs();
+    }
+
+    private void SolveRegularConstraintsBeforePhysics()
+    {
         float dt = Runner.DeltaTime;
-        if (dt <= 0f) return;
+
+        if (dt <= 0f)
+            return;
 
         RemoveInvalidRagdollRegistrations();
-
-
         SyncHydratedTmpJoints();
-        SyncHydratedGrabs();
 
         _globalStates.Clear();
 
         foreach (var ragdoll in registeredRagdolls)
-        {
             ragdoll.InitializeStates(dt, _globalStates);
-        }
 
-        foreach (var grab in _hydratedTempJoints)
+        foreach (var joint in _hydratedTempJoints)
         {
-            AddStateIfMissing(grab.parentRb, dt);
-            AddStateIfMissing(grab.childRb, dt);
-            grab.lambdaPosition = Vector3.zero;
-            grab.lambdaRotation = Vector3.zero;
-        }
+            if (!joint.IsValid())
+                continue;
 
-        foreach (var grab in _hydratedGrabJoints)
-        {
-            if (grab.IsValid())
-            {
-                AddStateIfMissing(grab.torsoRb, dt);
-                AddStateIfMissing(grab.itemRb, dt);
-
-                grab.lambdaPosition = Vector3.zero;
-                grab.lambdaRotation = Vector3.zero;
-            }
+            AddStateIfMissing(joint.parentRb, dt);
+            AddStateIfMissing(joint.childRb, dt);
+            joint.lambdaPosition = Vector3.zero;
+            joint.lambdaRotation = Vector3.zero;
         }
 
         for (int i = 0; i < iterations; i++)
         {
             foreach (var ragdoll in registeredRagdolls)
-            {
                 ragdoll.SolveConstraints(dt, _globalStates);
-            }
 
-            foreach (var tmp in _hydratedTempJoints)
+            foreach (var joint in _hydratedTempJoints)
             {
-                if (tmp.IsValid())
-                {
-                    SolveTempDistance(tmp, dt, _globalStates);
-                    SolveTempRotation(tmp, dt, _globalStates);
-                }
-            }
+                if (!joint.IsValid())
+                    continue;
 
-            foreach (var grab in _hydratedGrabJoints)
-            {
-                if (grab.IsValid())
-                {
-                    SolveGrabDistance(grab, dt, _globalStates);
-                    SolveGrabRotation(grab, dt, _globalStates);
-                }
+                SolveTempDistance(joint, dt, _globalStates);
+                SolveTempRotation(joint, dt, _globalStates);
             }
         }
 
         DeriveAllVelocities(dt);
         ApplyAllToUnity();
+    }
+
+    private void PreparePostPhysicsGrabs()
+    {
+        SyncHydratedGrabs();
+
+        foreach (var grab in _hydratedGrabJoints)
+        {
+            grab.preparedForPostPhysics = false;
+
+            if (!grab.IsValid() || grab.itemRb.isKinematic)
+                continue;
+
+            Rigidbody itemRb = grab.itemRb;
+            XPBDState itemState = grab.itemState;
+            XPBDKinematicTargetState targetState = grab.targetState;
+
+            itemState.rb = itemRb;
+            itemState.isKinematic = false;
+            itemState.invMass = 1f / itemRb.mass;
+            itemState.invInertiaLocal = new Vector3(1f / itemRb.inertiaTensor.x, 1f / itemRb.inertiaTensor.y, 1f / itemRb.inertiaTensor.z);
+            itemState.qInertia = itemRb.inertiaTensorRotation;
+            itemState.p_prev = itemRb.position;
+            itemState.q_prev = itemRb.rotation;
+            itemState.p = itemState.p_prev;
+            itemState.q = itemState.q_prev;
+            itemState.v = itemRb.linearVelocity;
+            itemState.w = itemRb.angularVelocity;
+
+            grab.torsoPositionBeforePhysics = grab.torsoRb.position;
+
+            Quaternion previousLookRotation = grab.grabberController.previousLookRot;
+            Vector3 previousEyePosition = grab.grabberController.GetEyePosSim(grab.torsoPositionBeforePhysics, previousLookRotation);
+
+            targetState.p_prev = previousEyePosition + previousLookRotation * Vector3.forward * grab.networkedData.grabDistance;
+            targetState.q_prev = previousLookRotation * grab.networkedData.targetLocalRotation;
+            targetState.p = targetState.p_prev;
+            targetState.q = targetState.q_prev;
+
+            grab.lambdaPosition = Vector3.zero;
+            grab.lambdaRotation = Vector3.zero;
+            grab.preparedForPostPhysics = true;
+        }
+    }
+
+    private void AfterPhysicsSimulation()
+    {
+        if (!enableSolver)
+            return;
+
+        float dt = Runner.DeltaTime;
+
+        if (dt <= 0f)
+            return;
+
+        debugTensionForce = 0f;
+        debugNormalizedLoad = 0f;
+        debugReactionMultiplier = 0f;
+        debugReactionVelocityChange = Vector3.zero;
+
+        // Update the item and hand target to their post-PhysX poses.
+        foreach (var grab in _hydratedGrabJoints)
+        {
+            if (!grab.preparedForPostPhysics || !grab.IsValid())
+                continue;
+
+            XPBDState itemState = grab.itemState;
+            XPBDKinematicTargetState targetState = grab.targetState;
+
+            itemState.p = grab.itemRb.position;
+            itemState.q = grab.itemRb.rotation;
+
+            Quaternion currentLookRotation = grab.grabberController.lookRot;
+            Vector3 currentEyePosition = grab.grabberController.GetEyePosSim(grab.torsoRb.position, currentLookRotation);
+
+            targetState.p = currentEyePosition + currentLookRotation * Vector3.forward * grab.networkedData.grabDistance;
+            targetState.q = currentLookRotation * grab.networkedData.targetLocalRotation;
+        }
+
+        // Solve the grab constraint.
+        for (int i = 0; i < iterations; i++)
+        {
+            foreach (var grab in _hydratedGrabJoints)
+            {
+                if (!grab.preparedForPostPhysics || !grab.IsValid())
+                    continue;
+
+                SolvePostPhysicsGrabRotation(grab, dt);
+                SolvePostPhysicsGrabPosition(grab, dt);
+            }
+        }
+
+        // Apply the solved item pose and reciprocal player reaction.
+        foreach (var grab in _hydratedGrabJoints)
+        {
+            if (!grab.preparedForPostPhysics || !grab.IsValid())
+                continue;
+
+            XPBDState itemState = grab.itemState;
+
+            itemState.q = XPBDMath.NormalizeQuaternion(itemState.q);
+            itemState.v = (itemState.p - itemState.p_prev) / dt;
+            itemState.w = XPBDMath.GetDeltaTheta(itemState.q_prev, itemState.q) / dt;
+
+            grab.itemRb.position = itemState.p;
+            grab.itemRb.rotation = itemState.q;
+            grab.itemRb.linearVelocity = itemState.v;
+            grab.itemRb.angularVelocity = itemState.w;
+
+            Vector3 tensionForce = grab.lambdaPosition / (dt * dt);
+            Vector3 horizontalTension = Vector3.ProjectOnPlane(tensionForce, Vector3.up);
+
+            float maxHorizontalForce = Mathf.Max(0f, grab.networkedData.maxHorizontalForce);
+            float verticalForceLimit = tensionForce.y >= 0f ? Mathf.Max(0f, grab.networkedData.maxLiftForce) : maxHorizontalForce;
+
+            float horizontalLoad = maxHorizontalForce > 0f ? horizontalTension.magnitude / maxHorizontalForce : 0f;
+            float verticalLoad = verticalForceLimit > 0f ? Mathf.Abs(tensionForce.y) / verticalForceLimit : 0f;
+            float normalizedLoad = Mathf.Clamp01(Mathf.Sqrt(horizontalLoad * horizontalLoad + verticalLoad * verticalLoad));
+
+            float reactionMultiplier = Mathf.Clamp01(recoilTensionCurve.Evaluate(normalizedLoad) * grab.networkedData.reactionScale);
+            Vector3 constraintImpulse = grab.lambdaPosition / dt;
+            Vector3 playerReactionImpulse = -constraintImpulse * reactionMultiplier;
+
+            float playerMass = grab.grabberController.totalMass > 0f ? grab.grabberController.totalMass : grab.torsoRb.mass;
+            Vector3 reactionVelocityChange = playerReactionImpulse / Mathf.Max(0.01f, playerMass);
+
+            if (maxPlayerReactionVelocityChangePerTick > 0f)
+                reactionVelocityChange = Vector3.ClampMagnitude(reactionVelocityChange, maxPlayerReactionVelocityChangePerTick);
+
+            grab.torsoRb.linearVelocity += reactionVelocityChange;
+
+            debugTensionForce = tensionForce.magnitude;
+            debugNormalizedLoad = normalizedLoad;
+            debugReactionMultiplier = reactionMultiplier;
+            debugReactionVelocityChange = reactionVelocityChange;
+
+            grab.preparedForPostPhysics = false;
+        }
     }
 
     private void SyncHydratedTmpJoints()
@@ -279,53 +417,52 @@ public class XPBDGlobalManager : NetworkBehaviour
         XPBDMath.SolveSphericalRotation(pState, cState, targetQ, alpha, gamma, ref grab.lambdaRotation);
     }
 
-    private void SolveGrabDistance(HydratedGrabJoint grab, float dt, Dictionary<Rigidbody, XPBDState> states)
+    private void SolvePostPhysicsGrabPosition(HydratedGrabJoint grab, float dt)
     {
-        var pState = states[grab.torsoRb];
-        var cState = states[grab.itemRb];
-        if (pState.isKinematic && cState.isKinematic) return;
+        XPBDState itemState = grab.itemState;
+        XPBDKinematicTargetState targetState = grab.targetState;
 
-        Vector3 eyePos = grab.grabberController.GetEyePosSim();
-        Vector3 lookDir = grab.grabberController.lookRot * Vector3.forward;
-        Vector3 worldHoldPos = eyePos + (lookDir * grab.networkedData.grabDistance);
+        Vector3 currentGrabPoint = itemState.p + itemState.q * grab.networkedData.localGrabOffset;
+        float errorDistance = Vector3.Distance(currentGrabPoint, targetState.p);
+        float normalizedDistance = Mathf.Clamp01(errorDistance / Mathf.Max(0.01f, dragRange));
 
-        Vector3 eyePos_prev = grab.grabberController.GetPreviousEyePosSim(pState.p_prev);
-        Vector3 lookDir_prev = grab.grabberController.previousLookRot * Vector3.forward;
-        Vector3 worldHoldPos_prev = eyePos_prev + (lookDir_prev * grab.networkedData.grabDistance);
+        float stiffness = Mathf.Max(0.01f, grab.networkedData.grabStiffness);
+        float stretchMultiplier = distanceComplianceCurve.Evaluate(normalizedDistance);
+        float alpha = (1f / stiffness) * stretchMultiplier / (dt * dt);
+        float gamma = alpha * (0.5f * dt * grab.networkedData.grabDamping) / dt;
 
-        Vector3 r1 = cState.q * grab.networkedData.localGrabOffset;
-        Vector3 dir = (cState.p + r1) - worldHoldPos;
+        Vector3 positionBeforeSolve = itemState.p;
+        Vector3 lambdaBeforeSolve = grab.lambdaPosition;
 
-        float massMultiplier = Mathf.Clamp(cState.rb.mass, 1f, 10f);
-        float scaledStrength = grab.networkedData.grabStrength * massMultiplier;
-        float normalizedDist = Mathf.Clamp01(dir.magnitude / Mathf.Max(0.01f, dragRange));
-        float stretchMultiplier = distanceComplianceCurve.Evaluate(normalizedDist);
+        XPBDMath.SolveKinematicGrabPosition(targetState, itemState, grab.networkedData.localGrabOffset, alpha, gamma, ref grab.lambdaPosition);
 
-        float alpha = ((1f / Mathf.Max(0.01f, scaledStrength)) * stretchMultiplier) / (dt * dt);
-        float gamma = (alpha * (0.5f * dt * grab.networkedData.grabDamping)) / dt;
+        float maxHorizontalLambda = Mathf.Max(0f, grab.networkedData.maxHorizontalForce) * dt * dt;
+        float maxLiftLambda = Mathf.Max(0f, grab.networkedData.maxLiftForce) * dt * dt;
 
-        float currentTensionNewtons = grab.lambdaPosition.magnitude / dt;
-        float recoilMultiplier = recoilTensionCurve.Evaluate(currentTensionNewtons);
-        Vector3 dxTarget = worldHoldPos - worldHoldPos_prev;
+        Vector3 clampedLambda = grab.lambdaPosition;
+        Vector3 horizontalLambda = new Vector3(clampedLambda.x, 0f, clampedLambda.z);
+        horizontalLambda = Vector3.ClampMagnitude(horizontalLambda, maxHorizontalLambda);
 
-        XPBDMath.SolveOneWayGrabDistance(pState, cState, r1, dir, dxTarget, alpha, gamma, grab.networkedData.dragResistance, recoilMultiplier, dt, ref grab.lambdaPosition);
+        clampedLambda.x = horizontalLambda.x;
+        clampedLambda.z = horizontalLambda.z;
+        clampedLambda.y = Mathf.Clamp(clampedLambda.y, -maxHorizontalLambda, maxLiftLambda);
+
+        Vector3 appliedDeltaLambda = clampedLambda - lambdaBeforeSolve;
+
+        itemState.p = positionBeforeSolve + itemState.invMass * appliedDeltaLambda;
+        grab.lambdaPosition = clampedLambda;
     }
 
-    private void SolveGrabRotation(HydratedGrabJoint grab, float dt, Dictionary<Rigidbody, XPBDState> states)
+    private void SolvePostPhysicsGrabRotation(HydratedGrabJoint grab, float dt)
     {
-        var pState = states[grab.torsoRb];
-        var cState = states[grab.itemRb];
-        if (pState.isKinematic && cState.isKinematic) return;
+        XPBDState itemState = grab.itemState;
+        XPBDKinematicTargetState targetState = grab.targetState;
 
-        Quaternion targetQ = grab.grabberController.lookRot * grab.networkedData.targetLocalRotation;
-        Quaternion targetQ_prev = grab.grabberController.previousLookRot * grab.networkedData.targetLocalRotation;
+        float alpha = 1f / Mathf.Max(0.01f, grab.networkedData.grabStiffness) / (dt * dt);
+        float gamma = alpha * (0.5f * dt * grab.networkedData.grabDamping) / dt;
 
-        float alpha = (1f / Mathf.Max(0.01f, grab.networkedData.grabStrength)) / (dt * dt);
-        float gamma = (alpha * (0.5f * dt * grab.networkedData.grabDamping)) / dt;
-
-        XPBDMath.SolveOneWayGrabRotation(cState, targetQ, targetQ_prev, alpha, gamma, ref grab.lambdaRotation);
+        XPBDMath.SolveKinematicGrabRotation(targetState, itemState, alpha, gamma, ref grab.lambdaRotation);
     }
-
     // --- FINAL VELOCITY DERIVATION ---
 
     private void DeriveAllVelocities(float dt)
@@ -653,6 +790,18 @@ public class XPBDGlobalManager : NetworkBehaviour
         }
 
         return true;
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        if (_physicsSimulator != null)
+        {
+            _physicsSimulator.OnBeforeSimulate -= BeforePhysicsSimulation;
+            _physicsSimulator.OnAfterSimulate -= AfterPhysicsSimulation;
+            _physicsSimulator = null;
+        }
+
+        base.Despawned(runner, hasState);
     }
 
     #endregion

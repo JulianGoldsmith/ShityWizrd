@@ -85,13 +85,15 @@ public class DraggableItem : InteractableItem
             NetworkGrabJoint newGrab = new NetworkGrabJoint()
             {
                 grabberId = playerObject.Id,
-                itemId = this.Object.Id,
+                itemId = Object.Id,
                 localGrabOffset = localGrabPos,
                 grabDistance = distance,
                 targetLocalRotation = snapshotRot,
-                grabStrength = controller.dragStength,
-                grabDamping = controller.grabDamping, // (or controller.grabDamping)
-                dragResistance = controller.playerDragResistance,
+                grabStiffness = controller.grabStiffness,
+                grabDamping = controller.grabDamping,
+                maxHorizontalForce = controller.maxHorizontalGrabForce,
+                maxLiftForce = controller.maxLiftGrabForce,
+                reactionScale = controller.grabReactionScale
             };
 
             _globalManager.AddGrabJoint(newGrab);

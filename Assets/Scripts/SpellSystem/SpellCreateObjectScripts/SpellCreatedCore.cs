@@ -6,7 +6,12 @@ using UnityEngine;
 public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 {
 
+    [Header("Generated Payload")]
+    public Transform PhysicsContainer;
+    public Transform VisualContainer;
+
     private GameObject _attachedComponents;
+    private GameObject _attachedVisual;
     //Debug
     public static int ActiveCount;
     public static int NetworkWritesThisSecond;
@@ -201,33 +206,50 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 
                 if (_attachedComponents == null && runtimeCore.AttachedSpellComponentsPrefab != null)
                 {
-                    _attachedComponents = Instantiate(runtimeCore.AttachedSpellComponentsPrefab, this.transform);
+                    Transform physicsParent = PhysicsContainer != null ? PhysicsContainer : transform;
+
+                    _attachedComponents = Instantiate(runtimeCore.AttachedSpellComponentsPrefab, physicsParent);
                     _attachedComponents.transform.localPosition = Vector3.zero;
                     _attachedComponents.transform.localRotation = Quaternion.identity;
-
-                    var attachedScript = _attachedComponents.GetComponent<AttatchedSpellComponent>();
-                    if (attachedScript != null) attachedScript.parentSpellCore = this;
+                    _attachedComponents.transform.localScale = Vector3.one;
                 }
 
-                var pop = GetComponent<PhysicsObjectProperties>();
+                AttatchedSpellComponent attachedScript = _attachedComponents != null ? _attachedComponents.GetComponent<AttatchedSpellComponent>() : null;
+
+                if (attachedScript != null)
+                {
+                    attachedScript.parentSpellCore = this;
+
+                    if (_attachedVisual == null && attachedScript.VisualRoot != null && VisualContainer != null)
+                    {
+                        _attachedVisual = attachedScript.VisualRoot.gameObject;
+                        attachedScript.VisualRoot.SetParent(VisualContainer, false);
+                    }
+                }
+
+                PhysicsObjectProperties pop = GetComponent<PhysicsObjectProperties>();
+
                 if (pop != null)
                 {
                     pop.Size = finalSize;
                     pop.Material_label = finalMat;
 
-                    // --- THE VISUAL HANDSHAKE ---
-                    if (_attachedComponents != null)
-                    {
-                        var attachedScript = _attachedComponents.GetComponent<AttatchedSpellComponent>();
-                        var physObj = pop.GetComponent<PhysicsObject>();
+                    PhysicsObject physObj = pop.GetComponent<PhysicsObject>();
 
-                        if (attachedScript != null && physObj != null)
+                    if (attachedScript != null && physObj != null)
+                        physObj.RegisterAttachedVisuals(attachedScript, pop.physicsobjectmaterial);
+
+                    if (physObj != null)
+                    {
+                        physObj.InitialisePhysicsObject();
+
+                        if (physObj.rb != null)
                         {
-                            physObj.RegisterAttachedVisuals(attachedScript, pop.physicsobjectmaterial);
+                            physObj.rb.ResetCenterOfMass();
+                            physObj.rb.ResetInertiaTensor();
+                            physObj.rb.WakeUp();
                         }
                     }
-
-                    pop.GetComponent<PhysicsObject>().InitialisePhysicsObject();
                 }
 
                 LifetimeTimer = TickTimer.CreateFromSeconds(Runner, finalLifetime);
@@ -368,8 +390,16 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
         ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
         if (activeSpell != null) activeSpell.RemoveToken();
 
+        if (_attachedVisual != null)
+        {
+            _attachedVisual.SetActive(false);
+            Destroy(_attachedVisual);
+            _attachedVisual = null;
+        }
+
         if (_attachedComponents != null)
         {
+            _attachedComponents.SetActive(false);
             Destroy(_attachedComponents);
             _attachedComponents = null;
         }

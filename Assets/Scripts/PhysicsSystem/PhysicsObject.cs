@@ -100,7 +100,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     {
         rb = GetComponent<Rigidbody>();
 
-        Collider col = GetComponent<Collider>();
+        Collider col = GetComponentInChildren<Collider>();
         if (col != null)
         {
             physicsMaterial = col.material;
@@ -129,8 +129,8 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         Material mat = physicsObjectProperties.physicsobjectmaterial.visual_material;
         if (mat == null) 
             return;
-        Renderer[] renderers = GetComponents<Renderer>();
-        if (renderers == null || renderers.Length == 0) 
+
+        if (_renderers == null || _renderers.Count == 0)
             return;
 
         for (int i = 0; i < _renderers.Count; i++)

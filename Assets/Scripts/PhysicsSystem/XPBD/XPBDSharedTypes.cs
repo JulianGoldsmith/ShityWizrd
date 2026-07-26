@@ -17,6 +17,14 @@ public class XPBDState
     public bool isKinematic;
 }
 
+public class XPBDKinematicTargetState
+{
+    public Vector3 p_prev;
+    public Quaternion q_prev;
+    public Vector3 p;
+    public Quaternion q;
+}
+
 [System.Serializable]
 public struct NetworkTempJoint : INetworkStruct
 {
@@ -57,17 +65,18 @@ public class HydratedTempJoint
 [System.Serializable]
 public struct NetworkGrabJoint : INetworkStruct
 {
-    public NetworkId grabberId; // The Player's Network Object
-    public NetworkId itemId;    // The Object being grabbed
+    public NetworkId grabberId;
+    public NetworkId itemId;
 
-    public Vector3 localGrabOffset; // Where on the item we grabbed
-    public float grabDistance;      // Distance from the camera
+    public Vector3 localGrabOffset;
+    public float grabDistance;
+    public Quaternion targetLocalRotation;
 
-    public Quaternion targetLocalRotation; // <-- Added: The snapshot of how the item aligns to the camera
-
-    public float grabStrength;      // Used for Compliance (Stiffness)
-    public float grabDamping;       // <-- Added: Prevents the grabbed object from infinitely wobbling
-    public float dragResistance;    // Used for Inverse Mass Scaling (How easily the player is dragged)
+    public float grabStiffness;
+    public float grabDamping;
+    public float maxHorizontalForce;
+    public float maxLiftForce;
+    public float reactionScale;
 }
 
 // --- LOCAL RUNTIME DATA (Fast Access) ---
@@ -75,14 +84,17 @@ public class HydratedGrabJoint
 {
     public NetworkGrabJoint networkedData;
 
-    // Cached References
     public HybridCharacterController grabberController;
     public Rigidbody torsoRb;
     public Rigidbody itemRb;
 
-    // XPBD Memory
+    public XPBDState itemState = new XPBDState();
+    public XPBDKinematicTargetState targetState = new XPBDKinematicTargetState();
+
+    public Vector3 torsoPositionBeforePhysics;
     public Vector3 lambdaPosition;
-    public Vector3 lambdaRotation; // <-- Added: Needed for 3D orthogonal rotation solver
+    public Vector3 lambdaRotation;
+    public bool preparedForPostPhysics;
 
     public bool IsValid() => grabberController != null && itemRb != null && torsoRb != null;
 
@@ -93,7 +105,8 @@ public class HydratedGrabJoint
         itemRb = null;
         networkedData = default(NetworkGrabJoint);
         lambdaPosition = Vector3.zero;
-        lambdaRotation = Vector3.zero; // <-- Added: Reset memory
+        lambdaRotation = Vector3.zero;
+        preparedForPostPhysics = false;
     }
 }
 
@@ -242,93 +255,175 @@ public static class XPBDMath
             if (!cState.isKinematic) ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * -cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
         }
     }
-
-    public static void SolveOneWayGrabDistance(XPBDState pState, XPBDState cState, Vector3 r1, Vector3 dir, Vector3 dxTarget,
-        float alpha, float gamma, float dragResist, float recoilMultiplier, float dt, ref Vector3 lambdaPosition)
+    public static void SolveKinematicGrabPosition(XPBDKinematicTargetState targetState, XPBDState itemState, Vector3 itemAnchorLocal, float alpha, float gamma, ref Vector3 lambdaPosition)
     {
-        Vector3 dx1 = cState.p - cState.p_prev;
-        Vector3 dw1 = GetDeltaTheta(cState.q_prev, cState.q);
-
-        float w0_solver = 0f;
-        Vector3[] axes = { Vector3.right, Vector3.up, Vector3.forward };
+        Vector3 targetDisplacement = targetState.p - targetState.p_prev;
 
         for (int i = 0; i < 3; i++)
         {
-            Vector3 cAxis = axes[i];
-            float C = Vector3.Dot(dir, cAxis);
+            Vector3 axis = i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
 
-            Vector3 gradP1 = cAxis;
-            Vector3 gradQ1 = Vector3.Cross(r1, cAxis);
+            Vector3 currentGrabPoint = itemState.p + itemState.q * itemAnchorLocal;
+            Vector3 previousGrabPoint = itemState.p_prev + itemState.q_prev * itemAnchorLocal;
+            Vector3 grabPointDisplacement = currentGrabPoint - previousGrabPoint;
 
-            float w1 = cState.isKinematic ? 0f : cState.invMass + Vector3.Dot(gradQ1, ApplyInvInertiaWorld(gradQ1, cState.q, cState.qInertia, cState.invInertiaLocal));
-            float wSum = w0_solver + w1;
-            if (wSum < 1e-6f) continue;
+            float C = Vector3.Dot(currentGrabPoint - targetState.p, axis);
+            float w = itemState.invMass;
 
-            float dC = Vector3.Dot(-cAxis, dxTarget) + Vector3.Dot(gradP1, dx1) + Vector3.Dot(gradQ1, dw1);
+            if (w < 1e-6f)
+                continue;
 
-            float currentLambda = i == 0 ? lambdaPosition.x : (i == 1 ? lambdaPosition.y : lambdaPosition.z);
-            float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * wSum + alpha);
+            float dC = Vector3.Dot(axis, grabPointDisplacement - targetDisplacement);
+            float currentLambda = i == 0 ? lambdaPosition.x : i == 1 ? lambdaPosition.y : lambdaPosition.z;
+            float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * w + alpha);
 
-            if (i == 0) lambdaPosition.x += deltaLambda; else if (i == 1) lambdaPosition.y += deltaLambda; else lambdaPosition.z += deltaLambda;
+            if (i == 0)
+                lambdaPosition.x += deltaLambda;
+            else if (i == 1)
+                lambdaPosition.y += deltaLambda;
+            else
+                lambdaPosition.z += deltaLambda;
 
-            if (!cState.isKinematic)
-            {
-                cState.p += cState.invMass * deltaLambda * gradP1;
-                ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * gradQ1, cState.q, cState.qInertia, cState.invInertiaLocal));
-            }
-        }
-
-        if (!pState.isKinematic)
-        {
-            float effectiveInvMass0 = pState.invMass / Mathf.Max(1f, dragResist);
-            Vector3 rawRecoilShift = -lambdaPosition * effectiveInvMass0;
-            Vector3 finalRecoilShift = rawRecoilShift * recoilMultiplier;
-
-            float maxSafeShift = 5f * dt;
-            if (finalRecoilShift.sqrMagnitude > maxSafeShift * maxSafeShift)
-            {
-                finalRecoilShift = finalRecoilShift.normalized * maxSafeShift;
-            }
-            pState.p += finalRecoilShift;
+            itemState.p += itemState.invMass * deltaLambda * axis;
         }
     }
 
-    public static void SolveOneWayGrabRotation(XPBDState cState,Quaternion targetQ, Quaternion targetQ_prev,
-        float alpha, float gamma, ref Vector3 lambdaRotation)
+    public static void SolveKinematicGrabRotation(XPBDKinematicTargetState targetState, XPBDState itemState, float alpha, float gamma, ref Vector3 lambdaRotation)
     {
-        Quaternion qError = targetQ * Quaternion.Inverse(cState.q);
-        if (qError.w < 0f) { qError.x = -qError.x; qError.y = -qError.y; qError.z = -qError.z; qError.w = -qError.w; }
-
-        Vector3 v = new Vector3(qError.x, qError.y, qError.z);
-        float sinHalfAngle = v.magnitude;
-        if (sinHalfAngle < 1e-6f) return;
-
-        Vector3 axis = v / sinHalfAngle;
-        float angleRad = 2f * Mathf.Atan2(sinHalfAngle, qError.w);
-
-        Vector3 rotVec = axis * angleRad;
-        Vector3[] axes = { Vector3.right, Vector3.up, Vector3.forward };
+        Vector3 targetAngularDisplacement = GetDeltaTheta(targetState.q_prev, targetState.q);
 
         for (int i = 0; i < 3; i++)
         {
-            Vector3 cAxis = axes[i];
-            float C = Vector3.Dot(rotVec, cAxis);
+            Vector3 axis = i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
 
-            float w1 = cState.isKinematic ? 0f : Vector3.Dot(-cAxis, ApplyInvInertiaWorld(-cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
-            if (w1 < 1e-6f) continue;
+            Quaternion qError = targetState.q * Quaternion.Inverse(itemState.q);
 
-            float dC = Vector3.Dot(cAxis, GetDeltaTheta(targetQ_prev, targetQ)) + Vector3.Dot(-cAxis, GetDeltaTheta(cState.q_prev, cState.q));
+            if (qError.w < 0f)
+            {
+                qError.x = -qError.x;
+                qError.y = -qError.y;
+                qError.z = -qError.z;
+                qError.w = -qError.w;
+            }
 
-            float currentLambda = i == 0 ? lambdaRotation.x : (i == 1 ? lambdaRotation.y : lambdaRotation.z);
-            float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * w1 + alpha);
+            Vector3 errorVector = new Vector3(qError.x, qError.y, qError.z);
+            float sinHalfAngle = errorVector.magnitude;
 
-            if (i == 0) lambdaRotation.x += deltaLambda; else if (i == 1) lambdaRotation.y += deltaLambda; else lambdaRotation.z += deltaLambda;
+            if (sinHalfAngle < 1e-6f)
+                return;
 
-            if (!cState.isKinematic) ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * -cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
+            Vector3 errorAxis = errorVector / sinHalfAngle;
+            float angleRadians = 2f * Mathf.Atan2(sinHalfAngle, qError.w);
+            Vector3 rotationError = errorAxis * angleRadians;
+
+            float C = Vector3.Dot(rotationError, axis);
+            float w = Vector3.Dot(axis, ApplyInvInertiaWorld(axis, itemState.q, itemState.qInertia, itemState.invInertiaLocal));
+
+            if (w < 1e-6f)
+                continue;
+
+            Vector3 itemAngularDisplacement = GetDeltaTheta(itemState.q_prev, itemState.q);
+            float dC = Vector3.Dot(axis, targetAngularDisplacement - itemAngularDisplacement);
+            float currentLambda = i == 0 ? lambdaRotation.x : i == 1 ? lambdaRotation.y : lambdaRotation.z;
+            float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * w + alpha);
+
+            if (i == 0)
+                lambdaRotation.x += deltaLambda;
+            else if (i == 1)
+                lambdaRotation.y += deltaLambda;
+            else
+                lambdaRotation.z += deltaLambda;
+
+            Vector3 angularCorrection = ApplyInvInertiaWorld(-deltaLambda * axis, itemState.q, itemState.qInertia, itemState.invInertiaLocal);
+            ApplyDeltaRotation(itemState, angularCorrection);
         }
     }
+    /* public static void SolveOneWayGrabDistance(XPBDState pState, XPBDState cState, Vector3 r1, Vector3 dir, Vector3 dxTarget,
+         float alpha, float gamma, float dragResist, float recoilMultiplier, float dt, ref Vector3 lambdaPosition)
+     {
+         Vector3 dx1 = cState.p - cState.p_prev;
+         Vector3 dw1 = GetDeltaTheta(cState.q_prev, cState.q);
 
+         float w0_solver = 0f;
+         Vector3[] axes = { Vector3.right, Vector3.up, Vector3.forward };
 
+         for (int i = 0; i < 3; i++)
+         {
+             Vector3 cAxis = axes[i];
+             float C = Vector3.Dot(dir, cAxis);
+
+             Vector3 gradP1 = cAxis;
+             Vector3 gradQ1 = Vector3.Cross(r1, cAxis);
+
+             float w1 = cState.isKinematic ? 0f : cState.invMass + Vector3.Dot(gradQ1, ApplyInvInertiaWorld(gradQ1, cState.q, cState.qInertia, cState.invInertiaLocal));
+             float wSum = w0_solver + w1;
+             if (wSum < 1e-6f) continue;
+
+             float dC = Vector3.Dot(-cAxis, dxTarget) + Vector3.Dot(gradP1, dx1) + Vector3.Dot(gradQ1, dw1);
+
+             float currentLambda = i == 0 ? lambdaPosition.x : (i == 1 ? lambdaPosition.y : lambdaPosition.z);
+             float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * wSum + alpha);
+
+             if (i == 0) lambdaPosition.x += deltaLambda; else if (i == 1) lambdaPosition.y += deltaLambda; else lambdaPosition.z += deltaLambda;
+
+             if (!cState.isKinematic)
+             {
+                 cState.p += cState.invMass * deltaLambda * gradP1;
+                 ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * gradQ1, cState.q, cState.qInertia, cState.invInertiaLocal));
+             }
+         }
+
+         if (!pState.isKinematic)
+         {
+             float effectiveInvMass0 = pState.invMass / Mathf.Max(1f, dragResist);
+             Vector3 rawRecoilShift = -lambdaPosition * effectiveInvMass0;
+             Vector3 finalRecoilShift = rawRecoilShift * recoilMultiplier;
+
+             float maxSafeShift = 5f * dt;
+             if (finalRecoilShift.sqrMagnitude > maxSafeShift * maxSafeShift)
+             {
+                 finalRecoilShift = finalRecoilShift.normalized * maxSafeShift;
+             }
+             pState.p += finalRecoilShift;
+         }
+     }
+
+     public static void SolveOneWayGrabRotation(XPBDState cState,Quaternion targetQ, Quaternion targetQ_prev,
+         float alpha, float gamma, ref Vector3 lambdaRotation)
+     {
+         Quaternion qError = targetQ * Quaternion.Inverse(cState.q);
+         if (qError.w < 0f) { qError.x = -qError.x; qError.y = -qError.y; qError.z = -qError.z; qError.w = -qError.w; }
+
+         Vector3 v = new Vector3(qError.x, qError.y, qError.z);
+         float sinHalfAngle = v.magnitude;
+         if (sinHalfAngle < 1e-6f) return;
+
+         Vector3 axis = v / sinHalfAngle;
+         float angleRad = 2f * Mathf.Atan2(sinHalfAngle, qError.w);
+
+         Vector3 rotVec = axis * angleRad;
+         Vector3[] axes = { Vector3.right, Vector3.up, Vector3.forward };
+
+         for (int i = 0; i < 3; i++)
+         {
+             Vector3 cAxis = axes[i];
+             float C = Vector3.Dot(rotVec, cAxis);
+
+             float w1 = cState.isKinematic ? 0f : Vector3.Dot(-cAxis, ApplyInvInertiaWorld(-cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
+             if (w1 < 1e-6f) continue;
+
+             float dC = Vector3.Dot(cAxis, GetDeltaTheta(targetQ_prev, targetQ)) + Vector3.Dot(-cAxis, GetDeltaTheta(cState.q_prev, cState.q));
+
+             float currentLambda = i == 0 ? lambdaRotation.x : (i == 1 ? lambdaRotation.y : lambdaRotation.z);
+             float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * w1 + alpha);
+
+             if (i == 0) lambdaRotation.x += deltaLambda; else if (i == 1) lambdaRotation.y += deltaLambda; else lambdaRotation.z += deltaLambda;
+
+             if (!cState.isKinematic) ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * -cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
+         }
+     }
+
+ */
 
 
     public static void SolveAngularLimit(

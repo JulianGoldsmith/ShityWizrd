@@ -40,8 +40,14 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     public float rideSpringDamper = 10f; // How much the spring is damped to prevent bouncing
     public float suspensionCastRadius = 0.25f; // The radius of the spherecast
 
-    [Header("ItemGrabStats")]
-    public float dragStength = 50, grabDamping = 10, playerDragResistance = 10;
+    [Header("Item Grab Settings")]
+    public float grabStiffness = 50f;
+    public float grabDamping = 0.6f;
+    public float maxHorizontalGrabForce = 350f;
+    public float maxLiftGrabForce = 250f;
+
+    [Range(0f, 1f)]
+    public float grabReactionScale = 1f;
 
     [Header("Movement Settings")]
     public float maxWalkSpeed = 3f, maxSprintSpeed = 5f;
@@ -212,7 +218,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         hipsRb.maxAngularVelocity = 20f;
 
         Runner.SetIsSimulated(this.Object, true);
-
+        totalMass = 0f;
         foreach (NetworkRigidbody3D nrb in networkRigidbody3Ds)
         {
             Runner.SetIsSimulated(nrb.Object, true);
@@ -275,8 +281,8 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             disableCC--; 
             return;      // Skip ALL simulation logic for this tick
         }
-        previousLookRot = lookRot;
-        //Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
+        if (HasStateAuthority || HasInputAuthority)
+            previousLookRot = lookRot;        //Debug.Log($"NetworkUpdate for - Is Local = {HasInputAuthority} + {this.GetComponent<NetworkObject>().InputAuthority} + {isHost}");
         DetectVariablesChangedOnNetwork();
         if (GetInput(out NetworkInputData data) && (HasStateAuthority || HasInputAuthority))
         {
@@ -991,11 +997,21 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     {
         return HasInputAuthority ? cameraTransform.rotation : lookRot;
     }
-    public Vector3 GetPreviousEyePosSim(Vector3 previousHipsPos)
+    public Vector3 GetEyePosSim(Vector3 hipsPosition, Quaternion simulationLookRotation)
     {
-        // Identical to GetEyePosSim, but uses the rolled-back data!
-        return previousHipsPos + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(previousLookRot);
+        return hipsPosition + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(simulationLookRotation);
     }
+
+    public Vector3 GetPreviousEyePosSim(Vector3 previousHipsPosition)
+    {
+        return GetEyePosSim(previousHipsPosition, previousLookRot);
+    }
+
+    public Vector3 GetEyePosSim()
+    {
+        return GetEyePosSim(hipsRb.position, lookRot);
+    }
+
     public Vector3 GetEyePos()
     {
         //if(HasInputAuthority)
@@ -1014,11 +1030,6 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         Vector3 up = look * Vector3.up; // or Vector3.up if you want strict world-up
 
         return new EyePosAndLookDir(eyePos, fwd, up);
-    }
-
-    public Vector3 GetEyePosSim()
-    {
-        return hipsRb.transform.position + camController.localEyeOffset + camController.GetEyePosBasedOnPitch(lookRot);
     }
 
     public EyePosAndLookDir GetEyePosAndLookDirSim()

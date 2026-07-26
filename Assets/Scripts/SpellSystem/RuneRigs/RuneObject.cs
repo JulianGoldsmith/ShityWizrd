@@ -4,9 +4,12 @@ using UnityEngine;
 
 public class RuneObject : MonoBehaviour
 {
+    public Transform VisualRoot;
+
     public List<RuneBay> Bays = new List<RuneBay>();
     public RuneRigObject OwningRig { get; internal set; }
     public int NodeIndex { get; internal set; } = -1;
+
 
     public RuneBay GetBay(byte bayIndex)
     {

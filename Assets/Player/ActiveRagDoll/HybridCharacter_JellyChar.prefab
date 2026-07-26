@@ -3001,9 +3001,11 @@ MonoBehaviour:
   rideSpringStrength: 100
   rideSpringDamper: 10
   suspensionCastRadius: 0.125
-  dragStength: 50
-  grabDamping: 0
-  playerDragResistance: 5
+  grabStiffness: 75
+  grabDamping: 0.6
+  maxHorizontalGrabForce: 350
+  maxLiftGrabForce: 250
+  grabReactionScale: 1
   maxWalkSpeed: 2.25
   maxSprintSpeed: 4.5
   acceleration: 2

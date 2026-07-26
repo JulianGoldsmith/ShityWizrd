@@ -1,15 +1,20 @@
 using UnityEngine;
 
-public class AttatchedSpellComponent: MonoBehaviour
+public class AttatchedSpellComponent : MonoBehaviour
 {
     public SpellCreatedCore parentSpellCore;
 
     [Header("Visual Configuration")]
-    [Tooltip("If true, the core will overwrite the main Material (e.g. turning a blank Egg into Ice). If false, the original Material is kept (e.g. a Wooden Crate).")]
+    public Transform VisualRoot;
+
+    [Tooltip("If true, the core will overwrite the main Material. If false, the original Material is kept.")]
     public bool allowBaseMaterialOverride = true;
 
     public Renderer[] GetAllRenderers()
     {
+        if (VisualRoot != null)
+            return VisualRoot.GetComponentsInChildren<Renderer>(true);
+
         return GetComponentsInChildren<Renderer>(true);
     }
 
