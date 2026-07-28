@@ -13,6 +13,8 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
     private NetworkId _localGrabItemId;
     private float _localGrabTargetDistance;
     private Quaternion _localGrabRotationOffset = Quaternion.identity;
+    private NetworkId _localLevitationRotationItemId;
+    private Quaternion _localLevitationTargetRotation = Quaternion.identity;
 
     private RuneRigSpawnController _runeRigSpawnController;
     private RuneRigPlacementController _runeRigPlacementController;
@@ -91,11 +93,12 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.buttons.Set(EInputButton.RIGHT_CLICK, mouse.rightButton.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.JUMP, keyboard.spaceKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.PICKUP, keyboard.eKey.isPressed);
-                _accumulatedInput.buttons.Set(EInputButton.DROP, keyboard.qKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.RELEASE, keyboard.qKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.SPRINT, keyboard.shiftKey.isPressed);
-                _accumulatedInput.buttons.Set(EInputButton.LEVITATE, keyboard.rKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.FEED, keyboard.fKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.ROTATE, mouse.middleButton.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.SELF_BONK, keyboard.tKey.isPressed);
-                _accumulatedInput.buttons.Set(EInputButton.UN_SELF_BONK, keyboard.fKey.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.UN_SELF_BONK, keyboard.uKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.TEST_COUNT, keyboard.cKey.isPressed);
 
                // _accumulatedInput.scroll = scroll.y/5f;
@@ -104,6 +107,9 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         }
 
         NetworkObject playerObject = Runner.GetPlayerObject(Runner.LocalPlayer);
+        bool rotatingHeldGrab = false;
+        bool rotatingLevitatingRig = false;
+
         if (!GameController.Instance.isEditorActive &&
             playerObject != null &&
             playerObject.TryGetComponent(out NetworkedHandsController hands) &&
@@ -133,11 +139,10 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             _localGrabTargetDistance += scrollDelta * controller.grabScrollSensitivity;
             _localGrabTargetDistance = Mathf.Clamp(_localGrabTargetDistance, controller.minGrabDistance, controller.maxGrabDistance);
 
-            bool rotatingGrab = mouse != null && mouse.middleButton.isPressed;
-            bool rollingGrab = rotatingGrab && keyboard != null && keyboard.shiftKey.isPressed;
-            controller.camController.grabRotationActive = rotatingGrab;
+            rotatingHeldGrab = mouse != null && mouse.middleButton.isPressed;
+            bool rollingGrab = rotatingHeldGrab && keyboard != null && keyboard.shiftKey.isPressed;
 
-            if (rotatingGrab)
+            if (rotatingHeldGrab)
             {
                 Vector2 mouseDelta = mouse.delta.ReadValue();
 
@@ -158,9 +163,6 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         }
         else
         {
-            if (playerObject != null && playerObject.TryGetComponent(out HybridCharacterController inactiveController))
-                inactiveController.camController.grabRotationActive = false;
-
             _localGrabItemId = default;
             _localGrabTargetDistance = 0f;
             _localGrabRotationOffset = Quaternion.identity;
@@ -168,6 +170,73 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             _accumulatedInput.grabTargetDistance = 0f;
             _accumulatedInput.grabRotationOffset = Quaternion.identity;
         }
+
+        if (!GameController.Instance.isEditorActive &&
+            playerObject != null &&
+            playerObject.TryGetComponent(out HybridCharacterController levitationController) &&
+            playerObject.TryGetComponent(out NetworkedInventoryManager levitationInventory) &&
+            levitationInventory.currentItemInHand == null &&
+            mouse != null)
+        {
+            if (mouse.middleButton.wasPressedThisFrame &&
+                levitationInventory.TryGetLookedAtInteractionTarget(out NetworkInteractionTarget rotationTarget) &&
+                rotationTarget.Type == InteractionTargetType.RuneNode &&
+                Runner.TryFindObject(rotationTarget.ObjectId, out NetworkObject rotationObject) &&
+                rotationObject.TryGetComponent(out RuneRigObject targetedRig) &&
+                targetedRig.IsLevitating)
+            {
+                _localLevitationRotationItemId = rotationObject.Id;
+                _localLevitationTargetRotation = targetedRig.LevitationTargetRotation;
+            }
+
+            if (_localLevitationRotationItemId.IsValid && mouse.middleButton.isPressed)
+            {
+                if (Runner.TryFindObject(_localLevitationRotationItemId, out NetworkObject controlledObject) &&
+                    controlledObject.TryGetComponent(out RuneRigObject rotatingRig) &&
+                    rotatingRig.IsLevitating)
+                {
+                    Vector2 mouseDelta = mouse.delta.ReadValue();
+                    Quaternion cameraRotation = Camera.main.transform.rotation;
+                    bool rollingRig = keyboard != null && keyboard.shiftKey.isPressed;
+                    Vector3 horizontalRotationAxis = rollingRig ? cameraRotation * Vector3.forward : cameraRotation * Vector3.up;
+                    Vector3 verticalRotationAxis = cameraRotation * Vector3.right;
+                    Quaternion horizontalDelta = Quaternion.AngleAxis(mouseDelta.x * levitationController.grabRotationSensitivity, horizontalRotationAxis);
+                    Quaternion verticalDelta = Quaternion.AngleAxis(-mouseDelta.y * levitationController.grabRotationSensitivity, verticalRotationAxis);
+
+                    _localLevitationTargetRotation = Quaternion.Normalize(horizontalDelta * verticalDelta * _localLevitationTargetRotation);
+                    _accumulatedInput.levitationRotationItemId = _localLevitationRotationItemId;
+                    _accumulatedInput.levitationTargetRotation = _localLevitationTargetRotation;
+                    rotatingLevitatingRig = true;
+
+                    if (rollingRig)
+                        _accumulatedInput.buttons.Set(EInputButton.SPRINT, false);
+                }
+                else
+                {
+                    _localLevitationRotationItemId = default;
+                    _localLevitationTargetRotation = Quaternion.identity;
+                }
+            }
+            else
+            {
+                _localLevitationRotationItemId = default;
+                _localLevitationTargetRotation = Quaternion.identity;
+            }
+        }
+        else
+        {
+            _localLevitationRotationItemId = default;
+            _localLevitationTargetRotation = Quaternion.identity;
+        }
+
+        if (!rotatingLevitatingRig)
+        {
+            _accumulatedInput.levitationRotationItemId = default;
+            _accumulatedInput.levitationTargetRotation = Quaternion.identity;
+        }
+
+        if (playerObject != null && playerObject.TryGetComponent(out HybridCharacterController cameraController))
+            cameraController.camController.grabRotationActive = rotatingHeldGrab || rotatingLevitatingRig;
 
         _accumulatedInput.lookRotation = Camera.main.transform.rotation;
     }

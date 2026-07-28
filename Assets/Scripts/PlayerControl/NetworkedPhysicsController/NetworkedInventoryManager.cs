@@ -25,8 +25,24 @@ public class NetworkedInventoryManager : NetworkBehaviour
     [SerializeField] private float pickupAngle = 45f;
     [SerializeField] public LayerMask itemLayer;
 
+    [Header("Rune Levitation")]
+    [Min(0.05f)] public float RuneLevitationHoldDuration = 0.35f;
+
+    [Header("Rune Detachment")]
+    [Min(0.05f)] public float RuneDetachmentHoldDuration = 0.35f;
+
     [Networked] public NetworkObject currentItemInHand { get; set; }
     [Networked] public NetworkObject potentialItemToPickup { get; set; }
+    [Networked] private NetworkId ReleaseHoldItemId { get; set; }
+    [Networked] private TickTimer ReleaseHoldTimer { get; set; }
+    [Networked] private NetworkBool ReleaseHoldTriggered { get; set; }
+    [Networked] private NetworkId InteractHoldItemId { get; set; }
+    [Networked] private NetworkInteractionTarget InteractHoldTarget { get; set; }
+    [Networked] private TickTimer InteractHoldTimer { get; set; }
+    [Networked] private NetworkBool InteractHoldAttempted { get; set; }
+    [Networked] private NetworkBool InteractHoldTriggered { get; set; }
+    [Networked] private NetworkId PendingDetachedPickupItemId { get; set; }
+    [Networked] private TickTimer PendingDetachedPickupTimer { get; set; }
 
     [Networked] public Vector3 localHandPosOnItem { get; set; }
 
@@ -59,35 +75,103 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             lookRotation = data.lookRotation;
 
+            if (PendingDetachedPickupItemId.IsValid && PendingDetachedPickupTimer.Expired(Runner))
+            {
+                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED && currentItemInHand == null)
+                    PickupItem(PendingDetachedPickupItemId);
+
+                PendingDetachedPickupItemId = default;
+                PendingDetachedPickupTimer = default;
+            }
+
+            if (data.levitationRotationItemId.IsValid &&
+                Runner.TryFindObject(data.levitationRotationItemId, out NetworkObject levitatingObject) &&
+                levitatingObject.TryGetComponent(out RuneRigObject levitatingRig) &&
+                levitatingRig.IsLevitating &&
+                HybridCharacterController.IsFinite(data.levitationTargetRotation))
+            {
+                levitatingRig.LevitationTargetRotation = Quaternion.Normalize(data.levitationTargetRotation);
+            }
+
             if (currentItemInHand == null)
             {
                 LookForItems();
             }
 
-            if (currentItemInHand == null && data.buttons.WasPressed(Prior_buttons, EInputButton.RIGHT_CLICK) && data.interactionTarget.Type == InteractionTargetType.RuneNode)
-            {
-                TryDetachRuneFromInput(data.interactionTarget);
-            }
-
             if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP))
             {
                 if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
-                    PickupItem();
+                {
+                    if (currentItemInHand == null)
+                    {
+                        InteractHoldItemId = potentialItemToPickup != null ? potentialItemToPickup.Id : default;
+                        InteractHoldTarget = data.interactionTarget;
+                        InteractHoldTimer = TickTimer.CreateFromSeconds(Runner, RuneDetachmentHoldDuration);
+                        InteractHoldAttempted = false;
+                        InteractHoldTriggered = false;
+                    }
+                    else
+                    {
+                        ClearInteractHoldState();
+                        TryAttachHeldRuneRig(data);
+                    }
+                }
             }
 
-            bool beganLevitation = false;
+            if (data.buttons.IsSet(EInputButton.PICKUP) &&
+                !InteractHoldAttempted &&
+                InteractHoldTarget.Type == InteractionTargetType.RuneNode &&
+                InteractHoldTarget.PartIndex > 0 &&
+                InteractHoldTimer.Expired(Runner))
+            {
+                InteractHoldAttempted = true;
+                InteractHoldTriggered = TryDetachRuneFromInput(InteractHoldTarget);
+            }
 
-            if (currentItemInHand != null && data.buttons.WasPressed(Prior_buttons, EInputButton.LEVITATE))
+            if (data.buttons.WasReleased(Prior_buttons, EInputButton.PICKUP))
+            {
+                if (!InteractHoldTriggered && InteractHoldItemId.IsValid && currentItemInHand == null)
+                    PickupItem(InteractHoldItemId);
+
+                ClearInteractHoldState();
+            }
+
+            if (data.buttons.WasPressed(Prior_buttons, EInputButton.RELEASE) && currentItemInHand != null)
+            {
+                ReleaseHoldItemId = currentItemInHand.Id;
+                ReleaseHoldTimer = TickTimer.CreateFromSeconds(Runner, RuneLevitationHoldDuration);
+                ReleaseHoldTriggered = false;
+            }
+
+            if (data.buttons.IsSet(EInputButton.RELEASE) &&
+                !ReleaseHoldTriggered &&
+                ReleaseHoldItemId.IsValid &&
+                ReleaseHoldTimer.Expired(Runner) &&
+                currentItemInHand != null &&
+                currentItemInHand.Id == ReleaseHoldItemId &&
+                currentItemInHand.TryGetComponent(out RuneRigObject heldRuneRig))
             {
                 if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
-                    beganLevitation = TryLevitateHeldRuneRig();
+                {
+                    ReleaseHoldTriggered = true;
+                    LevitateHeldRuneRig(heldRuneRig);
+                }
             }
 
-            if (!beganLevitation && data.buttons.WasReleased(Prior_buttons, EInputButton.DROP))
+            if (data.buttons.WasReleased(Prior_buttons, EInputButton.RELEASE))
             {
-                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
-                    DropItem(data);
+                if (!ReleaseHoldTriggered &&
+                    ReleaseHoldItemId.IsValid &&
+                    currentItemInHand != null &&
+                    currentItemInHand.Id == ReleaseHoldItemId &&
+                    characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
+                {
+                    DropItem();
+                }
+
+                ClearReleaseHoldState();
             }
+
             Prior_buttons = data.buttons;
         }
 
@@ -95,8 +179,12 @@ public class NetworkedInventoryManager : NetworkBehaviour
         {
             if (currentItemInHand != null)
             {
-                DropItem(default);
+                DropItem();
             }
+
+            ClearReleaseHoldState();
+            ClearInteractHoldState();
+
             if (potentialItemToPickup != null)
             {
                 potentialItemToPickup = null;
@@ -105,7 +193,11 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
 
         if (currentItemInHand != null && !currentItemInHand.gameObject.activeInHierarchy)
+        {
             currentItemInHand = null;
+            ClearReleaseHoldState();
+            ClearInteractHoldState();
+        }
 
         
     }
@@ -197,17 +289,22 @@ public class NetworkedInventoryManager : NetworkBehaviour
         }
     }
 
-    private void PickupItem()
+    private void PickupItem(NetworkId itemId)
     {
-        if (potentialItemToPickup == null) return;
+        if (!itemId.IsValid || !Runner.TryFindObject(itemId, out NetworkObject itemObject) || !itemObject.TryGetComponent(out InteractableItem item))
+            return;
 
-        currentItemInHand = potentialItemToPickup;
+        currentItemInHand = itemObject;
         potentialItemToPickup = null;
-        currentItemInHand.GetComponent<InteractableItem>().PickUpItem(this.GetComponent<NetworkObject>());
+
+        if (item is DraggableItem draggable)
+            handController.SetHandTarget_ToDraggPoint(false, draggable, draggable.transform.TransformPoint(localHandPosOnItem));
+
+        item.PickUpItem(Object);
     }
 
 
-    private void DropItem(NetworkInputData data)
+    private void DropItem()
     {
         if (currentItemInHand == null)
             return;
@@ -217,45 +314,84 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         droppedItem.DropItem(GetComponent<NetworkObject>(), HasInputAuthority, HasStateAuthority);
 
-        if (droppedItem is RuneRigObject runeRig && data.interactionTarget.Type == InteractionTargetType.RuneBay && data.interactionTarget.ObjectId.IsValid)
-        {
-            runeRig.TryAttachToBay(data.interactionTarget.ObjectId, data.interactionTarget.PartIndex, data.interactionTarget.BayIndex);
-        }
-
         handController.DragDistance = 0;
         currentItemInHand = null;
     }
 
-    private bool TryLevitateHeldRuneRig()
+    private bool TryAttachHeldRuneRig(NetworkInputData data)
     {
-        if (currentItemInHand == null || !currentItemInHand.TryGetComponent(out RuneRigObject runeRig))
+        if (currentItemInHand == null ||
+            !currentItemInHand.TryGetComponent(out RuneRigObject runeRig) ||
+            data.interactionTarget.Type != InteractionTargetType.RuneBay ||
+            !data.interactionTarget.ObjectId.IsValid)
+        {
             return false;
+        }
+
+        runeRig.DropItem(Object, HasInputAuthority, HasStateAuthority);
+        bool attached = runeRig.TryAttachToBay(data.interactionTarget.ObjectId, data.interactionTarget.PartIndex, data.interactionTarget.BayIndex);
+
+        handController.DragDistance = 0;
+        currentItemInHand = null;
+        ClearReleaseHoldState();
+        return attached;
+    }
+
+    private void LevitateHeldRuneRig(RuneRigObject runeRig)
+    {
+        if (currentItemInHand == null || runeRig == null || currentItemInHand != runeRig.Object)
+            return;
 
         runeRig.DropItem(Object, HasInputAuthority, HasStateAuthority);
         runeRig.BeginLevitation();
 
         handController.DragDistance = 0;
         currentItemInHand = null;
-        return true;
     }
 
-    private void TryDetachRuneFromInput(NetworkInteractionTarget target)
+    private void ClearReleaseHoldState()
+    {
+        ReleaseHoldItemId = default;
+        ReleaseHoldTimer = default;
+        ReleaseHoldTriggered = false;
+    }
+
+    private void ClearInteractHoldState()
+    {
+        InteractHoldItemId = default;
+        InteractHoldTarget = default;
+        InteractHoldTimer = default;
+        InteractHoldAttempted = false;
+        InteractHoldTriggered = false;
+    }
+
+    private bool TryDetachRuneFromInput(NetworkInteractionTarget target)
     {
         if (!target.IsValid || target.Type != InteractionTargetType.RuneNode)
-            return;
+            return false;
 
         if (!Runner.TryFindObject(target.ObjectId, out NetworkObject rigObject))
-            return;
+            return false;
 
         if (!rigObject.TryGetComponent(out RuneRigObject runeRig))
-            return;
+            return false;
 
         RuneObject selectedRune = runeRig.GetRuneObject(target.PartIndex);
 
         if (selectedRune == null)
-            return;
+            return false;
 
-        runeRig.TryDetachRune(target.PartIndex, Object.InputAuthority, selectedRune.transform.position, selectedRune.transform.rotation);
+        Vector3 detachedPosition = selectedRune.transform.position;
+        Quaternion detachedRotation = selectedRune.transform.rotation;
+        Vector3 handTargetPosition = runeRig.transform.TransformPoint(localHandPosOnItem);
+
+        if (!runeRig.TryDetachRune(target.PartIndex, Object.InputAuthority, detachedPosition, detachedRotation, out NetworkObject detachedObject))
+            return false;
+
+        localHandPosOnItem = Quaternion.Inverse(detachedRotation) * (handTargetPosition - detachedPosition);
+        PendingDetachedPickupItemId = detachedObject.Id;
+        PendingDetachedPickupTimer = TickTimer.CreateFromTicks(Runner, 1);
+        return true;
     }
 
     public bool TryGetLookedAtInteractionTarget(out NetworkInteractionTarget target)

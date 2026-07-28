@@ -340,7 +340,6 @@ public class EquipableItem : InteractableItem, IAfterRender
     public override void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority)
     {
 
-        var characterController = playerObject.GetComponent<HybridCharacterController>();
         var handController = playerObject.GetComponent<NetworkedHandsController>();
 
         if (playerObject.TryGetComponent(out NetworkedInventoryManager inventory))
@@ -368,10 +367,6 @@ public class EquipableItem : InteractableItem, IAfterRender
         networkedRB.RBIsKinematic = false;
         networkedRB.GetComponent<Collider>().enabled = true;
 
-        throwDir = characterController.GetLookRot() * Vector3.forward;
-        networkedRB.Rigidbody.AddForce((throwDir * 5f), ForceMode.Impulse);
-
-        
         visualModel.SetParent(this.transform);
         visualModel.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 

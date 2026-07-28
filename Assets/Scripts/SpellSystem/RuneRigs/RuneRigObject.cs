@@ -23,7 +23,7 @@ public class RuneRigObject : DraggableItem
 
     private RuneRigData _rigData;
     private RuneObject[] _runeObjects;
-    private GameObject _generatedRootObject;
+    private GameObject _generatedPhysicsRootObject;
     private GameObject _generatedVisualRootObject;
     private bool _hasRigData;
     private bool _wasConsumed;
@@ -46,6 +46,9 @@ public class RuneRigObject : DraggableItem
     [Min(0f)] public float LevitationRotationStrength = 15f;
     [Min(0f)] public float LevitationRotationDamping = 6f;
     [Min(0f)] public float MaximumLevitationAngularAcceleration = 25f;
+
+    [SerializeField] private float levitationBobSpeed = 0.01f;
+    [SerializeField] private float levitationBobAmount = 0.2f;
 
     [Networked] public NetworkBool IsLevitating { get; set; }
     [Networked] public Vector3 LevitationTargetPosition { get; set; }
@@ -332,8 +335,9 @@ public class RuneRigObject : DraggableItem
         return true;
     }
 
-    public bool TryDetachRune(int nodeIndex, PlayerRef bufferOwner, Vector3 detachedPosition, Quaternion detachedRotation)
+    public bool TryDetachRune(int nodeIndex, PlayerRef bufferOwner, Vector3 detachedPosition, Quaternion detachedRotation, out NetworkObject detachedObject)
     {
+        detachedObject = null;
         RuneRigData sourceData = GetRigDataCopy();
 
         if (sourceData.NodeCount == 0)
@@ -367,7 +371,7 @@ public class RuneRigObject : DraggableItem
         Vector3 detachedVelocity = rb != null ? rb.GetPointVelocity(detachedPosition) : Vector3.zero;
         Vector3 detachedAngularVelocity = rb != null ? rb.angularVelocity : Vector3.zero;
 
-        NetworkObject detachedObject = runeRigBuffer.GetBufferedObject(detachedPosition, detachedRotation, out _);
+        detachedObject = runeRigBuffer.GetBufferedObject(detachedPosition, detachedRotation, out _);
 
         if (detachedObject == null)
         {
@@ -404,6 +408,9 @@ public class RuneRigObject : DraggableItem
 
             return false;
         }
+
+        detachedRig.ReadNetworkDataAndRebuild();
+        ReadNetworkDataAndRebuild();
 
         if (detachedRig.rb != null)
         {
@@ -456,6 +463,9 @@ public class RuneRigObject : DraggableItem
 
         Transform rootParent = RuneContainer != null ? RuneContainer : transform;
 
+        _generatedPhysicsRootObject = new GameObject("GeneratedRunePhysics");
+        _generatedPhysicsRootObject.transform.SetParent(rootParent, false);
+
         _generatedVisualRootObject = new GameObject("GeneratedRuneVisuals");
         _generatedVisualRootObject.transform.SetParent(VisualContainer, false);
 
@@ -472,7 +482,6 @@ public class RuneRigObject : DraggableItem
                 return StopBuild($"'{definition.nodeName}' has no physical prefab.", out error);
 
             RuneBay parentBay = null;
-            Transform parentTransform = rootParent;
 
             if (nodeIndex > 0)
             {
@@ -481,21 +490,17 @@ public class RuneRigObject : DraggableItem
 
                 if (parentBay == null || parentBay.BayTransform == null)
                     return StopBuild($"Node {nodeData.ParentNodeIndex} has no valid bay {nodeData.ParentBayIndex}.", out error);
-
-                parentTransform = parentBay.BayTransform;
             }
 
-            GameObject runeGameObject = Instantiate(definition.PhysicalRune.PhysicalPrefab, parentTransform, false);
+            GameObject runeGameObject = Instantiate(definition.PhysicalRune.PhysicalPrefab, _generatedPhysicsRootObject.transform, false);
             runeGameObject.name = $"Rune_{nodeIndex}_{definition.nodeName}";
             runeGameObject.transform.localPosition = Vector3.zero;
             runeGameObject.transform.localRotation = Quaternion.identity;
-            runeGameObject.transform.localScale = Vector3.one;
-
-            if (nodeIndex == 0)
-                _generatedRootObject = runeGameObject;
 
             if (!runeGameObject.TryGetComponent(out RuneObject runeObject))
                 return StopBuild($"The physical prefab for '{definition.nodeName}' needs RuneObject on its root.", out error);
+
+            runeGameObject.transform.localScale = Vector3.one * runeObject.Size;
 
             if (runeObject.RootConnectionTransform == null)
                 return StopBuild($"The physical prefab for '{definition.nodeName}' needs a RootConnectionTransform.", out error);
@@ -542,14 +547,14 @@ public class RuneRigObject : DraggableItem
 
     private void ClearRuneObjects()
     {
-        if (_generatedRootObject != null)
+        if (_generatedPhysicsRootObject != null)
         {
-            _generatedRootObject.SetActive(false);
+            _generatedPhysicsRootObject.SetActive(false);
 
             if (Application.isPlaying)
-                Destroy(_generatedRootObject);
+                Destroy(_generatedPhysicsRootObject);
             else
-                DestroyImmediate(_generatedRootObject);
+                DestroyImmediate(_generatedPhysicsRootObject);
         }
 
         if (_generatedVisualRootObject != null)
@@ -562,7 +567,7 @@ public class RuneRigObject : DraggableItem
                 DestroyImmediate(_generatedVisualRootObject);
         }
 
-        _generatedRootObject = null;
+        _generatedPhysicsRootObject = null;
         _generatedVisualRootObject = null;
         _runeObjects = null;
     }
@@ -643,7 +648,9 @@ public class RuneRigObject : DraggableItem
         if (!IsLevitating)
             return;
 
-        Vector3 positionError = LevitationTargetPosition - rb.position;
+        Vector3 levitationBobTarget = LevitationTargetPosition + (Vector3.up * levitationBobAmount * Mathf.Sin(Runner.Tick * levitationBobSpeed));
+
+        Vector3 positionError = levitationBobTarget - rb.position;
         Vector3 positionAcceleration = positionError * LevitationPositionStrength - rb.linearVelocity * LevitationPositionDamping;
         positionAcceleration = Vector3.ClampMagnitude(positionAcceleration, MaximumLevitationAcceleration);
 

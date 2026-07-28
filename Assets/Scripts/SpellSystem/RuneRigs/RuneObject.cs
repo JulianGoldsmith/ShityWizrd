@@ -8,6 +8,8 @@ public class RuneObject : MonoBehaviour
     public Transform VisualRoot;
     public Transform RootConnectionTransform;
 
+    [Min(0.01f)] public float Size = 0.25f;
+
     [Header("Bays")]
     public List<RuneBay> Bays = new List<RuneBay>();
 

@@ -7,14 +7,15 @@ public enum EInputButton
     RIGHT_CLICK = 1,
     JUMP = 2,
     PICKUP = 3,
-    DROP = 4,
+    RELEASE = 4,
     SPRINT = 5,
     ADD = 6, 
     SUBTRACT = 7,
     SELF_BONK = 8,
     UN_SELF_BONK = 9,
     TEST_COUNT = 10,
-    LEVITATE = 11
+    FEED = 11,
+    ROTATE = 12
 }
 public struct NetworkInputData : INetworkInput
 {
@@ -25,6 +26,9 @@ public struct NetworkInputData : INetworkInput
     public NetworkId grabControlItemId;
     public float grabTargetDistance;
     public Quaternion grabRotationOffset;
+
+    public NetworkId levitationRotationItemId;
+    public Quaternion levitationTargetRotation;
 
     public Vector2 yawpitch;
     public float scroll;

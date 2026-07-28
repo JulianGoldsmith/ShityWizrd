@@ -30,13 +30,13 @@ public class PlayerCastActionController : CastActionController
             if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
                 OnInputEvent(ItemActionChannel.Primary, false, default);
 
-            if (data.buttons.WasReleased(prior_buttons, EInputButton.RIGHT_CLICK))
+            if (data.buttons.WasReleased(prior_buttons, EInputButton.FEED))
                 OnInputEvent(ItemActionChannel.Feed, false, default);
 
             if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
                 OnInputEvent(ItemActionChannel.Primary, true, data.interactionTarget);
 
-            if (data.buttons.WasPressed(prior_buttons, EInputButton.RIGHT_CLICK))
+            if (data.buttons.WasPressed(prior_buttons, EInputButton.FEED))
                 OnInputEvent(ItemActionChannel.Feed, true, data.interactionTarget);
 
             prior_buttons = data.buttons;
