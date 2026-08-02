@@ -34,9 +34,9 @@ public class CharacterBonkController : NetworkBehaviour
     {
         bool shouldBeBonked = BonkTick > UnbonkTick;
 
-        
 
-        if (ragdollProxysRoot.activeSelf != shouldBeBonked)
+        
+        if (ragdollProxysRoot!=null && ragdollProxysRoot.activeSelf != shouldBeBonked)
         {
             
             if (shouldBeBonked) ActivateRagDoll(snapBones: false);
@@ -57,7 +57,7 @@ public class CharacterBonkController : NetworkBehaviour
     {
         // 1. Immediately predict the visual and physics change locally! 
         // Pass TRUE to snap the rigidbodies to the current animation frame so they fall correctly.
-        if (!ragdollProxysRoot.activeSelf)
+        if (ragdollProxysRoot != null && !ragdollProxysRoot.activeSelf)
         {
             ActivateRagDoll(snapBones: true);
             _localRagdollActive = true;

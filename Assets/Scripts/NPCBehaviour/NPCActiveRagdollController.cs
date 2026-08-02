@@ -28,7 +28,6 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     public float rideSpringStrength = 100f;
     public float rideSpringDampingRatio = 1.0f;
-    public float rideSpringDamper = 10f;
 
     [Header("Upright Settings")]
     public float uprightSpringStrength = 50f;
@@ -73,7 +72,6 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
 
 
-    public XpbdConstraintSolver xpbdSolver;
 
     public CharacterBonkController characterBonkController;
 
@@ -160,7 +158,6 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         }
 
 
-        UpdatePDDrives();
 
         _desiredLookDirection = Vector3.zero;
         _desiredMoveVelocity = Vector3.zero;
@@ -240,18 +237,20 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
                 springForce = rideSpringStrength * compression /** Mathf.Min(ragDollStrength, 1)*/;
             }
 
-            float kp = rideSpringStrength /* Mathf.Min(ragDollStrength, 1)*/;
-            float kd = 2 * Mathf.Sqrt(kp * coreRB.mass);
+            float kp = Mathf.Max(0f, rideSpringStrength);
+            float dampingRatio = Mathf.Max(0f, rideSpringDampingRatio);
 
-            //springForce = rideSpringStrength * compression;
+            float kd = 2f * dampingRatio * Mathf.Sqrt(kp);
 
             float verticalVelocity = coreRB.linearVelocity.y;
+            float dampingAcceleration = kd * verticalVelocity;
 
-            float damperForce = (kd * rideSpringDampingRatio) * verticalVelocity;
+            Vector3 suspensionAcceleration =
+                Vector3.up * (springForce - dampingAcceleration);
 
-            Vector3 suspensionForce = Vector3.up * (springForce - damperForce) ;
-
-            coreRB.AddForce(suspensionForce, ForceMode.Acceleration);
+            coreRB.AddForce(
+                suspensionAcceleration,
+                ForceMode.Acceleration);
         }
         else
         {
@@ -329,20 +328,7 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         }
     }
 
-    private void UpdatePDDrives()
-    {
-        //for (int i = 0; i < pdBones.Count; i++)
-        //{
-        //    var bone = pdBones[i];
-        //    bone.Step(Runner.DeltaTime, ragDollStrength, sizeMult);
-        //}
-        if (xpbdSolver == null) return;
-
-        float dt = Runner.DeltaTime;
-        xpbdSolver.ApplyRotationalPD(characterBonkController.BonkedState == BONKEDSTATE.ALIVE? ragDollStrength : 0f, dt);
-        xpbdSolver.Solve(dt, false,1, sizeMult);
-    }
-
+   
     private void UpdateAnimatorParameters()
     {
         if (networkAnimator == null || coreRB == null) return;

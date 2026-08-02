@@ -84,6 +84,8 @@ SkinnedMeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -105,9 +107,11 @@ SkinnedMeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -274,8 +278,9 @@ GameObject:
   - component: {fileID: 2324168261029828707}
   - component: {fileID: 144840347229471801}
   - component: {fileID: 7925634833355978687}
-  - component: {fileID: 805318770800651383}
   - component: {fileID: 4714569651286264643}
+  - component: {fileID: 2677310295305490678}
+  - component: {fileID: 6068068284401359918}
   m_Layer: 18
   m_Name: LowerArmL
   m_TagString: Untagged
@@ -383,22 +388,9 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 2324168261029828707}
   - {fileID: 144840347229471801}
-  - {fileID: 805318770800651383}
+  - {fileID: 2677310295305490678}
+  - {fileID: 6068068284401359918}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &805318770800651383
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 363392135890107632}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 3854823433223173183}
-  rb: {fileID: 8974066230610475821}
 --- !u!136 &4714569651286264643
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -422,6 +414,57 @@ CapsuleCollider:
   m_Height: 0.65
   m_Direction: 1
   m_Center: {x: 0, y: 0.34, z: 0}
+--- !u!114 &2677310295305490678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 363392135890107632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 4
+  innateMaterial: 4
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
+--- !u!114 &6068068284401359918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 363392135890107632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
+  physicsSubObjects: []
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
 --- !u!1 &388521290831667879
 GameObject:
   m_ObjectHideFlags: 0
@@ -786,7 +829,8 @@ GameObject:
   - component: {fileID: 8605457865463961261}
   - component: {fileID: 2076324817551693007}
   - component: {fileID: 2761742343578383134}
-  - component: {fileID: 7953163973934376983}
+  - component: {fileID: 3014168664536966811}
+  - component: {fileID: 8679839263814801035}
   m_Layer: 18
   m_Name: Torso
   m_TagString: Untagged
@@ -915,9 +959,10 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 4371893882300290600}
   - {fileID: 2076324817551693007}
-  - {fileID: 7953163973934376983}
+  - {fileID: 3014168664536966811}
+  - {fileID: 8679839263814801035}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &7953163973934376983
+--- !u!114 &3014168664536966811
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -926,11 +971,48 @@ MonoBehaviour:
   m_GameObject: {fileID: 997645152669930567}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 3854823433223173183}
-  rb: {fileID: 8048021541529717614}
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 4
+  innateMaterial: 4
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
+--- !u!114 &8679839263814801035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 997645152669930567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
+  physicsSubObjects: []
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
 --- !u!1 &1087470562208942695
 GameObject:
   m_ObjectHideFlags: 0
@@ -1037,8 +1119,9 @@ GameObject:
   - component: {fileID: 5190465792086210517}
   - component: {fileID: 2157424682064259183}
   - component: {fileID: 6156816420346069326}
-  - component: {fileID: 1900375425680733333}
   - component: {fileID: 6162221967360522421}
+  - component: {fileID: 4129606078455897362}
+  - component: {fileID: 3964192123323717272}
   m_Layer: 18
   m_Name: LowerArmR
   m_TagString: Untagged
@@ -1148,22 +1231,9 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 5190465792086210517}
   - {fileID: 2157424682064259183}
-  - {fileID: 1900375425680733333}
+  - {fileID: 4129606078455897362}
+  - {fileID: 3964192123323717272}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &1900375425680733333
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1253092367450169746}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 3854823433223173183}
-  rb: {fileID: 7374893488951070117}
 --- !u!136 &6162221967360522421
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1187,6 +1257,57 @@ CapsuleCollider:
   m_Height: 0.65
   m_Direction: 1
   m_Center: {x: 0, y: 0.34, z: 0}
+--- !u!114 &4129606078455897362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1253092367450169746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 4
+  innateMaterial: 4
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
+--- !u!114 &3964192123323717272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1253092367450169746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
+  physicsSubObjects: []
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
 --- !u!1 &1379845485587772788
 GameObject:
   m_ObjectHideFlags: 0
@@ -1820,8 +1941,9 @@ GameObject:
   - component: {fileID: 1183002990005504496}
   - component: {fileID: 1234900890782459848}
   - component: {fileID: 8736204281237975583}
-  - component: {fileID: 7798762258689603100}
   - component: {fileID: 8402424099887760373}
+  - component: {fileID: 1235754905710200331}
+  - component: {fileID: 5167956144620494281}
   m_Layer: 18
   m_Name: ArmL
   m_TagString: Untagged
@@ -1929,22 +2051,9 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 1183002990005504496}
   - {fileID: 1234900890782459848}
-  - {fileID: 7798762258689603100}
+  - {fileID: 1235754905710200331}
+  - {fileID: 5167956144620494281}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &7798762258689603100
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2494837711089225888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 3854823433223173183}
-  rb: {fileID: 5154831695453045148}
 --- !u!136 &8402424099887760373
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1968,6 +2077,57 @@ CapsuleCollider:
   m_Height: 0.66
   m_Direction: 1
   m_Center: {x: 0, y: 0.21, z: 0}
+--- !u!114 &1235754905710200331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2494837711089225888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 4
+  innateMaterial: 4
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
+--- !u!114 &5167956144620494281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2494837711089225888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
+  physicsSubObjects: []
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
 --- !u!1 &2537452348770079633
 GameObject:
   m_ObjectHideFlags: 0
@@ -2813,8 +2973,9 @@ GameObject:
   - component: {fileID: 120737389028226268}
   - component: {fileID: 8770925779475449216}
   - component: {fileID: 5380040999818524437}
-  - component: {fileID: 7064396099324231766}
   - component: {fileID: 5996819964930338385}
+  - component: {fileID: 8938946758483214944}
+  - component: {fileID: 4109776136617549692}
   m_Layer: 18
   m_Name: ArmR
   m_TagString: Untagged
@@ -2922,22 +3083,9 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 120737389028226268}
   - {fileID: 8770925779475449216}
-  - {fileID: 7064396099324231766}
+  - {fileID: 8938946758483214944}
+  - {fileID: 4109776136617549692}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &7064396099324231766
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4410705509562163795}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 3854823433223173183}
-  rb: {fileID: 2642409149635873507}
 --- !u!136 &5996819964930338385
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2961,6 +3109,57 @@ CapsuleCollider:
   m_Height: 0.66
   m_Direction: 1
   m_Center: {x: 0, y: 0.21, z: 0}
+--- !u!114 &8938946758483214944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4410705509562163795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 4
+  innateMaterial: 4
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
+--- !u!114 &4109776136617549692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4410705509562163795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
+  physicsSubObjects: []
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
 --- !u!1 &4453923562492154901
 GameObject:
   m_ObjectHideFlags: 0
@@ -3208,6 +3407,8 @@ SkinnedMeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -3229,9 +3430,11 @@ SkinnedMeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -3606,7 +3809,7 @@ GameObject:
   - component: {fileID: 7638773589888862629}
   - component: {fileID: 2466432272339717576}
   m_Layer: 0
-  m_Name: BIGArmGooberSource
+  m_Name: AnimationSourceArmature
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4113,7 +4316,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3181204566373981943}
   m_Layer: 0
-  m_Name: BIGArmGooberTarget
+  m_Name: VisualArmature
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4623,6 +4826,8 @@ SkinnedMeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -4644,9 +4849,11 @@ SkinnedMeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -5155,8 +5362,9 @@ GameObject:
   - component: {fileID: 1438784044903141978}
   - component: {fileID: 3489598512563977317}
   - component: {fileID: 7633617859814170841}
-  - component: {fileID: 7612862897416565629}
   - component: {fileID: 2102491616114261096}
+  - component: {fileID: 7450709999777262711}
+  - component: {fileID: 5123077752189104703}
   m_Layer: 18
   m_Name: Head
   m_TagString: Untagged
@@ -5264,22 +5472,9 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 1438784044903141978}
   - {fileID: 3489598512563977317}
-  - {fileID: 7612862897416565629}
+  - {fileID: 7450709999777262711}
+  - {fileID: 5123077752189104703}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &7612862897416565629
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7215544345728991360}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 3854823433223173183}
-  rb: {fileID: 6599320879368139218}
 --- !u!135 &2102491616114261096
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -5301,6 +5496,57 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.39
   m_Center: {x: 0, y: 0.162, z: 0}
+--- !u!114 &7450709999777262711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7215544345728991360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 4
+  innateMaterial: 4
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
+--- !u!114 &5123077752189104703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7215544345728991360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
+  physicsSubObjects: []
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
 --- !u!1 &7239886038496702436
 GameObject:
   m_ObjectHideFlags: 0
@@ -5353,6 +5599,8 @@ SkinnedMeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -5374,9 +5622,11 @@ SkinnedMeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
@@ -6241,6 +6491,7 @@ MonoBehaviour:
   lerpTProxy: 1
   overRideAndInjectAnimatedHipsRootMotionToAll: 0
   overRideAndKillInjectedMotion: 0
+  readRootMotion: 1
 --- !u!114 &3318371847716034844
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6638,8 +6889,9 @@ GameObject:
   - component: {fileID: 5263521668428682401}
   - component: {fileID: 2420329348262738490}
   - component: {fileID: 1545640938162720877}
-  - component: {fileID: 7609552879377388005}
   - component: {fileID: 6803093271792217105}
+  - component: {fileID: 1234317156606510291}
+  - component: {fileID: 6832830267636991705}
   m_Layer: 18
   m_Name: Core
   m_TagString: Untagged
@@ -6748,22 +7000,9 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 5263521668428682401}
   - {fileID: 2420329348262738490}
-  - {fileID: 7609552879377388005}
+  - {fileID: 1234317156606510291}
+  - {fileID: 6832830267636991705}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &7609552879377388005
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8676512770309556811}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 3854823433223173183}
-  rb: {fileID: 5531538140928643104}
 --- !u!136 &6803093271792217105
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -6787,6 +7026,57 @@ CapsuleCollider:
   m_Height: 0.7
   m_Direction: 1
   m_Center: {x: 0, y: 0.21, z: 0.01}
+--- !u!114 &1234317156606510291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8676512770309556811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 4
+  innateMaterial: 4
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
+--- !u!114 &6832830267636991705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8676512770309556811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
+  physicsSubObjects: []
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1
 --- !u!1 &8698130573177560159
 GameObject:
   m_ObjectHideFlags: 0
@@ -6927,17 +7217,18 @@ GameObject:
   - component: {fileID: 4146742062015676680}
   - component: {fileID: 3746105418634596271}
   - component: {fileID: 597343824857953483}
-  - component: {fileID: 3854823433223173183}
-  - component: {fileID: 5418577610760186941}
   - component: {fileID: 908422980306863945}
-  - component: {fileID: 3419587978383463369}
   - component: {fileID: 5915804676976040147}
   - component: {fileID: 3304759973319979564}
   - component: {fileID: 6158706908187212526}
   - component: {fileID: 5279554271172316789}
   - component: {fileID: 4361945682367613513}
   - component: {fileID: 2544257463892314708}
-  - component: {fileID: 1180451839178079796}
+  - component: {fileID: 7527893191433850436}
+  - component: {fileID: 7860315200267580821}
+  - component: {fileID: 4864686867756283139}
+  - component: {fileID: 7884067904759870489}
+  - component: {fileID: 7235055901303356269}
   m_Layer: 0
   m_Name: NetWorkedGoober
   m_TagString: Untagged
@@ -6990,15 +7281,17 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 3746105418634596271}
   - {fileID: 597343824857953483}
-  - {fileID: 3854823433223173183}
-  - {fileID: 5418577610760186941}
   - {fileID: 908422980306863945}
   - {fileID: 5915804676976040147}
   - {fileID: 3304759973319979564}
   - {fileID: 6158706908187212526}
   - {fileID: 4361945682367613513}
   - {fileID: 2544257463892314708}
-  - {fileID: 1180451839178079796}
+  - {fileID: 7527893191433850436}
+  - {fileID: 7860315200267580821}
+  - {fileID: 4864686867756283139}
+  - {fileID: 7884067904759870489}
+  - {fileID: 7235055901303356269}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3746105418634596271
 MonoBehaviour:
@@ -7044,8 +7337,7 @@ MonoBehaviour:
   suspensionCastRadius: 0.125
   rideSpringStrength: 100
   rideSpringDampingRatio: 0.4
-  rideSpringDamper: 60
-  uprightSpringStrength: 100
+  uprightSpringStrength: 1000
   uprightSpringDamper: 12
   maxWalkSpeed: 1.5
   maxSprintSpeed: 3
@@ -7067,65 +7359,10 @@ MonoBehaviour:
   rootMotionForceStrength: 100
   useRootMotionXZ: 1
   useRootMotionY: 1
-  rootYMult: 1
+  rootYMult: 2
   _currentAbsoluteRM_Y: 0
   _currentAbsoluteRM_Rot: {x: 0, y: 0, z: 0, w: 0}
-  xpbdSolver: {fileID: 3419587978383463369}
   characterBonkController: {fileID: 0}
---- !u!114 &3854823433223173183
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9055020635152288778}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55a47827fb9403844a902d3ec8175ced, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  defaultGravityScale: 1
-  physicsObjectProperties: {fileID: 0}
-  currentProperties:
-    size: 0
-    density: 0
-    mass: 0
-    hardness: 0
-    elasticity: 0
-    brittleness: 0
-    stickiness: 0
-    friction: 0
-    gravityMultiplier: 0
-  rb: {fileID: 0}
-  tPO: {fileID: 0}
-  physicsMaterial: {fileID: 0}
-  objectMaterial: {fileID: 0}
-  physicsSubObjects: []
-  _current_bonkedness: 0
-  creator: {fileID: 0}
-  lastInteractor: {fileID: 0}
-  velocity_before_physics_update: {x: 0, y: 0, z: 0}
-  halo_radius_scale_modifier: 1
-  OnZeroBonk_event:
-    m_PersistentCalls:
-      m_Calls: []
-  OnRecoverFromBonk_event:
-    m_PersistentCalls:
-      m_Calls: []
-  bonkController: {fileID: 5915804676976040147}
---- !u!114 &5418577610760186941
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9055020635152288778}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cb61eb9c2377fcd4d836a58176e96489, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  local_active_aura_ids: 0000000000000000000000000000000000000000000000000000000000000000
 --- !u!114 &908422980306863945
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7142,269 +7379,6 @@ MonoBehaviour:
   prefab_counts: 
   _bufferSize: 2
   thisNO: {fileID: 0}
---- !u!114 &3419587978383463369
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9055020635152288778}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 658d34e6331f0e646aaeea01ff89ffd6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  joints:
-  - parent: {fileID: 5531538140928643104}
-    child: {fileID: 8048021541529717614}
-    rb3d: {fileID: 4371893882300290600}
-    parentAnchorLocal: {x: -0.000000016897925, y: 0.35977402, z: -0.04198962}
-    childAnchorLocal: {x: 0.000000020721927, y: 0, z: 0.0000007459894}
-    targetTransform: {fileID: 4656605126883193201}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 400
-    rotationKd: 20
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: 0, y: -1.0000001, z: 0, w: 0}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0.0000000022271947, y: 0.00000039835504, z: 3.5517592e-10, w: -1.0000001}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -45, y: 45}
-    swing1Limits: {x: -45, y: 45}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 1.13
-    anchorParentInfluence: 0.5
-    bakedScale: 1.445685
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: -0.008885362
-    lambdaRotation: 0
-    twistAxisParent: {x: 0, y: 1, z: 0}
-    swing1AxisParent: {x: 0, y: 0, z: -1}
-    swing2AxisParent: {x: -1, y: 0, z: 0}
-  - parent: {fileID: 8048021541529717614}
-    child: {fileID: 6599320879368139218}
-    rb3d: {fileID: 1438784044903141978}
-    parentAnchorLocal: {x: 0.0000000018626451, y: 0.5137476, z: -0.19022384}
-    childAnchorLocal: {x: 0.0000000018626451, y: 0, z: 0.0000018626451}
-    targetTransform: {fileID: 6316092410280505229}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 400
-    rotationKd: 20
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: 0, y: 0, z: -0, w: -1.0000001}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: -0.000000006613031, y: -1.0000001, z: 0.000000041468457, w: 0}
-    enableAngularLimits: 0
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -45, y: 45}
-    swing1Limits: {x: -45, y: 45}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 1.64
-    anchorParentInfluence: 0.5
-    bakedScale: 1
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: -0.004183835
-    lambdaRotation: 0
-    twistAxisParent: {x: 0, y: 1, z: 0}
-    swing1AxisParent: {x: 0, y: 0, z: 1}
-    swing2AxisParent: {x: 1, y: 0, z: 0}
-  - parent: {fileID: 8048021541529717614}
-    child: {fileID: 2642409149635873507}
-    rb3d: {fileID: 120737389028226268}
-    parentAnchorLocal: {x: -0.41334417, y: 0.42161226, z: 0.022888457}
-    childAnchorLocal: {x: 0.0000015052649, y: 0.000000702845, z: 0.00000012547628}
-    targetTransform: {fileID: 1099817643707989843}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 400
-    rotationKd: 20
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: 0.53650147, y: -0.45863026, z: -0.54775923, w: -0.44920436}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0, y: 0, z: 0, w: 1.0000002}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -180, y: 90}
-    swing1Limits: {x: -160, y: 90}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 1.64
-    anchorParentInfluence: 0.5
-    bakedScale: 1
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: -0.004317061
-    lambdaRotation: 0
-    twistAxisParent: {x: -0.98422295, y: -0.17574793, z: 0.020440362}
-    swing1AxisParent: {x: -0.17570978, y: 0.9844352, z: 0.0036489354}
-    swing2AxisParent: {x: -0.020763807, y: 0.000000059604623, z: -0.99978435}
-  - parent: {fileID: 8048021541529717614}
-    child: {fileID: 5154831695453045148}
-    rb3d: {fileID: 1183002990005504496}
-    parentAnchorLocal: {x: 0.4133432, y: 0.42161226, z: 0.02288855}
-    childAnchorLocal: {x: -0.0000013909909, y: -0.00000026698442, z: -0.000000047662752}
-    targetTransform: {fileID: 4596332134282228744}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 400
-    rotationKd: 20
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: -0.5357457, y: -0.45924962, z: -0.5484965, w: 0.44857356}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0.000000015579275, y: -0.0000000039292143, z: 0.0000000070837807, w: 1.0000001}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -90, y: 180}
-    swing1Limits: {x: -90, y: 160}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 1.64
-    anchorParentInfluence: 0.5
-    bakedScale: 1
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: -0.0018613065
-    lambdaRotation: 0
-    twistAxisParent: {x: 0.98416376, y: -0.1757436, z: 0.023150885}
-    swing1AxisParent: {x: 0.17569472, y: 0.98443604, z: 0.004132717}
-    swing2AxisParent: {x: -0.023517212, y: -0.000000029802312, z: 0.9997234}
-  - parent: {fileID: 2642409149635873507}
-    child: {fileID: 7374893488951070117}
-    rb3d: {fileID: 5190465792086210517}
-    parentAnchorLocal: {x: -0.0000012377277, y: 0.51131046, z: -0.000000059604645}
-    childAnchorLocal: {x: -0.00000030090672, y: 0.000000022130244, z: 0.000000004192316}
-    targetTransform: {fileID: 5569763825284524333}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 400
-    rotationKd: 20
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: -0.005272745, y: -0.0048802253, z: 0.026525978, w: 0.9996224}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 4.646381e-10, y: -0.0000000049493636, z: -0.000000011132876, w: 1.0000001}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -90, y: 90}
-    swing1Limits: {x: -150, y: -10}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 1.64
-    anchorParentInfluence: 0.5
-    bakedScale: 1.0000002
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: -0.0030048774
-    lambdaRotation: 0
-    twistAxisParent: {x: -0.05298046, y: 0.9985371, z: -0.010800414}
-    swing1AxisParent: {x: -0.010036495, y: 0.010282602, z: 0.99989676}
-    swing2AxisParent: {x: 0.9985451, y: 0.05308339, z: 0.009477036}
-  - parent: {fileID: 5154831695453045148}
-    child: {fileID: 8974066230610475821}
-    rb3d: {fileID: 2324168261029828707}
-    parentAnchorLocal: {x: -0.0000004833564, y: 0.5113396, z: -0.00000048428774}
-    childAnchorLocal: {x: -0.0000014441704, y: -0.0000007624176, z: -0.00000014471073}
-    targetTransform: {fileID: 7947498533477919931}
-    jointActive: 1
-    po: {fileID: 0}
-    tmpSizeMult: 0
-    enableDistanceConstraint: 1
-    restLength: 0
-    distanceStiffness: 0.5
-    distanceCompliance: 0.000001
-    distanceDamping: 0.7
-    leverArmScale: 0.2
-    maxDistanceImpulse: 20
-    enableRotationPD: 1
-    rotationKp: 400
-    rotationKd: 20
-    maxTorque: 8000
-    parentRotationInfluence: 0.2
-    restChildLocalRotation: {x: 0.0054560704, y: -0.0016399752, z: 0.008904871, w: -0.99994427}
-    designRotationInertia: 1.7320508
-    worldTargetToChild: {x: 0.000000038586187, y: 0.00000010264206, z: -0.000000036655543, w: -1}
-    enableAngularLimits: 1
-    angularLimitProfile: {fileID: 11400000, guid: 6579d9f6f6174d749be250ea49e4538a, type: 2}
-    twistAxis: 1
-    twistLimits: {x: -90, y: 90}
-    swing1Limits: {x: -10, y: 160}
-    swing2Limits: {x: -90, y: 90}
-    drawAngularLimitGizmos: 1
-    angularLimitGizmoSize: 1.64
-    anchorParentInfluence: 0.5
-    bakedScale: 1.0000004
-    frameLambdaDistance: 0
-    lastDistanceDir: {x: 0, y: 0, z: 0}
-    lambdaDistance: -0.0009711024
-    lambdaRotation: 0
-    twistAxisParent: {x: 0.017790852, y: 0.99978185, z: -0.01094074}
-    swing1AxisParent: {x: 0.0033769389, y: 0.0108823255, z: 0.9999351}
-    swing2AxisParent: {x: 0.999836, y: -0.017826645, z: -0.0031825965}
-  ragdollJoints: []
-  distanceBiasScale: 1
-  distanceBiasScaleRagdoll: 0.5
-  iterations: 8
 --- !u!114 &5915804676976040147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7489,6 +7463,7 @@ MonoBehaviour:
   m_Graph: {fileID: -2221796376738893910, guid: df9b629dcd808134eb4c190c43afc0d0, type: 2}
   m_BlackboardVariableOverridesList:
   - rid: 2425488075104715001
+  m_OriginalGraph: {fileID: 0}
   m_IsInitialised: 0
   m_IsStarted: 0
   references:
@@ -7565,7 +7540,7 @@ MonoBehaviour:
   eyeOffset: {x: 0, y: 1.75, z: 0}
   _inspectorDebugThreatTable: []
   showThreatDebug: 1
---- !u!114 &1180451839178079796
+--- !u!114 &7527893191433850436
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7574,23 +7549,521 @@ MonoBehaviour:
   m_GameObject: {fileID: 9055020635152288778}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Script: {fileID: 11500000, guid: 367acdbd166eff745bd45c5ccfd94152, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _Material_label: 0
-  _Size: 1
-  _Base_gravity_multiplier: 1
-  CurrentSimData:
-    Mass: 0
-    Friction: 0
-    Restitution: 0
-    LinearDamping: 0
-    AngularDamping: 0
-    Brittleness: 0
-    Hardness: 0
-    Stickiness: 0
-    GravityMultiplier: 0
-  CachedTick: -1
+  CurrentActiveCasts: 0
+--- !u!114 &7860315200267580821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58c86d766e76b684a94d360ef3cca2b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isCasting: 0
+  _TotalSpellCasts: 0
+  networkAnimator: {fileID: 0}
+  movementManager: {fileID: 0}
+  aggroController: {fileID: 0}
+  networkObjectBuffer: {fileID: 0}
+  activeRagdollController: {fileID: 0}
+  actionTemplates:
+  - {fileID: 11400000, guid: 48c38ff830130f2459dc430e81688a46, type: 2}
+  spellCastPoints: []
+  hitboxes: []
+--- !u!114 &4864686867756283139
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ccadfd0006c1f34fba35aee0ed1d2f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BonkManager
+  debugState:
+    TotalBonk: 200
+    KineticSpike: 0
+    ElementalFloor: 0
+    IsBroken: 0
+  debugProcessBonk: 0
+  debugCollisionStay: 0
+  minimumStayImpulse: 0.05
+  minimumStayNormalSpeed: 0.5
+  MaxComposure: 100
+  kineticBonkDecayRate: 2
+  maxHotBonkPerBone: 30
+  maxColdBonkPerBone: 30
+  bones:
+  - bone: {fileID: 6832830267636991705}
+    weight: 1
+  - bone: {fileID: 8679839263814801035}
+    weight: 1
+  - bone: {fileID: 5167956144620494281}
+    weight: 1
+  - bone: {fileID: 6068068284401359918}
+    weight: 1
+  - bone: {fileID: 4109776136617549692}
+    weight: 1
+  - bone: {fileID: 3964192123323717272}
+    weight: 1
+  - bone: {fileID: 5123077752189104703}
+    weight: 1
+  _KineticBonk: 0
+  showBonkBar: 0
+  bonkBarPrefab: {fileID: 0}
+  bonkBarOffset: {x: 0, y: 1, z: 0}
+  bonkBarScale: 0.01
+  bonkCanvas: {fileID: 0}
+  uiBarMaxWidth: 500
+  followTarget: {fileID: 0}
+  kineticUI: {fileID: 0}
+  hotUI: {fileID: 0}
+  coldUI: {fileID: 0}
+  burnUI: {fileID: 0}
+  baseSmoothingFactor: 20
+  scaleByPing: 1
+  pingScalar: 5
+  smoothingEnabled: 1
+--- !u!114 &7884067904759870489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98afb7b7b205a62459986d866f51e5fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::XPBDPosAndRotSolver
+  complianceCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 10
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  targetArmatureRoot: {fileID: 0}
+  joints:
+  - parent: {fileID: 5531538140928643104}
+    child: {fileID: 8048021541529717614}
+    parentAnchorLocal: {x: -0.0000011715753, y: 0.5201199, z: -0.05149048}
+    childAnchorLocal: {x: 0, y: -0.00000011920929, z: 0}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 2004947992228224748}
+    childTarget: {fileID: 4656605126883193201}
+    isRagdollJoint: 0
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 0
+    twistAxis: 1
+    forwardAxis: 5
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -90, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1.2263, y: 1.445685, z: 1.2263}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: -2.1175824e-22, y: -1, z: 0, w: 4.854678e-24}
+    twistAxisParent: {x: 4.2351647e-22, y: 1, z: -1e-45}
+    swing1AxisParent: {x: 1, y: -4.2351647e-22, z: -9.709356e-24}
+    swing2AxisParent: {x: -9.709356e-24, y: 1e-45, z: -1}
+    leverArmScale: 0.1
+    parentRotationInfluence: 0.1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - parent: {fileID: 8048021541529717614}
+    child: {fileID: 6599320879368139218}
+    parentAnchorLocal: {x: 0.00000011946531, y: 0.5137476, z: -0.19022515}
+    childAnchorLocal: {x: 0, y: 0.00000011920929, z: 0}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 4656605126883193201}
+    childTarget: {fileID: 6316092410280505229}
+    isRagdollJoint: 0
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 0
+    twistAxis: 1
+    forwardAxis: 5
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -90, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: 0, y: 4.2305026e-23, z: 3.1763736e-22, w: -1}
+    twistAxisParent: {x: 6.352747e-22, y: 1, z: 2.7e-44}
+    swing1AxisParent: {x: -1, y: 6.352747e-22, z: -8.461005e-23}
+    swing2AxisParent: {x: -8.461005e-23, y: 2.7e-44, z: 1}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - parent: {fileID: 8048021541529717614}
+    child: {fileID: 5154831695453045148}
+    parentAnchorLocal: {x: 0.41334313, y: 0.42161202, z: 0.022892259}
+    childAnchorLocal: {x: 0.0000018788867, y: 0.0000003441164, z: -0.000000059661616}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 4656605126883193201}
+    childTarget: {fileID: 4596332134282228744}
+    isRagdollJoint: 0
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 0
+    twistAxis: 1
+    forwardAxis: 3
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -90, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: -0.5357456, y: -0.45924953, z: -0.54849637, w: 0.44857353}
+    twistAxisParent: {x: 0.98416376, y: -0.17574328, z: 0.023150802}
+    swing1AxisParent: {x: 0.1756947, y: 0.98443604, z: 0.004133016}
+    swing2AxisParent: {x: -0.023516804, y: -0.000000059604645, z: 0.99972343}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - parent: {fileID: 5154831695453045148}
+    child: {fileID: 8974066230610475821}
+    parentAnchorLocal: {x: 0.0000018281826, y: 0.5113412, z: -0.00000027486888}
+    childAnchorLocal: {x: 0.0000018726344, y: 0.00000035589161, z: 0.000000067550204}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 4596332134282228744}
+    childTarget: {fileID: 7947498533477919931}
+    isRagdollJoint: 0
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 0
+    twistAxis: 1
+    forwardAxis: 3
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -90, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: 0.005456122, y: -0.001639951, z: 0.008904905, w: -0.99994403}
+    twistAxisParent: {x: 0.017790917, y: 0.99978185, z: -0.0109408405}
+    swing1AxisParent: {x: 0.0033768911, y: 0.010882426, z: 0.9999351}
+    swing2AxisParent: {x: 0.999836, y: -0.01782671, z: -0.003182546}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - parent: {fileID: 8048021541529717614}
+    child: {fileID: 2642409149635873507}
+    parentAnchorLocal: {x: -0.4133449, y: 0.42161214, z: 0.022891194}
+    childAnchorLocal: {x: 0, y: 0, z: 0}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 4656605126883193201}
+    childTarget: {fileID: 1099817643707989843}
+    isRagdollJoint: 0
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 0
+    twistAxis: 1
+    forwardAxis: 0
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -90, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: 0.5365015, y: -0.45863032, z: -0.5477592, w: -0.4492044}
+    twistAxisParent: {x: -0.984223, y: -0.17574799, z: 0.020440273}
+    swing1AxisParent: {x: 0.17570972, y: -0.98443526, z: -0.0036486671}
+    swing2AxisParent: {x: 0.020763777, y: 0.00000008940694, z: 0.9997844}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - parent: {fileID: 2642409149635873507}
+    child: {fileID: 7374893488951070117}
+    parentAnchorLocal: {x: -0.0000005301063, y: 0.5113099, z: -0.00000009998269}
+    childAnchorLocal: {x: 0.00000014242104, y: -0.0000018687889, z: -0.0000003540101}
+    distanceCompliance: 0.001
+    distanceDamping: 1
+    parentTarget: {fileID: 1099817643707989843}
+    childTarget: {fileID: 5569763825284524333}
+    isRagdollJoint: 0
+    muscleCompliance: 0.0005
+    muscleDamping: 1
+    enablePosition: 1
+    enableRotation: 1
+    enableAngularLimits: 0
+    twistAxis: 1
+    forwardAxis: 0
+    twistLimits: {x: -45, y: 45}
+    swing1Limits: {x: -90, y: 0}
+    swing2Limits: {x: -10, y: 10}
+    isMirroredBasis: 0
+    limitCompliance: 0.001
+    limitDamping: 10
+    drawLimitGizmos: 1
+    gizmoSize: 0.25
+    lambdaPosition: {x: 0, y: 0, z: 0}
+    lambdaRotation: {x: 0, y: 0, z: 0}
+    lambdaLimits: {x: 0, y: 0, z: 0}
+    bakedParentScale: {x: 1, y: 1, z: 1}
+    bakedChildScale: {x: 1, y: 1, z: 1}
+    restChildLocalRotation: {x: -0.005272712, y: -0.0048802374, z: 0.026525976, w: 0.99962246}
+    twistAxisParent: {x: -0.05298046, y: 0.9985371, z: -0.010800349}
+    swing1AxisParent: {x: 0.010036517, y: -0.010282537, z: -0.99989676}
+    swing2AxisParent: {x: -0.9985451, y: -0.05308339, z: -0.009477062}
+    leverArmScale: 1
+    parentRotationInfluence: 1
+    parentPositionInfluence: 1
+    scaleForceByTension: 0
+    minTensionDistance: 0.05
+    maxTensionDistance: 0.25
+    tensionReleaseCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  isRagdolling: 0
+--- !u!114 &7235055901303356269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc6934a32f23ec547acdcb9a3e7fd632, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityVFXManager
+  SpatialMatchThreshold: 1.5
+  _NetworkHitBuffer: []
+  _NetworkHitCount: 0
 --- !u!1 &9110468450381859461
 GameObject:
   m_ObjectHideFlags: 0
