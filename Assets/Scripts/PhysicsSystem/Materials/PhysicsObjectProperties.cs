@@ -27,6 +27,9 @@ public class PhysicsObjectProperties : NetworkBehaviour
     [Networked] public float Size { get; set; } = 1f;
 
     public Vector3 InitialEditorScale { get; private set; }
+    private NPCActiveRagdollController _creatureScaleProvider;
+    public float CreatureScaleMultiplier => _creatureScaleProvider != null ? _creatureScaleProvider.CurrentCreatureScale : 1f;
+    public float EffectiveSize => Size * CreatureScaleMultiplier;
 
     [Promotable("Base Gravity", DataTypeTag.Generic)]
     [Networked] public float Base_gravity_multiplier { get; set; } = 1f;
@@ -46,6 +49,7 @@ public class PhysicsObjectProperties : NetworkBehaviour
     {
         // Grab the largest axis of the object's transform in the scene.
         InitialEditorScale = transform.localScale;
+        _creatureScaleProvider = GetComponentInParent<NPCActiveRagdollController>();
     }
 
     public override void Spawned()
@@ -113,7 +117,7 @@ public class PhysicsObjectProperties : NetworkBehaviour
             CachedNetworkState.Tick = runner.Tick;
         }
 
-        CurrentSimData = currentMaterial.GetSimProperties(CachedNetworkState.State,Size,Base_gravity_multiplier);
+        CurrentSimData = currentMaterial.GetSimProperties(CachedNetworkState.State, EffectiveSize, Base_gravity_multiplier);
 
         // 3. PERIODIC CHECKPOINTING
         if (Object != null && Object.IsValid)
@@ -169,6 +173,6 @@ public class PhysicsObjectProperties : NetworkBehaviour
     public float stickiness => CurrentSimData.Stickiness;
     public float friction => CurrentSimData.Friction;
 
-    public float moment_of_inertia => density * Size;
+    public float moment_of_inertia => density * EffectiveSize;
     #endregion
 }

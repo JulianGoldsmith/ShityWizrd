@@ -73,7 +73,6 @@ public class NPCAggroController : NetworkBehaviour
         if (agent == null)
             agent = GetComponent<BehaviorGraphAgent>();
         agent.enabled = false;
-        eyeOffset *= activeRagdollController.sizeMult;
     }
 
 

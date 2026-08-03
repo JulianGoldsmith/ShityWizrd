@@ -288,7 +288,7 @@ public class PhysicsObjectMaterial : ScriptableObject
 
         float finalDensity = Mathf.Max(0.01f, calculatedProperties.Density * state.DensityMultiplier);
         float currentScale = baseSize * state.ScaleMultiplier;
-        float volume = currentScale * currentScale * currentScale;
+        float volume = currentScale * currentScale;
 
         finalProps.Mass = Mathf.Max(0.01f, (finalDensity * volume) + (state.Wetness * volume * 0.5f));
         finalProps.Scale = currentScale;

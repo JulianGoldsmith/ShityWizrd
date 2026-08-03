@@ -18,7 +18,11 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
 
     [Header("Size")]
+    [Min(0.01f)]
     public float sizeMult = 1;
+    [Networked] public float CreatureScale { get; set; }
+    private bool _hasSpawned;
+    public float CurrentCreatureScale => _hasSpawned && CreatureScale > 0f ? CreatureScale : Mathf.Max(0.01f, sizeMult);
 
     [Header("Grounded Settings")]
     public float extraRideHeight = 0f;
@@ -28,10 +32,16 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     public float rideSpringStrength = 100f;
     public float rideSpringDampingRatio = 1.0f;
+    [Networked] public NetworkBool HasStartingRagdollSupport { get; set; }
+    [Networked] public float StartingRagdollSupportForce { get; set; }
 
     [Header("Upright Settings")]
     public float uprightSpringStrength = 50f;
     public float uprightSpringDamper = 5f;
+
+    [Header("Turn Settings")]
+    public float turnSpringStrength = 50f;
+    public float turnSpringDamper = 5f;
 
     [Header("Movement Settings")]
     public float maxWalkSpeed = 3f, maxSprintSpeed = 5f;
@@ -102,12 +112,9 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     public override void Spawned()
     {
-        if(TryGetComponent<NPCPhysicsObject>(out NPCPhysicsObject NPCPO))
-        {
-            PhysicsObjectProperties props = NPCPO.physicsObjectProperties;
-            props.Size = sizeMult;
-            NPCPO.physicsObjectProperties = props;
-        }
+        _hasSpawned = true;
+        if(HasStateAuthority) CreatureScale = Mathf.Max(0.01f, sizeMult);
+
         Runner.SetIsSimulated(this.Object, true);
         foreach (NetworkRigidbody3D nrb in rbComponents)
         {
@@ -115,10 +122,27 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         }
        
         characterBonkController = this.GetComponent<CharacterBonkController>();
+        if (HasStateAuthority) TryInitializeStartingRagdollSupport();
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        _hasSpawned = false;
+        base.Despawned(runner, hasState);
+    }
+
+    public bool TrySetCreatureScale(float scale)
+    {
+        if (!HasStateAuthority) return false;
+
+        CreatureScale = Mathf.Max(0.01f, scale);
+        return true;
     }
 
     public void Tick()
     {
+        if (HasStateAuthority && !HasStartingRagdollSupport) TryInitializeStartingRagdollSupport();
+
         if (characterBonkController.BonkedState == BONKEDSTATE.ALIVE)
         {
             ApplyUprightStabilization();
@@ -136,10 +160,14 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
             networkAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRot, out Vector3 absRmPos, out Quaternion absRmRot);
 
+            float creatureScale = CurrentCreatureScale;
+            rmDeltaPos *= creatureScale;
+            absRmPos *= creatureScale;
+
             if (useRootMotionXZ && rmDeltaPos.sqrMagnitude > 0.0001f)
             {
-                // Convert Delta to Velocity, and scale it by the NPC's size!
-                Vector3 rmVelocity = (rmDeltaPos * sizeMult) / Runner.DeltaTime;
+                // Root motion has already been scaled once by CurrentCreatureScale.
+                Vector3 rmVelocity = rmDeltaPos / Runner.DeltaTime;
 
                 // OVERRIDE the AI's desired movement with the animation's movement
                 //_desiredMoveVelocity = new Vector3(rmVelocity.x, _desiredMoveVelocity.y, rmVelocity.z);
@@ -207,50 +235,37 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     private void ApplyCoreSuspention()
     {
-        //get the y (differecne between armeture and root from the animator (this is already scaled in the animator)
-        float rootMotionVerticalDelta = _currentAbsoluteRM_Y * rootYMult; //this is our ride height now
+        float creatureScale = CurrentCreatureScale;
+        float rootMotionRideHeight = useRootMotionY ? _currentAbsoluteRM_Y * rootYMult : 0f;
+        float targetHeight = Mathf.Max(0.01f, rootMotionRideHeight + (extraRideHeight * creatureScale));
+        float castOriginOffset = 0.1f * creatureScale;
+        float castRadius = suspensionCastRadius * creatureScale;
+        float groundCheckExtension = extraGroundCheckDistance * creatureScale;
+        float castDistance = Mathf.Max(0.01f, targetHeight + castOriginOffset + groundCheckExtension - castRadius);
+        Vector3 castOrigin = coreRB.position + (Vector3.up * castOriginOffset);
 
-        //float targetHeight = extraRideHeight + sizeMult + rootMotionVerticalDelta;
-
-        float extraHeightToCastFrom = 0.1f * sizeMult;
-
-        //float distanceToCast =  extraHeightToCastFrom + (suspensionCastRadius * sizeMult) + (extraGroundCheckDistance * sizeMult);
-        float distanceToCast = rootMotionVerticalDelta + extraHeightToCastFrom + (suspensionCastRadius*sizeMult) + (extraGroundCheckDistance*sizeMult)+ extraRideHeight;
-
-        if (Physics.SphereCast(coreRB.position + (Vector3.up * extraHeightToCastFrom), (suspensionCastRadius * sizeMult), Vector3.down, out RaycastHit hit, distanceToCast, groundLayer, QueryTriggerInteraction.Ignore))
+        if (Physics.SphereCast(castOrigin, castRadius, Vector3.down, out RaycastHit hit, castDistance, groundLayer, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
 
-            float targetHeight = useRootMotionY? rootMotionVerticalDelta + extraRideHeight : extraRideHeight;
-            float currentHeight = (coreRB.transform.position - hit.point).magnitude;
+            float currentHeight = Vector3.Dot(coreRB.position - hit.point, Vector3.up);
             float compression = targetHeight - currentHeight;
-
-            //if (compression <= 0)
-            //{
-            //    return;
-            //}
-
-            float springForce = 0f;
-
-            if (compression > 0)
-            {
-                springForce = rideSpringStrength * compression /** Mathf.Min(ragDollStrength, 1)*/;
-            }
-
             float kp = Mathf.Max(0f, rideSpringStrength);
             float dampingRatio = Mathf.Max(0f, rideSpringDampingRatio);
-
             float kd = 2f * dampingRatio * Mathf.Sqrt(kp);
+            float springAcceleration = 0f;
+            float gravitySupportAcceleration = 0f;
 
-            float verticalVelocity = coreRB.linearVelocity.y;
+            if (compression >= 0f)
+            {
+                springAcceleration = kp * compression;
+                if (HasStartingRagdollSupport) gravitySupportAcceleration = StartingRagdollSupportForce / Mathf.Max(0.01f, coreRB.mass);
+            }
+
+            float verticalVelocity = Vector3.Dot(coreRB.linearVelocity, Vector3.up);
             float dampingAcceleration = kd * verticalVelocity;
-
-            Vector3 suspensionAcceleration =
-                Vector3.up * (springForce - dampingAcceleration);
-
-            coreRB.AddForce(
-                suspensionAcceleration,
-                ForceMode.Acceleration);
+            Vector3 suspensionAcceleration = Vector3.up * (gravitySupportAcceleration + springAcceleration - dampingAcceleration);
+            coreRB.AddForce(suspensionAcceleration, ForceMode.Acceleration);
         }
         else
         {
@@ -258,34 +273,109 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         }
     }
 
+    private bool TryInitializeStartingRagdollSupport()
+    {
+        if (!HasStateAuthority || HasStartingRagdollSupport || coreRB == null) return HasStartingRagdollSupport;
+
+        HashSet<Rigidbody> startingBodies = new HashSet<Rigidbody> { coreRB };
+        foreach (NetworkRigidbody3D networkRB in rbComponents)
+        {
+            if (networkRB == null) continue;
+            Rigidbody body = networkRB.GetComponent<Rigidbody>();
+            if (body != null) startingBodies.Add(body);
+        }
+
+        float startingSupportForce = 0f;
+        foreach (Rigidbody body in startingBodies)
+        {
+            PhysicsObjectProperties properties = body.GetComponent<PhysicsObjectProperties>();
+            if (properties != null && properties.CurrentSimData.Mass <= 0f) return false;
+
+            float startingMass = properties != null ? properties.CurrentSimData.Mass : body.mass;
+            float gravityMultiplier = properties != null ? properties.CurrentSimData.GravityMultiplier : body.useGravity ? 1f : 0f;
+            float downwardGravityAcceleration = Mathf.Max(0f, -Vector3.Dot(Physics.gravity * gravityMultiplier, Vector3.up));
+            startingSupportForce += Mathf.Max(0.01f, startingMass) * downwardGravityAcceleration;
+        }
+
+        if (float.IsNaN(startingSupportForce) || float.IsInfinity(startingSupportForce)) return false;
+
+        StartingRagdollSupportForce = startingSupportForce;
+        HasStartingRagdollSupport = true;
+        return true;
+    }
+
     private void ApplyUprightStabilization()
     {
-
         Vector3 flatLook = Vector3.ProjectOnPlane(_desiredLookDirection, Vector3.up);
-        if (flatLook.sqrMagnitude < 1e-6f)
-            flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
+        if (flatLook.sqrMagnitude < 1e-6f) flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
         flatLook.Normalize();
 
         Quaternion qBase = Quaternion.LookRotation(flatLook, Vector3.up);
         Quaternion qAnimDelta = _currentAbsoluteRM_Rot;
         Quaternion targetRot = qBase * qAnimDelta;
 
-        float springDrive = uprightSpringStrength * Mathf.Min(ragDollStrength, 1) * Mathf.Min(ragDollStrength, 1);
-        float springDamp = uprightSpringDamper * Mathf.Min(ragDollStrength, 1);
+        float strength = Mathf.Min(ragDollStrength, 1f);
+        float strengthSquared = strength * strength;
+        float groundedMultiplier = IsGrounded ? 1f : 0.2f;
 
-        // THE FIX: Reduce rotational stiffness by 50% when picked up / in the air!
-        if (!IsGrounded)
-        {
-          
-            springDrive *= 0.2f;
-            springDamp *= 0.2f;
-        }
+        float uprightKp = uprightSpringStrength * strengthSquared * groundedMultiplier;
+        float uprightKd = uprightSpringDamper * strength * groundedMultiplier;
+        float turnKp = turnSpringStrength * strengthSquared * groundedMultiplier;
+        float turnKd = turnSpringDamper * strength * groundedMultiplier;
 
         float maxAngleRad = 60f * Mathf.Deg2Rad;
         float maxAccel = 4000f;
 
-        ApplyPdRotationLikeBone(childRB: coreRB, targetRotationWorld: targetRot, parentAngularVelocityWorld: Vector3.zero, kp: springDrive, kd: springDamp,
-            maximumAngleRadians: maxAngleRad, maximumTorqueAcceleration: maxAccel, rotationErrorCurve: null);
+        Vector3 uprightAcceleration = CalculateUprightAcceleration(uprightKp, uprightKd, maxAngleRad);
+        Vector3 turnAcceleration = CalculateTurnAcceleration(targetRot, turnKp, turnKd, maxAngleRad);
+        Vector3 rotationAcceleration = uprightAcceleration + turnAcceleration;
+
+        if (rotationAcceleration.sqrMagnitude > maxAccel * maxAccel) rotationAcceleration = rotationAcceleration.normalized * maxAccel;
+
+        coreRB.maxAngularVelocity = Mathf.Max(coreRB.maxAngularVelocity, 50f);
+        coreRB.AddTorque(rotationAcceleration, ForceMode.Acceleration);
+    }
+
+    private Vector3 CalculateUprightAcceleration(float kp, float kd, float maximumAngleRadians)
+    {
+        Vector3 currentUp = coreRB.rotation * Vector3.up;
+        Vector3 uprightAxis = Vector3.Cross(currentUp, Vector3.up);
+        float axisMagnitude = uprightAxis.magnitude;
+        float upDot = Mathf.Clamp(Vector3.Dot(currentUp, Vector3.up), -1f, 1f);
+        float uprightAngle = Mathf.Atan2(axisMagnitude, upDot);
+
+        if (axisMagnitude > 1e-6f)
+        {
+            uprightAxis /= axisMagnitude;
+        }
+        else if (upDot < 0f)
+        {
+            uprightAxis = Vector3.ProjectOnPlane(coreRB.rotation * Vector3.right, Vector3.up).normalized;
+        }
+        else
+        {
+            uprightAxis = Vector3.zero;
+        }
+
+        uprightAngle = Mathf.Min(uprightAngle, maximumAngleRadians);
+        Vector3 tiltAngularVelocity = Vector3.ProjectOnPlane(coreRB.angularVelocity, Vector3.up);
+        return (uprightAxis * uprightAngle * kp) - (tiltAngularVelocity * kd);
+    }
+
+    private Vector3 CalculateTurnAcceleration(Quaternion targetRotationWorld, float kp, float kd, float maximumAngleRadians)
+    {
+        Vector3 currentForward = Vector3.ProjectOnPlane(coreRB.rotation * Vector3.forward, Vector3.up);
+        Vector3 targetForward = Vector3.ProjectOnPlane(targetRotationWorld * Vector3.forward, Vector3.up);
+        float yawAngularVelocity = Vector3.Dot(coreRB.angularVelocity, Vector3.up);
+
+        if (currentForward.sqrMagnitude < 1e-6f || targetForward.sqrMagnitude < 1e-6f) return Vector3.up * (-yawAngularVelocity * kd);
+
+        currentForward.Normalize();
+        targetForward.Normalize();
+
+        float yawError = Vector3.SignedAngle(currentForward, targetForward, Vector3.up) * Mathf.Deg2Rad;
+        yawError = Mathf.Clamp(yawError, -maximumAngleRadians, maximumAngleRadians);
+        return Vector3.up * ((yawError * kp) - (yawAngularVelocity * kd));
     }
 
     private void UpdateCoreMovement()
@@ -394,44 +484,6 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
             _desiredMoveVelocity = input;
             //NetworkedWantsToSprint = speed > 1 ? true: false;
         }
-    }
-
-    private void ApplyPdRotationLikeBone(Rigidbody childRB, Quaternion targetRotationWorld, Vector3 parentAngularVelocityWorld, float kp, 
-        float kd, float maximumAngleRadians, float maximumTorqueAcceleration, AnimationCurve rotationErrorCurve = null ) {
-
-        Quaternion rotationError = targetRotationWorld * Quaternion.Inverse(childRB.rotation);
-
-        rotationError.ToAngleAxis(out float angleDegrees, out Vector3 errorAxisWorld);
-        if (angleDegrees > 180f) angleDegrees -= 360f;
-        float angleRadians = angleDegrees * Mathf.Deg2Rad;
-
-        if (errorAxisWorld.sqrMagnitude < 1e-8f)
-            errorAxisWorld = Vector3.zero;
-        else
-            errorAxisWorld.Normalize();
-
-        angleRadians = Mathf.Clamp(angleRadians, -maximumAngleRadians, maximumAngleRadians);
-
-        Vector3 angularVelocityErrorWorld = childRB.angularVelocity - parentAngularVelocityWorld;
-
-        float rotationMult = 1f;
-        if (rotationErrorCurve != null && maximumAngleRadians > 1e-4f)
-        {
-            float normalizedAngle = Mathf.Clamp01(Mathf.Abs(angleRadians) / maximumAngleRadians);
-            rotationMult = rotationErrorCurve.Evaluate(normalizedAngle);
-        }
-
-        Vector3 torqueAccelerationWorld =
-            (kp * angleRadians) * errorAxisWorld - (kd * angularVelocityErrorWorld);
-
-        torqueAccelerationWorld *= rotationMult;
-
-        if (torqueAccelerationWorld.sqrMagnitude > maximumTorqueAcceleration * maximumTorqueAcceleration)
-            torqueAccelerationWorld = torqueAccelerationWorld.normalized * maximumTorqueAcceleration;
-
-        childRB.maxAngularVelocity = Mathf.Max(childRB.maxAngularVelocity, 50f);
-
-        childRB.AddTorque(torqueAccelerationWorld, ForceMode.Acceleration);
     }
 
     public NetworkObject GetCoreNetworkObject()

@@ -314,13 +314,22 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
         // 2. APPLY TO UNITY PHYSICS
         SimProperties finalSim = physicsObjectProperties.CurrentSimData;
+        Vector3 targetScale = physicsObjectProperties.InitialEditorScale * finalSim.Scale;
+        bool scaleChanged = (transform.localScale - targetScale).sqrMagnitude > 0.000001f;
+
+        if (scaleChanged) transform.localScale = targetScale;
 
         if (rb != null)
         {
+            bool massChanged = !Mathf.Approximately(rb.mass, finalSim.Mass);
+
             rb.mass = finalSim.Mass;
             rb.linearDamping = finalSim.LinearDamping;
             rb.angularDamping = finalSim.AngularDamping;
             rb.useGravity = false; // We apply custom gravity in FUN
+
+            if (scaleChanged) rb.ResetCenterOfMass();
+            if (scaleChanged || massChanged) rb.ResetInertiaTensor();
         }
 
         if (physicsMaterial != null)
@@ -329,12 +338,6 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
             physicsMaterial.staticFriction = finalSim.Friction;
             physicsMaterial.bounciness = finalSim.Bounce;
         }
-
-
-   
-        transform.localScale =
-            physicsObjectProperties.InitialEditorScale *
-            finalSim.Scale;
     }
 
 

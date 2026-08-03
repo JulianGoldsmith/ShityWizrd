@@ -5604,7 +5604,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d093cc4ef6d084e4cabb7730f2db61e4, type: 2}
+  - {fileID: 2100000, guid: 50af39944c8c38c43a8c194f34c98ebf, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6124,6 +6124,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animationSourceArmature: {fileID: 2004947992228224748}
+  creatureVisualScaleRoot: {fileID: 0}
   retargetedBones:
   - sourceBone: {fileID: 2004947992228224748}
     targetBone: {fileID: 7581600629390232812}
@@ -6499,7 +6500,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8251583020459798429}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2d8418b0b9634b1892b0268dd9c2743, type: 3}
   m_Name: 
@@ -7329,6 +7330,7 @@ MonoBehaviour:
   _LastJumpTick: 0
   jumpSuspensionDuration: 0.2
   sizeMult: 2
+  _CreatureScale: 0
   extraRideHeight: 1.3
   extraGroundCheckDistance: 0.1
   groundLayer:
@@ -7339,8 +7341,8 @@ MonoBehaviour:
   rideSpringDampingRatio: 0.4
   uprightSpringStrength: 1000
   uprightSpringDamper: 12
-  maxWalkSpeed: 1.5
-  maxSprintSpeed: 3
+  maxWalkSpeed: 1
+  maxSprintSpeed: 2
   acceleration: 20
   braking: 10
   jumpForce: 50
@@ -7359,7 +7361,7 @@ MonoBehaviour:
   rootMotionForceStrength: 100
   useRootMotionXZ: 1
   useRootMotionY: 1
-  rootYMult: 2
+  rootYMult: 1
   _currentAbsoluteRM_Y: 0
   _currentAbsoluteRM_Rot: {x: 0, y: 0, z: 0, w: 0}
   characterBonkController: {fileID: 0}
@@ -7589,7 +7591,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BonkManager
   debugState:
-    TotalBonk: 200
+    TotalBonk: 0
     KineticSpike: 0
     ElementalFloor: 0
     IsBroken: 0
