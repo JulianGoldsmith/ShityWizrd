@@ -103,7 +103,7 @@ public class StateTimeCondition : AnimConditionBase
         if (anim == null) return false;
 
         // Calculate exactly how long we have been in this state based on the deterministic tick
-        int ticksInState = anim.Runner.Tick - anim.AnimState.TransitionStartTick;
+        int ticksInState = anim.Runner.Tick - anim.AnimState.CurrentStateStartTick;
         float secondsInState = ticksInState * anim.Runner.DeltaTime;
 
         return secondsInState >= MinimumSecondsInState;
