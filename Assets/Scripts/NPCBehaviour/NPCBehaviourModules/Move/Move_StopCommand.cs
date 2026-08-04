@@ -8,6 +8,6 @@ public class Move_StopCommand : NPCCommand
     public override void ActiveTick(ref NPCCommandData data, NPCBehaviourManager manager, NPCActiveRagdollController muscle)
     {
         NPCMovementManager movement = manager.GetComponent<NPCMovementManager>();
-        movement.MoveInDirection(Vector3.zero,0);
+        movement.MoveInDirection(Vector3.zero, NPCMovementMode.Stop);
     }
 }

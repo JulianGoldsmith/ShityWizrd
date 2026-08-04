@@ -212,7 +212,7 @@ MonoBehaviour:
         BlackboardGroupReferences: []
         Root:
           rid: 7486941987814244757
-        m_VersionTimestamp: 639213517050811448
+        m_VersionTimestamp: 639213726872590459
     - rid: 5481249115650130861
       type: {class: BlackboardReference, ns: Unity.Behavior, asm: Unity.Behavior}
       data:
@@ -352,7 +352,7 @@ MonoBehaviour:
         Name: 
         m_Value: 10
     - rid: 7486941976871830015
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      type: {class: 'BlackboardVariable`1[[NPCMovementMode, Assembly-CSharp]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
           m_Value0: 0
@@ -368,7 +368,7 @@ MonoBehaviour:
         Name: 
         m_Value: 10
     - rid: 7486941976871830017
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      type: {class: 'BlackboardVariable`1[[NPCMovementMode, Assembly-CSharp]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
           m_Value0: 0
@@ -1102,7 +1102,7 @@ MonoBehaviour:
           rid: 7486941987814244684
         Target:
           rid: 7486941987814244685
-        Speed:
+        MovementMode:
           rid: 7486941976871830015
     - rid: 7486941987814244792
       type: {class: BtLookInMoveDirectionAction, ns: , asm: Assembly-CSharp}
@@ -1154,7 +1154,7 @@ MonoBehaviour:
           rid: 7486941987814244684
         Point:
           rid: 7486941987814244688
-        Speed:
+        MovementMode:
           rid: 7486941976871830017
     - rid: 7486941987814244796
       type: {class: BtLookInMoveDirectionAction, ns: , asm: Assembly-CSharp}
@@ -1637,7 +1637,7 @@ MonoBehaviour:
   - rid: 7486941976871829720
   - rid: 7486941976871829832
   - rid: 7486941976871830032
-  m_VersionTimestamp: 639213517050811448
+  m_VersionTimestamp: 639213726872590459
   m_SerializedVersion: 3
   m_DebugInfo: {fileID: -2482486858928871841}
   m_RuntimeGraph: {fileID: -2221796376738893910}
@@ -1700,7 +1700,7 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: BT_PathfindToTarget
-    Story: '[Self] paths to target: [Target] speed: [Speed]'
+    Story: '[Self] paths to target: [Target] mode: [MovementMode]'
     RuntimeTypeString: BtPathfindToTargetAction, Assembly-CSharp, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     RuntimeTypeID:
@@ -1717,10 +1717,10 @@ MonoBehaviour:
         m_SerializableType: UnityEngine.GameObject, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
       Tooltip: 
-    - Name: Speed
+    - Name: MovementMode
       Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
+        m_SerializableType: NPCMovementMode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+          PublicKeyToken=null
       Tooltip: 
     NamedChildren: []
     IsPlaceholder: 0
@@ -1740,7 +1740,7 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: BtPathfindToPoint
-    Story: '[Self] paths to point: [Point] speed [Speed]'
+    Story: '[Self] paths to point: [Point] mode: [MovementMode]'
     RuntimeTypeString: BtPathfindToPointAction, Assembly-CSharp, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     RuntimeTypeID:
@@ -1757,10 +1757,10 @@ MonoBehaviour:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
       Tooltip: 
-    - Name: Speed
+    - Name: MovementMode
       Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
+        m_SerializableType: NPCMovementMode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+          PublicKeyToken=null
       Tooltip: 
     NamedChildren: []
     IsPlaceholder: 0
@@ -1863,7 +1863,9 @@ MonoBehaviour:
   m_GraphMissingManagedRef: 0
   m_HasMissingTypeInManagedRef: 0
   m_EnumDependencyCache:
-    Entries: []
+    Entries:
+    - EnumTypeId: NPCMovementMode, Assembly-CSharp
+      SignatureHash: d752dd1a7c953e18187944d0e699c22a
   references:
     version: 2
     RefIds:
@@ -2292,16 +2294,16 @@ MonoBehaviour:
     - rid: 2425488095408816931
       type: {class: BehaviorGraphNodeModel/FieldModel, ns: Unity.Behavior, asm: Unity.Behavior.Authoring}
       data:
-        FieldName: Speed
+        FieldName: MovementMode
         Type:
-          m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
+          m_SerializableType: NPCMovementMode, Assembly-CSharp, Version=0.0.0.0,
+            Culture=neutral, PublicKeyToken=null
         LocalValue:
           rid: 2425488095408816932
         LinkedVariable:
           rid: -2
     - rid: 2425488095408816932
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      type: {class: 'BlackboardVariable`1[[NPCMovementMode, Assembly-CSharp]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
           m_Value0: 0
@@ -2794,16 +2796,16 @@ MonoBehaviour:
     - rid: 2425488132718199130
       type: {class: BehaviorGraphNodeModel/FieldModel, ns: Unity.Behavior, asm: Unity.Behavior.Authoring}
       data:
-        FieldName: Speed
+        FieldName: MovementMode
         Type:
-          m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
+          m_SerializableType: NPCMovementMode, Assembly-CSharp, Version=0.0.0.0,
+            Culture=neutral, PublicKeyToken=null
         LocalValue:
           rid: 2425488132718199131
         LinkedVariable:
           rid: -2
     - rid: 2425488132718199131
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      type: {class: 'BlackboardVariable`1[[NPCMovementMode, Assembly-CSharp]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
           m_Value0: 0

@@ -11,6 +11,7 @@ public abstract class AnimStateBase
     [HideInInspector]
     public byte StateID;
     public bool ExtractRootMotion;
+    public bool ScalePlaybackWithController;
 
     [SerializeField]
     public List<AnimTransition> OutboundTransitions = new List<AnimTransition>();
@@ -26,7 +27,7 @@ public abstract class AnimStateBase
     /// <summary>
     /// Each state handles its own internal blending logic.
     /// </summary>
-    public abstract void ProcessState(ref AnimationMixerPlayable stateMixer, float absoluteTime, GameObject hull, bool isSim);
+    public abstract void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float controllerAnimationTime, GameObject hull, bool isSim);
 }
 
 
@@ -73,12 +74,13 @@ public class BlendTree1DState : AnimStateBase
         }
     }
 
-    public override void ProcessState(ref AnimationMixerPlayable stateMixer, float absoluteTime, GameObject hull, bool isSim)
+    public override void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float controllerAnimationTime, GameObject hull, bool isSim)
     {
         var anim = hull.GetComponent<NetworkAnimator>();
         if (anim == null || Motions.Count == 0) return;
 
         float val = isSim ? anim.GetSimFloat(_parameterName) : anim.GetRenderFloat(_parameterName);
+        float animationTime = ScalePlaybackWithController ? controllerAnimationTime : stateLocalTime;
         int count = Motions.Count;
 
         // 1. Advance Time for all active inputs, applying TimeScale
@@ -87,7 +89,7 @@ public class BlendTree1DState : AnimStateBase
             var inputPlayable = stateMixer.GetInput(i);
 
             // Clean direct time scaling
-            inputPlayable.SetTime(absoluteTime * Motions[i].TimeScale);
+            inputPlayable.SetTime(animationTime * Motions[i].TimeScale);
             stateMixer.SetInputWeight(i, 0f);
         }
 
@@ -153,7 +155,7 @@ public class BlendState2D : AnimStateBase
         }
     }
 
-    public override void ProcessState(ref AnimationMixerPlayable stateMixer, float absoluteTime, GameObject hull, bool isSim)
+    public override void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float controllerAnimationTime, GameObject hull, bool isSim)
     {
         var anim = hull.GetComponent<NetworkAnimator>();
         if (anim == null || Motions.Count == 0) return;
@@ -161,12 +163,13 @@ public class BlendState2D : AnimStateBase
         float inputX = isSim ? anim.GetSimFloat(_parameterX) : anim.GetRenderFloat(_parameterX);
         float inputY = isSim ? anim.GetSimFloat(_parameterY) : anim.GetRenderFloat(_parameterY);
         Vector2 input = new Vector2(inputX, inputY);
+        float animationTime = ScalePlaybackWithController ? controllerAnimationTime : stateLocalTime;
         int count = Motions.Count;
 
         // 1. Advance time for all clips
         for (int i = 0; i < count; i++)
         {
-            stateMixer.GetInput(i).SetTime(absoluteTime * Motions[i].TimeScale);
+            stateMixer.GetInput(i).SetTime(animationTime * Motions[i].TimeScale);
             stateMixer.SetInputWeight(i, 0f);
         }
 

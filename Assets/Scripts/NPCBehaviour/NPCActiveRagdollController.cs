@@ -8,6 +8,8 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 {
     [Header("Components")]
     public Rigidbody coreRB;
+    public XPBDPosAndRotSolver xpbdPosAndRotSolver;
+    public float CurrentRagdollScale => xpbdPosAndRotSolver != null ? xpbdPosAndRotSolver.CurrentScale : 1f;
 
     [Header("RagDoll Strength"), Range(0,2f)]
     [Networked] public float ragDollStrength { get; set; } = 1;
@@ -16,13 +18,6 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
     [Networked] public int LastJumpTick { get; set; }
     public float jumpSuspensionDuration = 0.2f;
 
-
-    [Header("Size")]
-    [Min(0.01f)]
-    public float sizeMult = 1;
-    [Networked] public float CreatureScale { get; set; }
-    private bool _hasSpawned;
-    public float CurrentCreatureScale => _hasSpawned && CreatureScale > 0f ? CreatureScale : Mathf.Max(0.01f, sizeMult);
 
     [Header("Grounded Settings")]
     public float extraRideHeight = 0f;
@@ -61,6 +56,7 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     [Header("Animation")]
     public NetworkAnimator networkAnimator;
+    [SerializeField] private float controllerAnimScale = 1f;
     public Vector3 hipsOffset;
 
     public float rootMotionForceStrength = 5.0f;
@@ -86,7 +82,28 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
     public CharacterBonkController characterBonkController;
 
 
-    public void SetMovementTarget(Vector3 velocity) => _desiredMoveVelocity = velocity;
+    public float GetMovementSpeed(NPCMovementMode movementMode)
+    {
+        float speed = 0f;
+
+        if (movementMode == NPCMovementMode.Walk) speed = maxWalkSpeed;
+        else if (movementMode == NPCMovementMode.Run) speed = maxSprintSpeed;
+
+        return speed * Mathf.Sqrt(CurrentRagdollScale);
+    }
+
+    public void SetMovementTarget(Vector3 direction, NPCMovementMode movementMode)
+    {
+        direction.y = 0f;
+
+        if (movementMode == NPCMovementMode.Stop || direction.sqrMagnitude < 0.0001f)
+        {
+            _desiredMoveVelocity = Vector3.zero;
+            return;
+        }
+
+        _desiredMoveVelocity = direction.normalized * GetMovementSpeed(movementMode);
+    }
 
     public void SetLookDirection(Vector3 worldDirection)
     {
@@ -112,8 +129,7 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     public override void Spawned()
     {
-        _hasSpawned = true;
-        if(HasStateAuthority) CreatureScale = Mathf.Max(0.01f, sizeMult);
+        if (xpbdPosAndRotSolver == null) xpbdPosAndRotSolver = GetComponent<XPBDPosAndRotSolver>();
 
         Runner.SetIsSimulated(this.Object, true);
         foreach (NetworkRigidbody3D nrb in rbComponents)
@@ -123,20 +139,6 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
        
         characterBonkController = this.GetComponent<CharacterBonkController>();
         if (HasStateAuthority) TryInitializeStartingRagdollSupport();
-    }
-
-    public override void Despawned(NetworkRunner runner, bool hasState)
-    {
-        _hasSpawned = false;
-        base.Despawned(runner, hasState);
-    }
-
-    public bool TrySetCreatureScale(float scale)
-    {
-        if (!HasStateAuthority) return false;
-
-        CreatureScale = Mathf.Max(0.01f, scale);
-        return true;
     }
 
     public void Tick()
@@ -160,13 +162,13 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
             networkAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRot, out Vector3 absRmPos, out Quaternion absRmRot);
 
-            float creatureScale = CurrentCreatureScale;
-            rmDeltaPos *= creatureScale;
-            absRmPos *= creatureScale;
+            float ragdollScale = CurrentRagdollScale;
+            rmDeltaPos *= ragdollScale;
+            absRmPos *= ragdollScale;
 
             if (useRootMotionXZ && rmDeltaPos.sqrMagnitude > 0.0001f)
             {
-                // Root motion has already been scaled once by CurrentCreatureScale.
+                // Root motion has already been scaled once by CurrentRagdollScale.
                 Vector3 rmVelocity = rmDeltaPos / Runner.DeltaTime;
 
                 // OVERRIDE the AI's desired movement with the animation's movement
@@ -235,12 +237,12 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     private void ApplyCoreSuspention()
     {
-        float creatureScale = CurrentCreatureScale;
+        float ragdollScale = CurrentRagdollScale;
         float rootMotionRideHeight = useRootMotionY ? _currentAbsoluteRM_Y * rootYMult : 0f;
-        float targetHeight = Mathf.Max(0.01f, rootMotionRideHeight + (extraRideHeight * creatureScale));
-        float castOriginOffset = 0.1f * creatureScale;
-        float castRadius = suspensionCastRadius * creatureScale;
-        float groundCheckExtension = extraGroundCheckDistance * creatureScale;
+        float targetHeight = Mathf.Max(0.01f, rootMotionRideHeight + (extraRideHeight * ragdollScale));
+        float castOriginOffset = 0.1f * ragdollScale;
+        float castRadius = suspensionCastRadius * ragdollScale;
+        float groundCheckExtension = extraGroundCheckDistance * ragdollScale;
         float castDistance = Mathf.Max(0.01f, targetHeight + castOriginOffset + groundCheckExtension - castRadius);
         Vector3 castOrigin = coreRB.position + (Vector3.up * castOriginOffset);
 
@@ -433,16 +435,33 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         Vector3 right = Vector3.Cross(Vector3.up, fwd);
 
         Vector3 currentVel = coreRB.linearVelocity;
-
-        float velocityX = Vector3.Dot(currentVel, right);
-        float velocityY = Vector3.Dot(currentVel, fwd);
+        Vector2 localPlanarVelocity = new Vector2(Vector3.Dot(currentVel, right), Vector3.Dot(currentVel, fwd));
+        float planarSpeed = localPlanarVelocity.magnitude;
+        float scaledWalkSpeed = Mathf.Max(0.01f, GetMovementSpeed(NPCMovementMode.Walk));
+        float scaledRunSpeed = Mathf.Max(scaledWalkSpeed, GetMovementSpeed(NPCMovementMode.Run));
+        float animationSpeed = GetNormalizedAnimationSpeed(planarSpeed, scaledWalkSpeed, scaledRunSpeed);
+        Vector2 animationVelocity = planarSpeed > 0.001f ? localPlanarVelocity / planarSpeed * animationSpeed : Vector2.zero;
         float verticalVelocity = currentVel.y;
 
-        networkAnimator.SetSimFloat("VelocityX", velocityX);
-        networkAnimator.SetSimFloat("VelocityY", velocityY);
+        float movementSizeScale = Mathf.Sqrt(CurrentRagdollScale);
+        float maximumPlaybackSpeed = Mathf.Max(1f, maxSprintSpeed / Mathf.Max(0.01f, maxWalkSpeed));
+        float movementPlaybackSpeed = Mathf.Clamp(planarSpeed / scaledWalkSpeed, 1f, maximumPlaybackSpeed);
+        controllerAnimScale = movementPlaybackSpeed / movementSizeScale;
+
+        networkAnimator.SetControllerAnimScale(controllerAnimScale);
+        networkAnimator.SetSimFloat("VelocityX", animationVelocity.x);
+        networkAnimator.SetSimFloat("VelocityY", animationVelocity.y);
         networkAnimator.SetSimFloat("VerticalVelocity", verticalVelocity);
 
         networkAnimator.SetSimBool("IsGrounded", IsGrounded);
+    }
+
+    private float GetNormalizedAnimationSpeed(float currentSpeed, float walkSpeed, float runSpeed)
+    {
+        if (currentSpeed <= walkSpeed) return currentSpeed / walkSpeed;
+        if (runSpeed <= walkSpeed) return 1f;
+
+        return 1f + Mathf.Clamp01((currentSpeed - walkSpeed) / (runSpeed - walkSpeed));
     }
 
     /*[ContextMenu("PD Ragdoll/ Bake Anchors")]
@@ -481,8 +500,8 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         //if (!HasStateAuthority) return;
         if (Object.isActiveAndEnabled)
         {
-            _desiredMoveVelocity = input;
-            //NetworkedWantsToSprint = speed > 1 ? true: false;
+            NPCMovementMode movementMode = speed <= 0f ? NPCMovementMode.Stop : speed <= 1f ? NPCMovementMode.Walk : NPCMovementMode.Run;
+            SetMovementTarget(input, movementMode);
         }
     }
 

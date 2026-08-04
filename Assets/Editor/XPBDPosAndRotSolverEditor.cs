@@ -20,10 +20,34 @@ public class XPBDPosAndRotSolverEditor : Editor
 
         XPBDPosAndRotSolver solver = (XPBDPosAndRotSolver)target;
         SerializedProperty complianceCurve = serializedObject.FindProperty("complianceCurve");
+        SerializedProperty authoredScale = serializedObject.FindProperty("authoredScale");
+        SerializedProperty distanceComplianceScaleExponent = serializedObject.FindProperty("distanceComplianceScaleExponent");
+        SerializedProperty angularComplianceScaleExponent = serializedObject.FindProperty("angularComplianceScaleExponent");
         SerializedProperty targetArmatureRoot = serializedObject.FindProperty("targetArmatureRoot");
         SerializedProperty joints = serializedObject.FindProperty("joints");
 
         EditorGUILayout.PropertyField(complianceCurve);
+        EditorGUILayout.Space(5);
+
+        if (authoredScale != null && distanceComplianceScaleExponent != null && angularComplianceScaleExponent != null)
+        {
+            EditorGUILayout.LabelField("Ragdoll Scale", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(authoredScale, new GUIContent("Authored Scale"));
+
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.FloatField("Start Scale", solver.StartScale);
+                EditorGUILayout.FloatField("Current Scale", solver.CurrentScale);
+            }
+
+            EditorGUILayout.Space(3);
+            EditorGUILayout.LabelField("Scale Compliance", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(distanceComplianceScaleExponent, new GUIContent("Distance Exponent"));
+            EditorGUILayout.PropertyField(angularComplianceScaleExponent, new GUIContent("Angular Exponent"));
+            EditorGUILayout.HelpBox("Compliance is divided by Start Scale raised to these exponents. Damping remains at its authored strength, and Current Scale changes do not strengthen the ragdoll.", MessageType.Info);
+        }
+        else EditorGUILayout.HelpBox("Ragdoll scale properties could not be found. Recompile the runtime scripts.", MessageType.Warning);
+
         EditorGUILayout.Space(5);
         EditorGUILayout.PropertyField(targetArmatureRoot, new GUIContent("Target Armature Root"));
         EditorGUILayout.Space(10);

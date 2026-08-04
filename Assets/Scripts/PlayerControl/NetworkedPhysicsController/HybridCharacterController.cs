@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEditor;
 
 public enum BONKEDSTATE
@@ -180,7 +181,9 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     private int disableCC = -1; // -1 = enabled - > 0 = disabled for X ticks.
 
     public XpbdConstraintSolver xpbdSolver;
-    public XPBDPosAndRotSolver xpbdJointSolver;
+    [FormerlySerializedAs("xpbdJointSolver")]
+    public XPBDPosAndRotSolver xpbdPosAndRotSolver;
+    public float CurrentRagdollScale => xpbdPosAndRotSolver != null ? xpbdPosAndRotSolver.CurrentScale : 1f;
 
     [Header("Proxy Extrapolation")]
     [Networked] public int AuthInputTick { get; set; }
@@ -250,10 +253,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
                 armatureHipsRoot.transform.localPosition.y, armatureHipsRoot.transform.localPosition.z);
         netAnimator = GetComponent<NetworkAnimator>();
 
-        if (xpbdJointSolver == null)
-        {
-            xpbdJointSolver = this.GetComponent<XPBDPosAndRotSolver>();
-        }
+        if (xpbdPosAndRotSolver == null) xpbdPosAndRotSolver = GetComponent<XPBDPosAndRotSolver>();
     }
 
 
@@ -867,19 +867,22 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         // IsGrounded = Physics.Raycast(hipsRb.transform.position, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, groundLayer);
 
         Vector3 castOrigin = hipsRb.worldCenterOfMass;
-
-        float distanceToCast = ((rideHeight * hipsRb.transform.localScale.z) + suspensionCastRadius + groundCheckExtraDistance);
+        float ragdollScale = CurrentRagdollScale;
+        float scaledRideHeight = rideHeight * ragdollScale;
+        float scaledCastRadius = suspensionCastRadius * ragdollScale;
+        float scaledGroundCheckDistance = groundCheckExtraDistance * ragdollScale;
+        float distanceToCast = scaledRideHeight + scaledCastRadius + scaledGroundCheckDistance;
 
         //Debug.DrawRay(castOrigin, Vector3.down* distanceToCast, Color.red);
 
-        IsGrounded = Physics.SphereCast(castOrigin, suspensionCastRadius, Vector3.down, out RaycastHit hitInfo, distanceToCast* hipsRb.transform.localScale.z, groundLayer);
-        Debug.DrawRay(castOrigin, Vector3.down * distanceToCast * hipsRb.transform.localScale.z, Color.aliceBlue);
+        IsGrounded = Physics.SphereCast(castOrigin, scaledCastRadius, Vector3.down, out RaycastHit hitInfo, distanceToCast, groundLayer);
+        Debug.DrawRay(castOrigin, Vector3.down * distanceToCast, Color.aliceBlue);
 
         if (IsGrounded)
         {
             float currentDistance = hitInfo.distance;
 
-            float heightError = (rideHeight * hipsRb.transform.localScale.z) - currentDistance;
+            float heightError = scaledRideHeight - currentDistance;
 
             float springForce = heightError * rideSpringStrength;
 

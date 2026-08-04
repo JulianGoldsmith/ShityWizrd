@@ -7324,13 +7324,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coreRB: {fileID: 5531538140928643104}
+  xpbdPosAndRotSolver: {fileID: 7884067904759870489}
   _ragDollStrength: 0.65
   _IsGrounded:
     _value: 1
   _LastJumpTick: 0
   jumpSuspensionDuration: 0.2
-  sizeMult: 2
-  _CreatureScale: 0
   extraRideHeight: 1.3
   extraGroundCheckDistance: 0.1
   groundLayer:
@@ -7670,6 +7669,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  authoredScale: 2
+  distanceComplianceScaleExponent: 1
+  angularComplianceScaleExponent: 3
   targetArmatureRoot: {fileID: 0}
   joints:
   - parent: {fileID: 5531538140928643104}

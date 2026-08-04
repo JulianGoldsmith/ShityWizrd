@@ -190,6 +190,17 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         new Keyframe(1f, 1f)
     );
 
+    [Header("Ragdoll Scale")]
+    [Min(0.01f)] public float authoredScale = 1f;
+    [Networked] private float NetworkedStartScale { get; set; }
+    [Networked] private float NetworkedCurrentScale { get; set; }
+    public float StartScale => _hasSpawned && NetworkedStartScale > 0f ? NetworkedStartScale : Mathf.Max(0.01f, authoredScale);
+    public float CurrentScale => _hasSpawned && NetworkedCurrentScale > 0f ? NetworkedCurrentScale : StartScale;
+
+    [Header("Scale Compliance")]
+    [Min(0f)] public float distanceComplianceScaleExponent = 1f;
+    [Min(0f)] public float angularComplianceScaleExponent = 3f;
+
     public Transform targetArmatureRoot;
 
     [Header("Joints")]
@@ -198,10 +209,18 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
     public bool isRagdolling = false;
 
     private XPBDGlobalManager _registeredManager;
+    private bool _hasSpawned;
 
     public override void Spawned()
     {
         base.Spawned();
+
+        _hasSpawned = true;
+        if (HasStateAuthority)
+        {
+            NetworkedStartScale = Mathf.Max(0.01f, authoredScale);
+            NetworkedCurrentScale = NetworkedStartScale;
+        }
 
         EnableNetworkSimulation();
 
@@ -224,6 +243,8 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
+        _hasSpawned = false;
+
         if (_registeredManager != null)
         {
             _registeredManager.UnregisterRagdoll(this);
@@ -231,6 +252,14 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         }
 
         base.Despawned(runner, hasState);
+    }
+
+    public bool TrySetCurrentScale(float scale)
+    {
+        if (!_hasSpawned || !HasStateAuthority) return false;
+
+        NetworkedCurrentScale = Mathf.Max(0.01f, scale);
+        return true;
     }
 
     private void EnableNetworkSimulation()
@@ -253,6 +282,20 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
 
         if (simulatedObjects.Add(networkObject))
             Runner.SetIsSimulated(networkObject, true);
+    }
+
+    private float ScaleCompliance(float compliance, float exponent) => compliance / Mathf.Pow(StartScale, exponent);
+
+    private float ScaleDistanceDamping(float damping)
+    {
+        float dampingExponent = (distanceComplianceScaleExponent + 2f) * 0.5f;
+        return damping * Mathf.Pow(StartScale, dampingExponent);
+    }
+
+    private float ScaleAngularDamping(float damping, float complianceCurveMultiplier)
+    {
+        float dampingExponent = (angularComplianceScaleExponent + 4f) * 0.5f;
+        return damping * Mathf.Pow(StartScale, dampingExponent) / Mathf.Sqrt(Mathf.Max(0.0001f, complianceCurveMultiplier));
     }
 
     public void InitializeStates(float dt, Dictionary<Rigidbody, XPBDState> globalStates)
@@ -327,8 +370,10 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         Vector3 r1 = cState.q * Vector3.Scale(joint.childAnchorLocal, cScaleMod);
         Vector3 dir = (cState.p + r1) - (pState.p + r0);
 
-        float alpha = joint.distanceCompliance / (dt * dt);
-        float gamma = (alpha * (0.5f * dt * joint.distanceDamping)) / dt;
+        float baseAlpha = joint.distanceCompliance / (dt * dt);
+        float alpha = ScaleCompliance(joint.distanceCompliance, distanceComplianceScaleExponent) / (dt * dt);
+        float scaledDamping = ScaleDistanceDamping(joint.distanceDamping);
+        float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
 
         // --- ------------------------------- DYNAMIC TENSION INFLUENCE --------------------------
         float effectivePosInfluence = isRagdolling ? 1f : joint.parentPositionInfluence;
@@ -365,9 +410,10 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         if (qError.w < 0f) { qError.x = -qError.x; qError.y = -qError.y; qError.z = -qError.z; qError.w = -qError.w; }
         float angleRad = 2f * Mathf.Atan2(new Vector3(qError.x, qError.y, qError.z).magnitude, qError.w);
 
-        float curveMultiplier = complianceCurve.Evaluate(Mathf.Clamp01(angleRad / Mathf.PI));
-        float alpha = (joint.muscleCompliance * curveMultiplier) / (dt * dt);
-        float gamma = (alpha * (0.5f * dt * joint.muscleDamping)) / dt;
+        float curveMultiplier = Mathf.Max(0.0001f, complianceCurve.Evaluate(Mathf.Clamp01(angleRad / Mathf.PI)));
+        float alpha = (ScaleCompliance(joint.muscleCompliance, angularComplianceScaleExponent) * curveMultiplier) / (dt * dt);
+        float scaledDamping = ScaleAngularDamping(joint.muscleDamping, curveMultiplier);
+        float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
 
         XPBDMath.SolveSphericalRotation(pState, cState, targetQ, alpha, gamma, ref joint.lambdaRotation, isRagdolling ? 1 : joint.parentRotationInfluence);
     }
@@ -383,16 +429,20 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         Quaternion relRotNow = Quaternion.Inverse(pState.q) * cState.q;
         Quaternion rotDiff = relRotNow * Quaternion.Inverse(joint.restChildLocalRotation);
         rotDiff = XPBDMath.NormalizeQuaternion(rotDiff);
+        float alpha = ScaleCompliance(joint.limitCompliance, angularComplianceScaleExponent) / (dt * dt);
+        float scaledDamping = ScaleAngularDamping(joint.limitDamping, 1f);
+        float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
+
 
         // 2. Test Twist Limits (X)
         if (joint.twistAxisParent.sqrMagnitude > 1e-6f)
-            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.twistAxisParent, joint.twistLimits.x, joint.twistLimits.y, joint.limitCompliance, joint.limitDamping, dt, ref joint.lambdaLimits.x, joint.parentRotationInfluence);
+            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.twistAxisParent, joint.twistLimits.x, joint.twistLimits.y, alpha, gamma, ref joint.lambdaLimits.x, joint.parentRotationInfluence);
 
         if (joint.swing1AxisParent.sqrMagnitude > 1e-6f)
-            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing1AxisParent, joint.swing1Limits.x, joint.swing1Limits.y, joint.limitCompliance, joint.limitDamping, dt, ref joint.lambdaLimits.y, joint.parentRotationInfluence);
+            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing1AxisParent, joint.swing1Limits.x, joint.swing1Limits.y, alpha, gamma, ref joint.lambdaLimits.y, joint.parentRotationInfluence);
 
         if (joint.swing2AxisParent.sqrMagnitude > 1e-6f)
-            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing2AxisParent, joint.swing2Limits.x, joint.swing2Limits.y, joint.limitCompliance, joint.limitDamping, dt, ref joint.lambdaLimits.z, joint.parentRotationInfluence);
+            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing2AxisParent, joint.swing2Limits.x, joint.swing2Limits.y, alpha, gamma, ref joint.lambdaLimits.z, joint.parentRotationInfluence);
     }
 
 

@@ -45,7 +45,7 @@ public class Move_PathfindCommand : NPCCommand
 
         Vector3 steeringTarget = moveManager.GetSteeringTarget((byte)data.IntData, manager.transform.position);
 
-        moveManager.MoveToPoint(steeringTarget, data.FloatData);
+        moveManager.MoveToPoint(steeringTarget, data.MovementMode);
 
         if (manager.Runner.TryFindObject(data.TargetID, out var lookTarget))
         {

@@ -51,6 +51,7 @@ MonoBehaviour:
         StateName: Locomotion
         StateID: 0
         ExtractRootMotion: 1
+        ScalePlaybackWithController: 1
         OutboundTransitions:
         - TargetStateID: 1
           BlendDurationSeconds: 0.05
@@ -85,6 +86,18 @@ MonoBehaviour:
           TimeScale: 1
         - Clip: {fileID: -8119403950739411288, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
           Position: {x: 0, y: -1}
+          TimeScale: -1
+        - Clip: {fileID: -8119403950739411288, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+          Position: {x: 0, y: 2}
+          TimeScale: 1
+        - Clip: {fileID: 2729161144076196762, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+          Position: {x: -2, y: 0}
+          TimeScale: 1
+        - Clip: {fileID: -6344824580521597273, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+          Position: {x: 2, y: 0}
+          TimeScale: 1
+        - Clip: {fileID: -8119403950739411288, guid: e9a699608cdeaf645b73faf1d023aeaf, type: 3}
+          Position: {x: 0, y: -2}
           TimeScale: -1
     - rid: 2425487985908121745
       type: {class: BlendTree1DState, ns: , asm: Assembly-CSharp}

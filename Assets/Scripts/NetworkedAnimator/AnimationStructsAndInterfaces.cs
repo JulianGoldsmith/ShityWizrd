@@ -12,6 +12,9 @@ public struct NetworkedAnimState : INetworkStruct
     public byte CurrentStateID;
     public byte PreviousStateID;
 
+    public int CurrentStateStartTick;
+    public int PreviousStateStartTick;
+
     // For handling interrupted transitions (The Cascade Blend)
     public byte CascadeStateID;
     public float InterruptionProgress;

@@ -27,9 +27,9 @@ public class PhysicsObjectProperties : NetworkBehaviour
     [Networked] public float Size { get; set; } = 1f;
 
     public Vector3 InitialEditorScale { get; private set; }
-    private NPCActiveRagdollController _creatureScaleProvider;
-    public float CreatureScaleMultiplier => _creatureScaleProvider != null ? _creatureScaleProvider.CurrentCreatureScale : 1f;
-    public float EffectiveSize => Size * CreatureScaleMultiplier;
+    private XPBDPosAndRotSolver _ragdollScaleProvider;
+    public float RagdollScaleMultiplier => _ragdollScaleProvider != null ? _ragdollScaleProvider.CurrentScale : 1f;
+    public float EffectiveSize => Size * RagdollScaleMultiplier;
 
     [Promotable("Base Gravity", DataTypeTag.Generic)]
     [Networked] public float Base_gravity_multiplier { get; set; } = 1f;
@@ -49,7 +49,7 @@ public class PhysicsObjectProperties : NetworkBehaviour
     {
         // Grab the largest axis of the object's transform in the scene.
         InitialEditorScale = transform.localScale;
-        _creatureScaleProvider = GetComponentInParent<NPCActiveRagdollController>();
+        _ragdollScaleProvider = GetComponentInParent<XPBDPosAndRotSolver>();
     }
 
     public override void Spawned()

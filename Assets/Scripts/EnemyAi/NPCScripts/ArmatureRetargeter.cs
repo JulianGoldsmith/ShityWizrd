@@ -26,7 +26,7 @@ public class ArmatureRetargeter : MonoBehaviour
 
     // --- DICTIONARY CACHE FOR VIRTUAL PARENTING ---
     private Dictionary<Transform, RetargetedBone> _sourceToBoneMap;
-    private NPCActiveRagdollController _creatureScaleProvider;
+    private XPBDPosAndRotSolver _ragdollScaleProvider;
     private Vector3 _referenceVisualScale = Vector3.one;
 
     [System.Serializable]
@@ -72,11 +72,11 @@ public class ArmatureRetargeter : MonoBehaviour
             }
         }
 
-        _creatureScaleProvider = GetComponentInParent<NPCActiveRagdollController>();
-        if (creatureVisualScaleRoot == null && _creatureScaleProvider != null && retargetedBones.Count > 0 && retargetedBones[0].targetBone != null)
+        _ragdollScaleProvider = GetComponentInParent<XPBDPosAndRotSolver>();
+        if (creatureVisualScaleRoot == null && _ragdollScaleProvider != null && retargetedBones.Count > 0 && retargetedBones[0].targetBone != null)
         {
             creatureVisualScaleRoot = retargetedBones[0].targetBone;
-            while (creatureVisualScaleRoot.parent != null && creatureVisualScaleRoot.parent != _creatureScaleProvider.transform) creatureVisualScaleRoot = creatureVisualScaleRoot.parent;
+            while (creatureVisualScaleRoot.parent != null && creatureVisualScaleRoot.parent != _ragdollScaleProvider.transform) creatureVisualScaleRoot = creatureVisualScaleRoot.parent;
         }
 
         if (creatureVisualScaleRoot != null) _referenceVisualScale = creatureVisualScaleRoot.localScale;
@@ -131,27 +131,27 @@ public class ArmatureRetargeter : MonoBehaviour
         lerpTProxy = Mathf.Clamp01(blendToProxy);
     }
 
-    private Vector3 GetProxyTargetScale(RetargetedBone bone, float creatureScale)
+    private Vector3 GetProxyTargetScale(RetargetedBone bone, float ragdollScale)
     {
         if (bone.physicsProperties != null && bone.sourceBone != null)
         {
             Vector3 initialScale = bone.physicsProperties.InitialEditorScale;
             Vector3 currentScale = bone.physicsProperties.transform.localScale;
             Vector3 totalScaleMultiplier = new Vector3(currentScale.x / Mathf.Max(0.0001f, initialScale.x), currentScale.y / Mathf.Max(0.0001f, initialScale.y), currentScale.z / Mathf.Max(0.0001f, initialScale.z));
-            Vector3 boneOnlyScaleMultiplier = totalScaleMultiplier / creatureScale;
+            Vector3 boneOnlyScaleMultiplier = totalScaleMultiplier / ragdollScale;
             return Vector3.Scale(bone.sourceBone.localScale, boneOnlyScaleMultiplier);
         }
 
-        return bone.physicsProxy != null ? bone.physicsProxy.localScale / creatureScale : bone.sourceBone.localScale;
+        return bone.physicsProxy != null ? bone.physicsProxy.localScale / ragdollScale : bone.sourceBone.localScale;
     }
 
     void LateUpdate()
     {
         if (retargetedBones == null || retargetedBones.Count == 0) return;
 
-        float creatureScale = _creatureScaleProvider != null ? _creatureScaleProvider.CurrentCreatureScale : 1f;
-        creatureScale = Mathf.Max(0.01f, creatureScale);
-        if (creatureVisualScaleRoot != null) creatureVisualScaleRoot.localScale = _referenceVisualScale * creatureScale;
+        float ragdollScale = _ragdollScaleProvider != null ? _ragdollScaleProvider.CurrentScale : 1f;
+        ragdollScale = Mathf.Max(0.01f, ragdollScale);
+        if (creatureVisualScaleRoot != null) creatureVisualScaleRoot.localScale = _referenceVisualScale * ragdollScale;
 
         var animatedRootMotion = animatedHipRootMotion * (1-lerpTProxy);
        
@@ -161,7 +161,7 @@ public class ArmatureRetargeter : MonoBehaviour
         if (rootBone.physicsProxy != null && !disableRetargetingToProxys)
         {
             rootBone.targetBone.SetPositionAndRotation(rootBone.physicsProxy.position, rootBone.physicsProxy.rotation);
-            rootBone.targetBone.localScale = GetProxyTargetScale(rootBone, creatureScale);
+            rootBone.targetBone.localScale = GetProxyTargetScale(rootBone, ragdollScale);
 
             if (rootBone.injectAnimatedHipsRootMotion || overRideAndInjectAnimatedHipsRootMotionToAll)
             {
@@ -200,7 +200,7 @@ public class ArmatureRetargeter : MonoBehaviour
 
                     Vector3 targetPos = Vector3.Lerp(projectedPos, proxyPos, lerpTProxy);
                     Quaternion targetRot = Quaternion.Slerp(projectedRot, proxyRot, lerpTProxy);
-                    Vector3 targetScale = Vector3.Lerp(bone.sourceBone.localScale, GetProxyTargetScale(bone, creatureScale), lerpTProxy);
+                    Vector3 targetScale = Vector3.Lerp(bone.sourceBone.localScale, GetProxyTargetScale(bone, ragdollScale), lerpTProxy);
 
                     bone.targetBone.SetPositionAndRotation(targetPos, targetRot);
                     bone.targetBone.localScale = targetScale;
@@ -216,7 +216,7 @@ public class ArmatureRetargeter : MonoBehaviour
                 if (hasActiveProxy)
                 {
                     bone.targetBone.SetPositionAndRotation(bone.physicsProxy.position, bone.physicsProxy.rotation);
-                    bone.targetBone.localScale = GetProxyTargetScale(bone, creatureScale);
+                    bone.targetBone.localScale = GetProxyTargetScale(bone, ragdollScale);
                 }
                 else
                 {

@@ -14,6 +14,7 @@ public class NetworkAnimator : NetworkBehaviour
 
     // The Network State
     [Networked] public NetworkedAnimState AnimState { get; set; }
+    [Networked] public float ControllerAnimationTime { get; set; }
 
     // The Playables Graph
     private PlayableGraph _graph;
@@ -21,6 +22,7 @@ public class NetworkAnimator : NetworkBehaviour
     private AnimationMixerPlayable[] _stateMixers; // Array index perfectly matches StateID
 
     private float _visualTime;
+    private float _controllerAnimScale = 1f;
 
     // The Blackboard
     private IAnimVarSpeed _speedProvider;
@@ -130,6 +132,8 @@ public class NetworkAnimator : NetworkBehaviour
         }
     }
 
+    public void SetControllerAnimScale(float scale) => _controllerAnimScale = Mathf.Max(0.01f, scale);
+
     public void SetSimBool(string name, bool value)
     {
         if (_boolNameMap.TryGetValue(name, out int index))
@@ -186,9 +190,20 @@ public class NetworkAnimator : NetworkBehaviour
         _speedProvider = GetComponent<IAnimVarSpeed>();
         InitializeParameters();
         InitializeGraph();
+
+        if (Object.HasStateAuthority)
+        {
+            var newState = AnimState;
+            newState.CurrentStateID = Profile.DefaultEntryStateID;
+            newState.PreviousStateID = Profile.DefaultEntryStateID;
+            newState.CurrentStateStartTick = Runner.Tick;
+            newState.PreviousStateStartTick = Runner.Tick;
+            newState.TransitionStartTick = Runner.Tick;
+            newState.TransitionEndTick = Runner.Tick;
+            AnimState = newState;
+        }
     }
-    public void UpdatePhysicsAnimator(out Vector3 rootMotionDeltaPos, out Quaternion rootMotionDeltaRot
-        , out Vector3 absoluteRootOffset, out Quaternion absoluteRootRot)
+    public void UpdatePhysicsAnimator(out Vector3 rootMotionDeltaPos, out Quaternion rootMotionDeltaRot, out Vector3 absoluteRootOffset, out Quaternion absoluteRootRot)
     {
         rootMotionDeltaPos = Vector3.zero;
         rootMotionDeltaRot = Quaternion.identity;
@@ -198,12 +213,19 @@ public class NetworkAnimator : NetworkBehaviour
 
         if (!_graph.IsValid()) return;
 
+        float previousControllerAnimationTime = ControllerAnimationTime;
+        ControllerAnimationTime += Runner.DeltaTime * _controllerAnimScale;
+        float currentControllerAnimationTime = ControllerAnimationTime;
+
         byte nextID = CheckTransitions(AnimState.CurrentStateID);
+
         if (nextID != AnimState.CurrentStateID)
         {
             var newState = AnimState;
             newState.PreviousStateID = AnimState.CurrentStateID;
+            newState.PreviousStateStartTick = AnimState.CurrentStateStartTick;
             newState.CurrentStateID = nextID;
+            newState.CurrentStateStartTick = Runner.Tick;
             newState.TransitionStartTick = Runner.Tick;
 
             float durationSeconds = 0.2f;
@@ -223,14 +245,14 @@ public class NetworkAnimator : NetworkBehaviour
             float prevWeight = GetWeightForTick(prevTick);
             float prevTime = prevTick * Runner.DeltaTime;
 
-            ApplyPose(prevWeight, prevTime, true);
+            ApplyPose(prevWeight, prevTime, previousControllerAnimationTime, true);
             Vector3 localPosT0 = RootMotionBone.localPosition;
             Quaternion localRotT0 = RootMotionBone.localRotation;
 
             float currWeight = GetWeightForTick(Runner.Tick);
             float currTime = Runner.Tick * Runner.DeltaTime;
 
-            ApplyPose(currWeight, currTime, true);
+            ApplyPose(currWeight, currTime, currentControllerAnimationTime, true);
             Vector3 localPosT1 = RootMotionBone.localPosition;
             Quaternion localRotT1 = RootMotionBone.localRotation;
 
@@ -276,7 +298,7 @@ public class NetworkAnimator : NetworkBehaviour
         {
             float weight = GetWeightForTick(Runner.Tick);
             float time = Runner.Tick * Runner.DeltaTime;
-            ApplyPose(weight, time, true);
+            ApplyPose(weight, time, currentControllerAnimationTime, true);
         }
 
        
@@ -292,6 +314,8 @@ public class NetworkAnimator : NetworkBehaviour
 
         // 1. Get Fusion's perfectly smooth continuous clock
         float currentTime = (float)Runner.LocalRenderTime;
+        float simulationTime = Runner.Tick * Runner.DeltaTime;
+        float controllerAnimationTime = ControllerAnimationTime + ((currentTime - simulationTime) * _controllerAnimScale);
 
         float startTickTime = AnimState.TransitionStartTick * Runner.DeltaTime;
         float endTickTime = AnimState.TransitionEndTick * Runner.DeltaTime;
@@ -303,7 +327,7 @@ public class NetworkAnimator : NetworkBehaviour
         }
 
 
-        ApplyPose(weight, currentTime, overRideWithSimValues);
+        ApplyPose(weight, currentTime, controllerAnimationTime, overRideWithSimValues);
 
         var currentStateLogic = Profile.AllStates.Find(s => s.StateID == AnimState.CurrentStateID);
         if (currentStateLogic != null && currentStateLogic.ExtractRootMotion && RootMotionBone != null)
@@ -331,8 +355,13 @@ public class NetworkAnimator : NetworkBehaviour
 
     }
 
+    private float GetStateLocalTime(byte stateID, float sampleTime)
+    {
+        int stateStartTick = stateID == AnimState.CurrentStateID ? AnimState.CurrentStateStartTick : AnimState.PreviousStateStartTick;
+        return Mathf.Max(0f, sampleTime - stateStartTick * Runner.DeltaTime);
+    }
 
-    private void ApplyPose(float transitionWeight, float absoluteTime, bool isSim)
+    private void ApplyPose(float transitionWeight, float sampleTime, float controllerAnimationTime, bool isSim)
     {
         for (int i = 0; i < _masterMixer.GetInputCount(); i++)
         {
@@ -348,7 +377,8 @@ public class NetworkAnimator : NetworkBehaviour
                 if (stateLogic != null)
                 {
                     var mixer = _stateMixers[i];
-                    stateLogic.ProcessState(ref mixer, absoluteTime, gameObject, isSim);
+                    float stateLocalTime = GetStateLocalTime((byte)i, sampleTime);
+                    stateLogic.ProcessState(ref mixer, stateLocalTime, controllerAnimationTime, gameObject, isSim);
                 }
             }
         }

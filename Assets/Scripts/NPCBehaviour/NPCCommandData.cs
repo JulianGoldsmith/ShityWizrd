@@ -18,7 +18,16 @@ public struct NPCCommandData : INetworkStruct
     public Vector3 VectorData;
     public float FloatData;
     public int IntData;
+    public NPCMovementMode MovementMode;
 }
+
+public enum NPCMovementMode : byte
+{
+    Stop,
+    Walk,
+    Run
+}
+
 public enum CommandType
 {
     None,

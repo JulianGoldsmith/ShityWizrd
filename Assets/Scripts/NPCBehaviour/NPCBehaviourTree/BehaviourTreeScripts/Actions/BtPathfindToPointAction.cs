@@ -5,12 +5,12 @@ using Action = Unity.Behavior.Action;
 using Unity.Properties;
 
 [Serializable, GeneratePropertyBag]
-[NodeDescription(name: "BtPathfindToPoint", story: "[Self] paths to point: [Point] speed [Speed]", category: "Action", id: "61d85a0cdd268e7b16b2513ce74916e4")]
+[NodeDescription(name: "BtPathfindToPoint", story: "[Self] paths to point: [Point] mode: [MovementMode]", category: "Action", id: "61d85a0cdd268e7b16b2513ce74916e4")]
 public partial class BtPathfindToPointAction : Action
 {
     [SerializeReference] public BlackboardVariable<GameObject> Self;
     [SerializeReference] public BlackboardVariable<Vector3> Point;
-    [SerializeReference] public BlackboardVariable<float> Speed;
+    [SerializeReference] public BlackboardVariable<NPCMovementMode> MovementMode;
     protected override Status OnStart()
     {
         if (Self.Value == null) return Status.Failure;
@@ -32,7 +32,7 @@ public partial class BtPathfindToPointAction : Action
             StartTick = targetStartTick,
             EndTick = targetStartTick + 999999,
             VectorData = Point.Value,        // Push the Vector3 here!
-            FloatData = Speed.Value
+            MovementMode = MovementMode.Value
         };
 
         bool success = manager.TryAddCommand(payload);

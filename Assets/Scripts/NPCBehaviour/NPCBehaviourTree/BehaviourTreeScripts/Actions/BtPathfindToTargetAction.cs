@@ -6,12 +6,12 @@ using UnityEngine;
 using Action = Unity.Behavior.Action;
 
 [Serializable, GeneratePropertyBag]
-[NodeDescription(name: "BT_PathfindToTarget", story: "[Self] paths to target: [Target] speed: [Speed]", category: "Action", id: "ec6506e0cf16c217626b6b74d28687ad")]
+[NodeDescription(name: "BT_PathfindToTarget", story: "[Self] paths to target: [Target] mode: [MovementMode]", category: "Action", id: "ec6506e0cf16c217626b6b74d28687ad")]
 public partial class BtPathfindToTargetAction : Action
 {
     [SerializeReference] public BlackboardVariable<GameObject> Self;
     [SerializeReference] public BlackboardVariable<GameObject> Target;
-    [SerializeReference] public BlackboardVariable<float> Speed;
+    [SerializeReference] public BlackboardVariable<NPCMovementMode> MovementMode;
     protected override Status OnStart()
     {
         if (Self.Value == null || Target.Value == null) return Status.Failure;
@@ -33,7 +33,7 @@ public partial class BtPathfindToTargetAction : Action
             StartTick = targetStartTick,           // The moment the muscle should activate
             EndTick = targetStartTick + 999999,    // Run indefinitely until the next state Clear
             TargetID = targetNetworkObj.Id,        // Pass the target's NetworkID
-            FloatData = Speed.Value                // Pass the movement speed
+            MovementMode = MovementMode.Value
         };
 
         bool success = manager.TryAddCommand(payload);

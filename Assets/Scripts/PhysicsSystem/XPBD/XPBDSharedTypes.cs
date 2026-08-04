@@ -446,7 +446,7 @@ public static class XPBDMath
         XPBDState pState, XPBDState cState,
         Quaternion rotDiff, Vector3 axisParentNorm,
         float minDeg, float maxDeg,
-        float compliance, float damping, float dt,
+        float alpha, float gamma,
         ref float lambdaLimit, float parentRotationInfluence = 1.0f)
     {
         float angleDeg = GetAngleAroundAxis(rotDiff, axisParentNorm);
@@ -471,9 +471,6 @@ public static class XPBDMath
         // and the Parent must rotate positively.
         Vector3 gradP = -axisWorld;
         Vector3 gradC = axisWorld;
-
-        float alpha = compliance / (dt * dt);
-        float gamma = (alpha * (0.5f * dt * damping)) / dt;
 
         float w0 = pState.isKinematic ? 0f : Vector3.Dot(gradP, ApplyInvInertiaWorld(gradP, pState.q, pState.qInertia, pState.invInertiaLocal)) * parentRotationInfluence;
         float w1 = cState.isKinematic ? 0f : Vector3.Dot(gradC, ApplyInvInertiaWorld(gradC, cState.q, cState.qInertia, cState.invInertiaLocal));

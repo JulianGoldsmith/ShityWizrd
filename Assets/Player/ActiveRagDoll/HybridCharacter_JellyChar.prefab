@@ -3192,7 +3192,7 @@ MonoBehaviour:
   handController: {fileID: 9045712812768551006}
   bonkController: {fileID: 0}
   xpbdSolver: {fileID: 0}
-  xpbdJointSolver: {fileID: 0}
+  xpbdPosAndRotSolver: {fileID: 1760587690114921678}
   _AuthInputTick: 0
   inputSmoothingFactor: 0.1
 --- !u!114 &3635803465142382114
@@ -3209,6 +3209,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Profile: {fileID: 11400000, guid: 85b558b7d395e1d43aa047e6ee428827, type: 2}
   UnityAnimator: {fileID: 5367763451751236983}
+  _ControllerAnimationTime: 0
   AimConstraints:
   - IsActive: 1
     Weight: 0.7
@@ -3586,6 +3587,8 @@ MonoBehaviour:
   itemLayer:
     serializedVersion: 2
     m_Bits: 327680
+  RuneLevitationHoldDuration: 0.35
+  RuneDetachmentHoldDuration: 0.35
   _currentItemInHand: {fileID: 0}
   _potentialItemToPickup: {fileID: 0}
   _localHandPosOnItem: {x: 0, y: 0, z: 0}
@@ -3695,6 +3698,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  authoredScale: 1
+  distanceComplianceScaleExponent: 1
+  angularComplianceScaleExponent: 3
   targetArmatureRoot: {fileID: 6635827893456137172}
   joints:
   - parent: {fileID: 6006997495019278083}
@@ -3707,7 +3713,7 @@ MonoBehaviour:
     childTarget: {fileID: 3209749074331946496}
     isRagdollJoint: 0
     muscleCompliance: 0.0005
-    muscleDamping: 1
+    muscleDamping: 5
     enablePosition: 1
     enableRotation: 1
     enableAngularLimits: 0
@@ -3770,7 +3776,7 @@ MonoBehaviour:
     childTarget: {fileID: 7324967554987265396}
     isRagdollJoint: 0
     muscleCompliance: 0.0005
-    muscleDamping: 1
+    muscleDamping: 5
     enablePosition: 1
     enableRotation: 1
     enableAngularLimits: 0
@@ -10328,6 +10334,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animationSourceArmature: {fileID: 4033882599428079034}
+  creatureVisualScaleRoot: {fileID: 0}
   retargetedBones:
   - sourceBone: {fileID: 4033882599428079034}
     targetBone: {fileID: 1704152662975029162}

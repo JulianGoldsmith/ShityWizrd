@@ -255,7 +255,7 @@ public class NPCBehaviourManager : NetworkBehaviour
                 {
                     // Format: [Slot] CommandType | Start: 100 | End: 500
                     string status = Runner.Tick < cmd.StartTick ? "(WAITING)" : "(ACTIVE)";
-                    _debugActiveCommands.Add($"[{i}] {cmd.CommandID} {status} | Start: {cmd.StartTick} | End: {cmd.EndTick}");
+                    _debugActiveCommands.Add($"[{i}] {cmd.CommandID} {cmd.MovementMode} {status} | Start: {cmd.StartTick} | End: {cmd.EndTick}");
                 }
             }
         }
@@ -267,12 +267,12 @@ public class NPCBehaviourManager : NetworkBehaviour
     {
         var testData = new NPCCommandData
         {
-            CommandID = CommandType.Move_PathfindToID, // Make sure this matches your Enum
+            CommandID = CommandType.Move_Forward,
             Priority = 10,
             StartTick = Runner.Tick,
             EndTick = Runner.Tick + 300, // Move for 5 seconds
             VectorData = transform.forward, // Move straight ahead
-            FloatData = 3f // Speed
+            MovementMode = NPCMovementMode.Run
         };
         ActiveCommands.Set(0, testData);
     }

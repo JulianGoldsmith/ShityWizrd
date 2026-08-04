@@ -31,19 +31,16 @@ public class NPCMovementManager : NetworkBehaviour
         _navMeshPath = new NavMeshPath();
     }
 
-    public void MoveInDirection(Vector3 direction, float speed)
+    public void MoveInDirection(Vector3 direction, NPCMovementMode movementMode)
     {
-        if (direction.sqrMagnitude > 0.01f)
-            muscle.SetMovementTarget(direction.normalized * speed);
-        else
-            muscle.SetMovementTarget(Vector3.zero);
+        muscle.SetMovementTarget(direction, movementMode);
     }
 
-    public void MoveToPoint(Vector3 point, float speed)
+    public void MoveToPoint(Vector3 point, NPCMovementMode movementMode)
     {
         Vector3 dir = point - pathingSource.transform.position;
         dir.y = 0;
-        MoveInDirection(dir, speed);
+        MoveInDirection(dir, movementMode);
     }
 
     public void LookInDirection(Vector3 direction)

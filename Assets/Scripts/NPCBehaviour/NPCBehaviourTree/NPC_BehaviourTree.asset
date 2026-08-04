@@ -80,7 +80,7 @@ MonoBehaviour:
         BlackboardGroupReferences: []
         Root:
           rid: 8567623700071318146
-        m_VersionTimestamp: 639173046186259186
+        m_VersionTimestamp: 639213726871761216
     - rid: 2425488089999474945
       type: {class: BlackboardReference, ns: Unity.Behavior, asm: Unity.Behavior}
       data:
@@ -223,7 +223,7 @@ MonoBehaviour:
           rid: 8567623700071318148
         Direction:
           rid: 8567623700071318161
-        Speed:
+        MovementMode:
           rid: 8567623700071318162
         Tick:
           rid: 8567623700071318163
@@ -292,13 +292,13 @@ MonoBehaviour:
         Name: 
         m_Value: {x: 1, y: 0, z: 0}
     - rid: 8567623700071318162
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      type: {class: 'BlackboardVariable`1[[NPCMovementMode, Assembly-CSharp]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
           m_Value0: 0
           m_Value1: 0
         Name: 
-        m_Value: 3
+        m_Value: 2
     - rid: 8567623700071318163
       type: {class: 'BlackboardVariable`1[[System.Int32, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
@@ -358,7 +358,7 @@ MonoBehaviour:
   - rid: 2425488075104715374
   - rid: 2425488075104715595
   - rid: 2425488089999474703
-  m_VersionTimestamp: 639173046186259186
+  m_VersionTimestamp: 639213726871761216
   m_SerializedVersion: 3
   m_DebugInfo: {fileID: -6665418451802808274}
   m_RuntimeGraph: {fileID: -230947505070901639}
@@ -381,7 +381,7 @@ MonoBehaviour:
     NamedChildren: []
     IsPlaceholder: 0
   - Name: Node_MoveForward
-    Story: '[NPC] to move direction: [Direction] speed: [Speed] tick [Tick]'
+    Story: '[NPC] moves direction: [Direction] mode: [MovementMode] tick: [Tick]'
     RuntimeTypeString: NodeMoveForward, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
     RuntimeTypeID:
@@ -398,10 +398,10 @@ MonoBehaviour:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
       Tooltip: 
-    - Name: Speed
+    - Name: MovementMode
       Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
+        m_SerializableType: NPCMovementMode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+          PublicKeyToken=null
       Tooltip: 
     - Name: Tick
       Type:
@@ -504,7 +504,9 @@ MonoBehaviour:
   m_GraphMissingManagedRef: 0
   m_HasMissingTypeInManagedRef: 0
   m_EnumDependencyCache:
-    Entries: []
+    Entries:
+    - EnumTypeId: NPCMovementMode, Assembly-CSharp
+      SignatureHash: d752dd1a7c953e18187944d0e699c22a
   references:
     version: 2
     RefIds:
@@ -605,10 +607,10 @@ MonoBehaviour:
     - rid: 2425488075104715025
       type: {class: BehaviorGraphNodeModel/FieldModel, ns: Unity.Behavior, asm: Unity.Behavior.Authoring}
       data:
-        FieldName: Speed
+        FieldName: MovementMode
         Type:
-          m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
+          m_SerializableType: NPCMovementMode, Assembly-CSharp, Version=0.0.0.0,
+            Culture=neutral, PublicKeyToken=null
         LocalValue:
           rid: 2425488075104715028
         LinkedVariable:
@@ -630,13 +632,13 @@ MonoBehaviour:
         Name: 
         m_Value: {x: 1, y: 0, z: 0}
     - rid: 2425488075104715028
-      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      type: {class: 'BlackboardVariable`1[[NPCMovementMode, Assembly-CSharp]]', ns: Unity.Behavior, asm: Unity.Behavior}
       data:
         GUID:
           m_Value0: 0
           m_Value1: 0
         Name: 
-        m_Value: 3
+        m_Value: 2
     - rid: 2425488075104715041
       type: {class: ActionNodeModel, ns: Unity.Behavior, asm: Unity.Behavior.Authoring}
       data:
