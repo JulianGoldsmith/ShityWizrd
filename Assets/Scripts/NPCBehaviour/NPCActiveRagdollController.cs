@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
+public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IXPBDPoseProvider
 {
     [Header("Components")]
     public Rigidbody coreRB;
@@ -56,8 +56,14 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     [Header("Animation")]
     public NetworkAnimator networkAnimator;
+    public ArmatureRetargeter armatureRetargeter;
     [SerializeField] private float controllerAnimScale = 1f;
     public Vector3 hipsOffset;
+
+    private Vector3 _lastRenderedPosition;
+    private Vector3 _renderedVelocity;
+    private bool _hasRenderedPosition;
+    private int _xpbdPoseRequestTick = -1;
 
     public float rootMotionForceStrength = 5.0f;
     public bool useRootMotionXZ = true, useRootMotionY = true;
@@ -130,6 +136,7 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
     public override void Spawned()
     {
         if (xpbdPosAndRotSolver == null) xpbdPosAndRotSolver = GetComponent<XPBDPosAndRotSolver>();
+        if (armatureRetargeter == null) armatureRetargeter = GetComponentInChildren<ArmatureRetargeter>();
 
         Runner.SetIsSimulated(this.Object, true);
         foreach (NetworkRigidbody3D nrb in rbComponents)
@@ -155,37 +162,8 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         }
 
 
-        UpdateAnimatorParameters();
-
-        if (networkAnimator != null)
-        {
-
-            networkAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRot, out Vector3 absRmPos, out Quaternion absRmRot);
-
-            float ragdollScale = CurrentRagdollScale;
-            rmDeltaPos *= ragdollScale;
-            absRmPos *= ragdollScale;
-
-            if (useRootMotionXZ && rmDeltaPos.sqrMagnitude > 0.0001f)
-            {
-                // Root motion has already been scaled once by CurrentRagdollScale.
-                Vector3 rmVelocity = rmDeltaPos / Runner.DeltaTime;
-
-                // OVERRIDE the AI's desired movement with the animation's movement
-                //_desiredMoveVelocity = new Vector3(rmVelocity.x, _desiredMoveVelocity.y, rmVelocity.z);
-            }
-
-            // --- 2. Y-AXIS RIDE HEIGHT ROOT MOTION ---
-            if (useRootMotionY) _currentAbsoluteRM_Y = absRmPos.y;
-            else _currentAbsoluteRM_Y = 0f;
-
-            _currentAbsoluteRM_Rot = absRmRot;
-        }
-        else
-        {
-            _currentAbsoluteRM_Y = 0f;
-            _currentAbsoluteRM_Rot = Quaternion.identity;
-        }
+        UpdateAnimatorParameters(true);
+        _xpbdPoseRequestTick = Runner.Tick;
 
 
 
@@ -211,16 +189,41 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
 
     public override void Render()
     {
-        if (networkAnimator != null)
+        if (networkAnimator == null) return;
+
+        UpdateRenderedVelocity();
+        UpdateAnimatorParameters(false);
+        UpdateAnimatorPosition(false);
+
+        networkAnimator.UpdateVisualAnimator(out Vector3 visualPos, out Quaternion visualRot);
+
+        if (armatureRetargeter != null && armatureRetargeter.readRootMotion)
         {
-            networkAnimator.UpdateVisualAnimator(out Vector3 visualPos, out Quaternion visualRot, true);
+            armatureRetargeter.animatedHipRootMotion = visualPos * CurrentRagdollScale;
+            armatureRetargeter.animatedHipRotation = visualRot;
+        }
+    }
+
+    public void PrepareXPBDPose()
+    {
+        if (_xpbdPoseRequestTick != Runner.Tick) return;
+
+        if (networkAnimator == null)
+        {
+            _currentAbsoluteRM_Y = 0f;
+            _currentAbsoluteRM_Rot = Quaternion.identity;
+            return;
         }
 
-        if (smoothedNetworkRoot != null && coreRB != null)
-        {
-            var targetPos = smoothedNetworkRoot.position + hipsOffset;
-            var targetRot = smoothedNetworkRoot.rotation;
-        }
+        UpdateAnimatorPosition(true);
+        networkAnimator.UpdatePhysicsAnimator(out Vector3 rmDeltaPos, out Quaternion rmDeltaRot, out Vector3 absRmPos, out Quaternion absRmRot);
+
+        float ragdollScale = CurrentRagdollScale;
+        rmDeltaPos *= ragdollScale;
+        absRmPos *= ragdollScale;
+
+        _currentAbsoluteRM_Y = useRootMotionY ? absRmPos.y : 0f;
+        _currentAbsoluteRM_Rot = absRmRot;
     }
 
     private void ApplyRootMotionForce(Vector3 rootMotionVelocity)
@@ -421,20 +424,56 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
     }
 
    
-    private void UpdateAnimatorParameters()
+    private void UpdateRenderedVelocity()
+    {
+        Transform renderRoot = smoothedNetworkRoot != null ? smoothedNetworkRoot : networkedRenderRoot;
+        if (renderRoot == null || Time.deltaTime <= 1e-6f) return;
+
+        Vector3 currentPosition = renderRoot.position;
+        if (!_hasRenderedPosition)
+        {
+            _hasRenderedPosition = true;
+            _lastRenderedPosition = currentPosition;
+            _renderedVelocity = Vector3.zero;
+            return;
+        }
+
+        Vector3 rawVelocity = (currentPosition - _lastRenderedPosition) / Time.deltaTime;
+        float smoothing = 1f - Mathf.Exp(-12f * Time.deltaTime);
+        _renderedVelocity = Vector3.Lerp(_renderedVelocity, rawVelocity, smoothing);
+        if (_renderedVelocity.magnitude < 0.05f) _renderedVelocity = Vector3.zero;
+
+        _lastRenderedPosition = currentPosition;
+    }
+
+    private void UpdateAnimatorPosition(bool isSim)
+    {
+        if (networkAnimator == null || networkAnimator.UnityAnimator == null || coreRB == null) return;
+
+        Transform renderRoot = smoothedNetworkRoot != null ? smoothedNetworkRoot : networkedRenderRoot;
+        if (!isSim && renderRoot == null) return;
+
+        Vector3 targetPosition = isSim ? coreRB.position + hipsOffset : renderRoot.position + hipsOffset;
+        Quaternion targetRotation = isSim ? coreRB.rotation : renderRoot.rotation;
+        networkAnimator.UnityAnimator.transform.SetPositionAndRotation(targetPosition, targetRotation);
+    }
+
+    private void UpdateAnimatorParameters(bool isSim)
     {
         if (networkAnimator == null || coreRB == null) return;
 
-        Vector3 fwd = Vector3.ProjectOnPlane(_desiredLookDirection, Vector3.up);
+        Transform renderRoot = smoothedNetworkRoot != null ? smoothedNetworkRoot : networkedRenderRoot;
+        Vector3 facingDirection = isSim ? _desiredLookDirection : renderRoot != null ? renderRoot.forward : coreRB.transform.forward;
+        Vector3 fwd = Vector3.ProjectOnPlane(facingDirection, Vector3.up);
         if (fwd.sqrMagnitude < 1e-6f)
         {
-            fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            fwd = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
         }
         fwd.Normalize();
 
         Vector3 right = Vector3.Cross(Vector3.up, fwd);
 
-        Vector3 currentVel = coreRB.linearVelocity;
+        Vector3 currentVel = isSim ? coreRB.linearVelocity : _renderedVelocity;
         Vector2 localPlanarVelocity = new Vector2(Vector3.Dot(currentVel, right), Vector3.Dot(currentVel, fwd));
         float planarSpeed = localPlanarVelocity.magnitude;
         float scaledWalkSpeed = Mathf.Max(0.01f, GetMovementSpeed(NPCMovementMode.Walk));
@@ -443,17 +482,24 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore
         Vector2 animationVelocity = planarSpeed > 0.001f ? localPlanarVelocity / planarSpeed * animationSpeed : Vector2.zero;
         float verticalVelocity = currentVel.y;
 
-        float movementSizeScale = Mathf.Sqrt(CurrentRagdollScale);
-        float maximumPlaybackSpeed = Mathf.Max(1f, maxSprintSpeed / Mathf.Max(0.01f, maxWalkSpeed));
-        float movementPlaybackSpeed = Mathf.Clamp(planarSpeed / scaledWalkSpeed, 1f, maximumPlaybackSpeed);
-        controllerAnimScale = movementPlaybackSpeed / movementSizeScale;
+        float movementSizeScale = Mathf.Sqrt(Mathf.Max(0.01f, CurrentRagdollScale));
+        controllerAnimScale = 1f / movementSizeScale;
 
         networkAnimator.SetControllerAnimScale(controllerAnimScale);
-        networkAnimator.SetSimFloat("VelocityX", animationVelocity.x);
-        networkAnimator.SetSimFloat("VelocityY", animationVelocity.y);
-        networkAnimator.SetSimFloat("VerticalVelocity", verticalVelocity);
-
-        networkAnimator.SetSimBool("IsGrounded", IsGrounded);
+        if (isSim)
+        {
+            networkAnimator.SetSimFloat("VelocityX", animationVelocity.x);
+            networkAnimator.SetSimFloat("VelocityY", animationVelocity.y);
+            networkAnimator.SetSimFloat("VerticalVelocity", verticalVelocity);
+            networkAnimator.SetSimBool("IsGrounded", IsGrounded);
+        }
+        else
+        {
+            networkAnimator.SetRenderFloat("VelocityX", animationVelocity.x, 0.05f, Time.deltaTime);
+            networkAnimator.SetRenderFloat("VelocityY", animationVelocity.y, 0.05f, Time.deltaTime);
+            networkAnimator.SetRenderFloat("VerticalVelocity", verticalVelocity, 0.05f, Time.deltaTime);
+            networkAnimator.SetRenderBool("IsGrounded", IsGrounded);
+        }
     }
 
     private float GetNormalizedAnimationSpeed(float currentSpeed, float walkSpeed, float runSpeed)

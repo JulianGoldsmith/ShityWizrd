@@ -30,7 +30,7 @@ public class BlendTreeMotion2DDrawer : PropertyDrawer
 
         var clipProp = property.FindPropertyRelative("Clip");
         var posProp = property.FindPropertyRelative("Position");
-        var speedProp = property.FindPropertyRelative("TimeScale");
+        var speedProp = property.FindPropertyRelative("SpeedMultiplier");
 
         Rect clipRect = new Rect(position.x, position.y, clipWidth, EditorGUIUtility.singleLineHeight);
         Rect posRect = new Rect(clipRect.xMax + 5, position.y, posWidth - 5, EditorGUIUtility.singleLineHeight);

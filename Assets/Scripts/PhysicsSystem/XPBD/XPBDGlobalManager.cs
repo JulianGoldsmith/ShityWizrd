@@ -69,9 +69,15 @@ public class XPBDGlobalManager : NetworkBehaviour
 
     private void BeforePhysicsSimulation()
     {
-        if (!enableSolver)
-            return;
+        RemoveInvalidRagdollRegistrations();
 
+        // Phase 1: Sample every simulation animation pose in deterministic ragdoll order.
+        foreach (XPBDPosAndRotSolver ragdoll in registeredRagdolls)
+            ragdoll.PreparePoseForSolve();
+
+        if (!enableSolver) return;
+
+        // Phase 2: XPBD consumes those poses. Fusion runs PhysX after this callback returns.
         SolveRegularConstraintsBeforePhysics();
         PreparePostPhysicsGrabs();
     }
@@ -83,7 +89,6 @@ public class XPBDGlobalManager : NetworkBehaviour
         if (dt <= 0f)
             return;
 
-        RemoveInvalidRagdollRegistrations();
         SyncHydratedTmpJoints();
 
         _globalStates.Clear();

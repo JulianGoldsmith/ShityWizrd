@@ -181,6 +181,11 @@ public class XPBDTestJoint
     }
 }
 
+public interface IXPBDPoseProvider
+{
+    void PrepareXPBDPose();
+}
+
 [RequireComponent(typeof(NetworkObject))]
 public class XPBDPosAndRotSolver : NetworkBehaviour
 {
@@ -209,6 +214,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
     public bool isRagdolling = false;
 
     private XPBDGlobalManager _registeredManager;
+    private IXPBDPoseProvider _poseProvider;
     private bool _hasSpawned;
 
     public override void Spawned()
@@ -216,6 +222,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         base.Spawned();
 
         _hasSpawned = true;
+        CachePoseProvider();
         if (HasStateAuthority)
         {
             NetworkedStartScale = Mathf.Max(0.01f, authoredScale);
@@ -252,6 +259,27 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         }
 
         base.Despawned(runner, hasState);
+    }
+
+    private void CachePoseProvider()
+    {
+        _poseProvider = null;
+
+        MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            if (behaviours[i] is IXPBDPoseProvider provider)
+            {
+                _poseProvider = provider;
+                return;
+            }
+        }
+    }
+
+    public void PreparePoseForSolve()
+    {
+        if (_poseProvider == null || _poseProvider as MonoBehaviour == null) CachePoseProvider();
+        _poseProvider?.PrepareXPBDPose();
     }
 
     public bool TrySetCurrentScale(float scale)

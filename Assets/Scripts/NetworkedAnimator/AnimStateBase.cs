@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
+using UnityEngine.Serialization;
 
 [Serializable]
 public abstract class AnimStateBase
@@ -11,7 +12,11 @@ public abstract class AnimStateBase
     [HideInInspector]
     public byte StateID;
     public bool ExtractRootMotion;
-    public bool ScalePlaybackWithController;
+    [FormerlySerializedAs("ScalePlaybackWithController")]
+    public bool UseLocomotionCycle;
+
+    [Min(0f)]
+    public float LocomotionCyclesPerSecond = 1f;
 
     [SerializeField]
     public List<AnimTransition> OutboundTransitions = new List<AnimTransition>();
@@ -27,7 +32,18 @@ public abstract class AnimStateBase
     /// <summary>
     /// Each state handles its own internal blending logic.
     /// </summary>
-    public abstract void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float controllerAnimationTime, GameObject hull, bool isSim);
+    public abstract void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float locomotionCycle, GameObject hull, bool isSim);
+
+    protected float GetMotionTime(AnimationClip clip, float speedMultiplier, float stateLocalTime, float locomotionCycle)
+    {
+        if (UseLocomotionCycle) return locomotionCycle * clip.length;
+        return stateLocalTime * speedMultiplier;
+    }
+
+    public virtual float GetLocomotionCycleRateMultiplier(GameObject hull)
+    {
+        return UseLocomotionCycle ? 1f : 0f;
+    }
 }
 
 
@@ -44,7 +60,9 @@ public class BlendTreeMotion2D
 {
     public AnimationClip Clip;
     public Vector2 Position; // The X/Y threshold (e.g., X: 0, Y: 1 for Forward Walk)
-    public float TimeScale = 1f;
+    [FormerlySerializedAs("TimeScale")]
+    [Min(0f)]
+    public float SpeedMultiplier = 1f;
 }
 
 [Serializable]
@@ -74,22 +92,21 @@ public class BlendTree1DState : AnimStateBase
         }
     }
 
-    public override void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float controllerAnimationTime, GameObject hull, bool isSim)
+    public override void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float locomotionCycle, GameObject hull, bool isSim)
     {
         var anim = hull.GetComponent<NetworkAnimator>();
         if (anim == null || Motions.Count == 0) return;
 
         float val = isSim ? anim.GetSimFloat(_parameterName) : anim.GetRenderFloat(_parameterName);
-        float animationTime = ScalePlaybackWithController ? controllerAnimationTime : stateLocalTime;
         int count = Motions.Count;
 
         // 1. Advance Time for all active inputs, applying TimeScale
         for (int i = 0; i < count; i++)
         {
-            var inputPlayable = stateMixer.GetInput(i);
+            var motion = Motions[i];
+            float animationTime = GetMotionTime(motion.Clip, motion.TimeScale, stateLocalTime, locomotionCycle);
 
-            // Clean direct time scaling
-            inputPlayable.SetTime(animationTime * Motions[i].TimeScale);
+            stateMixer.GetInput(i).SetTime(animationTime);
             stateMixer.SetInputWeight(i, 0f);
         }
 
@@ -125,19 +142,14 @@ public class BlendTree1DState : AnimStateBase
 [Serializable]
 public class BlendState2D : AnimStateBase
 {
-    //[Header("Blend Parameters")]
-    [Tooltip("The parameter for the X axis (Horizontal/Strafe).")]
     [SerializeField, AnimParameter(AnimParamType.Float)]
     private string _parameterX;
 
-    //[Tooltip("The parameter for the Y axis (Vertical/Forward).")]
     [SerializeField, AnimParameter(AnimParamType.Float)]
     private string _parameterY;
 
-   // [Header("Motions")]
     public List<BlendTreeMotion2D> Motions = new List<BlendTreeMotion2D>();
 
-    // We cache weights array to avoid GC allocations during FUN
     private float[] _weightsCache;
 
     public override int GetClipCount() => Motions.Count;
@@ -148,97 +160,124 @@ public class BlendState2D : AnimStateBase
 
         for (int i = 0; i < Motions.Count; i++)
         {
-            var motion = Motions[i];
-            var clipPlayable = AnimationClipPlayable.Create(graph, motion.Clip);
+            var clipPlayable = AnimationClipPlayable.Create(graph, Motions[i].Clip);
             clipPlayable.Pause();
             graph.Connect(clipPlayable, 0, stateMixer, i);
         }
     }
 
-    public override void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float controllerAnimationTime, GameObject hull, bool isSim)
+    private Vector2 GetInput(NetworkAnimator anim, bool isSim)
+    {
+        float inputX = isSim ? anim.GetSimFloat(_parameterX) : anim.GetRenderFloat(_parameterX);
+        float inputY = isSim ? anim.GetSimFloat(_parameterY) : anim.GetRenderFloat(_parameterY);
+        return new Vector2(inputX, inputY);
+    }
+
+    private void EnsureWeightsCache()
+    {
+        if (_weightsCache == null || _weightsCache.Length != Motions.Count)
+        {
+            _weightsCache = new float[Motions.Count];
+        }
+    }
+
+    private void CalculateWeights(Vector2 input)
+    {
+        EnsureWeightsCache();
+        Array.Clear(_weightsCache, 0, _weightsCache.Length);
+
+        int count = Motions.Count;
+        if (count == 0) return;
+
+        for (int i = 0; i < count; i++)
+        {
+            if ((input - Motions[i].Position).sqrMagnitude < 0.0001f)
+            {
+                _weightsCache[i] = 1f;
+                return;
+            }
+        }
+
+        float inputMagnitude = input.magnitude;
+        Vector2 inputDirection = inputMagnitude > 0.001f ? input / inputMagnitude : Vector2.up;
+        float totalWeight = 0f;
+        float baseAnglePenalty = 2f;
+
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 position = Motions[i].Position;
+            float positionMagnitude = position.magnitude;
+
+            if (positionMagnitude < 0.001f)
+            {
+                float idleDistanceSquared = inputMagnitude * inputMagnitude;
+                _weightsCache[i] = 1f / (idleDistanceSquared * idleDistanceSquared + 0.0001f);
+                totalWeight += _weightsCache[i];
+                continue;
+            }
+
+            Vector2 positionDirection = position / positionMagnitude;
+            float dot = Vector2.Dot(inputDirection, positionDirection);
+            float angleMetric = 1f - dot;
+            float dynamicAnglePenalty = baseAnglePenalty * inputMagnitude;
+            float magnitudeDifference = Mathf.Abs(inputMagnitude - positionMagnitude);
+            float warpedAngle = angleMetric * dynamicAnglePenalty;
+            float polarDistanceSquared = warpedAngle * warpedAngle + magnitudeDifference * magnitudeDifference;
+
+            _weightsCache[i] = 1f / (polarDistanceSquared * polarDistanceSquared + 0.0001f);
+            totalWeight += _weightsCache[i];
+        }
+
+        if (totalWeight <= 0.0001f)
+        {
+            _weightsCache[0] = 1f;
+            return;
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            _weightsCache[i] /= totalWeight;
+        }
+    }
+
+    private float GetWeightedSpeedMultiplier()
+    {
+        float weightedSpeed = 0f;
+
+        for (int i = 0; i < Motions.Count; i++)
+        {
+            weightedSpeed += _weightsCache[i] * Mathf.Max(0f, Motions[i].SpeedMultiplier);
+        }
+
+        return weightedSpeed;
+    }
+
+    public override float GetLocomotionCycleRateMultiplier(GameObject hull)
+    {
+        if (!UseLocomotionCycle) return 0f;
+
+        var anim = hull.GetComponent<NetworkAnimator>();
+        if (anim == null || Motions.Count == 0) return 0f;
+
+        CalculateWeights(GetInput(anim, true));
+        return GetWeightedSpeedMultiplier();
+    }
+
+    public override void ProcessState(ref AnimationMixerPlayable stateMixer, float stateLocalTime, float locomotionCycle, GameObject hull, bool isSim)
     {
         var anim = hull.GetComponent<NetworkAnimator>();
         if (anim == null || Motions.Count == 0) return;
 
-        float inputX = isSim ? anim.GetSimFloat(_parameterX) : anim.GetRenderFloat(_parameterX);
-        float inputY = isSim ? anim.GetSimFloat(_parameterY) : anim.GetRenderFloat(_parameterY);
-        Vector2 input = new Vector2(inputX, inputY);
-        float animationTime = ScalePlaybackWithController ? controllerAnimationTime : stateLocalTime;
-        int count = Motions.Count;
+        CalculateWeights(GetInput(anim, isSim));
 
-        // 1. Advance time for all clips
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < Motions.Count; i++)
         {
-            stateMixer.GetInput(i).SetTime(animationTime * Motions[i].TimeScale);
-            stateMixer.SetInputWeight(i, 0f);
-        }
+            var motion = Motions[i];
+            float animationTime = GetMotionTime(motion.Clip, motion.SpeedMultiplier, stateLocalTime, locomotionCycle);
 
-        float inputMag = input.magnitude;
-        Vector2 inputDir = inputMag > 0.001f ? input / inputMag : Vector2.up;
-
-        float totalWeight = 0f;
-        float[] weights = new float[count];
-
-        // The base penalty for being off-angle
-        float baseAnglePenalty = 2.0f;
-
-        for (int i = 0; i < count; i++)
-        {
-            Vector2 pos = Motions[i].Position;
-            float posMag = pos.magnitude;
-
-            // --- 1. EXACT MATCH SHORT-CIRCUIT ---
-            float exactDistSq = (input - pos).sqrMagnitude;
-            if (exactDistSq < 0.0001f)
-            {
-                for (int j = 0; j < count; j++) stateMixer.SetInputWeight(j, 0f);
-                stateMixer.SetInputWeight(i, 1f);
-                return;
-            }
-
-            // --- 2. IDLE NODE HANDLING ---
-            if (posMag < 0.001f)
-            {
-                float polarDistSqIdle = (inputMag * inputMag);
-                // Added a tiny epsilon (0.0001f) to prevent divide-by-zero explosions
-                weights[i] = 1f / (polarDistSqIdle * polarDistSqIdle + 0.0001f);
-                totalWeight += weights[i];
-                continue;
-            }
-
-            // --- 3. DIRECTIONAL POLAR DISTANCE ---
-            Vector2 posDir = pos / posMag;
-            float dot = Vector2.Dot(inputDir, posDir);
-
-            // THE FIX 1: Smooth Hemisphere Falloff (No more hard 'if' cutoff!)
-            // dot ranges from 1 (perfect) to -1 (exact opposite).
-            // We map this to a penalty: 0 (perfect) to 2 (opposite).
-            float angleMetric = 1f - dot;
-
-            // THE FIX 2: Stateless Origin Singularity Fix
-            // As input magnitude approaches 0, the direction becomes hypersensitive and meaningless.
-            // By scaling the penalty by inputMag, the angle matters less and less as you stop!
-            float dynamicAnglePenalty = baseAnglePenalty * inputMag;
-
-            float magDiff = Mathf.Abs(inputMag - posMag);
-
-            // The "Warped" Distance
-            float warpedAngle = angleMetric * dynamicAnglePenalty;
-            float polarDistSq = (warpedAngle * warpedAngle) + (magDiff * magDiff);
-
-            // Power of 4 falloff
-            weights[i] = 1f / (polarDistSq * polarDistSq + 0.0001f);
-            totalWeight += weights[i];
-        }
-
-        // --- 4. NORMALIZE AND APPLY ---
-        for (int i = 0; i < count; i++)
-        {
-            float finalWeight = totalWeight > 0.0001f ? (weights[i] / totalWeight) : 0f;
-
-            if (totalWeight <= 0.0001f && i == 0) finalWeight = 1f;
-
-            stateMixer.SetInputWeight(i, finalWeight);
+            stateMixer.GetInput(i).SetTime(animationTime);
+            stateMixer.SetInputWeight(i, _weightsCache[i]);
         }
     }
 }
+

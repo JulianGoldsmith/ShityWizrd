@@ -13,10 +13,12 @@ public class AnimMasterProfileSO : ScriptableObject
     [SerializeField]
     public List<AnimTransition> AnyStateTransitions = new List<AnimTransition>();
 
+
+
     [Header("Blackboard Parameters")]
     public List<FloatParameterDef> FloatParameters = new List<FloatParameterDef>();
     public List<BoolParameterDef> BoolParameters = new List<BoolParameterDef>();
-    public List<TriggerParameterDef> TriggerParameters = new List<TriggerParameterDef>(); // ADDED THIS
+    public List<TriggerParameterDef> TriggerParameters = new List<TriggerParameterDef>(); 
 }
 
 [System.Serializable]

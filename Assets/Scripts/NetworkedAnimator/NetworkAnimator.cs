@@ -14,7 +14,8 @@ public class NetworkAnimator : NetworkBehaviour
 
     // The Network State
     [Networked] public NetworkedAnimState AnimState { get; set; }
-    [Networked] public float ControllerAnimationTime { get; set; }
+    [Networked] public float LocomotionCycle { get; set; }
+    [Networked] public float LocomotionCycleRate { get; set; }
 
     // The Playables Graph
     private PlayableGraph _graph;
@@ -201,6 +202,8 @@ public class NetworkAnimator : NetworkBehaviour
             newState.TransitionStartTick = Runner.Tick;
             newState.TransitionEndTick = Runner.Tick;
             AnimState = newState;
+            LocomotionCycle = 0f;
+            LocomotionCycleRate = 0f;
         }
     }
     public void UpdatePhysicsAnimator(out Vector3 rootMotionDeltaPos, out Quaternion rootMotionDeltaRot, out Vector3 absoluteRootOffset, out Quaternion absoluteRootRot)
@@ -213,23 +216,24 @@ public class NetworkAnimator : NetworkBehaviour
 
         if (!_graph.IsValid()) return;
 
-        float previousControllerAnimationTime = ControllerAnimationTime;
-        ControllerAnimationTime += Runner.DeltaTime * _controllerAnimScale;
-        float currentControllerAnimationTime = ControllerAnimationTime;
+        float transitionWeight = GetWeightForTick(Runner.Tick);
+        LocomotionCycleRate = GetLocomotionCyclesPerSecond(transitionWeight) * _controllerAnimScale;
 
-        byte nextID = CheckTransitions(AnimState.CurrentStateID);
+        float previousLocomotionCycle = LocomotionCycle;
+        LocomotionCycle += Runner.DeltaTime * LocomotionCycleRate;
+        float currentLocomotionCycle = LocomotionCycle;
 
-        if (nextID != AnimState.CurrentStateID)
+        if (TryGetTransition(AnimState.CurrentStateID, out AnimTransition transition) && transition.TargetStateID != AnimState.CurrentStateID)
         {
             var newState = AnimState;
             newState.PreviousStateID = AnimState.CurrentStateID;
             newState.PreviousStateStartTick = AnimState.CurrentStateStartTick;
-            newState.CurrentStateID = nextID;
+            newState.CurrentStateID = transition.TargetStateID;
             newState.CurrentStateStartTick = Runner.Tick;
             newState.TransitionStartTick = Runner.Tick;
 
-            float durationSeconds = 0.2f;
-            int durationTicks = Mathf.Max(1, (int)(durationSeconds / Runner.DeltaTime));
+            float durationSeconds = Mathf.Max(0f, transition.BlendDurationSeconds);
+            int durationTicks = Mathf.CeilToInt(durationSeconds / Runner.DeltaTime);
             newState.TransitionEndTick = Runner.Tick + durationTicks;
 
             AnimState = newState;
@@ -245,14 +249,14 @@ public class NetworkAnimator : NetworkBehaviour
             float prevWeight = GetWeightForTick(prevTick);
             float prevTime = prevTick * Runner.DeltaTime;
 
-            ApplyPose(prevWeight, prevTime, previousControllerAnimationTime, true);
+            ApplyPose(prevWeight, prevTime, previousLocomotionCycle, true);
             Vector3 localPosT0 = RootMotionBone.localPosition;
             Quaternion localRotT0 = RootMotionBone.localRotation;
 
             float currWeight = GetWeightForTick(Runner.Tick);
             float currTime = Runner.Tick * Runner.DeltaTime;
 
-            ApplyPose(currWeight, currTime, currentControllerAnimationTime, true);
+            ApplyPose(currWeight, currTime, currentLocomotionCycle, true);
             Vector3 localPosT1 = RootMotionBone.localPosition;
             Quaternion localRotT1 = RootMotionBone.localRotation;
 
@@ -298,7 +302,7 @@ public class NetworkAnimator : NetworkBehaviour
         {
             float weight = GetWeightForTick(Runner.Tick);
             float time = Runner.Tick * Runner.DeltaTime;
-            ApplyPose(weight, time, currentControllerAnimationTime, true);
+            ApplyPose(weight, time, currentLocomotionCycle, true);
         }
 
        
@@ -312,10 +316,8 @@ public class NetworkAnimator : NetworkBehaviour
 
         if (!_graph.IsValid()) return;
 
-        // 1. Get Fusion's perfectly smooth continuous clock
         float currentTime = (float)Runner.LocalRenderTime;
         float simulationTime = Runner.Tick * Runner.DeltaTime;
-        float controllerAnimationTime = ControllerAnimationTime + ((currentTime - simulationTime) * _controllerAnimScale);
 
         float startTickTime = AnimState.TransitionStartTick * Runner.DeltaTime;
         float endTickTime = AnimState.TransitionEndTick * Runner.DeltaTime;
@@ -326,8 +328,9 @@ public class NetworkAnimator : NetworkBehaviour
             weight = Mathf.Clamp01((currentTime - startTickTime) / (endTickTime - startTickTime));
         }
 
+        float renderedLocomotionCycle = LocomotionCycle + ((currentTime - simulationTime) * LocomotionCycleRate);
 
-        ApplyPose(weight, currentTime, controllerAnimationTime, overRideWithSimValues);
+        ApplyPose(weight, currentTime, renderedLocomotionCycle, overRideWithSimValues);
 
         var currentStateLogic = Profile.AllStates.Find(s => s.StateID == AnimState.CurrentStateID);
         if (currentStateLogic != null && currentStateLogic.ExtractRootMotion && RootMotionBone != null)
@@ -361,7 +364,37 @@ public class NetworkAnimator : NetworkBehaviour
         return Mathf.Max(0f, sampleTime - stateStartTick * Runner.DeltaTime);
     }
 
-    private void ApplyPose(float transitionWeight, float sampleTime, float controllerAnimationTime, bool isSim)
+    private float GetStateLocomotionCyclesPerSecond(AnimStateBase state)
+    {
+        if (state == null || !state.UseLocomotionCycle) return 0f;
+
+        float weightedMultiplier = state.GetLocomotionCycleRateMultiplier(gameObject);
+        return state.LocomotionCyclesPerSecond * Mathf.Max(0f, weightedMultiplier);
+    }
+
+    private float GetLocomotionCyclesPerSecond(float transitionWeight)
+    {
+        var currentState = Profile.AllStates.Find(state => state.StateID == AnimState.CurrentStateID);
+        var previousState = Profile.AllStates.Find(state => state.StateID == AnimState.PreviousStateID);
+
+        bool currentUsesCycle = currentState != null && currentState.UseLocomotionCycle;
+        bool previousUsesCycle = previousState != null && previousState.UseLocomotionCycle;
+
+        float currentRate = currentUsesCycle ? GetStateLocomotionCyclesPerSecond(currentState) : 0f;
+        float previousRate = previousUsesCycle ? GetStateLocomotionCyclesPerSecond(previousState) : 0f;
+
+        if (currentUsesCycle && previousUsesCycle && transitionWeight < 1f)
+        {
+            return Mathf.Lerp(previousRate, currentRate, transitionWeight);
+        }
+
+        if (currentUsesCycle) return currentRate;
+        if (previousUsesCycle && transitionWeight < 1f) return previousRate;
+
+        return 0f;
+    }
+
+    private void ApplyPose(float transitionWeight, float sampleTime, float locomotionCycle, bool isSim)
     {
         for (int i = 0; i < _masterMixer.GetInputCount(); i++)
         {
@@ -378,7 +411,7 @@ public class NetworkAnimator : NetworkBehaviour
                 {
                     var mixer = _stateMixers[i];
                     float stateLocalTime = GetStateLocalTime((byte)i, sampleTime);
-                    stateLogic.ProcessState(ref mixer, stateLocalTime, controllerAnimationTime, gameObject, isSim);
+                    stateLogic.ProcessState(ref mixer, stateLocalTime, locomotionCycle, gameObject, isSim);
                 }
             }
         }
@@ -424,23 +457,33 @@ public class NetworkAnimator : NetworkBehaviour
     }
 
 
-    private byte CheckTransitions(byte currentStateID)
+    private bool TryGetTransition(byte currentStateID, out AnimTransition matchingTransition)
     {
         foreach (var transition in Profile.AnyStateTransitions)
         {
-            if (EvaluateTransition(transition)) return transition.TargetStateID;
+            if (EvaluateTransition(transition))
+            {
+                matchingTransition = transition;
+                return true;
+            }
         }
 
         var currentStateLogic = Profile.AllStates.Find(s => s.StateID == currentStateID);
+
         if (currentStateLogic != null)
         {
             foreach (var transition in currentStateLogic.OutboundTransitions)
             {
-                if (EvaluateTransition(transition)) return transition.TargetStateID;
+                if (EvaluateTransition(transition))
+                {
+                    matchingTransition = transition;
+                    return true;
+                }
             }
         }
 
-        return currentStateID; 
+        matchingTransition = null;
+        return false;
     }
 
     private bool EvaluateTransition(AnimTransition transition)

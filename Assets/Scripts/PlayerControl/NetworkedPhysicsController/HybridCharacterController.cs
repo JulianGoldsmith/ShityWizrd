@@ -15,7 +15,7 @@ public enum BONKEDSTATE
 }
 
 [DefaultExecutionOrder(-5)]
-public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimVarDirection, IAnimVarGrounded, IAnimEventListener, IHasPhysicalCore
+public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimVarDirection, IAnimVarGrounded, IAnimEventListener, IHasPhysicalCore, IXPBDPoseProvider
 {
     [Header("Components")]
     public Rigidbody hipsRb;
@@ -105,6 +105,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     [Networked] private int _jumpCount { get; set; }
     [Networked] public bool sprint { get; set; }
     private int _lastVisibleJump;
+    private int _xpbdPoseRequestTick = -1;
 
     [Networked] public NetworkId GrabControlItemId { get; set; }
     [Networked] public float GrabTargetDistance { get; set; }
@@ -376,8 +377,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             
             ApplyHipsHorizontalMovement();
 
-            UpdateAnimator(true);
-
+            _xpbdPoseRequestTick = Runner.Tick;
             UpdateSpineIK();
         }
 
@@ -520,6 +520,8 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     {
         if (netAnimator == null) return;
 
+        UpdateAnimatorPos(isSim);
+
         // 1. Get the Raw Physics Reality
         Vector3 physicalVel = isSim ? hipsRb.linearVelocity : renderedVelocity;
         physicalVel.y = 0f;
@@ -572,6 +574,9 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         // 5. Apply to Animator
         if (isSim)
         {
+            float movementSizeScale = Mathf.Sqrt(Mathf.Max(0.01f, CurrentRagdollScale));
+            netAnimator.SetControllerAnimScale(1f / movementSizeScale);
+
             netAnimator.SetSimFloat("VelocityY", targetForward);
             netAnimator.SetSimFloat("VelocityX", targetRight);
             netAnimator.SetSimBool("IsGrounded", IsGrounded);
@@ -596,11 +601,12 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             }
         }
 
-        UpdateAnimatorPos(isSim);
+    }
 
-
-
-        
+    public void PrepareXPBDPose()
+    {
+        if (_xpbdPoseRequestTick != Runner.Tick) return;
+        UpdateAnimator(true);
     }
 
     void UpdateAnimatorPos(bool isSim)

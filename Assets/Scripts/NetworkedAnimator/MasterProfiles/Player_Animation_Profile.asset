@@ -40,6 +40,8 @@ MonoBehaviour:
         StateName: Locomotion
         StateID: 0
         ExtractRootMotion: 1
+        UseLocomotionCycle: 1
+        LocomotionCyclesPerSecond: 1.8
         OutboundTransitions:
         - TargetStateID: 1
           BlendDurationSeconds: 0.05
@@ -57,52 +59,54 @@ MonoBehaviour:
         Motions:
         - Clip: {fileID: -203655887218126122, guid: 1db810396b6675345a45b61aa2c7ce37, type: 3}
           Position: {x: 0, y: 0}
-          TimeScale: 1
+          SpeedMultiplier: 1
         - Clip: {fileID: 4061839508520268033, guid: 26ee491a73a735b43afb0d14798902a5, type: 3}
           Position: {x: 0, y: 0.125}
-          TimeScale: 0.75
+          SpeedMultiplier: 0.25
         - Clip: {fileID: 4061839508520268033, guid: 26ee491a73a735b43afb0d14798902a5, type: 3}
           Position: {x: 0, y: 0.5}
-          TimeScale: 1.5
+          SpeedMultiplier: 1
         - Clip: {fileID: 6744220789736127422, guid: 2c374e9258dc5b445924275c50fc75cc, type: 3}
           Position: {x: 0, y: 1}
-          TimeScale: 0.9
+          SpeedMultiplier: 1
         - Clip: {fileID: -203655887218126122, guid: e3ca53c8572d9774994c2f79eeaab1ad, type: 3}
           Position: {x: 0, y: -0.125}
-          TimeScale: 0.9
+          SpeedMultiplier: 0.25
         - Clip: {fileID: -203655887218126122, guid: e3ca53c8572d9774994c2f79eeaab1ad, type: 3}
           Position: {x: 0, y: -0.5}
-          TimeScale: 1.8
+          SpeedMultiplier: 1
         - Clip: {fileID: 26458965035043077, guid: d2f02797e72c9fa4a9702798ff1f7a8e, type: 3}
           Position: {x: 0.125, y: 0}
-          TimeScale: 0.275
+          SpeedMultiplier: 0.25
         - Clip: {fileID: 26458965035043077, guid: d2f02797e72c9fa4a9702798ff1f7a8e, type: 3}
           Position: {x: 0.5, y: 0}
-          TimeScale: 1.1
+          SpeedMultiplier: 1
         - Clip: {fileID: 2188135747154074032, guid: d2f02797e72c9fa4a9702798ff1f7a8e, type: 3}
           Position: {x: -0.125, y: 0}
-          TimeScale: 0.275
+          SpeedMultiplier: 0.25
         - Clip: {fileID: 2188135747154074032, guid: d2f02797e72c9fa4a9702798ff1f7a8e, type: 3}
           Position: {x: -0.5, y: 0}
-          TimeScale: 1.1
+          SpeedMultiplier: 1
         - Clip: {fileID: -4677418966718974060, guid: 2490d8dbf6e42664ea7ae805f99e5c7e, type: 3}
           Position: {x: 0.35, y: 0.35}
-          TimeScale: 0.9
+          SpeedMultiplier: 0.9
         - Clip: {fileID: 2717322911435412430, guid: 2490d8dbf6e42664ea7ae805f99e5c7e, type: 3}
           Position: {x: -0.35, y: 0.35}
-          TimeScale: 0.9
+          SpeedMultiplier: 0.9
         - Clip: {fileID: -4677418966718974060, guid: 2490d8dbf6e42664ea7ae805f99e5c7e, type: 3}
           Position: {x: -0.5, y: 0}
-          TimeScale: -0.9
+          SpeedMultiplier: -0.9
         - Clip: {fileID: 2717322911435412430, guid: 2490d8dbf6e42664ea7ae805f99e5c7e, type: 3}
           Position: {x: -0.5, y: 0}
-          TimeScale: -0.9
+          SpeedMultiplier: -0.9
     - rid: 2425487985908121745
       type: {class: BlendTree1DState, ns: , asm: Assembly-CSharp}
       data:
         StateName: Jump
         StateID: 1
         ExtractRootMotion: 1
+        UseLocomotionCycle: 0
+        LocomotionCyclesPerSecond: 1
         OutboundTransitions:
         - TargetStateID: 2
           BlendDurationSeconds: 0.1
@@ -129,6 +133,8 @@ MonoBehaviour:
         StateName: Falling
         StateID: 2
         ExtractRootMotion: 1
+        UseLocomotionCycle: 0
+        LocomotionCyclesPerSecond: 1
         OutboundTransitions:
         - TargetStateID: 3
           BlendDurationSeconds: 0
@@ -149,6 +155,8 @@ MonoBehaviour:
         StateName: Landing
         StateID: 3
         ExtractRootMotion: 1
+        UseLocomotionCycle: 0
+        LocomotionCyclesPerSecond: 1
         OutboundTransitions:
         - TargetStateID: 0
           BlendDurationSeconds: 0.1

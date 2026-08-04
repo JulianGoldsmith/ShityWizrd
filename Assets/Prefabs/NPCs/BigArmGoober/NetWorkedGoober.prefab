@@ -7325,7 +7325,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coreRB: {fileID: 5531538140928643104}
   xpbdPosAndRotSolver: {fileID: 7884067904759870489}
-  _ragDollStrength: 0.65
+  _ragDollStrength: 1
   _IsGrounded:
     _value: 1
   _LastJumpTick: 0
@@ -7338,8 +7338,13 @@ MonoBehaviour:
   suspensionCastRadius: 0.125
   rideSpringStrength: 100
   rideSpringDampingRatio: 0.4
+  _HasStartingRagdollSupport:
+    _value: 0
+  _StartingRagdollSupportForce: 0
   uprightSpringStrength: 1000
   uprightSpringDamper: 12
+  turnSpringStrength: 50
+  turnSpringDamper: 5
   maxWalkSpeed: 1
   maxSprintSpeed: 2
   acceleration: 20
@@ -7356,6 +7361,8 @@ MonoBehaviour:
   - {fileID: 120737389028226268}
   - {fileID: 5190465792086210517}
   networkAnimator: {fileID: 6158706908187212526}
+  armatureRetargeter: {fileID: 0}
+  controllerAnimScale: 1
   hipsOffset: {x: 0, y: -0.5594505, z: 0}
   rootMotionForceStrength: 100
   useRootMotionXZ: 1
@@ -7436,6 +7443,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Profile: {fileID: 11400000, guid: 11f03185b1cca184fab3c93150724ca2, type: 2}
   UnityAnimator: {fileID: 7638773589888862629}
+  _LocomotionCycle: 0
+  _LocomotionCycleRate: 0
   AimConstraints: []
   _floatParams: []
   _boolParams: 
@@ -7683,7 +7692,7 @@ MonoBehaviour:
     parentTarget: {fileID: 2004947992228224748}
     childTarget: {fileID: 4656605126883193201}
     isRagdollJoint: 0
-    muscleCompliance: 0.0005
+    muscleCompliance: 0.001
     muscleDamping: 1
     enablePosition: 1
     enableRotation: 1
@@ -7746,7 +7755,7 @@ MonoBehaviour:
     parentTarget: {fileID: 4656605126883193201}
     childTarget: {fileID: 6316092410280505229}
     isRagdollJoint: 0
-    muscleCompliance: 0.0005
+    muscleCompliance: 0.001
     muscleDamping: 1
     enablePosition: 1
     enableRotation: 1
@@ -7809,7 +7818,7 @@ MonoBehaviour:
     parentTarget: {fileID: 4656605126883193201}
     childTarget: {fileID: 4596332134282228744}
     isRagdollJoint: 0
-    muscleCompliance: 0.0005
+    muscleCompliance: 0.001
     muscleDamping: 1
     enablePosition: 1
     enableRotation: 1
@@ -7872,7 +7881,7 @@ MonoBehaviour:
     parentTarget: {fileID: 4596332134282228744}
     childTarget: {fileID: 7947498533477919931}
     isRagdollJoint: 0
-    muscleCompliance: 0.0005
+    muscleCompliance: 0.001
     muscleDamping: 1
     enablePosition: 1
     enableRotation: 1
@@ -7935,7 +7944,7 @@ MonoBehaviour:
     parentTarget: {fileID: 4656605126883193201}
     childTarget: {fileID: 1099817643707989843}
     isRagdollJoint: 0
-    muscleCompliance: 0.0005
+    muscleCompliance: 0.001
     muscleDamping: 1
     enablePosition: 1
     enableRotation: 1
@@ -7998,7 +8007,7 @@ MonoBehaviour:
     parentTarget: {fileID: 1099817643707989843}
     childTarget: {fileID: 5569763825284524333}
     isRagdollJoint: 0
-    muscleCompliance: 0.0005
+    muscleCompliance: 0.001
     muscleDamping: 1
     enablePosition: 1
     enableRotation: 1

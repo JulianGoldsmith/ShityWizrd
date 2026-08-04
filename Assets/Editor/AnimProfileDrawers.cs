@@ -379,6 +379,17 @@ public class BaseAnimStateDrawer : BaseCollapsibleBlockDrawer
     {
         float oldWidth = EditorGUIUtility.labelWidth;
 
+        var useLocomotionProp = property.FindPropertyRelative("UseLocomotionCycle");
+        EditorGUI.PropertyField(new Rect(position.x, y, position.width, lineH), useLocomotionProp, new GUIContent("Use Locomotion Cycle"));
+        y += lineH + spacing;
+
+        if (useLocomotionProp.boolValue)
+        {
+            var cadenceProp = property.FindPropertyRelative("LocomotionCyclesPerSecond");
+            EditorGUI.PropertyField(new Rect(position.x, y, position.width, lineH), cadenceProp, new GUIContent("Cycles Per Second"));
+            y += lineH + spacing;
+        }
+
         DrawMiddleSection(position, property, ref y, lineH, spacing, oldWidth);
 
         // --- MOTIONS LAYER (Teal / Sage Palette) ---
@@ -481,7 +492,13 @@ public class BaseAnimStateDrawer : BaseCollapsibleBlockDrawer
 
     protected override float GetBodyHeight(SerializedProperty property)
     {
-        float height = GetMiddleSectionHeight(property);
+
+        var useLocomotionProp = property.FindPropertyRelative("UseLocomotionCycle");
+
+        float height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+        if (useLocomotionProp.boolValue) height += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+
+        height += GetMiddleSectionHeight(property);
         var motionsProp = property.FindPropertyRelative("Motions");
         var transProp = property.FindPropertyRelative("OutboundTransitions");
         
