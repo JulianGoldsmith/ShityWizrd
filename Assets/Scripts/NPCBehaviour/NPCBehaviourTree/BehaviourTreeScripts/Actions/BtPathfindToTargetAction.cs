@@ -16,28 +16,26 @@ public partial class BtPathfindToTargetAction : Action
     {
         if (Self.Value == null || Target.Value == null) return Status.Failure;
 
-        var manager = Self.Value.GetComponent<NPCBehaviourManager>();
-        var targetNetworkObj = Target.Value.GetComponent<NetworkObject>();
+        NPCBehaviourManager manager = Self.Value.GetComponent<NPCBehaviourManager>();
+        NetworkObject targetNetworkObj = Target.Value.GetComponentInParent<NetworkObject>();
 
         if (manager == null || targetNetworkObj == null || manager.Runner == null) return Status.Failure;
 
-        int targetStartTick = manager.GlobalClearTick > manager.Runner.Tick
-            ? manager.GlobalClearTick
-            : manager.Runner.Tick;
+        int targetStartTick = manager.GetCurrentIntentStartTick();
+        int revision = manager.BeginCommandRevision();
+
+        if (revision == 0) return Status.Failure;
 
         NPCCommandData payload = new NPCCommandData
         {
             CommandID = CommandType.Move_PathfindToID,
             Priority = 10,
-            SetTick = manager.Runner.Tick,         // The moment the BT decided to do this
-            StartTick = targetStartTick,           // The moment the muscle should activate
-            EndTick = targetStartTick + 999999,    // Run indefinitely until the next state Clear
-            TargetID = targetNetworkObj.Id,        // Pass the target's NetworkID
+            EndTick = targetStartTick + 999999,
+            TargetID = targetNetworkObj.Id,
             MovementMode = MovementMode.Value
         };
 
-        bool success = manager.TryAddCommand(payload);
-
+        bool success = manager.TryScheduleChannelCommand(payload, targetStartTick, revision);
         return success ? Status.Success : Status.Failure;
     }
 }

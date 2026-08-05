@@ -18,20 +18,19 @@ public partial class BtStopMovementAction : Action
 
         if (manager == null || manager.Runner == null) return Status.Failure;
 
-        int targetStartTick = manager.GlobalClearTick > manager.Runner.Tick
-            ? manager.GlobalClearTick
-            : manager.Runner.Tick;
+        int targetStartTick = manager.GetCurrentIntentStartTick();
+        int revision = manager.BeginCommandRevision();
+
+        if (revision == 0) return Status.Failure;
 
         NPCCommandData payload = new NPCCommandData
         {
-            CommandID = CommandType.Move_Stop, 
-            Priority = 20,                   
-            SetTick = manager.Runner.Tick,
-            StartTick = targetStartTick,
-            EndTick = targetStartTick + 999999     
+            CommandID = CommandType.Move_Stop,
+            Priority = 20,
+            EndTick = targetStartTick + 999999
         };
 
-        bool success = manager.TryAddCommand(payload);
+        bool success = manager.TryScheduleChannelCommand(payload, targetStartTick, revision);
 
         return success ? Status.Success : Status.Failure;
     }

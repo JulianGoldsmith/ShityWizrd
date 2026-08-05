@@ -107,11 +107,7 @@ public class NPCChargeAndJumpSpellAction : NPCAction
                 // Has the follow-through animation completely finished?
                 if (timeInPhase >= releaseTime)
                 {
-                    // ONLY the Host officially ends the action to reset the state block cleanly
-                    if (Manager.HasStateAuthority)
-                    {
-                        Manager.EndCurrentAction();
-                    }
+                    Manager.EndCurrentAction();
                 }
                 break;
         }

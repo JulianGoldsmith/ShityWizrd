@@ -61,11 +61,29 @@ public abstract class NPCAction : ScriptableObject
 
 public struct NetworkNPCActionData : INetworkStruct
 {
-    public int actionID;        
-    public int phaseID;          // e.g., 0 = Idle, 1 = Windup, 2 = Hold, 3 = Release
-    public int phaseStartTick;  
-
-    public int chargeStartTick;  
-
+    public NetworkBool isActive;
+    public int actionID;
+    public NetworkId targetID;
+    public int revision;
+    public int startTick;
+    public int phaseID;
+    public int phaseStartTick;
+    public int chargeStartTick;
     public NetworkBool hasFired;
+}
+
+public struct NetworkNPCActionRequest : INetworkStruct
+{
+    public NetworkBool isValid;
+    public int actionID;
+    public NetworkId targetID;
+    public int earliestStartTick;
+    public int revision;
+}
+
+public struct NetworkNPCActionChannelState : INetworkStruct
+{
+    public NetworkNPCActionData activeAction;
+    public NetworkNPCActionRequest pendingAction;
+    public int revisionCounter;
 }

@@ -13,12 +13,21 @@ public partial class ClearCommands : Action
     protected override Status OnStart()
     {
         if (NPC.Value == null) return Status.Failure;
-       // Debug.Log(NPC.Value.name.ToString());
-        var manager = NPC.Value.GetComponent<NPCBehaviourManager>();
-        if (manager == null) return Status.Failure;
 
-        manager.GlobalClearTick = manager.Runner.Tick;
+        NPCBehaviourManager manager = NPC.Value.GetComponent<NPCBehaviourManager>();
+        if (manager == null || manager.Runner == null) return Status.Failure;
 
+        int targetStartTick = manager.Runner.Tick + Mathf.Max(0, Tick.Value);
+        int revision = manager.BeginCommandRevision();
+
+        if (revision == 0) return Status.Failure;
+
+        bool success = manager.TryScheduleAllChannelClears(targetStartTick, revision);
+        if (!success) return Status.Failure;
+
+        if (manager.actionManager != null) manager.actionManager.TryCancelPendingAction();
+
+        manager.SetCurrentIntentStartTick(targetStartTick);
         return Status.Success;
     }
 }

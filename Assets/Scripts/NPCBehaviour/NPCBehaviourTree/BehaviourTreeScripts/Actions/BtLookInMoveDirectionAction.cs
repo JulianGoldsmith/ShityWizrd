@@ -14,24 +14,22 @@ public partial class BtLookInMoveDirectionAction : Action
     {
         if (Self.Value == null) return Status.Failure;
 
-        var manager = Self.Value.GetComponent<NPCBehaviourManager>();
+        NPCBehaviourManager manager = Self.Value.GetComponent<NPCBehaviourManager>();
         if (manager == null || manager.Runner == null) return Status.Failure;
 
-        int targetStartTick = manager.GlobalClearTick > manager.Runner.Tick
-            ? manager.GlobalClearTick
-            : manager.Runner.Tick;
+        int targetStartTick = manager.GetCurrentIntentStartTick();
+        int revision = manager.BeginCommandRevision();
+
+        if (revision == 0) return Status.Failure;
 
         NPCCommandData payload = new NPCCommandData
         {
             CommandID = CommandType.Look_InMoveDirection,
             Priority = 10,
-            SetTick = manager.Runner.Tick,
-            StartTick = targetStartTick,
-            EndTick = targetStartTick + 999999 // Run forever until aborted/cleared
+            EndTick = targetStartTick + 999999
         };
 
-        bool success = manager.TryAddCommand(payload);
-
+        bool success = manager.TryScheduleChannelCommand(payload, targetStartTick, revision);
         return success ? Status.Success : Status.Failure;
     }
 }

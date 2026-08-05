@@ -17,28 +17,15 @@ public partial class BtExecuteAction : Action
     {
         if (Self.Value == null || Target.Value == null) return Status.Failure;
 
-        var manager = Self.Value.GetComponent<NPCBehaviourManager>();
-        var targetNetworkObj = Target.Value.GetComponent<NetworkObject>();
+        NPCBehaviourManager manager = Self.Value.GetComponent<NPCBehaviourManager>();
+        NPCActionManager actionManager = Self.Value.GetComponent<NPCActionManager>();
+        NetworkObject targetNetworkObj = Target.Value.GetComponentInParent<NetworkObject>();
 
-        if (manager == null || targetNetworkObj == null || manager.Runner == null) return Status.Failure;
+        if (manager == null || actionManager == null || targetNetworkObj == null || manager.Runner == null) return Status.Failure;
 
-        // Auto-Delay Sync exactly like the Pathfinding nodes!
-        int targetStartTick = manager.GlobalClearTick > manager.Runner.Tick
-            ? manager.GlobalClearTick
-            : manager.Runner.Tick;
+        int targetStartTick = manager.GetCurrentIntentStartTick();
 
-        NPCCommandData payload = new NPCCommandData
-        {
-            CommandID = CommandType.Action_Execute,
-            Priority = 5,                          // High priority to override normal looking/movement
-            SetTick = manager.Runner.Tick,
-            StartTick = targetStartTick,
-            EndTick = targetStartTick + 999999,
-            TargetID = targetNetworkObj.Id,
-            IntData = ActionID.Value               // This is where we pass the Action array index (e.g. 0 for Fireball)
-        };
-
-        bool success = manager.TryAddCommand(payload);
+        bool success = actionManager.TryScheduleAction(ActionID.Value, targetNetworkObj.Id, targetStartTick);
 
         return success ? Status.Success : Status.Failure;
     }

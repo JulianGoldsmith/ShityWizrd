@@ -19,23 +19,21 @@ public partial class BtPathfindToPointAction : Action
 
         if (manager == null || manager.Runner == null) return Status.Failure;
 
-        // Auto-Delay Sync
-        int targetStartTick = manager.GlobalClearTick > manager.Runner.Tick
-            ? manager.GlobalClearTick
-            : manager.Runner.Tick;
+        int targetStartTick = manager.GetCurrentIntentStartTick();
+        int revision = manager.BeginCommandRevision();
+
+        if (revision == 0) return Status.Failure;
 
         NPCCommandData payload = new NPCCommandData
         {
-            CommandID = CommandType.Move_PathfindToPoint, // Use the existing Point enum
+            CommandID = CommandType.Move_PathfindToPoint,
             Priority = 10,
-            SetTick = manager.Runner.Tick,
-            StartTick = targetStartTick,
             EndTick = targetStartTick + 999999,
-            VectorData = Point.Value,        // Push the Vector3 here!
+            VectorData = Point.Value,
             MovementMode = MovementMode.Value
         };
 
-        bool success = manager.TryAddCommand(payload);
+        bool success = manager.TryScheduleChannelCommand(payload, targetStartTick, revision);
 
         return success ? Status.Success : Status.Failure;
     }

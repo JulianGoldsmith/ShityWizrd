@@ -49,7 +49,8 @@ public class GlobalNPCCommandRegistryEditor : Editor
         Undo.RecordObject(registry, "Validate and Sort Registry");
 
         var enumValues = Enum.GetValues(typeof(CommandType)).Cast<CommandType>().ToList();
-        enumValues.Remove(CommandType.None); // We don't need a slot for 'None'
+        enumValues.Remove(CommandType.None);
+        enumValues.Remove(CommandType.Action_Request);
 
         // 1. Purge mismatched SOs
         for (int i = 0; i < registry.UniversalCommands.Count; i++)
@@ -145,6 +146,7 @@ public class GlobalNPCCommandRegistryEditor : Editor
 
         var enumValues = Enum.GetValues(typeof(CommandType)).Cast<CommandType>().ToList();
         enumValues.Remove(CommandType.None);
+        enumValues.Remove(CommandType.Action_Request);
 
         foreach (var type in enumValues)
         {

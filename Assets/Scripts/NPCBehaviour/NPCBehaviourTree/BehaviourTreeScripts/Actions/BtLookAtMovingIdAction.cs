@@ -16,39 +16,38 @@ public partial class BtLookAtMovingIdAction : Action
     {
         if (Self.Value == null || Target.Value == null) return Status.Failure;
 
-        var manager = Self.Value.GetComponent<NPCBehaviourManager>();
-        var targetNetworkObj = Target.Value.GetComponent<NetworkObject>();
+        NPCBehaviourManager manager = Self.Value.GetComponent<NPCBehaviourManager>();
+        NetworkObject targetNetworkObj = Target.Value.GetComponentInParent<NetworkObject>();
+
+        if (manager == null || targetNetworkObj == null || manager.Runner == null) return Status.Failure;
 
         //Debug.Log($"BT set command to look at {targetNetworkObj} + ID: {targetNetworkObj.Id}");
-        if(targetNetworkObj.TryGetComponent<IHasPhysicalCore>(out var core))
+        if (targetNetworkObj.TryGetComponent<IHasPhysicalCore>(out IHasPhysicalCore core))
         {
             targetNetworkObj = core.GetCoreNetworkObject();
             Debug.Log($"NPC BT issued command to look an object with a core - replaced core ");
         }
 
+        if (targetNetworkObj == null) return Status.Failure;
+
         Debug.Log($"NPC BT issued command to look at {targetNetworkObj.gameObject.name}");
 
-        if (manager == null || targetNetworkObj == null || manager.Runner == null) return Status.Failure;
+        int targetStartTick = manager.GetCurrentIntentStartTick();
+        int revision = manager.BeginCommandRevision();
 
-        int targetStartTick = manager.GlobalClearTick > manager.Runner.Tick
-            ? manager.GlobalClearTick
-            : manager.Runner.Tick;
+        if (revision == 0) return Status.Failure;
 
         NPCCommandData payload = new NPCCommandData
         {
             CommandID = CommandType.Look_AtID,
             Priority = 10,
-            SetTick = manager.Runner.Tick,         // The moment the BT decided to do this
-            StartTick = targetStartTick,           // The moment the muscle should activate
-            EndTick = targetStartTick + 999999,    // Run indefinitely until the next state Clear
-            TargetID = targetNetworkObj.Id,        // Pass the target's NetworkID
-                   // Pass the movement speed
+            EndTick = targetStartTick + 999999,
+            TargetID = targetNetworkObj.Id
         };
-        
-        bool success = manager.TryAddCommand(payload);
+
+        bool success = manager.TryScheduleChannelCommand(payload, targetStartTick, revision);
 
         return success ? Status.Success : Status.Failure;
     }
-
 }
 

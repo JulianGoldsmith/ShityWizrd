@@ -4,6 +4,7 @@ using UnityEngine;
 public class Move_PathfindToPointCommand : NPCCommand
 {
     public override CommandType Type => CommandType.Move_PathfindToPoint;
+    public override NPCCommandChannel Channel => NPCCommandChannel.Locomotion;
 
     public override void PreTick(ref NPCCommandData data, NPCBehaviourManager manager, NPCActiveRagdollController muscle)
     {
@@ -38,8 +39,6 @@ public class Move_PathfindToPointCommand : NPCCommand
         Vector3 steeringTarget = moveManager.GetSteeringTarget((byte)data.IntData, manager.transform.position);
 
         moveManager.MoveToPoint(steeringTarget, data.MovementMode);
-
-        moveManager.LookInMoveDirection();
 
          //Debug.Log($"{this.name} Pathfinding to Point: {data.VectorData}");
     }

@@ -6,6 +6,7 @@ using UnityEngine.AI;
 public class Move_PathfindCommand : NPCCommand
 {
     public override CommandType Type => CommandType.Move_PathfindToID;
+    public override NPCCommandChannel Channel => NPCCommandChannel.Locomotion;
 
     public override void PreTick(ref NPCCommandData data, NPCBehaviourManager manager, NPCActiveRagdollController muscle)
     {
@@ -46,15 +47,6 @@ public class Move_PathfindCommand : NPCCommand
         Vector3 steeringTarget = moveManager.GetSteeringTarget((byte)data.IntData, manager.transform.position);
 
         moveManager.MoveToPoint(steeringTarget, data.MovementMode);
-
-        if (manager.Runner.TryFindObject(data.TargetID, out var lookTarget))
-        {
-            moveManager.LookAtPoint(lookTarget.transform.position);
-        }
-        else
-        {
-            moveManager.LookInMoveDirection();
-        }
 
         //Debug.Log($"{this.name} Pathfinding to {lookTarget.gameObject.name} ");
     }

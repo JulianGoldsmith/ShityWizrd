@@ -93,11 +93,6 @@ public class NPCAggroController : NetworkBehaviour
         }
     }
 
-    public override void FixedUpdateNetwork()
-    {
-        TickAggroSensors();
-    }
-
     public override void Spawned()
     {
         if (Object.HasStateAuthority)

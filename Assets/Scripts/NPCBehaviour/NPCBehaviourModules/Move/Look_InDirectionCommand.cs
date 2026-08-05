@@ -4,6 +4,7 @@ using UnityEngine;
 public class Look_InDirectionCommand : NPCCommand
 {
     public override CommandType Type => CommandType.Look_InDirection;
+    public override NPCCommandChannel Channel => NPCCommandChannel.BodyFacing;
 
     public override void ActiveTick(ref NPCCommandData data, NPCBehaviourManager manager, NPCActiveRagdollController muscle)
     {

@@ -1,20 +1,23 @@
 using Fusion;
 using System.Collections.Generic;
 using Unity.Behavior;
-using Unity.VisualScripting;
 using UnityEngine;
 using static GlobalNPCCommandRegistry;
 
 public class NPCBehaviourManager : NetworkBehaviour
 {
+    private const int COMMAND_CHANNEL_COUNT = 4;
 
-    [Networked, Capacity(6)]
-    public NetworkArray<NPCCommandData> ActiveCommands { get; }
+    [Networked, Capacity(COMMAND_CHANNEL_COUNT)]
+    public NetworkArray<NPCCommandChannelState> CommandChannels { get; }
+
     [Header("Debug")]
     public bool showCommandDebug = true;
-    [SerializeField] private List<string> _debugActiveCommands = new List<string>(4);
+    [SerializeField] private List<string> _debugCommandChannels = new List<string>(COMMAND_CHANNEL_COUNT);
+    [SerializeField] private string _debugActionChannel;
 
-    [Networked] public int GlobalClearTick { get; set; }
+    [Networked] public int CommandRevision { get; set; }
+    public int CurrentIntentStartTick { get; private set; }
 
     //Pthing
     //[Networked, Capacity(4)] public NetworkArray<Vector3> TargetWaypoints { get; }
@@ -31,8 +34,6 @@ public class NPCBehaviourManager : NetworkBehaviour
 
     public BehaviorGraphAgent behaviorAgent;
 
-    private List<int> _executionBuffer = new List<int>(4);
-
     [Header("Global Defaults")]
     public GlobalNPCCommandRegistry globalRegistry; // Assign your 1 master asset here
 
@@ -48,6 +49,7 @@ public class NPCBehaviourManager : NetworkBehaviour
     public override void Spawned()
     {
         globalRegistry.Initialize();
+        CurrentIntentStartTick = Runner.Tick;
 
         if(aggroController == null)
         {
@@ -80,9 +82,9 @@ public class NPCBehaviourManager : NetworkBehaviour
     {
         TickPerception();
 
-        TickCommands();
+        TickCommandChannels();
 
-        TickActionManager();
+        TickActionChannel();
 
         TickRagDollController();
     }
@@ -92,63 +94,9 @@ public class NPCBehaviourManager : NetworkBehaviour
         if (aggroController != null) aggroController.TickAggroSensors();
     }
 
-    public void TickCommands()
+    public void TickActionChannel()
     {
-        _executionBuffer.Clear();
-
-        for (int i = 0; i < ActiveCommands.Length; i++)
-        {
-            var cmd = ActiveCommands[i];
-            if (cmd.CommandID == CommandType.None) continue;
-
-            if (GlobalClearTick > 0 && Runner.Tick >= GlobalClearTick && cmd.SetTick < GlobalClearTick)
-            {
-                ActiveCommands.Set(i, default);
-                continue;
-            }
-
-            if (Runner.Tick > cmd.EndTick)
-            {
-                ActiveCommands.Set(i, default);
-                continue;
-            }
-
-            NPCCommand processor = GetProcessorForCommand(cmd.CommandID);
-            if (processor != null)
-            {
-                if (Runner.Tick >= cmd.SetTick && Runner.Tick < cmd.StartTick)
-                {
-                    processor.PreTick(ref cmd, this, muscleController);
-                    ActiveCommands.Set(i, cmd);
-                }
-                else if (Runner.Tick >= cmd.StartTick)
-                {
-                    _executionBuffer.Add(i);
-                }
-            }
-        }
-
-        // 2. SORT BY PRIORITY (Lowest to Highest)
-        // _executionBuffer.Sort((a, b) => a.Priority.CompareTo(b.Priority));
-
-        // 3. EXECUTE
-        foreach (int index in _executionBuffer)
-        {
-            // Pull the live command
-            var cmd = ActiveCommands[index];
-            NPCCommand command = GetProcessorForCommand(cmd.CommandID);
-
-            if (command != null)
-            {
-                command.ActiveTick(ref cmd, this, muscleController);
-                ActiveCommands.Set(index, cmd);
-            }
-        }
-    }
-
-    public void TickActionManager()
-    {
-        actionManager.Tick();
+        if (actionManager != null) actionManager.TickActionChannel();
     }
 
     public void TickRagDollController()
@@ -168,125 +116,309 @@ public class NPCBehaviourManager : NetworkBehaviour
         return globalRegistry.GetUniversalCommand(type);
     }
 
-    public bool TryAddCommand(NPCCommandData payload)
+    private static bool TryGetCommandChannelIndex(NPCCommandChannel channel, out int index)
     {
-        for (int i = 0; i < ActiveCommands.Length; i++)
+        index = (int)channel - 1;
+        return index >= 0 && index < COMMAND_CHANNEL_COUNT;
+    }
+
+    public int BeginCommandRevision()
+    {
+        if (!HasStateAuthority || Runner == null) return 0;
+
+        CommandRevision++;
+        return CommandRevision;
+    }
+
+    public void SetCurrentIntentStartTick(int startTick)
+    {
+        if (!HasStateAuthority || Runner == null) return;
+        CurrentIntentStartTick = Mathf.Max(Runner.Tick, startTick);
+    }
+
+    public int GetCurrentIntentStartTick()
+    {
+        if (Runner == null) return 0;
+        return Mathf.Max(Runner.Tick, CurrentIntentStartTick);
+    }
+
+    public bool TryScheduleChannelCommand(NPCCommandData command, int startTick, int revision)
+    {
+        if (!HasStateAuthority || Runner == null) return false;
+        if (command.CommandID == CommandType.None) return false;
+        if (revision <= 0 || revision != CommandRevision) return false;
+
+        NPCCommand processor = GetProcessorForCommand(command.CommandID);
+        if (processor == null) return false;
+
+        if (!TryGetCommandChannelIndex(processor.Channel, out int channelIndex))
         {
-            if (ActiveCommands[i].CommandID == CommandType.None)
-            {
-                ActiveCommands.Set(i, payload);
-                return true;
-            }
+            Debug.LogWarning($"[NPCBehaviourManager] {command.CommandID} is not a sustained channel command.");
+            return false;
         }
 
-        Debug.LogWarning($"[NPCBehaviourManager] Command Array is full! Could not add {payload.CommandID}");
-        return false;
+        int scheduledStartTick = Mathf.Max(Runner.Tick, startTick);
+        if (command.EndTick < scheduledStartTick)
+        {
+            Debug.LogWarning($"[NPCBehaviourManager] {command.CommandID} ends before it starts.");
+            return false;
+        }
+
+        NPCCommandChannelState channelState = CommandChannels[channelIndex];
+        if (channelState.PendingOperation != NPCCommandChannelOperation.None && revision <= channelState.PendingRevision)
+        {
+            Debug.LogWarning($"[NPCBehaviourManager] {processor.Channel} already has an equal or newer pending decision are you calling this multiple times by accident?.");
+            return false;
+        }
+
+        command.SetTick = Runner.Tick;
+        command.StartTick = scheduledStartTick;
+
+        channelState.PendingCommand = command;
+        channelState.PendingOperation = NPCCommandChannelOperation.Set;
+        channelState.PendingStartTick = scheduledStartTick;
+        channelState.PendingRevision = revision;
+
+        CommandChannels.Set(channelIndex, channelState);
+        return true;
+    }
+
+    public bool TryScheduleChannelClear(NPCCommandChannel channel, int startTick, int revision)
+    {
+        if (!HasStateAuthority || Runner == null) return false;
+        if (revision <= 0 || revision != CommandRevision) return false;
+        if (!TryGetCommandChannelIndex(channel, out int channelIndex)) return false;
+
+        NPCCommandChannelState channelState = CommandChannels[channelIndex];
+        if (channelState.PendingOperation != NPCCommandChannelOperation.None && revision <= channelState.PendingRevision)
+        {
+            Debug.LogWarning($"[NPCBehaviourManager] {channel} already has an equal or newer pending decision.");
+            return false;
+        }
+
+        channelState.PendingCommand = default;
+        channelState.PendingOperation = NPCCommandChannelOperation.Clear;
+        channelState.PendingStartTick = Mathf.Max(Runner.Tick, startTick);
+        channelState.PendingRevision = revision;
+
+        CommandChannels.Set(channelIndex, channelState);
+        return true;
+    }
+
+    public bool TryScheduleAllChannelClears(int startTick, int revision)
+    {
+        if (!HasStateAuthority || Runner == null) return false;
+
+        bool success = true;
+
+        for (int channelIndex = 0; channelIndex < COMMAND_CHANNEL_COUNT; channelIndex++)
+        {
+            NPCCommandChannel channel = (NPCCommandChannel)(channelIndex + 1);
+            if (!TryScheduleChannelClear(channel, startTick, revision)) success = false;
+        }
+
+        return success;
+    }
+
+    private void PreparePendingChannel(int channelIndex, ref NPCCommandChannelState channelState)
+    {
+        if (!HasStateAuthority) return;
+        if (channelState.PendingOperation != NPCCommandChannelOperation.Set) return;
+        if (Runner.Tick > channelState.PendingStartTick) return;
+
+        NPCCommandData pendingCommand = channelState.PendingCommand;
+        NPCCommand processor = GetProcessorForCommand(pendingCommand.CommandID);
+        if (processor == null) return;
+
+        if (!TryGetCommandChannelIndex(processor.Channel, out int processorChannelIndex) || processorChannelIndex != channelIndex)
+        {
+            Debug.LogError($"[NPCBehaviourManager] {pendingCommand.CommandID} was stored in the wrong channel.");
+            return;
+        }
+
+        processor.PreTick(ref pendingCommand, this, muscleController);
+
+        channelState.PendingCommand = pendingCommand;
+        CommandChannels.Set(channelIndex, channelState);
+    }
+
+    private void CommitPendingChannel(int channelIndex, ref NPCCommandChannelState channelState)
+    {
+        if (!HasStateAuthority) return;
+        if (channelState.PendingOperation == NPCCommandChannelOperation.None) return;
+
+        if (channelState.PendingOperation == NPCCommandChannelOperation.Set)
+        {
+            channelState.ActiveCommand = channelState.PendingCommand;
+            channelState.ActiveRevision = channelState.PendingRevision;
+        }
+        else if (channelState.PendingOperation == NPCCommandChannelOperation.Clear)
+        {
+            channelState.ActiveCommand = default;
+            channelState.ActiveRevision = channelState.PendingRevision;
+        }
+
+        channelState.PendingCommand = default;
+        channelState.PendingOperation = NPCCommandChannelOperation.None;
+        channelState.PendingStartTick = 0;
+        channelState.PendingRevision = 0;
+
+        CommandChannels.Set(channelIndex, channelState);
+    }
+
+    public void TickCommandChannels()
+    {
+        for (int channelIndex = 0; channelIndex < COMMAND_CHANNEL_COUNT; channelIndex++)
+        {
+            NPCCommandChannelState channelState = CommandChannels[channelIndex];
+
+            if (channelState.PendingOperation == NPCCommandChannelOperation.Set && Runner.Tick <= channelState.PendingStartTick)
+            {
+                PreparePendingChannel(channelIndex, ref channelState);
+            }
+
+            bool pendingIsDue = channelState.PendingOperation != NPCCommandChannelOperation.None && Runner.Tick >= channelState.PendingStartTick;
+            NPCCommandData effectiveCommand = channelState.ActiveCommand;
+            int effectiveRevision = channelState.ActiveRevision;
+
+            if (pendingIsDue)
+            {
+                if (channelState.PendingOperation == NPCCommandChannelOperation.Set)
+                {
+                    effectiveCommand = channelState.PendingCommand;
+                    effectiveRevision = channelState.PendingRevision;
+                }
+                else
+                {
+                    effectiveCommand = default;
+                    effectiveRevision = channelState.PendingRevision;
+                }
+
+                if (HasStateAuthority)
+                {
+                    CommitPendingChannel(channelIndex, ref channelState);
+                    effectiveCommand = channelState.ActiveCommand;
+                    effectiveRevision = channelState.ActiveRevision;
+                }
+            }
+
+            if (effectiveCommand.CommandID == CommandType.None) continue;
+            if (Runner.Tick < effectiveCommand.StartTick) continue;
+
+            if (Runner.Tick > effectiveCommand.EndTick)
+            {
+                if (HasStateAuthority)
+                {
+                    NPCCommandChannelState liveState = CommandChannels[channelIndex];
+                    if (liveState.ActiveRevision == effectiveRevision)
+                    {
+                        liveState.ActiveCommand = default;
+                        liveState.ActiveRevision = 0;
+                        CommandChannels.Set(channelIndex, liveState);
+                    }
+                }
+
+                continue;
+            }
+
+            NPCCommand processor = GetProcessorForCommand(effectiveCommand.CommandID);
+            if (processor == null) continue;
+
+            if (!TryGetCommandChannelIndex(processor.Channel, out int processorChannelIndex) || processorChannelIndex != channelIndex)
+            {
+                if (HasStateAuthority)
+                {
+                    Debug.LogError($"[NPCBehaviourManager] {effectiveCommand.CommandID} is executing from the wrong channel.");
+
+                    NPCCommandChannelState liveState = CommandChannels[channelIndex];
+                    if (liveState.ActiveRevision == effectiveRevision)
+                    {
+                        liveState.ActiveCommand = default;
+                        liveState.ActiveRevision = 0;
+                        CommandChannels.Set(channelIndex, liveState);
+                    }
+                }
+
+                continue;
+            }
+
+            processor.ActiveTick(ref effectiveCommand, this, muscleController);
+
+            if (HasStateAuthority)
+            {
+                NPCCommandChannelState liveState = CommandChannels[channelIndex];
+                if (liveState.ActiveRevision == effectiveRevision && liveState.ActiveCommand.CommandID == effectiveCommand.CommandID)
+                {
+                    liveState.ActiveCommand = effectiveCommand;
+                    CommandChannels.Set(channelIndex, liveState);
+                }
+            }
+        }
     }
 
     public bool HasActiveCommand(CommandType type, NetworkId specificTarget = default)
     {
-        for (int i = 0; i < ActiveCommands.Length; i++)
+        if (type == CommandType.Action_Request && actionManager != null)
         {
-            var cmd = ActiveCommands[i];
-
-            if (cmd.CommandID == type)
-            {
-                if (specificTarget.IsValid)
-                {
-                    if (cmd.TargetID == specificTarget) return true;
-                }
-                else
-                {
-                    return true;
-                }
-            }
+            NetworkNPCActionData action = actionManager.ActionData;
+            if (!action.isActive) return false;
+            return !specificTarget.IsValid || action.targetID == specificTarget;
         }
+
+        for (int channelIndex = 0; channelIndex < COMMAND_CHANNEL_COUNT; channelIndex++)
+        {
+            NPCCommandData command = CommandChannels[channelIndex].ActiveCommand;
+            if (command.CommandID != type) continue;
+            if (!specificTarget.IsValid || command.TargetID == specificTarget) return true;
+        }
+
         return false;
     }
 
-    public bool IsCommandQueuedAndWaiting(CommandType type, NetworkId specificTarget = default)
+    public bool IsRequestQueuedAndWaiting(CommandType type, NetworkId specificTarget = default)
     {
-        for (int i = 0; i < ActiveCommands.Length; i++)
+        if (type == CommandType.Action_Request && actionManager != null)
         {
-            var cmd = ActiveCommands[i];
-
-            if (cmd.CommandID == type && Runner.Tick < cmd.StartTick)
-            {
-                if (specificTarget.IsValid)
-                {
-                    if (cmd.TargetID == specificTarget) return true;
-                }
-                else
-                {
-                    return true;
-                }
-            }
+            NetworkNPCActionRequest request = actionManager.ActionChannel.pendingAction;
+            if (!request.isValid) return false;
+            return !specificTarget.IsValid || request.targetID == specificTarget;
         }
+
+        for (int channelIndex = 0; channelIndex < COMMAND_CHANNEL_COUNT; channelIndex++)
+        {
+            NPCCommandChannelState channel = CommandChannels[channelIndex];
+            if (channel.PendingOperation != NPCCommandChannelOperation.Set) continue;
+            if (channel.PendingCommand.CommandID != type || Runner.Tick >= channel.PendingStartTick) continue;
+            if (!specificTarget.IsValid || channel.PendingCommand.TargetID == specificTarget) return true;
+        }
+
         return false;
     }
-
-    public void SetGlobalClearTick(int delayTicks = 0)
-    {
-        if (Runner == null)
-        {
-            Debug.LogWarning("[NPCBehaviourManager] Tried to set clear tick, but Runner is null!");
-            return;
-        }
-
-        GlobalClearTick = Runner.Tick + Mathf.Max(0, delayTicks);
-    }
-
 
     public override void Render()
     {
-        if (showCommandDebug && ActiveCommands.Length > 0)
+        if (!showCommandDebug) return;
+
+        _debugCommandChannels.Clear();
+
+        for (int channelIndex = 0; channelIndex < COMMAND_CHANNEL_COUNT; channelIndex++)
         {
-            _debugActiveCommands.Clear();
-
-            for (int i = 0; i < ActiveCommands.Length; i++)
-            {
-                var cmd = ActiveCommands[i];
-
-                if (cmd.CommandID == CommandType.None)
-                {
-                    _debugActiveCommands.Add($"[{i}] --- EMPTY ---");
-                }
-                else
-                {
-                    // Format: [Slot] CommandType | Start: 100 | End: 500
-                    string status = Runner.Tick < cmd.StartTick ? "(WAITING)" : "(ACTIVE)";
-                    _debugActiveCommands.Add($"[{i}] {cmd.CommandID} {cmd.MovementMode} {status} | Start: {cmd.StartTick} | End: {cmd.EndTick}");
-                }
-            }
+            NPCCommandChannel channelName = (NPCCommandChannel)(channelIndex + 1);
+            NPCCommandChannelState channel = CommandChannels[channelIndex];
+            string active = channel.ActiveCommand.CommandID == CommandType.None ? "None" : channel.ActiveCommand.CommandID.ToString();
+            string pending = channel.PendingOperation == NPCCommandChannelOperation.None ? "None" : $"{channel.PendingOperation} {channel.PendingCommand.CommandID} @ {channel.PendingStartTick}";
+            _debugCommandChannels.Add($"{channelName}: Active={active} | Pending={pending}");
         }
-    }
 
-
-    [ContextMenu("TEST: Move Forward")]
-    public void InjectTestMove()
-    {
-        var testData = new NPCCommandData
+        if (actionManager == null)
         {
-            CommandID = CommandType.Move_Forward,
-            Priority = 10,
-            StartTick = Runner.Tick,
-            EndTick = Runner.Tick + 300, // Move for 5 seconds
-            VectorData = transform.forward, // Move straight ahead
-            MovementMode = NPCMovementMode.Run
-        };
-        ActiveCommands.Set(0, testData);
-    }
+            _debugActionChannel = "Action: Missing Manager";
+            return;
+        }
 
-    [ContextMenu("TEST: Stop")]
-    public void InjectTestStop()
-    {
-        var testData = new NPCCommandData
-        {
-            CommandID = CommandType.Move_Stop,
-            Priority = 20, // Higher priority overwrites movement!
-            StartTick = Runner.Tick,
-            EndTick = Runner.Tick + 300
-        };
-        ActiveCommands.Set(0, testData);
+        NetworkNPCActionChannelState actionChannel = actionManager.ActionChannel;
+        string activeAction = actionChannel.activeAction.isActive ? $"{actionChannel.activeAction.actionID} rev {actionChannel.activeAction.revision}" : "None";
+        string pendingAction = actionChannel.pendingAction.isValid ? $"{actionChannel.pendingAction.actionID} rev {actionChannel.pendingAction.revision} @ {actionChannel.pendingAction.earliestStartTick}" : "None";
+        _debugActionChannel = $"Action: Active={activeAction} | Pending={pendingAction}";
     }
 }

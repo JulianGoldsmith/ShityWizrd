@@ -9,7 +9,6 @@ public class NPCActionManager : CastActionController
     [Header("Core Components")]
     public NetworkAnimator networkAnimator;
     public NPCMovementManager movementManager;
-    public NPCAggroController aggroController;
     public NetworkObjectBuffer networkObjectBuffer;
     public NPCActiveRagdollController activeRagdollController;
 
@@ -23,8 +22,25 @@ public class NPCActionManager : CastActionController
     public List<HitBoxBehaviour> hitboxes = new List<HitBoxBehaviour>();
 
     [Header("Networked State")]
-    [Networked] public NetworkNPCActionData ActionData { get; set; }
+    [Networked] public NetworkNPCActionChannelState ActionChannel { get; set; }
     [Networked] public ActiveCastID CurrentCastID { get; set; }
+
+    private int _localActiveRevision;
+    private int _localActiveActionID = -1;
+
+    public NetworkNPCActionData ActionData
+    {
+        get => ActionChannel.activeAction;
+        set
+        {
+            NetworkNPCActionChannelState channel = ActionChannel;
+            channel.activeAction = value;
+            ActionChannel = channel;
+        }
+    }
+
+    public bool HasActiveAction => ActionData.isActive;
+    public bool HasPendingAction => ActionChannel.pendingAction.isValid;
 
     public override void Spawned()
     {
@@ -32,11 +48,14 @@ public class NPCActionManager : CastActionController
 
         if (networkAnimator == null) networkAnimator = GetComponent<NetworkAnimator>();
         if (movementManager == null) movementManager = GetComponent<NPCMovementManager>();
-        if (aggroController == null) aggroController = GetComponent<NPCAggroController>();
         if (networkObjectBuffer == null) networkObjectBuffer = GetComponent<NetworkObjectBuffer>();
         if (activeRagdollController == null) activeRagdollController = GetComponent<NPCActiveRagdollController>();
 
-        ClearActionState();
+        if (HasStateAuthority) ActionChannel = default;
+
+        _localActiveRevision = 0;
+        _localActiveActionID = -1;
+        isCasting = false;
 
         _runtimeActions.Clear();
         for (int i = 0; i < actionTemplates.Count; i++)
@@ -71,68 +90,77 @@ public class NPCActionManager : CastActionController
         }
     }
 
-    public override void FixedUpdateNetwork()
+    public void TickActionChannel()
     {
-        // If we are currently executing an action, tick it!
-        if (ActionData.actionID != -1 && ActionData.actionID < _runtimeActions.Count)
-        {
-            NPCAction activeAction = _runtimeActions[ActionData.actionID];
-            if (activeAction != null)
-            {
-                // Pass the delta time down to the Action Brain
-                activeAction.Tick(ActionData.actionID, Runner.DeltaTime);
-            }
-        }
-    }
+        if (Runner == null) return;
 
-    public void Tick()
-    {
-        if (ActionData.actionID != -1 && ActionData.actionID < _runtimeActions.Count)
+        TryPromotePendingAction();
+        SynchronizeLocalActionLifecycle();
+
+        NetworkNPCActionData actionData = ActionData;
+        if (actionData.isActive && IsValidAction(actionData.actionID))
         {
-            NPCAction activeAction = _runtimeActions[ActionData.actionID];
-            if (activeAction != null)
-            {
-                activeAction.Tick(ActionData.actionID, Runner.DeltaTime);
-            }
+            _runtimeActions[actionData.actionID].Tick(actionData.actionID, Runner.DeltaTime);
         }
+
+        TryPromotePendingAction();
+        SynchronizeLocalActionLifecycle();
     }
 
     // ==========================================
-    // ACTION CONTROL API (Called by BT Commands)
+    // ACTION CHANNEL CONTROL API
     // ==========================================
 
-    public void StartAction(int actionID)
+    public bool TryScheduleAction(int actionID, NetworkId targetID, int earliestStartTick)
     {
-        if (isCasting) return;
-        if (actionID < 0 || actionID >= _runtimeActions.Count || _runtimeActions[actionID] == null) return;
+        if (!HasStateAuthority || Runner == null) return false;
+        if (!IsValidAction(actionID)) return false;
 
-        if (HasStateAuthority)
+        NetworkNPCActionChannelState channel = ActionChannel;
+        if (channel.pendingAction.isValid) return false;
+
+        channel.revisionCounter++;
+        channel.pendingAction = new NetworkNPCActionRequest
         {
-            ActionData = new NetworkNPCActionData
-            {
-                actionID = actionID,
-                phaseID = 1, // Start at Phase 1 (Windup)
-                phaseStartTick = Runner.Tick,
-                chargeStartTick = Runner.Tick,
-                hasFired = false
-            };
-        }
+            isValid = true,
+            actionID = actionID,
+            targetID = targetID,
+            earliestStartTick = Mathf.Max(Runner.Tick, earliestStartTick),
+            revision = channel.revisionCounter
+        };
 
-        isCasting = true;
-        _runtimeActions[actionID].OnStart(actionID);
+        ActionChannel = channel;
+        return true;
+    }
+
+    public bool TryCancelPendingAction()
+    {
+        if (!HasStateAuthority || Runner == null) return false;
+
+        NetworkNPCActionChannelState channel = ActionChannel;
+        if (!channel.pendingAction.isValid) return true;
+
+        channel.revisionCounter++;
+        channel.pendingAction = default;
+        ActionChannel = channel;
+        return true;
+    }
+
+    public void StartAction(int actionID, NetworkId targetID)
+    {
+        if (!HasStateAuthority || Runner == null) return;
+        if (HasActiveAction || HasPendingAction) return;
+        TryScheduleAction(actionID, targetID, Runner.Tick);
     }
 
     public void EndCurrentAction()
     {
-        if (!isCasting) return;
+        NetworkNPCActionChannelState channel = ActionChannel;
+        if (!channel.activeAction.isActive) return;
 
-        int currentID = ActionData.actionID;
-        if (currentID >= 0 && currentID < _runtimeActions.Count && _runtimeActions[currentID] != null)
-        {
-            _runtimeActions[currentID].OnEnd(currentID);
-        }
-
-        ClearActionState();
+        EndLocalAction();
+        channel.activeAction = default;
+        ActionChannel = channel;
         isCasting = false;
     }
 
@@ -143,30 +171,115 @@ public class NPCActionManager : CastActionController
 
     public void ClearActionState()
     {
-        if (HasStateAuthority)
+        if (!HasStateAuthority) return;
+
+        NetworkNPCActionChannelState channel = ActionChannel;
+        channel.activeAction = default;
+        ActionChannel = channel;
+    }
+
+    private bool IsValidAction(int actionID)
+    {
+        return actionID >= 0 && actionID < _runtimeActions.Count && _runtimeActions[actionID] != null;
+    }
+
+    private bool TryPromotePendingAction()
+    {
+        NetworkNPCActionChannelState channel = ActionChannel;
+        if (channel.activeAction.isActive || !channel.pendingAction.isValid) return false;
+        if (Runner.Tick < channel.pendingAction.earliestStartTick) return false;
+
+        NetworkNPCActionRequest request = channel.pendingAction;
+        if (!IsValidAction(request.actionID))
         {
-            ActionData = new NetworkNPCActionData
-            {
-                actionID = -1,
-                phaseID = -1,
-                phaseStartTick = 0,
-                chargeStartTick = 0,
-                hasFired = false
-            };
+            channel.pendingAction = default;
+            ActionChannel = channel;
+            return false;
         }
+
+        channel.activeAction = new NetworkNPCActionData
+        {
+            isActive = true,
+            actionID = request.actionID,
+            targetID = request.targetID,
+            revision = request.revision,
+            startTick = Runner.Tick,
+            phaseID = 1,
+            phaseStartTick = Runner.Tick,
+            chargeStartTick = Runner.Tick,
+            hasFired = false
+        };
+        channel.pendingAction = default;
+
+        ActionChannel = channel;
+        return true;
+    }
+
+    private void SynchronizeLocalActionLifecycle()
+    {
+        NetworkNPCActionData actionData = ActionData;
+
+        if (!actionData.isActive)
+        {
+            EndLocalAction();
+            isCasting = false;
+            return;
+        }
+
+        if (_localActiveRevision == actionData.revision && _localActiveActionID == actionData.actionID)
+        {
+            isCasting = true;
+            return;
+        }
+
+        EndLocalAction();
+
+        if (!IsValidAction(actionData.actionID))
+        {
+            isCasting = false;
+            return;
+        }
+
+        _localActiveRevision = actionData.revision;
+        _localActiveActionID = actionData.actionID;
+        isCasting = true;
+        _runtimeActions[actionData.actionID].OnStart(actionData.actionID);
+    }
+
+    private void EndLocalAction()
+    {
+        if (!IsValidAction(_localActiveActionID))
+        {
+            _localActiveRevision = 0;
+            _localActiveActionID = -1;
+            return;
+        }
+
+        int endedActionID = _localActiveActionID;
+        _localActiveRevision = 0;
+        _localActiveActionID = -1;
+        _runtimeActions[endedActionID].OnEnd(endedActionID);
     }
 
     // ==========================================
     // THE SPATIAL CONTRACT (Fulfilling the Base)
     // ==========================================
 
+    public bool TryGetActionTarget(out NetworkObject targetObject)
+    {
+        targetObject = null;
+        if (Runner == null || !ActionData.isActive || !ActionData.targetID.IsValid) return false;
+
+        return Runner.TryFindObject(ActionData.targetID, out targetObject);
+    }
+
     public override Vector3 GetAimTarget()
     {
-        if (aggroController != null && aggroController.CurrentTarget != null)
+        if (TryGetActionTarget(out NetworkObject targetObject))
         {
-            // Aim at the chest, not the toes
-            return aggroController.CurrentTarget.transform.position + (Vector3.up * 1.2f);
+            return targetObject.transform.position + (Vector3.up * 1.2f);
         }
+
         return transform.position + (transform.forward * 10f);
     }
 

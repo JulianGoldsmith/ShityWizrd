@@ -21,6 +21,18 @@ public struct NPCCommandData : INetworkStruct
     public NPCMovementMode MovementMode;
 }
 
+public struct NPCCommandChannelState : INetworkStruct
+{
+    public NPCCommandData ActiveCommand; //    Current instruction being executed
+
+    public int ActiveRevision;
+
+    public NPCCommandData PendingCommand; //predicted replacement
+    public NPCCommandChannelOperation PendingOperation;
+    public int PendingStartTick;
+    public int PendingRevision;
+}
+
 public enum NPCMovementMode : byte
 {
     Stop,
@@ -28,17 +40,32 @@ public enum NPCMovementMode : byte
     Run
 }
 
+public enum NPCCommandChannel : byte
+{
+    None = 0,
+    Locomotion = 1,
+    BodyFacing = 2,
+    Gaze = 3,
+    Posture = 4
+}
+
+public enum NPCCommandChannelOperation : byte
+{
+    None = 0, //no chnage -- ie for patch
+    Set = 1, //replace the active command
+    Clear = 2 //remove the active command
+}
+
 public enum CommandType
 {
-    None,
-    Move_PathfindToID,
-    Move_PathfindToPoint,
-    Move_Forward,
-    Move_Stop,
-    Look_InMoveDirection,
-    Action_Execute,
-    Look_InDirection,
-    Look_AtPoint,
-    Look_AtID
-    // <-- ADD THIS
+    None = 0,
+    Move_PathfindToID = 1,
+    Move_PathfindToPoint = 2,
+    Move_Forward = 3,
+    Move_Stop = 4,
+    Look_InMoveDirection = 5,
+    Action_Request = 6,
+    Look_InDirection = 7,
+    Look_AtPoint = 8,
+    Look_AtID = 9
 }

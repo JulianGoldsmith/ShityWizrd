@@ -18,9 +18,10 @@ public partial class BtLookAtStaticPointAction : Action
         var manager = Self.Value.GetComponent<NPCBehaviourManager>();
         if (manager == null || manager.Runner == null) return Status.Failure;
 
-        int targetStartTick = manager.GlobalClearTick > manager.Runner.Tick
-            ? manager.GlobalClearTick
-            : manager.Runner.Tick;
+        int targetStartTick = manager.GetCurrentIntentStartTick();
+        int revision = manager.BeginCommandRevision();
+
+        if (revision == 0) return Status.Failure;
 
         Vector3 targ = Target.Value != null ? Target.Value.transform.position : Point.Value;
 
@@ -28,13 +29,11 @@ public partial class BtLookAtStaticPointAction : Action
         {
             CommandID = CommandType.Look_AtPoint,
             Priority = 10,
-            SetTick = manager.Runner.Tick,
-            StartTick = targetStartTick,
-            EndTick = targetStartTick + 999999, // Run forever until aborted/cleared
+            EndTick = targetStartTick + 999999,
             VectorData = targ
         };
 
-        bool success = manager.TryAddCommand(payload);
+        bool success = manager.TryScheduleChannelCommand(payload, targetStartTick, revision);
 
         return success ? Status.Success : Status.Failure;
     }

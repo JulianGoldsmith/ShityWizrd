@@ -16,6 +16,6 @@ public partial class BtIsCastingCheckCondition : Condition
         var actionManager = Self.Value.GetComponent<NPCActionManager>();
         if (actionManager == null) return false;
 
-        return actionManager.isCasting == IsCasting.Value;
+        return actionManager.HasActiveAction == IsCasting.Value;
     }
 }

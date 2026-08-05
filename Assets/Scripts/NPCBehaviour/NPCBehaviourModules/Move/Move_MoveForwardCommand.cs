@@ -4,6 +4,7 @@ using UnityEngine;
 public class Move_ForwardCommand : NPCCommand
 {
     public override CommandType Type => CommandType.Move_Forward;
+    public override NPCCommandChannel Channel => NPCCommandChannel.Locomotion;
 
     public override void ActiveTick(ref NPCCommandData data, NPCBehaviourManager manager, NPCActiveRagdollController muscle)
     {
@@ -18,6 +19,5 @@ public class Move_ForwardCommand : NPCCommand
         direction.Normalize();
 
         muscle.SetMovementTarget(direction, data.MovementMode);
-        muscle.SetLookDirection(direction);
     }
 }
