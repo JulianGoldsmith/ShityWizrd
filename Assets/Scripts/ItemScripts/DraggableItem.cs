@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Analytics;
 
 [RequireComponent(typeof(NetworkRigidbody3D))]
-public class DraggableItem : InteractableItem
+public class DraggableItem : InteractableItem, IBufferableComponent
 {
     [HideInInspector]
     public Rigidbody rb;
@@ -12,6 +12,8 @@ public class DraggableItem : InteractableItem
     public bool isCharacterObject = false;
 
     private XPBDGlobalManager _globalManager;
+    protected BufferedObject BufferedObject { get; private set; }
+    protected bool IsLocallyAwake => BufferedObject == null || BufferedObject.IsAwake;
 
     public override void Spawned()
     {
@@ -19,11 +21,12 @@ public class DraggableItem : InteractableItem
         networkedRB = this.GetComponent<NetworkRigidbody3D>();
         Runner.SetIsSimulated(this.Object, true);
         _globalManager = FindObjectOfType<XPBDGlobalManager>();
+        if (BufferedObject == null && TryGetComponent(out BufferedObject bufferedObject)) BindBufferedObject(bufferedObject);
     }
 
     public override void FixedUpdateNetwork()
     {
-
+        if (!IsLocallyAwake) return;
     }
 
     public Vector3 GetPlayerTargetHoldPos(NetworkObject playerObj, out Vector3 dragFacingDir)
@@ -73,6 +76,7 @@ public class DraggableItem : InteractableItem
 
     public override void PickUpItem(NetworkObject playerObject)
     {
+        if (!IsLocallyAwake) return;
        // networkedRB.RBIsKinematic = false; // (Or true, depending on if you want unity physics off)
 
         if (_globalManager != null && playerObject.TryGetComponent(out HybridCharacterController controller))
@@ -116,6 +120,7 @@ public class DraggableItem : InteractableItem
 
     public override void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority)
     {
+        if (!IsLocallyAwake) return;
         if (_globalManager != null)
             _globalManager.RemoveGrabJoint(playerObject.Id, Object.Id);
 
@@ -131,6 +136,7 @@ public class DraggableItem : InteractableItem
 
     public override void ForceReleaseForDisconnect(NetworkObject playerObject)
     {
+        if (!IsLocallyAwake) return;
         if (Object == null || !Object.IsValid || !Object.HasStateAuthority)
             return;
 
@@ -150,6 +156,19 @@ public class DraggableItem : InteractableItem
         }
 
         Object.RemoveInputAuthority();
+    }
+
+    public virtual void BindBufferedObject(BufferedObject bufferedObject)
+    {
+        BufferedObject = bufferedObject;
+    }
+
+    public virtual void OnBufferedWake(int wakeTick, bool isActivationTick)
+    {
+    }
+
+    public virtual void OnBufferedSleep(int sleepTick)
+    {
     }
 
 

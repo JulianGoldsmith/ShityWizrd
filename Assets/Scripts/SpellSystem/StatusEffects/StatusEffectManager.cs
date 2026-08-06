@@ -4,12 +4,13 @@ using UnityEngine;
 
 [RequireComponent(typeof(NetworkedMemoryAllocator))]
 [RequireComponent(typeof(PhysicsObject))]
-public class StatusEffectManager : NetworkBehaviour
+public class StatusEffectManager : NetworkBehaviour, IBufferableComponent
 {
     const int CAPACITY = 32;
     [Networked, Capacity(CAPACITY)] public NetworkArray<ActiveStatusEffectData> ActiveEffects { get; }
 
     private NetworkedMemoryAllocator _memory;
+    private BufferedObject _bufferedObject;
 
     // We don't even need the _physicsObject reference here anymore!
 
@@ -23,12 +24,14 @@ public class StatusEffectManager : NetworkBehaviour
     public override void Spawned()
     {
         _memory = GetComponent<NetworkedMemoryAllocator>();
+        if (_bufferedObject == null && TryGetComponent(out BufferedObject bufferedObject)) BindBufferedObject(bufferedObject);
         _isSpawned= true;
     }
 
     public override void Render()
     {
         base.Render();
+        if (_bufferedObject != null && !_bufferedObject.IsAwake) return;
         activeEffectNames.Clear();
 
         if (debugEffectNames)
@@ -188,5 +191,19 @@ public class StatusEffectManager : NetworkBehaviour
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         _isSpawned = false;
+    }
+
+    public void BindBufferedObject(BufferedObject bufferedObject)
+    {
+        _bufferedObject = bufferedObject;
+    }
+
+    public void OnBufferedWake(int wakeTick, bool isActivationTick)
+    {
+    }
+
+    public void OnBufferedSleep(int sleepTick)
+    {
+        activeEffectNames.Clear();
     }
 }

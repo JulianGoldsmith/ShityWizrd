@@ -67,7 +67,7 @@ public class RuneRigNetworkDebugSpawner : MonoBehaviour
 
         foreach (RuneRigObject rig in rigs)
         {
-            if (rig != null && rig.Object != null && rig.Object.IsValid && rig.Object.HasStateAuthority)
+            if (rig != null && rig.HasRigData && rig.Object != null && rig.Object.IsValid && rig.Object.HasStateAuthority)
                 Runner.Despawn(rig.Object);
         }
     }
@@ -88,15 +88,14 @@ public class RuneRigNetworkDebugSpawner : MonoBehaviour
             return;
         }
 
-        NetworkObject networkObject = runeRigBuffer.GetBufferedObject(position, Quaternion.identity, out _);
+        NetworkObject networkObject = runeRigBuffer.GetBufferedObject(out _);
 
         if (networkObject == null || !networkObject.TryGetComponent(out RuneRigObject runeRig))
         {
             Debug.LogError("[RuneRigSpawner] The RuneRig buffer returned an invalid object.", this);
             return;
         }
-        runeRig.StopLevitation();
-        if (!runeRig.TryWriteRigData(rigData, out string error))
+        if (!runeRig.InitializeFromBuffer(rigData, position, Quaternion.identity, Vector3.zero, Vector3.zero, out string error))
         {
             Debug.LogError($"[RuneRigSpawner] Failed to initialize rig: {error}", this);
             Runner.Despawn(networkObject);

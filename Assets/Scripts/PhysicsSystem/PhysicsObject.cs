@@ -10,11 +10,12 @@ using static Fusion.NetworkBehaviour;
 
 [DefaultExecutionOrder(+50)]
 [RequireComponent(typeof(PhysicsObjectProperties))]
-public class PhysicsObject : NetworkBehaviour, ISpawned
+public class PhysicsObject : NetworkBehaviour, ISpawned, IBufferableComponent
 {
 
 
     private IMovementHandler _movementHandler;
+    private BufferedObject _bufferedObject;
 
     [Header("Dependancies")]
     public PhysicsObjectProperties physicsObjectProperties;
@@ -54,6 +55,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         base.Spawned();
 
         tick_spawned = Runner.Tick;
+        if (_bufferedObject == null && TryGetComponent(out BufferedObject bufferedObject)) BindBufferedObject(bufferedObject);
         //InitialisePhysicsObject();
     }
     #endregion
@@ -61,6 +63,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     public override void Render()
     {
+        if (_bufferedObject != null && !_bufferedObject.CanRunSimulationCode) return;
         if (physicsObjectProperties == null || _renderers == null || physicsObjectProperties.physicsobjectmaterial == null)
             return;
 
@@ -200,6 +203,20 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         _renderers = updatedRenderers.ToList();
     }
 
+    public void UnregisterAttachedVisuals(AttatchedSpellComponent attachedData)
+    {
+        if (attachedData == null) return;
+        Renderer[] attachedRenderers = attachedData.GetAllRenderers();
+        if (attachedRenderers == null) return;
+
+        foreach (Renderer renderer in attachedRenderers)
+        {
+            if (renderer == null) continue;
+            _renderers.Remove(renderer);
+            originalMaterials.Remove(renderer);
+        }
+    }
+
     #endregion
 
 
@@ -212,6 +229,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     public void OnCollisionEnter(Collision collision)
     {
+        if (_bufferedObject != null && !_bufferedObject.CanRunSimulationCode) return;
         if (Runner == null || Object == null || !Object.IsValid)
             return;
         //OnBounce(collision);
@@ -230,6 +248,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     // For spell explosions or forces that don't trigger a physical Unity Collision
     public void ReportRawImpulse(float impulse, PhysicsObject otherPhysicsObject = null, NetworkObject instigator = null, Vector3? pos = null)
     {
+        if (_bufferedObject != null && !_bufferedObject.CanRunSimulationCode) return;
         if (bonkManager != null)
         {
             bonkManager.ReportImpulse(
@@ -244,6 +263,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
 
     public void OnCollisionStay(Collision collision)
     {
+        if (_bufferedObject != null && !_bufferedObject.CanRunSimulationCode) return;
         if (Runner == null || Object == null || !Object.IsValid)
             return;
 
@@ -272,6 +292,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     public Vector3 velocity_before_physics_update;
     public override void FixedUpdateNetwork()
     {
+        if (_bufferedObject != null && !_bufferedObject.CanRunSimulationCode) return;
         /*if (TryGetComponent<StatusEffectManager>(out var effectManager))
         {
             effectManager.BeginTick();
@@ -656,6 +677,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
     }
     public void ApplyForce(Vector3 force, ForceMode forceMode)
     {
+        if (_bufferedObject != null && !_bufferedObject.CanRunSimulationCode) return;
         if (_movementHandler != null)
         {
             _movementHandler.ApplyForce(force, forceMode);
@@ -664,6 +686,20 @@ public class PhysicsObject : NetworkBehaviour, ISpawned
         {
             rb.AddForce(force, forceMode);
         }
+    }
+
+    public void BindBufferedObject(BufferedObject bufferedObject)
+    {
+        _bufferedObject = bufferedObject;
+    }
+
+    public void OnBufferedWake(int wakeTick, bool isActivationTick)
+    {
+    }
+
+    public void OnBufferedSleep(int sleepTick)
+    {
+        velocity_before_physics_update = Vector3.zero;
     }
     void ApplyForceToSubObject(PhysicsSubObject pso, Vector3 force, ForceMode forceMode)
     {

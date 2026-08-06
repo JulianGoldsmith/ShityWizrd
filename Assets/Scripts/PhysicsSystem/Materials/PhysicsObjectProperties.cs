@@ -9,8 +9,9 @@ public struct NetworkedMaterialState : INetworkStruct
     public MaterialState State;
 }
 
-public class PhysicsObjectProperties : NetworkBehaviour
+public class PhysicsObjectProperties : NetworkBehaviour, IBufferableComponent
 {
+    private BufferedObject _bufferedObject;
     #region Base Networked Properties (Promotable)
     // By using { get; set; }, Fusion networks these automatically. 
     // Your updated SpellNode reflection will find them via GetProperties()!
@@ -55,7 +56,12 @@ public class PhysicsObjectProperties : NetworkBehaviour
     public override void Spawned()
     {
         base.Spawned();
-        ResetStateToTick(Runner.Tick);
+        if (_bufferedObject == null && TryGetComponent(out BufferedObject bufferedObject)) BindBufferedObject(bufferedObject);
+
+        if (HasStateAuthority && CheckpointState.Tick == 0)
+            ResetStateToTick(Runner.Tick);
+        else
+            CachedNetworkState = CheckpointState;
 
         GetComponent<PhysicsObject>().InitialisePhysicsObject();
     }
@@ -68,6 +74,7 @@ public class PhysicsObjectProperties : NetworkBehaviour
     public override void Render()
     {
         base.Render();
+        if (_bufferedObject != null && !_bufferedObject.IsAwake) return;
         debugState.Clear();
         debugState.Add($"Temp  = {CachedNetworkState.State.Temperature}");
         debugState.Add($"Wetness  = {CachedNetworkState.State.Wetness}");
@@ -175,4 +182,17 @@ public class PhysicsObjectProperties : NetworkBehaviour
 
     public float moment_of_inertia => density * EffectiveSize;
     #endregion
+
+    public void BindBufferedObject(BufferedObject bufferedObject)
+    {
+        _bufferedObject = bufferedObject;
+    }
+
+    public void OnBufferedWake(int wakeTick, bool isActivationTick)
+    {
+    }
+
+    public void OnBufferedSleep(int sleepTick)
+    {
+    }
 }

@@ -106,7 +106,7 @@ public class FusionDebugOverlay : MonoBehaviour
 
                 if (no.TryGetComponent<SpellCreatedCore>(out var core))
                 {
-                    if (core.IsActiveInBuffer)
+                    if (core.IsRuntimeActive)
                         activeSpellCores++;
                 }
             }

@@ -120,7 +120,7 @@ public class RuneSpellContainer : MonoBehaviour
         }
 
         Transform ejectTransform = EjectionPoint != null ? EjectionPoint : (_item.projectileSpawnPoint != null ? _item.projectileSpawnPoint : _item.transform);
-        NetworkObject ejectedObject = runeBuffer.GetBufferedObject(ejectTransform.position, ejectTransform.rotation, out _);
+        NetworkObject ejectedObject = runeBuffer.GetBufferedObject(out _);
 
         if (ejectedObject == null)
         {
@@ -137,9 +137,10 @@ public class RuneSpellContainer : MonoBehaviour
 
             return false;
         }
-        ejectedRig.StopLevitation();
+        Vector3 holderVelocity = _item.activeHolder != null ? _item.activeHolder.calculatedFixedVel : Vector3.zero;
+        Vector3 ejectionVelocity = holderVelocity + ejectTransform.forward * EjectionSpeed;
 
-        if (!ejectedRig.TryWriteRigData(looseRig, out string writeError))
+        if (!ejectedRig.InitializeFromBuffer(looseRig, ejectTransform.position, ejectTransform.rotation, ejectionVelocity, Vector3.zero, out string writeError))
         {
             Debug.LogWarning($"[RuneFeed] Could not initialize ejected rig: {writeError}", _item);
 
@@ -147,14 +148,6 @@ public class RuneSpellContainer : MonoBehaviour
                 _item.Runner.Despawn(ejectedObject);
 
             return false;
-        }
-
-        if (ejectedRig.rb != null)
-        {
-            Vector3 holderVelocity = _item.activeHolder != null ? _item.activeHolder.calculatedFixedVel : Vector3.zero;
-            ejectedRig.rb.linearVelocity = holderVelocity + ejectTransform.forward * EjectionSpeed;
-            ejectedRig.rb.angularVelocity = Vector3.zero;
-            ejectedRig.rb.WakeUp();
         }
 
         _item.PrimarySpellID = default;

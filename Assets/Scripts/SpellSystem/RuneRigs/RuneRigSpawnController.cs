@@ -113,16 +113,17 @@ public class RuneRigSpawnController : NetworkBehaviour
         Vector3 eyePosition = CharacterController.GetEyePosSim(CharacterController.hipsRb.position, CharacterController.lookRot);
         Vector3 spawnPosition = eyePosition + CharacterController.lookRot * Vector3.forward * SpawnDistance + Vector3.up * SpawnHeight;
 
-        NetworkObject networkObject = runeRigBuffer.GetBufferedObject(spawnPosition, Quaternion.identity, out _);
+        NetworkObject networkObject = runeRigBuffer.GetBufferedObject(out _);
 
         if (networkObject == null || !networkObject.TryGetComponent(out RuneRigObject runeRig))
             return;
 
-        runeRig.StopLevitation();
-
         RuneRigData rigData = new RuneRigData(new[] { RuneNodeData.CreateLooseRoot(definitionId, bayCapacity) });
 
-        if (!runeRig.TryWriteRigData(rigData, out string error) && HasStateAuthority)
+        if (!runeRig.InitializeFromBuffer(rigData, spawnPosition, Quaternion.identity, Vector3.zero, Vector3.zero, out string error) && HasStateAuthority)
+        {
             Debug.LogError($"Rune spawn failed: {error}", runeRig);
+            Runner.Despawn(networkObject);
+        }
     }
 }

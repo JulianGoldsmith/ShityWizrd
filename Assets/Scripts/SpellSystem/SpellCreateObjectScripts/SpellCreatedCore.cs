@@ -1,109 +1,86 @@
 using Fusion;
+using Fusion.Addons.Physics;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
+public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferableComponent
 {
+    private const int IntMemoryCapacity = 8;
+    private const int FloatMemoryCapacity = 8;
+    private const int VectorMemoryCapacity = 4;
 
     [Header("Generated Payload")]
     public Transform PhysicsContainer;
     public Transform VisualContainer;
 
-    private GameObject _attachedComponents;
-    private GameObject _attachedVisual;
-    //Debug
     public static int ActiveCount;
     public static int NetworkWritesThisSecond;
 
-    //References to SpellGraph #
     [Networked] public ActiveCastID ActiveCastID { get; set; }
     [Networked] public SpellGraphId BlueprintID { get; set; }
-    [Networked] public NetworkBool IsActiveInBuffer { get; set; }
     [Networked] public int NodeArrayIndex { get; set; }
-
     [Networked] public int SpawnTick { get; set; }
     [Networked] public TickTimer LifetimeTimer { get; set; }
-
-    // current context / active variables
     [Networked] public CoreContext Context { get; set; }
     [Networked] public Vector3 NetworkVelocity { get; set; }
-
-
-
-    //networked varibale sketchpad - added to by behaviours and triggers for roll back friendly data
-    [Networked, Capacity(8)] public NetworkArray<int> IntMemory { get; }
-    [Networked, Capacity(8)] public NetworkArray<float> FloatMemory { get; }
-    [Networked, Capacity(4)] public NetworkArray<Vector3> VectorMemory { get; }
+    [Networked, Capacity(IntMemoryCapacity)] public NetworkArray<int> IntMemory { get; }
+    [Networked, Capacity(FloatMemoryCapacity)] public NetworkArray<float> FloatMemory { get; }
+    [Networked, Capacity(VectorMemoryCapacity)] public NetworkArray<Vector3> VectorMemory { get; }
     [Networked] public int BoolMemory { get; set; }
-
-
     [Networked] public int GlobalBufferIndex { get; set; }
-
 
     public List<PendingContact> TickContacts = new List<PendingContact>();
     public Dictionary<int, GameObject> ActiveVisuals { get; private set; } = new Dictionary<int, GameObject>();
 
-
-    private ChangeDetector _changes;
-
+    private BufferedObject _bufferedObject;
+    private NetworkRigidbody3D _networkRigidbody;
+    private NetworkTransform _networkTransform;
+    private Rigidbody _rigidbody;
+    private PhysicsObject _physicsObject;
+    private GameObject _attachedComponents;
+    private GameObject _attachedVisual;
     private CoreExecutionPlan _myPlan;
-
+    private GameObject _payloadPrefab;
+    private SpellGraphId _payloadBlueprintId;
+    private ActiveCastID _runtimeCastId;
+    private int _payloadNodeArrayIndex = -1;
+    private float _configuredLifetime;
+    private ActiveSpell _tokenOwnerSpell;
+    private ActiveCastID _tokenOwnerCastId;
     private bool _isInitialized;
+    private bool _isCountedActive;
 
     public Vector3 Position => transform.position;
     public Quaternion Rotation => transform.rotation;
     public PlayerRef InputAuthority => Object.InputAuthority;
-
     public GameObject SourceObject => gameObject;
-
     public NetworkId CoreNetworkId => Object != null ? Object.Id : default;
+    public bool IsLocallyAwake => _bufferedObject != null ? _bufferedObject.IsAwake : _isCountedActive;
+    public bool IsRuntimeActive => IsLocallyAwake && _isInitialized;
+
     public bool TryGetCoreComponent<T>(out T component) where T : class
     {
-        return TryGetComponent<T>(out component);
+        return TryGetComponent(out component);
     }
 
     public override void Spawned()
     {
-        _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
-    }
+        _networkRigidbody = GetComponent<NetworkRigidbody3D>();
+        _networkTransform = GetComponent<NetworkTransform>();
+        _rigidbody = GetComponent<Rigidbody>();
+        _physicsObject = GetComponent<PhysicsObject>();
 
-    public override void Render()
-    {
-        base.Render();
-
-        /*if (!_isInitialized || _myPlan == null) return;*/
-
-       /* foreach (var behaviour in _myPlan.Behaviours) behaviour.TickVFX(this);
-        foreach (var trigger in _myPlan.Triggers) trigger.TickVFX(this);*/
-    }
-
-    public void LateUpdate()
-    {
-        if (!_isInitialized || _myPlan == null) return;
-
-        foreach (var behaviour in _myPlan.Behaviours) behaviour.TickVFX(this);
-        foreach (var trigger in _myPlan.Triggers) trigger.TickVFX(this);
+        if (_bufferedObject == null && TryGetComponent(out BufferedObject bufferedObject)) BindBufferedObject(bufferedObject);
     }
 
     public override void FixedUpdateNetwork()
     {
-        // Proxies monitor this. When the Host sets IsActiveInBuffer = true, the Proxy wakes up.
-        /*foreach (var change in _changes.DetectChanges(this))
-        {
-            if (change == nameof(IsActiveInBuffer))
-            {
-                if (IsActiveInBuffer) WakeUp();
-                else GoToSleep();
-            }
-        }*/
+        ReconcileUnbufferedWakeFromTick();
+        if (!IsLocallyAwake) return;
+        if (!EnsureLocalRuntimeReady()) return;
 
-        if (IsActiveInBuffer && !_isInitialized)
-        {
-            WakeUp();
-        }
-
-        if (!_isInitialized || _myPlan == null) return;
+        ReconcileTokenOwnership();
 
         if (LifetimeTimer.Expired(Runner))
         {
@@ -111,175 +88,116 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
             return;
         }
 
-        foreach (var behaviour in _myPlan.Behaviours)
-        {
+        foreach (IBehaviour behaviour in _myPlan.Behaviours)
             behaviour.Tick(this, Runner.DeltaTime);
-        }
 
         for (int i = _myPlan.Triggers.Count - 1; i >= 0; i--)
         {
             ITrigger trigger = _myPlan.Triggers[i];
 
-            // 1. FIX: Expect a List of hits!
-            if (trigger.Tick(this, Runner.DeltaTime, out List<SpellTriggerInfo> hitInfos))
+            if (!trigger.Tick(this, Runner.DeltaTime, out List<SpellTriggerInfo> hitInfos))
+                continue;
+
+            if (trigger is not RuntimeTriggerBase runtimeTrigger)
+                continue;
+
+            foreach (IRuntimeNode outcome in runtimeTrigger.Outcomes)
             {
-                // 2. Execute every effect, passing the WHOLE LIST so the effect can do group math!
-                if (trigger is RuntimeTriggerBase runtimeTrigger)
+                if (outcome is IEffect effect)
+                    effect.Execute(this, hitInfos);
+
+                if (outcome is IRuntimeCore downstreamCore)
                 {
-                    foreach (var outcome in runtimeTrigger.Outcomes)
-                    {
-                        // If the outcome is an effect, fire it instantly!
-                        if (outcome is IEffect effect)
-                        {
-                            effect.Execute(this, hitInfos);
-                        }
-                        if (outcome is IRuntimeCore downstreamCore)
-                        {
-                            // If a shotgun trigger hits 5 enemies, spawn 5 explosions!
-                            foreach (var hitInfo in hitInfos)
-                            {
-                                downstreamCore.ExecuteCore(hitInfo);
-                            }
-                        }
-                        // (We will add the logic to spawn downstream Cores here later!)
-                    }
+                    foreach (SpellTriggerInfo hitInfo in hitInfos)
+                        downstreamCore.ExecuteCore(hitInfo);
                 }
 
-                
+                if (!IsLocallyAwake)
+                    return;
             }
         }
 
         TickContacts.Clear();
-
     }
 
-    public void Initialize(ActiveCastID castId, SpellGraphId blueprintId, CoreContext initialContext, int arrayIndex, int globalBufferIndex)
+    public override void Render()
     {
-        // 1. If we were somehow already active (buffer overlap), clean up the old spell first!
-        SpawnTick = Runner.Tick;
-        if (IsActiveInBuffer)
-        {
-            DeactivateCore();
-        }
-        GlobalBufferIndex = globalBufferIndex;
+        if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
 
+        foreach (IBehaviour behaviour in _myPlan.Behaviours)
+            behaviour.TickVFX(this);
+
+        foreach (ITrigger trigger in _myPlan.Triggers)
+            trigger.TickVFX(this);
+    }
+
+    public bool Initialize(ActiveCastID castId, SpellGraphId blueprintId, CoreContext initialContext, int arrayIndex, int globalBufferIndex, Vector3 spawnPosition, Quaternion spawnRotation)
+    {
+        if (Object == null || !Object.IsValid) return false;
+
+        if (_bufferedObject != null && _bufferedObject.IsAwake)
+        {
+            Debug.LogError("[SpellCreatedCore] A buffer returned an already-awake spell core.", this);
+            return false;
+        }
+
+        GlobalBufferIndex = globalBufferIndex;
         NodeArrayIndex = arrayIndex;
         ActiveCastID = castId;
         BlueprintID = blueprintId;
-        //NodeInstanceGuid = nodeGuid;
         Context = initialContext;
-        IsActiveInBuffer = true;
+        SpawnTick = Runner.Tick;
         NetworkVelocity = Vector3.zero;
 
-        ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
-        if (activeSpell != null) activeSpell.AddToken();
+        PreparePose(spawnPosition, spawnRotation);
+        ResetActivationMemory();
 
-        // Host / Caster instantly initializes and predicts
-        SetupFromRAM();
-    }
-
-    private void SetupFromRAM()
-    {
-        if (SpellStateManager.instance.hydratedSpells.TryGetValue(BlueprintID, out RuntimeSpell runtimeSpell))
+        if (!EnsureCastHydrated() || !EnsurePayloadHydrated())
         {
-            IRuntimeNode myLogic = runtimeSpell.HydratedNodes[NodeArrayIndex];
-
-            if (myLogic is RuntimeObjectCore runtimeCore)
-            {
-                _myPlan = new CoreExecutionPlan();
-                _myPlan.Behaviours = new List<IBehaviour>(runtimeCore.Behaviours);
-                _myPlan.Triggers = new List<ITrigger>(runtimeCore.Triggers);
-
-                SpellState myState = SpellStateManager.instance.GetActiveSpell(ActiveCastID)?.State;
-                SpellTriggerInfo evaluationInfo = new SpellTriggerInfo(
-                    isCast: false, source: gameObject, state: myState, position: Context.SpawnPosition,
-                    rotation: transform.rotation, triggerVector: Context.TriggerVector, hitObject: null
-                );
-
-                // 1. Initialise the base template defaults (Legacy bridge)
-                //runtimeCore.Template.InitialisePhysicsObjectOnSpawn(Object, evaluationInfo);
-
-                // 2. DETERMINISTIC MATH (Host and Proxy both run this instantly!)
-                float finalSize = runtimeCore.size.GetValue(evaluationInfo);
-                float finalLifetime = runtimeCore.lifetime.GetValue(evaluationInfo);
-                ushort finalMat = runtimeCore.material.GetValue(evaluationInfo);
-
-                if (_attachedComponents == null && runtimeCore.AttachedSpellComponentsPrefab != null)
-                {
-                    Transform physicsParent = PhysicsContainer != null ? PhysicsContainer : transform;
-
-                    _attachedComponents = Instantiate(runtimeCore.AttachedSpellComponentsPrefab, physicsParent);
-                    _attachedComponents.transform.localPosition = Vector3.zero;
-                    _attachedComponents.transform.localRotation = Quaternion.identity;
-                    _attachedComponents.transform.localScale = Vector3.one;
-                }
-
-                AttatchedSpellComponent attachedScript = _attachedComponents != null ? _attachedComponents.GetComponent<AttatchedSpellComponent>() : null;
-
-                if (attachedScript != null)
-                {
-                    attachedScript.parentSpellCore = this;
-
-                    if (_attachedVisual == null && attachedScript.VisualRoot != null && VisualContainer != null)
-                    {
-                        _attachedVisual = attachedScript.VisualRoot.gameObject;
-                        attachedScript.VisualRoot.SetParent(VisualContainer, false);
-                    }
-                }
-
-                PhysicsObjectProperties pop = GetComponent<PhysicsObjectProperties>();
-
-                if (pop != null)
-                {
-                    pop.Size = finalSize;
-                    pop.Material_label = finalMat;
-
-                    PhysicsObject physObj = pop.GetComponent<PhysicsObject>();
-
-                    if (attachedScript != null && physObj != null)
-                        physObj.RegisterAttachedVisuals(attachedScript, pop.physicsobjectmaterial);
-
-                    if (physObj != null)
-                    {
-                        physObj.InitialisePhysicsObject();
-
-                        if (physObj.rb != null)
-                        {
-                            physObj.rb.ResetCenterOfMass();
-                            physObj.rb.ResetInertiaTensor();
-                            physObj.rb.WakeUp();
-                        }
-                    }
-                }
-
-                LifetimeTimer = TickTimer.CreateFromSeconds(Runner, finalLifetime);
-
-                foreach (var behaviour in _myPlan.Behaviours) behaviour.InitTick(this);
-                foreach (var trigger in _myPlan.Triggers) trigger.InitTick(this);
-
-                var physOb = GetComponent<PhysicsObject>();
-                if (physOb != null)
-                {
-                    //////////////////////////////////////////////////////NEED BONK LOGIC ///////////////////////////////////////////////////////////
-
-                    /*physOb.OnZeroBonk_event.RemoveListener(DeactivateCore);
-                    physOb.OnZeroBonk_event.AddListener(DeactivateCore);*/
-                }
-            }
-            _isInitialized = true;
+            if (HasStateAuthority) Runner.Despawn(Object);
+            return false;
         }
+
+        ReconcileTokenOwnership();
+
+        if (_bufferedObject != null)
+        {
+            _bufferedObject.BeginWakeInitialization();
+            ResetPhysicsVelocity();
+            InitializeActivationTick();
+            _bufferedObject.CompleteWakeInitialization();
+        }
+        else
+        {
+            InitializeActivationTick();
+            ActivateLocalState();
+        }
+
+        return true;
     }
 
-    #region CollisionHandleing
+    public void DeactivateCore()
+    {
+        if (!IsLocallyAwake) return;
+
+        if (_bufferedObject != null)
+            _bufferedObject.Sleep();
+        else
+            DeactivateLocalState();
+
+        if (HasStateAuthority && Object != null && Object.IsValid)
+            Runner.Despawn(Object);
+    }
+
     public void OnCollisionEnter(Collision collision)
     {
-        if (!_isInitialized || _myPlan == null) return;
-        //Debug.Log("Registered Contact added pending contact");
-        GameObject coll = SpellSystemHelpers.GetHitGameObject(collision.collider);
+        if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
+        if (collision.contactCount == 0) return;
+
+        GameObject hitObject = SpellSystemHelpers.GetHitGameObject(collision.collider);
         TickContacts.Add(new PendingContact
         {
-
-            Target = coll,
+            Target = hitObject,
             Point = collision.contacts[0].point,
             Normal = collision.contacts[0].normal
         });
@@ -287,108 +205,160 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
 
     public void OnTriggerEnter(Collider other)
     {
-        if (!_isInitialized || _myPlan == null) return;
+        if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
 
         Vector3 hitPoint = other.ClosestPoint(transform.position);
         Vector3 hitNormal = (transform.position - other.transform.position).normalized;
         if (hitNormal == Vector3.zero) hitNormal = Vector3.up;
-        GameObject coll = SpellSystemHelpers.GetHitGameObject(other);
+
         TickContacts.Add(new PendingContact
         {
-            Target = coll,
+            Target = SpellSystemHelpers.GetHitGameObject(other),
             Point = hitPoint,
             Normal = hitNormal
         });
     }
 
-    #endregion
-
-    #region Wake / Sleep
-    // Call this when the fireball hits a wall, runs out of lifetime, or is destroyed
-    public void DeactivateCore()
+    public void BindBufferedObject(BufferedObject bufferedObject)
     {
-        _isInitialized = false;
-
-        if (!IsActiveInBuffer) return;
-
-        IsActiveInBuffer = false;
-
-        if (GlobalSpellBuffer.Instance != null)
-        {
-           // GlobalSpellBuffer.Instance.ReturnSpellCoreToBuffer(GlobalBufferIndex);
-        }
-
-        GoToSleep();
-
-        if (HasStateAuthority)
-            Runner.Despawn(Object);
+        _bufferedObject = bufferedObject;
     }
 
-    private void WakeUp()
+    public void OnBufferedWake(int wakeTick, bool isActivationTick)
     {
-        ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
-        ActiveCount++;
-        // 1. REBUILD THE PROXY STATE (If it doesn't exist)
-        if (activeSpell == null)
+        ActivateLocalState();
+        EnsureLocalRuntimeReady();
+        ReconcileTokenOwnership();
+    }
+
+    public void OnBufferedSleep(int sleepTick)
+    {
+        DeactivateLocalState();
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        DeactivateLocalState();
+        base.Despawned(runner, hasState);
+    }
+
+    private bool EnsureLocalRuntimeReady()
+    {
+        bool identityChanged = !_runtimeCastId.Equals(ActiveCastID) || !_payloadBlueprintId.Equals(BlueprintID) || _payloadNodeArrayIndex != NodeArrayIndex;
+        if (_isInitialized && !identityChanged) return true;
+        if (!EnsureCastHydrated()) return false;
+        return EnsurePayloadHydrated();
+    }
+
+    private bool EnsureCastHydrated()
+    {
+        if (!ActiveCastID.IsValid || SpellStateManager.instance == null) return false;
+        if (SpellStateManager.instance.GetActiveSpell(ActiveCastID) != null) return true;
+        if (!SpellStateManager.instance.hydratedSpells.ContainsKey(BlueprintID)) return false;
+        if (!Runner.TryFindObject(ActiveCastID.CasterId, out NetworkObject casterObject)) return false;
+        if (!casterObject.TryGetComponent(out ActiveCastTracker tracker)) return false;
+
+        NetworkCastData syncedData = tracker.GetCastData(ActiveCastID);
+
+        if (!syncedData.CastID.IsValid)
+            return false;
+
+        SpellGraph legacyBlueprint = SpellStateManager.instance.GetSpellGraph(BlueprintID);
+        SpellState proxyState = legacyBlueprint != null ? new SpellState(Runner, syncedData, legacyBlueprint) : new SpellState(Runner, syncedData);
+        ActiveSpell activeSpell = legacyBlueprint != null ? new ActiveSpell(ActiveCastID, legacyBlueprint, proxyState) : new ActiveSpell(ActiveCastID, BlueprintID, proxyState);
+        SpellStateManager.instance.RegisterNewCast(ActiveCastID, activeSpell);
+        return true;
+    }
+
+    private bool EnsurePayloadHydrated()
+    {
+        if (SpellStateManager.instance == null) return false;
+        if (!SpellStateManager.instance.hydratedSpells.TryGetValue(BlueprintID, out RuntimeSpell runtimeSpell)) return false;
+        if (runtimeSpell.HydratedNodes == null || NodeArrayIndex < 0 || NodeArrayIndex >= runtimeSpell.HydratedNodes.Length) return false;
+        if (runtimeSpell.HydratedNodes[NodeArrayIndex] is not RuntimeObjectCore runtimeCore) return false;
+
+        bool payloadMissing = runtimeCore.AttachedSpellComponentsPrefab != null && _attachedComponents == null;
+        bool payloadChanged = _myPlan == null || !_payloadBlueprintId.Equals(BlueprintID) || _payloadNodeArrayIndex != NodeArrayIndex || _payloadPrefab != runtimeCore.AttachedSpellComponentsPrefab || payloadMissing;
+
+        if (payloadChanged)
         {
-            if (!SpellStateManager.instance.hydratedSpells.ContainsKey(BlueprintID))
-                return;
-
-            if (!Runner.TryFindObject(ActiveCastID.CasterId, out NetworkObject casterObject))
-                return;
-
-            if (!casterObject.TryGetComponent(out ActiveCastTracker tracker))
-                return;
-
-            NetworkCastData syncedData = tracker.GetCastData(ActiveCastID);
-
-            if (!syncedData.CastID.IsValid)
+            if (_isInitialized) CleanupPlanVFX();
+            DestroyCurrentPayload();
+            _myPlan = new CoreExecutionPlan
             {
-                Debug.LogWarning($"[Proxy Sync] Tracker had no data for Cast {ActiveCastID.CastNumber}.");
-                return;
-            }
-
-            SpellGraph legacyBlueprint = SpellStateManager.instance.GetSpellGraph(BlueprintID);
-            SpellState proxyState;
-
-            if (legacyBlueprint != null)
-                proxyState = new SpellState(Runner, syncedData, legacyBlueprint);
-            else
-                proxyState = new SpellState(Runner, syncedData);
-
-            if (legacyBlueprint != null)
-                activeSpell = new ActiveSpell(ActiveCastID, legacyBlueprint, proxyState);
-            else
-                activeSpell = new ActiveSpell(ActiveCastID, BlueprintID, proxyState);
-
-            SpellStateManager.instance.RegisterNewCast(ActiveCastID, activeSpell);
-            activeSpell.AddToken();
-
-            Debug.Log($"[Proxy Sync] Rehydrated cast {ActiveCastID.CastNumber} using blueprint {BlueprintID.BlueprintNumber}.");
+                Behaviours = new List<IBehaviour>(runtimeCore.Behaviours),
+                Triggers = new List<ITrigger>(runtimeCore.Triggers)
+            };
+            _payloadBlueprintId = BlueprintID;
+            _payloadNodeArrayIndex = NodeArrayIndex;
+            _payloadPrefab = runtimeCore.AttachedSpellComponentsPrefab;
+            CreatePayload(runtimeCore.AttachedSpellComponentsPrefab);
         }
-
-        // 2. THE FIX: Pass off entirely to the Universal Setup!
-        // We delete the old manual _myPlan extraction block completely.
-        if (_myPlan == null)
+        else
         {
-            SetupFromRAM();
+            if (_attachedComponents != null) _attachedComponents.SetActive(true);
+            if (_attachedVisual != null) _attachedVisual.SetActive(true);
         }
+
+        SpellState spellState = SpellStateManager.instance.GetActiveSpell(ActiveCastID)?.State;
+        SpellTriggerInfo evaluationInfo = new SpellTriggerInfo(false, gameObject, spellState, Context.SpawnPosition, transform.rotation, Context.TriggerVector, null);
+        float finalSize = runtimeCore.size.GetValue(evaluationInfo);
+        _configuredLifetime = runtimeCore.lifetime.GetValue(evaluationInfo);
+        ushort finalMaterial = runtimeCore.material.GetValue(evaluationInfo);
+        AttatchedSpellComponent attachedScript = _attachedComponents != null ? _attachedComponents.GetComponent<AttatchedSpellComponent>() : null;
+
+        if (attachedScript != null)
+            attachedScript.parentSpellCore = this;
+
+        if (TryGetComponent(out PhysicsObjectProperties properties))
+        {
+            properties.Size = finalSize;
+            properties.Material_label = finalMaterial;
+
+            if (payloadChanged && attachedScript != null && _physicsObject != null)
+                _physicsObject.RegisterAttachedVisuals(attachedScript, properties.physicsobjectmaterial);
+
+            if (_physicsObject != null)
+            {
+                _physicsObject.InitialisePhysicsObject();
+
+                if (_physicsObject.rb != null)
+                {
+                    _physicsObject.rb.ResetCenterOfMass();
+                    _physicsObject.rb.ResetInertiaTensor();
+                }
+            }
+        }
+
+        _runtimeCastId = ActiveCastID;
+        _isInitialized = true;
+        return true;
     }
 
-    private void GoToSleep()
+    private void CreatePayload(GameObject payloadPrefab)
     {
-        if (_myPlan != null)
-        {
-            foreach (var behaviour in _myPlan.Behaviours) behaviour.CleanupVFX(this);
-            foreach (var trigger in _myPlan.Triggers) trigger.CleanupVFX(this);
-        }
-        ActiveCount--;
-        TickContacts.Clear();
+        if (payloadPrefab == null) return;
 
-        ActiveVisuals.Clear();
+        Transform physicsParent = PhysicsContainer != null ? PhysicsContainer : transform;
+        _attachedComponents = Instantiate(payloadPrefab, physicsParent);
+        _attachedComponents.transform.localPosition = Vector3.zero;
+        _attachedComponents.transform.localRotation = Quaternion.identity;
+        _attachedComponents.transform.localScale = Vector3.one;
 
-        ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(ActiveCastID);
-        if (activeSpell != null) activeSpell.RemoveToken();
+        if (!_attachedComponents.TryGetComponent(out AttatchedSpellComponent attachedScript)) return;
+
+        attachedScript.parentSpellCore = this;
+
+        if (attachedScript.VisualRoot == null || VisualContainer == null) return;
+
+        _attachedVisual = attachedScript.VisualRoot.gameObject;
+        attachedScript.VisualRoot.SetParent(VisualContainer, false);
+    }
+
+    private void DestroyCurrentPayload()
+    {
+        AttatchedSpellComponent attachedScript = _attachedComponents != null ? _attachedComponents.GetComponent<AttatchedSpellComponent>() : null;
+        if (attachedScript != null && _physicsObject != null) _physicsObject.UnregisterAttachedVisuals(attachedScript);
 
         if (_attachedVisual != null)
         {
@@ -403,45 +373,130 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore
             Destroy(_attachedComponents);
             _attachedComponents = null;
         }
-
-        if (TryGetComponent<Rigidbody>(out var rb))
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
-        NetworkVelocity = Vector3.zero;
-
-        ActiveCastID = default;
-        BlueprintID = default;
     }
 
-    #endregion
-
-    #region sketchpad memory
-
-    public bool GetBool(int bitIndex)
+    private void PreparePose(Vector3 position, Quaternion rotation)
     {
-        return (BoolMemory & (1 << bitIndex)) != 0;
+        if (_networkRigidbody != null)
+            _networkRigidbody.Teleport(position, rotation);
+        else if (_networkTransform != null)
+            _networkTransform.Teleport(position, rotation);
+        else
+            transform.SetPositionAndRotation(position, rotation);
+
+        if (_rigidbody == null) return;
+        _rigidbody.linearVelocity = Vector3.zero;
+        _rigidbody.angularVelocity = Vector3.zero;
     }
+
+    private void ResetPhysicsVelocity()
+    {
+        if (_rigidbody == null) return;
+        _rigidbody.linearVelocity = Vector3.zero;
+        _rigidbody.angularVelocity = Vector3.zero;
+    }
+
+    private void ResetActivationMemory()
+    {
+        for (int i = 0; i < IntMemoryCapacity; i++) IntMemory.Set(i, 0);
+        for (int i = 0; i < FloatMemoryCapacity; i++) FloatMemory.Set(i, 0f);
+        for (int i = 0; i < VectorMemoryCapacity; i++) VectorMemory.Set(i, Vector3.zero);
+        BoolMemory = 0;
+    }
+
+    private void InitializeActivationTick()
+    {
+        SpawnTick = Runner.Tick;
+        LifetimeTimer = TickTimer.CreateFromSeconds(Runner, _configuredLifetime);
+
+        foreach (IBehaviour behaviour in _myPlan.Behaviours)
+            behaviour.InitTick(this);
+
+        foreach (ITrigger trigger in _myPlan.Triggers)
+            trigger.InitTick(this);
+    }
+
+    private void ActivateLocalState()
+    {
+        if (_isCountedActive) return;
+        ActiveCount++;
+        _isCountedActive = true;
+    }
+
+    private void ReconcileUnbufferedWakeFromTick()
+    {
+        if (_bufferedObject != null || _isCountedActive || !ActiveCastID.IsValid || LifetimeTimer.Expired(Runner)) return;
+        ActivateLocalState();
+    }
+
+    private void DeactivateLocalState()
+    {
+        if (_isInitialized) CleanupPlanVFX();
+        ReleaseTokenOwnership();
+        TickContacts.Clear();
+        ActiveVisuals.Clear();
+        _isInitialized = false;
+
+        if (_attachedVisual != null) _attachedVisual.SetActive(false);
+        if (_attachedComponents != null) _attachedComponents.SetActive(false);
+
+        if (_isCountedActive)
+        {
+            ActiveCount = Mathf.Max(0, ActiveCount - 1);
+            _isCountedActive = false;
+        }
+    }
+
+    private void CleanupPlanVFX()
+    {
+        if (_myPlan == null) return;
+
+        foreach (IBehaviour behaviour in _myPlan.Behaviours)
+            behaviour.CleanupVFX(this);
+
+        foreach (ITrigger trigger in _myPlan.Triggers)
+            trigger.CleanupVFX(this);
+    }
+
+    private void ReconcileTokenOwnership()
+    {
+        ActiveSpell activeSpell = SpellStateManager.instance != null ? SpellStateManager.instance.GetActiveSpell(ActiveCastID) : null;
+
+        if (_tokenOwnerSpell != null && (_tokenOwnerSpell != activeSpell || !_tokenOwnerCastId.Equals(ActiveCastID)))
+            ReleaseTokenOwnership();
+
+        if (activeSpell == null || _tokenOwnerSpell == activeSpell) return;
+
+        activeSpell.AddToken(CoreNetworkId);
+        _tokenOwnerSpell = activeSpell;
+        _tokenOwnerCastId = ActiveCastID;
+    }
+
+    private void ReleaseTokenOwnership()
+    {
+        if (_tokenOwnerSpell != null)
+            _tokenOwnerSpell.RemoveToken(CoreNetworkId);
+
+        _tokenOwnerSpell = null;
+        _tokenOwnerCastId = default;
+    }
+
+    public bool GetBool(int bitIndex) => (BoolMemory & (1 << bitIndex)) != 0;
 
     public void SetBool(int bitIndex, bool value)
     {
         if (value)
-            BoolMemory |= (1 << bitIndex); 
+            BoolMemory |= 1 << bitIndex;
         else
-            BoolMemory &= ~(1 << bitIndex); 
+            BoolMemory &= ~(1 << bitIndex);
     }
 
     public int GetInt(int index) => IntMemory.Get(index);
     public void SetInt(int index, int value) => IntMemory.Set(index, value);
-
     public float GetFloat(int index) => FloatMemory.Get(index);
     public void SetFloat(int index, float value) => FloatMemory.Set(index, value);
-
     public Vector3 GetVector(int index) => VectorMemory.Get(index);
     public void SetVector(int index, Vector3 value) => VectorMemory.Set(index, value);
-
-    #endregion
 }
 
 public class SpellCompilationContext
@@ -452,11 +507,11 @@ public class SpellCompilationContext
     public List<SpellNode> TemplateRegistry;
     public List<SpellNode>[] DownstreamNodeDefinitions;
 
-    private int _nextIntSlot = 0;
-    private int _nextFloatSlot = 0;
-    private int _nextVectorSlot = 0;
-    private int _nextBoolBit = 0;
-    private int _nextVfxId = 0;
+    private int _nextIntSlot;
+    private int _nextFloatSlot;
+    private int _nextVectorSlot;
+    private int _nextBoolBit;
+    private int _nextVfxId;
 
     public int ClaimIntSlot() => _nextIntSlot++;
     public int ClaimFloatSlot() => _nextFloatSlot++;
@@ -465,9 +520,7 @@ public class SpellCompilationContext
 
     public int ClaimBoolBit()
     {
-        if (_nextBoolBit >= 32)
-            Debug.LogError("Too many booleans on this core!");
-
+        if (_nextBoolBit >= 32) Debug.LogError("Too many booleans on this core!");
         return _nextBoolBit++;
     }
 

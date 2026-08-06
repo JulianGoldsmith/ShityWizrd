@@ -1,6 +1,4 @@
 using Fusion;
-using Fusion.Addons.Physics;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -21,9 +19,8 @@ public class ObjectBuffer : NetworkBehaviour
     [Networked, Capacity(MAX_CAPACITY)]
     private NetworkArray<NetworkObject> _buffer { get; }
 
-    private readonly NetworkObject[] _localBuffer = new NetworkObject[MAX_CAPACITY];
-    private readonly HashSet<NetworkObject> _locallyClaimed = new HashSet<NetworkObject>();
     private int _replenishScanIndex;
+    private int _orphanCleanupIndex;
 
     public override void Spawned()
     {
@@ -48,7 +45,18 @@ public class ObjectBuffer : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        if (!HasStateAuthority || IsOrphaned || ActiveCapacity <= 0)
+        ReconcileBufferedObjectParents();
+
+        if (!HasStateAuthority)
+            return;
+
+        if (IsOrphaned)
+        {
+            CleanUpOrphanedBuffer();
+            return;
+        }
+
+        if (ActiveCapacity <= 0)
             return;
 
         for (int i = 0; i < 10; i++)
@@ -63,41 +71,26 @@ public class ObjectBuffer : NetworkBehaviour
         }
     }
 
-    public override void Render()
+    private void ReconcileBufferedObjectParents()
     {
-        for (int i = 0; i < ActiveCapacity; i++)
+        int capacity = Mathf.Clamp(ActiveCapacity, 0, MAX_CAPACITY);
+
+        for (int i = 0; i < capacity; i++)
         {
-            NetworkObject networkInstance = _buffer[i];
+            NetworkObject instance = _buffer[i];
 
-            if (_localBuffer[i] != networkInstance && _localBuffer[i] != null)
-            {
-                Reawaken(_localBuffer[i]);
-                _locallyClaimed.Remove(_localBuffer[i]);
-            }
-
-            if (networkInstance != null && _locallyClaimed.Contains(networkInstance))
-            {
-                _localBuffer[i] = networkInstance;
-                continue;
-            }
-
-            _localBuffer[i] = networkInstance;
-
-            if (networkInstance == null || !networkInstance.IsValid)
+            if (instance == null || !instance.IsValid)
                 continue;
 
-            if (networkInstance.gameObject.activeSelf)
-                networkInstance.gameObject.SetActive(false);
+            if (instance.TryGetComponent(out BufferedObject bufferedObject) && bufferedObject.IsAwake)
+                continue;
 
-            if (networkInstance.IsInSimulation)
-                Runner.SetIsSimulated(networkInstance, false);
-
-            if (networkInstance.transform.parent != transform)
-                networkInstance.transform.SetParent(transform, false);
+            if (instance.transform.parent != transform)
+                instance.transform.SetParent(transform, true);
         }
     }
 
-    public NetworkObject GetBufferedObject(Vector3 position, Quaternion rotation, out int assignedBufferIndex)
+    public NetworkObject GetBufferedObject(out int assignedBufferIndex)
     {
         assignedBufferIndex = -1;
 
@@ -108,6 +101,13 @@ public class ObjectBuffer : NetworkBehaviour
         assignedBufferIndex = currentIndex;
         NetworkObject instance = _buffer[currentIndex];
 
+        if (instance != null && instance.TryGetComponent(out BufferedObject existingBufferedObject) && existingBufferedObject.IsAwake)
+        {
+            Debug.LogError($"[ObjectBuffer] Slot {currentIndex} contains an already-awake object.", instance);
+            assignedBufferIndex = -1;
+            return null;
+        }
+
         if (instance == null)
         {
             instance = PrepareInstance();
@@ -117,12 +117,15 @@ public class ObjectBuffer : NetworkBehaviour
             _buffer.Set(currentIndex, null);
         }
 
+        if (instance == null)
+        {
+            assignedBufferIndex = -1;
+            return null;
+        }
+
+        instance.transform.SetParent(null, true);
         HeadIndex = (currentIndex + 1) % ActiveCapacity;
 
-        if (!HasStateAuthority && instance != null)
-            _locallyClaimed.Add(instance);
-
-        ReawakenAndPlace(instance, position, rotation);
         return instance;
     }
 
@@ -133,51 +136,34 @@ public class ObjectBuffer : NetworkBehaviour
 
         NetworkObject instance = Runner.Spawn(BufferedPrefab, new Vector3(0f, -1000f, 0f));
 
-        if (instance.TryGetComponent(out Rigidbody rb))
-            rb.isKinematic = true;
+        if (!instance.TryGetComponent(out BufferedObject bufferedObject))
+        {
+            Debug.LogError("[ObjectBuffer] Buffered prefab needs a BufferedObject component.", instance);
+            Runner.Despawn(instance);
+            return null;
+        }
 
-        Runner.SetIsSimulated(instance, false);
-        instance.gameObject.SetActive(false);
-        instance.transform.SetParent(transform, false);
-
+        instance.transform.SetParent(transform, true);
+        Runner.SetIsSimulated(instance, true);
+        bufferedObject.ApplyStateImmediately();
         return instance;
     }
 
-    private void ReawakenAndPlace(NetworkObject instance, Vector3 position, Quaternion rotation)
+    private void CleanUpOrphanedBuffer()
     {
-        if (instance == null)
+        while (_orphanCleanupIndex < ActiveCapacity)
+        {
+            int index = _orphanCleanupIndex++;
+            NetworkObject instance = _buffer[index];
+
+            if (instance == null)
+                continue;
+
+            _buffer.Set(index, null);
+            Runner.Despawn(instance);
             return;
-
-        Reawaken(instance);
-
-        if (instance.TryGetComponent(out Rigidbody unityRigidbody))
-        {
-            unityRigidbody.linearVelocity = Vector3.zero;
-            unityRigidbody.angularVelocity = Vector3.zero;
         }
 
-        if (instance.TryGetComponent(out NetworkRigidbody3D networkRigidbody))
-        {
-            networkRigidbody.Teleport(position, rotation);
-            networkRigidbody.RBIsKinematic = false;
-        }
-        else if (instance.TryGetComponent(out NetworkTransform networkTransform))
-        {
-            networkTransform.Teleport(position, rotation);
-        }
-        else
-        {
-            instance.transform.SetPositionAndRotation(position, rotation);
-        }
-    }
-
-    private void Reawaken(NetworkObject instance)
-    {
-        if (instance == null)
-            return;
-
-        instance.transform.SetParent(null);
-        Runner.SetIsSimulated(instance, true);
-        instance.gameObject.SetActive(true);
+        Runner.Despawn(Object);
     }
 }

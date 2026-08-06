@@ -165,13 +165,9 @@ public class RuntimeObjectCore : RuntimeCoreBase
         Vector3 pos = SpellSystemHelpers.GetSpellPosition(triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
         Quaternion rot = SpellSystemHelpers.GetSpellRotation(triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
 
-        PlayerRef casterRef = PlayerRef.None;
         NetworkObject sourceObj = null;
 
-        if (triggerInfo.Source != null && triggerInfo.Source.TryGetComponent<NetworkObject>(out sourceObj))
-        {
-            casterRef = sourceObj.InputAuthority;
-        }
+        if (triggerInfo.Source != null) triggerInfo.Source.TryGetComponent(out sourceObj);
 
         // Route to the allocator!
         ObjectBuffer myBuffer = null;
@@ -185,7 +181,7 @@ public class RuntimeObjectCore : RuntimeCoreBase
 
         if (myBuffer != null)
         {
-            spellCore = myBuffer.GetBufferedObject(pos, rot, out localBufferIndex);
+            spellCore = myBuffer.GetBufferedObject(out localBufferIndex);
         }
         else
         {
@@ -204,7 +200,7 @@ public class RuntimeObjectCore : RuntimeCoreBase
             };
 
             // Pass 'ArrayIndex' (the Node index) so the core hydrates correctly
-            lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, context, ArrayIndex, localBufferIndex);
+            lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, context, ArrayIndex, localBufferIndex, pos, rot);
         }
     }
 }

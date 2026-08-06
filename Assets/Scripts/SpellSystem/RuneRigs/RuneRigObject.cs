@@ -25,12 +25,11 @@ public class RuneRigObject : DraggableItem
     private RuneObject[] _runeObjects;
     private GameObject _generatedPhysicsRootObject;
     private GameObject _generatedVisualRootObject;
-    private bool _hasRigData;
     private bool _wasConsumed;
     private bool _isSpawned;
     private int _lastBuiltHash = int.MinValue;
 
-    public bool HasRigData => NetworkNodeCount > 0 && !IsConsumed;
+    public bool HasRigData => IsLocallyAwake && NetworkNodeCount > 0 && !IsConsumed;
     public int NodeCount => NetworkNodeCount;
     public RuneObject[] RuneObjects => _runeObjects;
     public Transform GeneratedVisualRoot => _generatedVisualRootObject != null ? _generatedVisualRootObject.transform : null;
@@ -59,7 +58,7 @@ public class RuneRigObject : DraggableItem
         base.Spawned();
 
         _isSpawned = true;
-        ReadNetworkDataAndRebuild();
+        if (IsLocallyAwake) ReadNetworkDataAndRebuild();
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -73,7 +72,7 @@ public class RuneRigObject : DraggableItem
     {
         base.FixedUpdateNetwork();
 
-        if (!_isSpawned)
+        if (!_isSpawned || !IsLocallyAwake)
             return;
 
         if (IsConsumed)
@@ -81,7 +80,6 @@ public class RuneRigObject : DraggableItem
             if (!_wasConsumed)
             {
                 _wasConsumed = true;
-                _hasRigData = false;
                 ClearRuneObjects();
             }
 
@@ -130,6 +128,45 @@ public class RuneRigObject : DraggableItem
         IsConsumed = false;
 
         error = null;
+        return true;
+    }
+
+    public bool InitializeFromBuffer(RuneRigData rigData, Vector3 position, Quaternion rotation, Vector3 linearVelocity, Vector3 angularVelocity, out string error)
+    {
+        if (BufferedObject == null)
+        {
+            error = "RuneRigObject has no BufferedObject.";
+            return false;
+        }
+
+        if (BufferedObject.IsAwake)
+        {
+            error = "The RuneRig buffer returned an already-awake object.";
+            return false;
+        }
+
+        IsLevitating = false;
+        if (rb != null) rb.useGravity = true;
+
+        if (!TryWriteRigData(rigData, out error))
+            return false;
+
+        if (networkedRB != null)
+            networkedRB.Teleport(position, rotation);
+        else
+            transform.SetPositionAndRotation(position, rotation);
+
+        BufferedObject.BeginWakeInitialization();
+        ReadNetworkDataAndRebuild();
+        
+
+        if (rb != null)
+        {
+            rb.linearVelocity = linearVelocity;
+            rb.angularVelocity = angularVelocity;
+        }
+
+        BufferedObject.CompleteWakeInitialization();
         return true;
     }
 
@@ -371,7 +408,7 @@ public class RuneRigObject : DraggableItem
         Vector3 detachedVelocity = rb != null ? rb.GetPointVelocity(detachedPosition) : Vector3.zero;
         Vector3 detachedAngularVelocity = rb != null ? rb.angularVelocity : Vector3.zero;
 
-        detachedObject = runeRigBuffer.GetBufferedObject(detachedPosition, detachedRotation, out _);
+        detachedObject = runeRigBuffer.GetBufferedObject(out _);
 
         if (detachedObject == null)
         {
@@ -388,8 +425,7 @@ public class RuneRigObject : DraggableItem
 
             return false;
         }
-        detachedRig.StopLevitation();
-        if (!detachedRig.TryWriteRigData(splitResult.DetachedRig, out string detachedError))
+        if (!detachedRig.InitializeFromBuffer(splitResult.DetachedRig, detachedPosition, detachedRotation, detachedVelocity, detachedAngularVelocity, out string detachedError))
         {
             Debug.LogWarning($"[RuneRigObject] Detached rig could not be initialized: {detachedError}", this);
 
@@ -409,15 +445,7 @@ public class RuneRigObject : DraggableItem
             return false;
         }
 
-        detachedRig.ReadNetworkDataAndRebuild();
         ReadNetworkDataAndRebuild();
-
-        if (detachedRig.rb != null)
-        {
-            detachedRig.rb.linearVelocity = detachedVelocity;
-            detachedRig.rb.angularVelocity = detachedAngularVelocity;
-            detachedRig.rb.WakeUp();
-        }
 
         Debug.Log($"[RuneRigObject] Detached node {nodeIndex} using player {bufferOwner}'s RuneRig buffer.", this);
         return true;
@@ -431,7 +459,6 @@ public class RuneRigObject : DraggableItem
         if (nodeCount == 0)
         {
             _rigData = default;
-            _hasRigData = false;
             _lastBuiltHash = RigDataHash;
             ClearRuneObjects();
             return;
@@ -447,7 +474,6 @@ public class RuneRigObject : DraggableItem
             Nodes = nodes
         };
 
-        _hasRigData = true;
         _lastBuiltHash = RigDataHash;
 
         if (!TryRebuild(out string error))
@@ -529,9 +555,9 @@ public class RuneRigObject : DraggableItem
 
         if (rb != null)
         {
+            Physics.SyncTransforms();
             rb.ResetCenterOfMass();
             rb.ResetInertiaTensor();
-            rb.WakeUp();
         }
 
         error = null;
@@ -610,13 +636,14 @@ public class RuneRigObject : DraggableItem
 
     public override void PickUpItem(NetworkObject playerObject)
     {
+        if (!IsLocallyAwake) return;
         StopLevitation();
         base.PickUpItem(playerObject);
     }
 
     public void BeginLevitation()
     {
-        if (rb == null)
+        if (!IsLocallyAwake || rb == null)
             return;
 
         LevitationTargetPosition = rb.position;
@@ -635,7 +662,7 @@ public class RuneRigObject : DraggableItem
             return;
 
         rb.useGravity = true;
-        rb.WakeUp();
+        if (!rb.isKinematic) rb.WakeUp();
     }
 
     private void ApplyLevitationDrive()
@@ -667,6 +694,23 @@ public class RuneRigObject : DraggableItem
         angularAcceleration = Vector3.ClampMagnitude(angularAcceleration, MaximumLevitationAngularAcceleration);
 
         rb.AddTorque(angularAcceleration, ForceMode.Acceleration);
+    }
+
+    public override void OnBufferedWake(int wakeTick, bool isActivationTick)
+    {
+        base.OnBufferedWake(wakeTick, isActivationTick);
+        _wasConsumed = IsConsumed;
+
+        if (!IsConsumed && (_lastBuiltHash != RigDataHash || _runeObjects == null))
+            ReadNetworkDataAndRebuild();
+    }
+
+    public override void OnBufferedSleep(int sleepTick)
+    {
+        base.OnBufferedSleep(sleepTick);
+        _wasConsumed = false;
+       // _lastBuiltHash = int.MinValue;
+       // ClearRuneObjects();
     }
     #endregion
 }

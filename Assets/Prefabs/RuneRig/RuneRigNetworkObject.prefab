@@ -75,6 +75,7 @@ GameObject:
   - component: {fileID: 4959115259605229940}
   - component: {fileID: 7294177793029873782}
   - component: {fileID: 3178076787936444022}
+  - component: {fileID: 8457392170063591194}
   m_Layer: 16
   m_Name: RuneRigNetworkObject
   m_TagString: Untagged
@@ -118,6 +119,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 7294177793029873782}
   - {fileID: 3178076787936444022}
+  - {fileID: 8457392170063591194}
   ForceRemoteRenderTimeframe: 0
 --- !u!54 &4959115259605229940
 Rigidbody:
@@ -160,7 +162,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fusion.Addons.Physics::Fusion.Addons.Physics.NetworkRigidbody3D
   _stateAuthorityChangeErrorCorrectionDelta: 0
   SyncScale: 0
-  SyncParent: 1
+  SyncParent: 0
   _interpolationTarget: {fileID: 6714570414995644291}
   UsePreciseRotation: 0
   UseRenderSleepThresholds: 1
@@ -206,3 +208,22 @@ MonoBehaviour:
     _value: 0
   _LevitationTargetPosition: {x: 0, y: 0, z: 0}
   _LevitationTargetRotation: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &8457392170063591194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6764342376449885503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40d99144d13c4b5ca494be2765afde36, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BufferedObject
+  physicsRoots:
+  - {fileID: 149407168425707603}
+  visualRoots:
+  - {fileID: 6714570414995644291}
+  awakeIsKinematic: 0
+  _WakeTick: -1
+  _SleepTick: 0
