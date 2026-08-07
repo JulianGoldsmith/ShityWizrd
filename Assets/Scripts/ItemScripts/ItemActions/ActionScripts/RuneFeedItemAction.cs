@@ -1,4 +1,4 @@
-using UnityEngine;
+/*using UnityEngine;
 
 [CreateAssetMenu(fileName = "RuneFeedItemAction", menuName = "Items/Actions/Rune Feed")]
 public class RuneFeedItemAction : ItemAction
@@ -66,5 +66,23 @@ public class RuneFeedItemAction : ItemAction
     {
         if (feedAnimation != null)
             feedAnimation.InitializeTickCache(dt);
+    }
+}*/
+
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "RuneFeedItemAction", menuName = "Items/Actions/Rune Feed")]
+public class RuneFeedItemAction : ItemAction
+{
+    private enum Phase
+    {
+        Feed
+    }
+
+    public ItemAnimation feedAnimation;
+
+    public override ItemAnimation GetAnimationForPhase(int phaseID)
+    {
+        return feedAnimation;
     }
 }

@@ -5,8 +5,7 @@ using Fusion;
 public class PlayerCastActionController : CastActionController
 {
     public NetworkedInventoryManager inventory;
-
-    [Networked] NetworkButtons prior_buttons { get; set; }
+    [SerializeField] private PlayerActionManager playerActionManager;
     [Networked] Quaternion lookDirection { get; set; }
 
     public Vector3 castPointOffset;
@@ -17,56 +16,20 @@ public class PlayerCastActionController : CastActionController
     {
         base.Spawned();
         if (inventory == null) inventory = GetComponent<NetworkedInventoryManager>();
+        if (playerActionManager == null) playerActionManager = GetComponent<PlayerActionManager>();
         if (hcc == null) hcc = GetComponent<HybridCharacterController>();
         //GlobalSpellBuffer.Instance.AssignSliceToPlayer(Runner.LocalPlayer);
     }
 
-    public override void FixedUpdateNetwork()
+    public void SetSimulationLookDirection(Quaternion value)
     {
-        // Notice we do NOT call base.FixedUpdateNetwork() anymore, because the Base is just a ledger!
-
-        if (GetInput(out NetworkInputData data))
-        {
-            if (data.buttons.WasReleased(prior_buttons, EInputButton.LEFT_CLICK))
-                OnInputEvent(ItemActionChannel.Primary, false, default);
-
-            if (data.buttons.WasReleased(prior_buttons, EInputButton.FEED))
-                OnInputEvent(ItemActionChannel.Feed, false, default);
-
-            if (data.buttons.WasPressed(prior_buttons, EInputButton.LEFT_CLICK))
-                OnInputEvent(ItemActionChannel.Primary, true, data.interactionTarget);
-
-            if (data.buttons.WasPressed(prior_buttons, EInputButton.FEED))
-                OnInputEvent(ItemActionChannel.Feed, true, data.interactionTarget);
-
-            prior_buttons = data.buttons;
-            lookDirection = data.lookRotation;
-        }
-    }
-
-    private void OnInputEvent(ItemActionChannel channel, bool isPress, NetworkInteractionTarget target)
-    {
-        if (inventory == null || inventory.activeItem == null)
-            return;
-
-        if (!inventory.activeItem.TryGetComponent(out EquipableItem item))
-            return;
-
-        if (isPress)
-            item.TryPressAction(channel, 0, target);
-        else
-            item.TryReleaseAction(channel);
+        lookDirection = value;
     }
 
     public override void EndCast()
     {
-        if (inventory != null && inventory.activeItem != null && inventory.activeItem.TryGetComponent(out EquipableItem item))
-        {
-            ItemActionChannel channel = item.ItemActionData.channel;
-
-            if (channel != ItemActionChannel.None)
-                item.TryReleaseAction(channel);
-        }
+        if (playerActionManager != null)
+            playerActionManager.ReleaseCurrentAction();
 
         isCasting = false;
     }

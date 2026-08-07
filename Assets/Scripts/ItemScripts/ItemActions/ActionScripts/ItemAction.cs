@@ -1,98 +1,132 @@
 using Fusion;
-using System;
 using UnityEngine;
+
+public struct DerivedActionContext
+{
+    public NetworkPlayerActionData ActionData;
+
+    public int CurrentTick;
+    public int ActionTick;
+
+    public int PhaseID;
+    public int PhaseStartTick;
+    public int TickInPhase;
+    public int PhaseDurationTicks;
+
+    public bool IsComplete;
+
+    public bool IsActionStart => ActionTick == 0;
+    public bool IsPhaseStart => TickInPhase == 0;
+    public bool IsReleased => ActionData.HasReleased && CurrentTick >= ActionData.ReleaseTick;
+    public float NormalizedPhaseTime => PhaseDurationTicks > 0 ? Mathf.Clamp01((float)TickInPhase / PhaseDurationTicks) : 0f;
+
+    public int ComboIndex => ActionData.ComboIndex;
+
+    public bool IsPhaseTick(int tick)
+    {
+        return TickInPhase == tick;
+    }
+}
 
 public abstract class ItemAction : ScriptableObject
 {
-    [NonSerialized] public int ComboIndex;
-    [NonSerialized] public EquipableItem Item;
-    [NonSerialized] public ItemActionChannel Channel;
-    public virtual void InitializeRuntimeForItem(EquipableItem item, int comboIndex, ItemActionChannel channel)
+
+    public virtual bool IsImplemented => false;
+    public virtual bool CreatesSpellState => false;
+
+    protected SpellState EnsureSpellState(PlayerActionManager manager, EquipableItem item, in DerivedActionContext context)
     {
-        Item = item;
-        ComboIndex = comboIndex;
-        Channel = channel;
+        if (!CreatesSpellState) return null;
+        if (!context.ActionData.CastID.IsValid) return null;
+        if (manager == null || manager.CastController == null || item == null) return null;
+        if (SpellStateManager.instance == null) return null;
 
-        float dt = Item != null && Item.Runner != null ? Item.Runner.DeltaTime : Time.fixedDeltaTime;
-        InitializeAnimationTickCache(dt);
-    }
+        ActiveSpell existingSpell = SpellStateManager.instance.GetActiveSpell(context.ActionData.CastID);
 
-    protected virtual void InitializeAnimationTickCache(float dt)
-    {
-        // default: do nothing
-    }
-
-    public abstract void OnPress(int comboIndex,bool isAlreadyReleased);
-
-    public abstract void OnRelease(int comboIndex);
-
-    public virtual void Tick(int comboIndex,float deltaTime){ }
-
-    public virtual ItemAnimation GetAnimationForPhase(int phaseIndex)
-    {
-        return null;
-    }
-
-    protected virtual void CreateAndRegisterSpellState(int comboIndex)
-    {
-        if (Item == null || Item.activeCaster == null || Channel == ItemActionChannel.Feed)
-            return;
-
-        SpellGraphId spellId = Channel == ItemActionChannel.Secondary ? Item.SecondarySpellID : Item.PrimarySpellID;
-        SpellGraph legacyGraph = Channel == ItemActionChannel.Secondary ? Item.secondaryActionSpell : Item.primaryActionSpell;
-
-        if (spellId.IsNull())
-            return;
-
-        if (SpellStateManager.instance.GetHydratedSpell(spellId) == null)
+        if (existingSpell != null)
         {
-            Debug.LogWarning($"[ItemAction] Spell {spellId.BlueprintNumber} is not hydrated.");
-            return;
+            existingSpell.State.ComboIndex = context.ComboIndex;
+            return existingSpell.State;
         }
 
-        CastActionController controller = Item.activeCaster;
-        NetworkObject casterObject = controller.GetComponent<NetworkObject>();
-        ActiveCastID newCastID = controller.GenerateNewCastID();
+        ItemActionChannel channel = context.ActionData.Channel;
+        SpellGraphId spellID = channel == ItemActionChannel.Secondary ? item.SecondarySpellID : item.PrimarySpellID;
 
-        SpellState newCast = new SpellState(newCastID, controller, Item, spellId, casterObject);
-        newCast.CastPosition = controller.transform.position;
-        newCast.ComboIndex = comboIndex;
-        newCast.isHeld = true;
+        if (spellID.IsNull()) return null;
 
-        controller.RegisterAndTrackCast(newCast, legacyGraph);
-        Item.CurrentCastID = newCastID;
-    }
-
-    protected virtual void RemoveCastingToken(SpellState state)
-    {
-        if (state == null) return;
-
-        ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(state.ActiveCastID);
-        if (activeSpell != null)
+        if (SpellStateManager.instance.GetHydratedSpell(spellID) == null)
         {
-            activeSpell.MarkInitialExecutionDone();
-            activeSpell.RemoveToken();
+            Debug.LogWarning($"[ItemAction] Spell {spellID.BlueprintNumber} is not hydrated.");
+            return null;
         }
+
+        CastActionController controller = manager.CastController;
+        SpellState state = new SpellState(context.ActionData.CastID, controller, item, spellID, manager.Object);
+
+        state.ComboIndex = context.ComboIndex;
+        state.CastPosition = controller.transform.position;
+        state.isHeld = true;
+
+        controller.RegisterAndTrackCast(state);
+        if (item.HasStateAuthority || item.HasInputAuthority) item.CurrentCastID = context.ActionData.CastID;
+
+        return state;
     }
 
-    protected virtual void RemoveSpellState()
+    protected void ExecuteHydratedSpell(EquipableItem item, ItemActionChannel channel, SpellTriggerInfo triggerInfo)
     {
-        Item.ClearSpellState();
-    }
+        if (item == null || channel == ItemActionChannel.Feed) return;
 
-    protected void ExecuteHydratedSpell(SpellTriggerInfo triggerInfo)
-    {
-        if (Item == null || Channel == ItemActionChannel.Feed)
-            return;
-
-        SpellGraphId spellId = Channel == ItemActionChannel.Secondary ? Item.SecondarySpellID : Item.PrimarySpellID;
-        IRuntimeNode rootNode = SpellStateManager.instance.GetHydratedSpell(spellId);
+        SpellGraphId spellID = channel == ItemActionChannel.Secondary ? item.SecondarySpellID : item.PrimarySpellID;
+        IRuntimeNode rootNode = SpellStateManager.instance.GetHydratedSpell(spellID);
 
         if (rootNode is RuntimeEntryPoint entryPoint)
             entryPoint.Execute(triggerInfo);
         else if (rootNode is IRuntimeCore core)
             core.ExecuteCore(triggerInfo);
         else
-            Debug.LogError($"[ItemAction] Failed to execute spell {spellId.BlueprintNumber}.");
+            Debug.LogError($"[ItemAction] Failed to execute spell {spellID.BlueprintNumber}.");
+    }
+    public virtual bool TryDeriveActionContext(in NetworkPlayerActionData actionData, int currentTick, out DerivedActionContext context)
+    {
+        context = default;
+        return false;
+    }
+
+    public virtual void Tick(PlayerActionManager manager, EquipableItem item, in DerivedActionContext context)
+    {
+    }
+
+    protected DerivedActionContext CreateDerivedContext(in NetworkPlayerActionData actionData, int currentTick, int phaseID, int phaseStartTick, int phaseDurationTicks, bool isComplete = false)
+    {
+        return new DerivedActionContext
+        {
+            ActionData = actionData,
+            CurrentTick = currentTick,
+            ActionTick = Mathf.Max(0, currentTick - actionData.StartTick),
+            PhaseID = phaseID,
+            PhaseStartTick = phaseStartTick,
+            TickInPhase = Mathf.Max(0, currentTick - phaseStartTick),
+            PhaseDurationTicks = phaseDurationTicks,
+            IsComplete = isComplete
+        };
+    }
+
+    public virtual ItemAnimation GetAnimationForPhase(int phaseID)
+    {
+        return null;
+    }
+
+    protected void RemoveCastingToken(SpellState state)
+    {
+        if (state == null) return;
+
+        ActiveSpell activeSpell = SpellStateManager.instance.GetActiveSpell(state.ActiveCastID);
+
+        if (activeSpell != null)
+        {
+            activeSpell.MarkInitialExecutionDone();
+            activeSpell.RemoveToken();
+        }
     }
 }

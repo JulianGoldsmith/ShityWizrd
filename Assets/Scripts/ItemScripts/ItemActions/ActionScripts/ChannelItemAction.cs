@@ -1,4 +1,4 @@
-using Fusion;
+/*using Fusion;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "ChannelItemAction", menuName = "Items/Actions/Channel Item Action")]
@@ -125,5 +125,40 @@ public class ChannelItemAction : ItemAction
         if (windupAnimation != null) windupAnimation.InitializeTickCache(dt);
         if (holdAnimation != null) holdAnimation.InitializeTickCache(dt);
         if (releaseAnimation != null) releaseAnimation.InitializeTickCache(dt);
+    }
+}*/
+
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "ChannelItemAction", menuName = "Items/Actions/Channel Item Action")]
+public class ChannelItemAction : ItemAction
+{
+    private enum Phase
+    {
+        Idle,
+        Windup,
+        Hold,
+        Release
+    }
+
+    [Header("Animations")]
+    public ItemAnimation windupAnimation;
+    public ItemAnimation holdAnimation;
+    public ItemAnimation releaseAnimation;
+
+    [Header("Legacy authoring values")]
+    public float maxChannelTime;
+
+    public override ItemAnimation GetAnimationForPhase(int phaseID)
+    {
+        Phase phase = (Phase)phaseID;
+
+        switch (phase)
+        {
+            case Phase.Windup: return windupAnimation;
+            case Phase.Hold: return holdAnimation;
+            case Phase.Release: return releaseAnimation;
+            default: return null;
+        }
     }
 }

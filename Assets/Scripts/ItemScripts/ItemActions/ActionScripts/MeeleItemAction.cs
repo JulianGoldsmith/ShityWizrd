@@ -1,4 +1,4 @@
-using Fusion;
+/*using Fusion;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "MeeleItemAction", menuName = "Items/Actions/Meele Item Action")]
@@ -37,7 +37,7 @@ public class MeeleItemAction : ItemAction
 
     public override void OnRelease(int comboIndex)
     {
-        var pose =/* Item.activeCaster.HasInputAuthority ? Item.localItemActionData :*/ Item.ItemActionData;
+        var pose =*//* Item.activeCaster.HasInputAuthority ? Item.localItemActionData :*//* Item.ItemActionData;
         if (pose.actionID != comboIndex) return;
         if ((Phase)pose.phaseID == Phase.Idle) return;
 
@@ -50,7 +50,7 @@ public class MeeleItemAction : ItemAction
 
     public override void Tick(int comboIndex, float deltaTime)
     {
-        var pose =/* Item.activeCaster.HasInputAuthority ? Item.localItemActionData : */Item.ItemActionData;
+        var pose =*//* Item.activeCaster.HasInputAuthority ? Item.localItemActionData : *//*Item.ItemActionData;
         if (pose.actionID != comboIndex) return;
 
         Phase currentPhase = (Phase)pose.phaseID;
@@ -177,4 +177,43 @@ public class MeeleItemAction : ItemAction
 
 
 
+}*/
+
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "MeeleItemAction", menuName = "Items/Actions/Meele Item Action")]
+public class MeeleItemAction : ItemAction
+{
+    private enum Phase
+    {
+        Idle,
+        Windup,
+        Hold,
+        Release
+    }
+
+    [Header("Animations")]
+    public ItemAnimation windupAnimation;
+    public ItemAnimation holdAnimation;
+    public ItemAnimation releaseAnimation;
+
+    [Header("Legacy authoring values")]
+    public float minChargeTime = 0.1f;
+    public float maxChargeTime = 1.5f;
+    public float chargeMult = 50f;
+    public float cooldown = 0.4f;
+    public float comboWindow = 0.6f;
+
+    public override ItemAnimation GetAnimationForPhase(int phaseID)
+    {
+        Phase phase = (Phase)phaseID;
+
+        switch (phase)
+        {
+            case Phase.Windup: return windupAnimation;
+            case Phase.Hold: return holdAnimation;
+            case Phase.Release: return releaseAnimation;
+            default: return null;
+        }
+    }
 }

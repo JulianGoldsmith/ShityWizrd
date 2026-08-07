@@ -2665,6 +2665,7 @@ GameObject:
   - component: {fileID: 2693293064502896331}
   - component: {fileID: 2497915391348923376}
   - component: {fileID: 3351947955755336054}
+  - component: {fileID: 69018092540601302}
   - component: {fileID: 8374426935566782753}
   - component: {fileID: 1087551941607753607}
   - component: {fileID: 917457606701308410}
@@ -2923,6 +2924,7 @@ MonoBehaviour:
   - {fileID: 9045712812768551006}
   - {fileID: 2497915391348923376}
   - {fileID: 3351947955755336054}
+  - {fileID: 69018092540601302}
   - {fileID: 8374426935566782753}
   - {fileID: 1087551941607753607}
   - {fileID: 917457606701308410}
@@ -3595,6 +3597,20 @@ MonoBehaviour:
   _localHandPosOnItem: {x: 0, y: 0, z: 0}
   __dragTargetPos: {x: 0, y: 0, z: 0}
   __dragFacingDir: {x: 0, y: 0, z: 0}
+--- !u!114 &69018092540601302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73f3a01839682fd469050337ec9bcb53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerActionManager
+  inventory: {fileID: 3351947955755336054}
+  castController: {fileID: 8374426935566782753}
 --- !u!114 &8374426935566782753
 MonoBehaviour:
   m_ObjectHideFlags: 0

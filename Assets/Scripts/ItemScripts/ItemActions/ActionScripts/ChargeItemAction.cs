@@ -4,6 +4,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ChargeItemAction", menuName = "Items/Actions/Charge Item Action")]
 public class ChargeItemAction : ItemAction
 {
+    public override bool IsImplemented => true;
+    public override bool CreatesSpellState => true;
+
     private enum Phase
     {
         Idle,
@@ -17,130 +20,132 @@ public class ChargeItemAction : ItemAction
     public ItemAnimation holdAnimation;
     public ItemAnimation releaseAnimation;
 
-    [Header("Charge timings")]
-    [Min(0f)] public float minChargeTime = 0.1f;
-    [Min(0.01f)] public float maxChargeTime = 1.5f;
+    [Header("Deterministic phase timings")]
+    [Min(0)] public int windupTicks = 10;
+    [Min(1)] public int releaseTicks = 10;
+    [Min(0)] public int spellTickInRelease = 3;
+
+    [Header("Charge")]
+    [Min(0)] public int minChargeTicks = 6;
+    [Min(1)] public int maxChargeTicks = 90;
     public float chargeMult = 50f;
 
     [Header("Cooldown & combo")]
     public float cooldown = 0.4f;
     public float comboWindow = 0.6f;
 
-    public override void OnPress(int comboIndex, bool isAlreadyReleased)
+    public override bool TryDeriveActionContext(in NetworkPlayerActionData actionData, int currentTick, out DerivedActionContext context)
     {
+        context = default;
 
-        Item.EnterNewPhaseAtTick((int)Phase.Windup, Item.activeCaster.Runner.Tick, comboIndex, Item.Runner.Tick);
-        Item.activeCaster.isCasting = true;
+        if (!actionData.IsValid) return false;
+        if (currentTick < actionData.StartTick) return false;
 
-        CreateAndRegisterSpellState(comboIndex);
-        if (!Item.HasStateAuthority && Item.Runner.IsResimulation)
-            Debug.Log("OnOnPressCalledInResim");
-    }
+        int windupEndTick = actionData.StartTick + windupTicks;
 
-    public override void OnRelease( int comboIndex)
-    {
-        var pose = /*Item.activeCaster.HasInputAuthority? Item.localItemActionData: */Item.ItemActionData;
-        if (pose.actionID != comboIndex) return;
-        if ((Phase)pose.phaseID == Phase.Idle) return;
-
-        Item.EnterNewPhaseAtTick((int)Phase.Release, Item.Runner.Tick, comboIndex);
-
-       // Item.activeCaster.SetCoolDown(cooldown);
-       // Item.activeCaster.StartComboTimer(comboWindow);
-
-        
-
-    }
-
-    public override void Tick( int comboIndex, float deltaTime)
-    {
-        var pose = /*Item.activeCaster.HasInputAuthority ? Item.localItemActionData :*/ Item.ItemActionData;
-        if (pose.actionID != comboIndex) return;
-
-        Phase currentPhase = (Phase)pose.phaseID;
-
-        int ticksInPhase = Item.Runner.Tick - pose.phaseStartTick;
-        float timeInPhase = ticksInPhase * Item.Runner.DeltaTime;
-
-        ItemAnimation currentAnim = GetAnimationForPhase((int)currentPhase);
-
-        switch (currentPhase)
+        if (currentTick < windupEndTick)
         {
-            case Phase.Windup:
-                if (currentAnim.IsFinished(timeInPhase))
-                {
-                    Item.EnterNewPhaseAtTick((int)Phase.Hold, Item.Runner.Tick, comboIndex);
-                }
-                break;
-
-            case Phase.Hold:
-                // Wait for release...
-                break;
-
-            case Phase.Release:
-
-                if (!pose.hasFired/* && (Item.activeCaster.HasInputAuthority || Item.HasStateAuthority)*/)
-                {
-                    if (currentAnim != null && currentAnim.HasPassedCastTick(ticksInPhase))
-                    {
-                        int chargeTicks = Item.Runner.Tick - pose.chargeStartTick;
-                        float chargeSeconds = chargeTicks * Item.Runner.DeltaTime;
-                        ExecuteSpell(comboIndex, chargeSeconds);
-                        Item.MarkFired();
-                    }
-                }
-
-                if (currentAnim != null && currentAnim.IsFinished(timeInPhase))
-                {
-                    Item.activeCaster.isCasting = false;
-                    Item.ClearItemActionData(); 
-                    RemoveSpellState();
-                }
-                break;
+            context = CreateDerivedContext(actionData, currentTick, (int)Phase.Windup, actionData.StartTick, windupTicks);
+            return true;
         }
+
+        if (!actionData.HasReleased)
+        {
+            context = CreateDerivedContext(actionData, currentTick, (int)Phase.Hold, windupEndTick, 0);
+            return true;
+        }
+
+        int releaseStartTick = Mathf.Max(windupEndTick, actionData.ReleaseTick);
+
+        if (currentTick < releaseStartTick)
+        {
+            context = CreateDerivedContext(actionData, currentTick, (int)Phase.Hold, windupEndTick, releaseStartTick - windupEndTick);
+            return true;
+        }
+
+        int releaseEndTick = releaseStartTick + releaseTicks;
+        bool isComplete = currentTick >= releaseEndTick;
+
+        context = CreateDerivedContext(actionData, currentTick, (int)Phase.Release, releaseStartTick, releaseTicks, isComplete);
+        return true;
     }
 
-   
-
-    private void ExecuteSpell(int comboIndex, float chargeDuration)
+    public override void Tick(PlayerActionManager manager, EquipableItem item, in DerivedActionContext context)
     {
-        var controller = Item.activeCaster;
-        SpellState state = Item.activeCast;
+        if (context.IsComplete) return;
+
+        SpellState state = EnsureSpellState(manager, item, context);
         if (state == null) return;
 
-        // Apply Charge
-        float chargeT = Mathf.InverseLerp(minChargeTime, maxChargeTime, chargeDuration);
-        state.CastChargeLevel = Mathf.Clamp01(chargeT) * chargeMult;
-        state.isHeld = false;
+        manager.CastController.isCasting = true;
 
+        bool spellHasReleased = context.PhaseID == (int)Phase.Release && context.TickInPhase >= spellTickInRelease;
+        state.isHeld = !spellHasReleased;
+
+        if (context.PhaseID != (int)Phase.Release) return;
+        if (!context.IsPhaseTick(spellTickInRelease)) return;
+
+        ExecuteSpell(manager, item, state, context);
+    }
+
+    public int GetChargeTicks(in DerivedActionContext context)
+    {
+        if (!context.ActionData.HasReleased) return Mathf.Max(0, context.CurrentTick - context.ActionData.StartTick);
+        return Mathf.Max(0, context.ActionData.ReleaseTick - context.ActionData.StartTick);
+    }
+
+    public float GetNormalizedCharge(in DerivedActionContext context)
+    {
+        int chargeTicks = GetChargeTicks(context);
+
+        if (maxChargeTicks <= minChargeTicks) return chargeTicks >= minChargeTicks ? 1f : 0f;
+        return Mathf.Clamp01(Mathf.InverseLerp(minChargeTicks, maxChargeTicks, chargeTicks));
+    }
+
+    private void OnValidate()
+    {
+        windupTicks = Mathf.Max(0, windupTicks);
+        releaseTicks = Mathf.Max(1, releaseTicks);
+        spellTickInRelease = Mathf.Clamp(spellTickInRelease, 0, releaseTicks - 1);
+        maxChargeTicks = Mathf.Max(minChargeTicks, maxChargeTicks);
+    }
+
+
+    private void ExecuteSpell(PlayerActionManager manager, EquipableItem item, SpellState state, in DerivedActionContext context)
+    {
+        CastActionController controller = manager.CastController;
+        if (controller == null || state == null) return;
+
+        int chargeTicks = GetChargeTicks(context);
+        state.CastChargeLevel = GetNormalizedCharge(context) * chargeMult;
+        state.isHeld = false;
 
         EyePosAndLookDir eyeInfo = controller.GetEyePosAndLookDir();
 
-        Vector3 spawnPosition = eyeInfo.EyePosition + (eyeInfo.Forward * 1f);
-        Quaternion spawnRotation = Quaternion.LookRotation(controller.GetSpellCastDir());
+        Vector3 castDirection = controller.GetSpellCastDir();
+        Vector3 spawnPosition = eyeInfo.EyePosition + eyeInfo.Forward;
+        Quaternion spawnRotation = Quaternion.LookRotation(castDirection);
 
-        var triggerInfo = new SpellTriggerInfo(
+        state.CastPosition = spawnPosition;
+        state.CastRotation = spawnRotation;
+        state.CastAimTargetPos = controller.GetAimTarget();
+
+        // This counter is local mutable state, so restore its deterministic
+        // event-start value whenever this event is replayed.
+        state.SpawnedCoresCounter = 0;
+
+        SpellTriggerInfo triggerInfo = new SpellTriggerInfo(
             true,
             controller.gameObject,
             state,
             spawnPosition,
             spawnRotation,
-            controller.GetSpellCastDir() * state.CastChargeLevel,
+            castDirection * state.CastChargeLevel,
             controller.gameObject
         );
-        triggerInfo.State.CastAimTargetPos = controller.GetAimTarget();
-        state.CastRotation = spawnRotation;
-        state.CastPosition = spawnPosition;
 
-        // Execute
-        ExecuteHydratedSpell(triggerInfo);
+        ExecuteHydratedSpell(item, context.ActionData.Channel, triggerInfo);
         RemoveCastingToken(state);
-
-        if (!Item.HasStateAuthority && Item.Runner.IsResimulation)
-            Debug.Log("SpellExecutedOnResim");
-
-
-        Debug.Log($"Fired at {chargeDuration}s charge.");
     }
 
 
@@ -155,13 +160,6 @@ public class ChargeItemAction : ItemAction
             case Phase.Release: return releaseAnimation;
             default: return null;
         }
-    }
-
-    protected override void InitializeAnimationTickCache(float dt)
-    {
-        if (windupAnimation != null) windupAnimation.InitializeTickCache(dt);
-        if (holdAnimation != null) holdAnimation.InitializeTickCache(dt);
-        if (releaseAnimation != null) releaseAnimation.InitializeTickCache(dt);
     }
 
 

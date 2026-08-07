@@ -30,14 +30,10 @@ public class EquipableItem : InteractableItem, IAfterRender
 
 
 
-    [Header("Item Actions (Templates)")]
+    [Header("Item Actions")]
     public List<ItemAction> primaryActionsRef = new List<ItemAction>();
     public List<ItemAction> secondaryActionsRef = new List<ItemAction>();
     public ItemAction feedActionRef;
-
-    [NonSerialized] public List<ItemAction> primaryActions = new List<ItemAction>();
-    [NonSerialized] public List<ItemAction> secondaryActions = new List<ItemAction>();
-    [NonSerialized] public ItemAction feedAction;
 
     public HandState heldHandState;
 
@@ -94,8 +90,6 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     [NonSerialized] private bool _hasLocalSimState;
 
-    [Networked] public NetworkItemActionData ItemActionData { get; set; }
-    public NetworkItemActionData localItemActionData;
     [Networked] public Vector3 LinVel { get; set; }
     [Networked] public Vector3 AngVel { get; set; }
     public Vector3 visualLinVel, visualAngleVel;
@@ -128,12 +122,6 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     
 
-    public void Start()
-    {
-        //LoadSpells();
-        InitialiseRuntimeActions();
-    }
-
     public void AfterRender()
     {
         UpdateModelVisuals();
@@ -149,7 +137,6 @@ public class EquipableItem : InteractableItem, IAfterRender
         AngVel = Vector3.zero;
 
         RestCastingState();
-        localItemActionData = ItemActionData;
 
         InitializeAnimClipSampler();
         Runner.SetIsSimulated(this.Object, true);
@@ -166,8 +153,6 @@ public class EquipableItem : InteractableItem, IAfterRender
         if (!HoldingPlayer.TryGetComponent(out HybridCharacterController hcc)) return;
 
         bool local = IsLocalPlayerHoldingThisItem();
-        var dataToUse = local ? localItemActionData : ItemActionData;
-
         // 1. GET THE PERFECTLY SMOOTH VISUAL TARGET
         Vector3 eyePos;
         Quaternion eyeRot;
@@ -187,8 +172,11 @@ public class EquipableItem : InteractableItem, IAfterRender
         }
 
         EyePosAndLookDir eye = new EyePosAndLookDir(eyePos, eyeRot * Vector3.forward, eyeRot * Vector3.up);
+        double renderTime = Runner.LocalRenderTime;
+        int renderTick = (int)Math.Floor(renderTime / Runner.DeltaTime);
+        GetDerivedActionPose(renderTick, renderTime, out ItemAction action, out int phaseID, out float phaseTime);
 
-        if (!GetTargetPose(dataToUse, eye, Time.deltaTime, out Vector3 targetPos, out Quaternion targetRot))
+        if (!GetTargetPose(action, phaseID, phaseTime, eye, out Vector3 targetPos, out Quaternion targetRot))
             return;
 
         // 2. CALCULATE CONTINUOUS VISUAL VELOCITY
@@ -231,9 +219,7 @@ public class EquipableItem : InteractableItem, IAfterRender
         {
            // Debug.Log($"Item {this.name} is held by {HoldingPlayer.name}");
         }
-
-
-        TickActions();
+        
         SimulatePhysics(HoldingPlayer.GetComponent<HybridCharacterController>(), Runner.DeltaTime);
         //Debug.Log($"Simulating tick and hold pos on {this.name}");
 
@@ -255,15 +241,6 @@ public class EquipableItem : InteractableItem, IAfterRender
         lastHoldingPlayer = HoldingPlayer;
     }
 
-    public void TickActions()
-    {
-        NetworkItemActionData data = ItemActionData;
-        ItemAction action = GetAction(data.channel, data.actionID);
-
-        if (action != null)
-            action.Tick(data.actionID, Runner.DeltaTime);
-    }
-
     #region PickUpDrop
 
     public override void PickUpItem(NetworkObject playerObject)
@@ -274,11 +251,6 @@ public class EquipableItem : InteractableItem, IAfterRender
         {
             inventory.activeItem = gameObject;
             inventory.currentItemInHand = this.GetComponent<NetworkObject>();
-        }
-
-        if(playerObject.TryGetComponent<PlayerCastActionController>(out PlayerCastActionController cac))
-        {
-            UpdateActionsToNewCaster(cac);
         }
 
       this.Object.AssignInputAuthority(playerObject.InputAuthority);
@@ -383,124 +355,23 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     #region ActionsAndCasting
 
-    public bool TryPressAction(ItemActionChannel channel, int actionIndex, NetworkInteractionTarget target)
-    {
-        if (channel == ItemActionChannel.None || ItemActionData.channel != ItemActionChannel.None)
-            return false;
-
-        ItemAction action = GetAction(channel, actionIndex);
-
-        if (action == null)
-            return false;
-
-        SetItemActionData(new NetworkItemActionData
-        {
-            channel = channel,
-            actionID = actionIndex,
-            phaseID = -1,
-            phaseStartTick = Runner.Tick,
-            chargeStartTick = Runner.Tick,
-            hasFired = false,
-            interactionTarget = target
-        });
-
-        action.OnPress(actionIndex, false);
-        return true;
-    }
-
-    public void TryReleaseAction(ItemActionChannel channel)
-    {
-        NetworkItemActionData data = ItemActionData;
-
-        if (data.channel != channel)
-            return;
-
-        ItemAction action = GetAction(channel, data.actionID);
-
-        if (action != null)
-            action.OnRelease(data.actionID);
-    }
-
-    private void SetItemActionData(NetworkItemActionData data)
-    {
-        if (HasInputAuthority || IsLocalPlayerHoldingThisItem())
-            localItemActionData = data;
-
-        ItemActionData = data;
-    }
-
-    public void InitialiseRuntimeActions()
-    {
-        primaryActions = CloneActionList(primaryActionsRef, ItemActionChannel.Primary);
-        secondaryActions = CloneActionList(secondaryActionsRef, ItemActionChannel.Secondary);
-
-        if (feedActionRef != null)
-        {
-            feedAction = Instantiate(feedActionRef);
-            feedAction.InitializeRuntimeForItem(this, 0, ItemActionChannel.Feed);
-        }
-    }
-
-    private List<ItemAction> CloneActionList(List<ItemAction> templates, ItemActionChannel channel)
-    {
-        var list = new List<ItemAction>();
-
-        if (templates == null)
-            return list;
-
-        for (int i = 0; i < templates.Count; i++)
-        {
-            ItemAction template = templates[i];
-
-            if (template == null)
-            {
-                list.Add(null);
-                continue;
-            }
-
-            ItemAction clone = Instantiate(template);
-            clone.InitializeRuntimeForItem(this, i, channel);
-            list.Add(clone);
-        }
-
-        return list;
-    }
-
-    private void UpdateActionsToNewCaster(CastActionController cAC)
-    {
-        for (int i = 0; i < primaryActions.Count; i++)
-        {
-            if (primaryActions[i] != null)
-                primaryActions[i].InitializeRuntimeForItem(this, i, ItemActionChannel.Primary);
-        }
-
-        for (int i = 0; i < secondaryActions.Count; i++)
-        {
-            if (secondaryActions[i] != null)
-                secondaryActions[i].InitializeRuntimeForItem(this, i, ItemActionChannel.Secondary);
-        }
-
-        if (feedAction != null)
-            feedAction.InitializeRuntimeForItem(this, 0, ItemActionChannel.Feed);
-    }
-
     public ItemAction GetAction(ItemActionChannel channel, int actionIndex)
     {
         switch (channel)
         {
             case ItemActionChannel.Primary:
-                if (actionIndex >= 0 && actionIndex < primaryActions.Count)
-                    return primaryActions[actionIndex];
+                if (actionIndex >= 0 && actionIndex < primaryActionsRef.Count)
+                    return primaryActionsRef[actionIndex];
                 break;
 
             case ItemActionChannel.Secondary:
-                if (actionIndex >= 0 && actionIndex < secondaryActions.Count)
-                    return secondaryActions[actionIndex];
+                if (actionIndex >= 0 && actionIndex < secondaryActionsRef.Count)
+                    return secondaryActionsRef[actionIndex];
                 break;
 
             case ItemActionChannel.Feed:
                 if (actionIndex == 0)
-                    return feedAction;
+                    return feedActionRef;
                 break;
         }
 
@@ -520,8 +391,10 @@ public class EquipableItem : InteractableItem, IAfterRender
     private void SimulatePhysics(HybridCharacterController hcc, float dt)
     {
         EyePosAndLookDir eye = hcc.GetEyePosAndLookDir();
+        double simulationTime = Runner.Tick * (double)Runner.DeltaTime;
+        GetDerivedActionPose(Runner.Tick, simulationTime, out ItemAction action, out int phaseID, out float phaseTime);
 
-        if (!GetTargetPose(ItemActionData, eye, dt, out Vector3 targetPos, out Quaternion targetRot))
+        if (!GetTargetPose(action, phaseID, phaseTime, eye, out Vector3 targetPos, out Quaternion targetRot))
             return; 
 
         Vector3 currentLinVel = LinVel;
@@ -608,92 +481,69 @@ public class EquipableItem : InteractableItem, IAfterRender
     //    newRot = deltaRot * currentRot;
     //}
 
-    private bool GetTargetPose(NetworkItemActionData data, EyePosAndLookDir eye, float dt, out Vector3 pos, out Quaternion rot)
+
+
+    private void GetDerivedActionPose(int sampleTick, double sampleTime, out ItemAction action, out int phaseID, out float phaseTime)
+    {
+        action = null;
+        phaseID = -1;
+        phaseTime = 0f;
+
+        if (HoldingPlayer == null) return;
+        if (!HoldingPlayer.TryGetComponent(out PlayerActionManager actionManager)) return;
+
+        if (!actionManager.TryGetActionContextForItem(this, sampleTick, out action, out DerivedActionContext context))
+        {
+            action = null;
+            return;
+        }
+
+        if (context.IsComplete)
+        {
+            action = null;
+            return;
+        }
+
+        phaseID = context.PhaseID;
+        phaseTime = (float)Math.Max(0.0, sampleTime - context.PhaseStartTick * (double)Runner.DeltaTime);
+    }
+
+    private bool GetTargetPose(ItemAction action, int phaseID, float phaseTime, EyePosAndLookDir eye, out Vector3 pos, out Quaternion rot)
     {
         Quaternion viewRot = Quaternion.LookRotation(eye.Forward, eye.Up);
-        Quaternion idleRotOffset = Quaternion.Euler(idleLocalRotEuler); 
+        Quaternion idleRotOffset = Quaternion.Euler(idleLocalRotEuler);
 
-        Vector3 idleWorldPos = eye.EyePosition + (eye.Right * idleLocalPos.x) + (eye.Up * idleLocalPos.y) + (eye.Forward * idleLocalPos.z);
+        Vector3 idleWorldPos = eye.EyePosition + eye.Right * idleLocalPos.x + eye.Up * idleLocalPos.y + eye.Forward * idleLocalPos.z;
         Quaternion idleWorldRot = viewRot * idleRotOffset;
 
-        int actionIndex = data.actionID;
-        int phaseIndex = data.phaseID;
-        ItemAction action = GetAction(data.channel, actionIndex);
-
-        if (actionIndex < 0 || phaseIndex < 0 || action == null)
+        if (action == null || phaseID < 0)
         {
             pos = idleWorldPos;
             rot = idleWorldRot;
             return true;
         }
 
-       
+        ItemAnimation animation = action.GetAnimationForPhase(phaseID);
 
-        ItemAnimation anim = action.GetAnimationForPhase(phaseIndex);
-
-        if (anim == null)
+        if (animation == null)
         {
             pos = idleWorldPos;
             rot = idleWorldRot;
             return true;
         }
 
-        int ticksInPhase = Runner.Tick - data.phaseStartTick;
-        float phaseTime = ticksInPhase * Runner.DeltaTime;
+        float sampleTime = phaseTime * animation.speedMultiplier;
 
-        float sampleTime = phaseTime * anim.speedMultiplier;
-
-        Vector3 sampledLocalPos;
-        Quaternion sampledLocalRot;
-
-        if (TrySampleFromClip(anim, sampleTime, out sampledLocalPos, out sampledLocalRot))
+        if (TrySampleFromClip(animation, sampleTime, out Vector3 sampledLocalPos, out Quaternion sampledLocalRot))
         {
-            pos = eye.EyePosition + (viewRot * sampledLocalPos);
+            pos = eye.EyePosition + viewRot * sampledLocalPos;
             rot = viewRot * sampledLocalRot;
-
             return true;
         }
 
         pos = idleWorldPos;
         rot = idleWorldRot;
         return true;
-    }
-
-    public void EnterNewPhaseAtTick(int phase, int tick, int actionId = -1, int chargeStart = -1)
-    {
-        NetworkItemActionData data = ItemActionData;
-
-        if (actionId != -1)
-            data.actionID = actionId;
-
-        data.phaseID = phase;
-        data.phaseStartTick = tick;
-
-        if (chargeStart != -1)
-            data.chargeStartTick = chargeStart;
-
-        SetItemActionData(data);
-    }
-
-    public void MarkFired()
-    {
-        NetworkItemActionData data = ItemActionData;
-        data.hasFired = true;
-        SetItemActionData(data);
-    }
-
-    public void ClearItemActionData()
-    {
-        SetItemActionData(new NetworkItemActionData
-        {
-            channel = ItemActionChannel.None,
-            actionID = -1,
-            phaseID = -1,
-            phaseStartTick = 0,
-            chargeStartTick = 0,
-            hasFired = false,
-            interactionTarget = default
-        });
     }
 
 
@@ -785,7 +635,6 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     public void RestCastingState()
     {
-        ClearItemActionData();
         ClearSpellState();
         activeCaster = null;
         activeHolder = null;
@@ -871,19 +720,6 @@ public class EquipableItem : InteractableItem, IAfterRender
     }
 }
 
-public struct NetworkItemActionData : INetworkStruct
-{
-    public ItemActionChannel channel;
-
-    public int actionID;
-    public int phaseID;
-    public int phaseStartTick;
-    public int chargeStartTick;
-
-    public NetworkBool hasFired;
-
-    public NetworkInteractionTarget interactionTarget;
-}
 
 public enum ItemActionChannel : byte
 {
