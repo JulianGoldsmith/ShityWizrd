@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-4808803926669102048
+--- !u!114 &-5209579199985819251
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,8 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Glass 1
-  m_Shader: {fileID: -6465566751694194690, guid: 478efc5e42df4724c998d2ecb9df45d2, type: 3}
+  m_Name: Metal 1
+  m_Shader: {fileID: -6465566751694194690, guid: f331e6fe9c68669459c4b90587c00fbb, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -42,10 +42,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: 9154b3a500851e04494b08c0a363964a, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _CalculateToonGlassLightingCustomFunction_54d06eb3a266402aa809cd014c2a70c7_ColorRamp_17_Texture2D:
+    - _CalculateToonLightingCustomFunction_54d06eb3a266402aa809cd014c2a70c7_ColorRamp_17_Texture2D:
         m_Texture: {fileID: 2800000, guid: 3c0cbd3698aaead459ce8011f878f3e1, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -101,7 +101,6 @@ Material:
     m_Floats:
     - _AO: 0
     - _AddPrecomputedVelocity: 0
-    - _Alpha: 0.627
     - _AlphaClip: 0
     - _AlphaToMask: 0
     - _Blend: 0
@@ -115,11 +114,10 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EdgePower: 1.3
     - _EnvironmentReflections: 1
     - _FORWARD_PLUS: 1
     - _GlossMapScale: 1
-    - _Glossiness: 0.5
+    - _Glossiness: 1
     - _GlossyReflections: 1
     - _GradHeight: 2
     - _GradPivotStart: -1
@@ -131,9 +129,9 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimEdge: 0.34
-    - _RimPower: 3.11
-    - _Smoothness: 0.769
+    - _RimEdge: 1
+    - _RimPower: 4
+    - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -145,14 +143,13 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.46168438, g: 0, b: 0.5660378, a: 1}
-    - _Color: {r: 0.5952629, g: 0.8135408, b: 0.9063786, a: 1}
+    - _BaseColor: {r: 0.60889757, g: 0.5801887, b: 1, a: 1}
+    - _Color: {r: 0.6117431, g: 0.6767465, b: 0.6934578, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
     - _GradAxis: {r: 0, g: 1, b: 0, a: 0}
     - _GradEnd: {r: 0.608215, g: 0.58873266, b: 0.6603774, a: 1}
     - _GradStart: {r: 1, g: 0.9649175, b: 0.9198113, a: 1}
-    - _Refraction_Color: {r: 0, g: 0, b: 0, a: 0}
-    - _RimColor: {r: 1, g: 0.36490673, b: 0.13679248, a: 1}
+    - _RimColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

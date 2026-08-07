@@ -454,6 +454,7 @@ public class RuneRigObject : DraggableItem
 
     private void ReadNetworkDataAndRebuild()
     {
+        Debug.Log("Reading Net Data and Rebuild on RuneRig");
         int nodeCount = Mathf.Min(NetworkNodeCount, RuneRigLimits.MaxNodes);
 
         if (nodeCount == 0)

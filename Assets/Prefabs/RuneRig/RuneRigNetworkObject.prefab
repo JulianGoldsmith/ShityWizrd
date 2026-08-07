@@ -76,6 +76,8 @@ GameObject:
   - component: {fileID: 7294177793029873782}
   - component: {fileID: 3178076787936444022}
   - component: {fileID: 8457392170063591194}
+  - component: {fileID: -4658402736693462064}
+  - component: {fileID: -356343642227973449}
   m_Layer: 16
   m_Name: RuneRigNetworkObject
   m_TagString: Untagged
@@ -120,6 +122,8 @@ MonoBehaviour:
   - {fileID: 7294177793029873782}
   - {fileID: 3178076787936444022}
   - {fileID: 8457392170063591194}
+  - {fileID: -4658402736693462064}
+  - {fileID: -356343642227973449}
   ForceRemoteRenderTimeframe: 0
 --- !u!54 &4959115259605229940
 Rigidbody:
@@ -147,7 +151,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 1
+  m_CollisionDetection: 3
 --- !u!114 &7294177793029873782
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164,7 +168,7 @@ MonoBehaviour:
   SyncScale: 0
   SyncParent: 0
   _interpolationTarget: {fileID: 6714570414995644291}
-  UsePreciseRotation: 0
+  UsePreciseRotation: 1
   UseRenderSleepThresholds: 1
   RenderThresholds:
     UseEnergy: 1
@@ -218,7 +222,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 40d99144d13c4b5ca494be2765afde36, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BufferedObject
   physicsRoots:
   - {fileID: 149407168425707603}
@@ -227,3 +231,54 @@ MonoBehaviour:
   awakeIsKinematic: 0
   _WakeTick: -1
   _SleepTick: 0
+--- !u!114 &-4658402736693462064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6764342376449885503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 345794a911114774aac6a11849213de1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObjectProperties
+  _Material_label: 1
+  innateMaterial: 1
+  _Size: 1
+  _Base_gravity_multiplier: 1
+  CurrentSimData:
+    Mass: 0
+    Scale: 0
+    Friction: 0
+    Bounce: 0
+    LinearDamping: 0
+    AngularDamping: 0
+    Brittleness: 0
+    Hardness: 0
+    Stickiness: 0
+    GravityMultiplier: 0
+  debugState: []
+--- !u!114 &-356343642227973449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6764342376449885503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f35ab88ee8114389a901ed99b0676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PhysicsObject
+  physicsObjectProperties: {fileID: 0}
+  rb: {fileID: 0}
+  physicsMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
+  physicsSubObjects: []
+  creator: {fileID: 0}
+  lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
+  velocity_before_physics_update: {x: 0, y: 0, z: 0}
+  halo_radius_scale_modifier: 1

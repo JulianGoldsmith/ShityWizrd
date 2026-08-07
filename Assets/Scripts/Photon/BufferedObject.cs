@@ -71,6 +71,8 @@ public class BufferedObject : NetworkBehaviour
             return;
 
         _isPreparingWake = true;
+        DetachForWake();
+
         SetRootsActive(physicsRoots, true);
         ApplyAwakePhysicsState();
     }
@@ -143,6 +145,7 @@ public class BufferedObject : NetworkBehaviour
     {
         bool isActivationTick = Runner.Tick == WakeTick;
 
+        DetachForWake();
         SetRootsActive(physicsRoots, true);
 
         foreach (IBufferableComponent bufferableComponent in _bufferableComponents)
@@ -154,6 +157,11 @@ public class BufferedObject : NetworkBehaviour
         _locallyAwake = true;
         _appliedWakeTick = WakeTick;
         _appliedSleepTick = SleepTick;
+    }
+
+    private void DetachForWake()
+    {
+        if (transform.parent != null) transform.SetParent(null, true);
     }
 
     private void ApplyAwakePhysicsState()
