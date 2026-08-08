@@ -114,7 +114,7 @@ public abstract class ItemAction : ScriptableObject
 
     public virtual ItemAnimation GetAnimationForPhase(int phaseID)
     {
-        return null;
+        return default;
     }
 
     protected void RemoveCastingToken(SpellState state)
@@ -128,5 +128,21 @@ public abstract class ItemAction : ScriptableObject
             activeSpell.MarkInitialExecutionDone();
             activeSpell.RemoveToken();
         }
+    }
+}
+
+public struct EyePosAndLookDir
+{
+    public Vector3 EyePosition;
+    public Vector3 Forward;
+    public Vector3 Up;
+    public Vector3 Right;
+
+    public EyePosAndLookDir(Vector3 eyePosition, Vector3 forward, Vector3 up)
+    {
+        EyePosition = eyePosition;
+        Forward = forward.normalized;
+        Up = up.normalized;
+        Right = Vector3.Cross(Up, Forward).normalized;
     }
 }

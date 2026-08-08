@@ -1,138 +1,11 @@
-/*using Fusion;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "ChannelItemAction", menuName = "Items/Actions/Channel Item Action")]
 public class ChannelItemAction : ItemAction
 {
-    private enum Phase { Idle, Windup, Hold, Release }
+    public override bool IsImplemented => true;
+    public override bool CreatesSpellState => true;
 
-    [Header("Animations")]
-    public ItemAnimation windupAnimation;
-    public ItemAnimation holdAnimation;
-    public ItemAnimation releaseAnimation;
-
-    [Header("Settings")]
-    [Tooltip("Max time the player can channel before it auto-cancels. 0 = Infinite.")]
-    public float maxChannelTime = 0f;
-
-    public override void OnPress(int comboIndex, bool isAlreadyReleased)
-    {
-        Item.EnterNewPhaseAtTick((int)Phase.Windup, Item.activeCaster.Runner.Tick, comboIndex, Item.Runner.Tick);
-        Item.activeCaster.isCasting = true;
-
-        CreateAndRegisterSpellState(comboIndex);
-        if (!Item.HasStateAuthority && Item.Runner.IsResimulation) Debug.Log("Channel OnPress Resim");
-    }
-
-    public override void OnRelease(int comboIndex)
-    {
-        var pose = Item.ItemActionData;
-        if (pose.actionID != comboIndex) return;
-        if ((Phase)pose.phaseID == Phase.Idle || (Phase)pose.phaseID == Phase.Release) return;
-
-        StopChanneling();
-
-        Item.EnterNewPhaseAtTick((int)Phase.Release, Item.Runner.Tick, comboIndex);
-    }
-
-    public override void Tick(int comboIndex, float deltaTime)
-    {
-        var pose = Item.ItemActionData;
-        if (pose.actionID != comboIndex) return;
-
-        Phase currentPhase = (Phase)pose.phaseID;
-        int ticksInPhase = Item.Runner.Tick - pose.phaseStartTick;
-        float timeInPhase = ticksInPhase * Item.Runner.DeltaTime;
-
-        ItemAnimation currentAnim = GetAnimationForPhase((int)currentPhase);
-
-        switch (currentPhase)
-        {
-            case Phase.Windup:
-                if (currentAnim == null || currentAnim.IsFinished(timeInPhase))
-                {
-                    Item.EnterNewPhaseAtTick((int)Phase.Hold, Item.Runner.Tick, comboIndex);
-
-                    StartChanneling();
-                }
-                break;
-
-            case Phase.Hold:
-                if (maxChannelTime > 0 && timeInPhase >= maxChannelTime)
-                {
-                    StopChanneling();
-                    Item.EnterNewPhaseAtTick((int)Phase.Release, Item.Runner.Tick, comboIndex);
-                }
-                break;
-
-            case Phase.Release:
-                if (currentAnim == null || currentAnim.IsFinished(timeInPhase))
-                {
-                    Item.activeCaster.isCasting = false;
-                    Item.ClearItemActionData();
-                    RemoveSpellState();
-                }
-                break;
-        }
-    }
-
-    private void StartChanneling()
-    {
-        if (Item.activeCaster.TryGetComponent<VirtualCoreController>(out var vcc))
-        {
-            SpellState state = Item.activeCast;
-            if (state == null) return;
-
-            CoreContext context = new CoreContext()
-            {
-                SpawnPosition = Item.projectileSpawnPoint != null ? Item.projectileSpawnPoint.position : Item.activeCaster.transform.position,
-                TriggerVector = Item.activeCaster.GetSpellCastDir(),
-                CastChargeLevel = 1f,
-                OriginalCaster = Item.activeCaster.Object.Id,
-            };
-
-            vcc.StartVirtualCore(state.ActiveCastID, state.SpellGraphIdFrom, 0, context);
-        }
-    }
-
-    private void StopChanneling()
-    {
-        if (Item.activeCaster.TryGetComponent<VirtualCoreController>(out var vcc))
-        {
-            SpellState state = Item.activeCast;
-            if (state != null)
-            {
-                vcc.StopVirtualCore(state.ActiveCastID);
-                RemoveCastingToken(state); 
-            }
-        }
-    }
-
-    public override ItemAnimation GetAnimationForPhase(int phaseIndex)
-    {
-        Phase p = (Phase)phaseIndex;
-        switch (p)
-        {
-            case Phase.Windup: return windupAnimation;
-            case Phase.Hold: return holdAnimation;
-            case Phase.Release: return releaseAnimation;
-            default: return null;
-        }
-    }
-
-    protected override void InitializeAnimationTickCache(float dt)
-    {
-        if (windupAnimation != null) windupAnimation.InitializeTickCache(dt);
-        if (holdAnimation != null) holdAnimation.InitializeTickCache(dt);
-        if (releaseAnimation != null) releaseAnimation.InitializeTickCache(dt);
-    }
-}*/
-
-using UnityEngine;
-
-[CreateAssetMenu(fileName = "ChannelItemAction", menuName = "Items/Actions/Channel Item Action")]
-public class ChannelItemAction : ItemAction
-{
     private enum Phase
     {
         Idle,
@@ -146,8 +19,128 @@ public class ChannelItemAction : ItemAction
     public ItemAnimation holdAnimation;
     public ItemAnimation releaseAnimation;
 
-    [Header("Legacy authoring values")]
-    public float maxChannelTime;
+    [Header("Deterministic phase timings")]
+    [TickDuration(0)] public int windupTicks = 10;
+    [TickDuration(1)] public int releaseTicks = 10;
+
+    [Tooltip("Maximum number of ticks spent channeling. Zero means infinite.")]
+    [TickDuration(0)] public int maxChannelTicks;
+
+    public override bool TryDeriveActionContext(in NetworkPlayerActionData actionData, int currentTick, out DerivedActionContext context)
+    {
+        context = default;
+
+        if (!actionData.IsValid) return false;
+        if (currentTick < actionData.StartTick) return false;
+
+        int windupEndTick = actionData.StartTick + windupTicks;
+        int releaseStartTick = GetReleaseStartTick(actionData, windupEndTick);
+
+        if (releaseStartTick < windupEndTick)
+        {
+            if (currentTick < releaseStartTick)
+            {
+                context = CreateDerivedContext(actionData, currentTick, (int)Phase.Windup, actionData.StartTick, windupTicks);
+                return true;
+            }
+
+            return CreateReleaseContext(actionData, currentTick, releaseStartTick, out context);
+        }
+
+        if (currentTick < windupEndTick)
+        {
+            context = CreateDerivedContext(actionData, currentTick, (int)Phase.Windup, actionData.StartTick, windupTicks);
+            return true;
+        }
+
+        if (currentTick < releaseStartTick)
+        {
+            int holdDurationTicks = releaseStartTick == int.MaxValue ? 0 : releaseStartTick - windupEndTick;
+            context = CreateDerivedContext(actionData, currentTick, (int)Phase.Hold, windupEndTick, holdDurationTicks);
+            return true;
+        }
+
+        return CreateReleaseContext(actionData, currentTick, releaseStartTick, out context);
+    }
+
+    public override void Tick(PlayerActionManager manager, EquipableItem item, in DerivedActionContext context)
+    {
+        if (context.IsComplete) return;
+
+        SpellState state = EnsureSpellState(manager, item, context);
+        if (state == null) return;
+
+        manager.CastController.isCasting = true;
+
+        Phase phase = (Phase)context.PhaseID;
+
+        if (phase == Phase.Hold)
+        {
+            state.isHeld = true;
+
+            if (context.IsPhaseStart) StartChanneling(manager, item, state);
+            return;
+        }
+
+        if (phase == Phase.Release)
+        {
+            state.isHeld = false;
+
+            if (context.IsPhaseStart) StopChanneling(manager, state);
+        }
+    }
+
+    private int GetReleaseStartTick(in NetworkPlayerActionData actionData, int windupEndTick)
+    {
+        if (actionData.HasReleased) return actionData.ReleaseTick;
+        if (maxChannelTicks > 0) return windupEndTick + maxChannelTicks;
+
+        return int.MaxValue;
+    }
+
+    private bool CreateReleaseContext(in NetworkPlayerActionData actionData, int currentTick, int releaseStartTick, out DerivedActionContext context)
+    {
+        int releaseEndTick = releaseStartTick + releaseTicks;
+        bool isComplete = currentTick >= releaseEndTick;
+
+        context = CreateDerivedContext(actionData, currentTick, (int)Phase.Release, releaseStartTick, releaseTicks, isComplete);
+        return true;
+    }
+
+    private void StartChanneling(PlayerActionManager manager, EquipableItem item, SpellState state)
+    {
+        CastActionController controller = manager.CastController;
+
+        if (controller == null) return;
+        if (!controller.TryGetComponent(out VirtualCoreController virtualCoreController)) return;
+
+        Vector3 spawnPosition = item.projectileSpawnPoint != null ? item.projectileSpawnPoint.position : controller.GetSpellCastPoint();
+        Vector3 castDirection = controller.GetSpellCastDir();
+
+        state.CastPosition = spawnPosition;
+        state.CastRotation = Quaternion.LookRotation(castDirection);
+        state.CastAimTargetPos = controller.GetAimTarget();
+        state.CastVelocity = castDirection;
+        state.CastChargeLevel = 1f;
+
+        CoreContext coreContext = new CoreContext
+        {
+            SpawnPosition = spawnPosition,
+            TriggerVector = castDirection,
+            CastChargeLevel = 1f,
+            OriginalCaster = manager.Object.Id
+        };
+
+        virtualCoreController.StartVirtualCore(state.ActiveCastID, state.SpellGraphIdFrom, 0, coreContext);
+    }
+
+    private void StopChanneling(PlayerActionManager manager, SpellState state)
+    {
+        if (manager.CastController != null && manager.CastController.TryGetComponent(out VirtualCoreController virtualCoreController))
+            virtualCoreController.StopVirtualCore(state.ActiveCastID);
+
+        RemoveCastingToken(state);
+    }
 
     public override ItemAnimation GetAnimationForPhase(int phaseID)
     {
@@ -158,7 +151,14 @@ public class ChannelItemAction : ItemAction
             case Phase.Windup: return windupAnimation;
             case Phase.Hold: return holdAnimation;
             case Phase.Release: return releaseAnimation;
-            default: return null;
+            default: return default;
         }
+    }
+
+    private void OnValidate()
+    {
+        windupTicks = Mathf.Max(0, windupTicks);
+        releaseTicks = Mathf.Max(1, releaseTicks);
+        maxChannelTicks = Mathf.Max(0, maxChannelTicks);
     }
 }

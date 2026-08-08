@@ -12,7 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26a2c4aa1a57f2c47abab67ff69bb7a0, type: 3}
   m_Name: ChannelItemAction
   m_EditorClassIdentifier: Assembly-CSharp::ChannelItemAction
-  windupAnimation: {fileID: 11400000, guid: e4d56a37d63038b48a0b0550cd5ced92, type: 2}
-  holdAnimation: {fileID: 11400000, guid: 63d237fa97a511346a82ad8bfbe5e4c1, type: 2}
-  releaseAnimation: {fileID: 11400000, guid: 7cb9b7eb5154bee46bfdb3a8bddbcf52, type: 2}
-  maxChannelTime: 0
+  windupAnimation:
+    clip: {fileID: 7400000, guid: e2d5f94e4be169a42823fb9d92d2bfab, type: 2}
+    speedMultiplier: 1
+  holdAnimation:
+    clip: {fileID: 7400000, guid: 3c401012cffc091469a0b35f21a95d0d, type: 2}
+    speedMultiplier: 1
+  releaseAnimation:
+    clip: {fileID: 7400000, guid: d925fbb5e102bd14dba78bccb3df9aad, type: 2}
+    speedMultiplier: 1
+  windupTicks: 32
+  releaseTicks: 32
+  maxChannelTicks: 0

@@ -25,7 +25,7 @@ public partial class BtExecuteAction : Action
 
         int targetStartTick = manager.GetCurrentIntentStartTick();
 
-        bool success = actionManager.TryScheduleAction(ActionID.Value, targetNetworkObj.Id, targetStartTick);
+        bool success = actionManager.TryStartAction(ActionID.Value, targetNetworkObj.Id, targetStartTick);
 
         return success ? Status.Success : Status.Failure;
     }

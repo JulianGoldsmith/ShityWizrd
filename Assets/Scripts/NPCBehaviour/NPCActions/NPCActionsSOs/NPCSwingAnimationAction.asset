@@ -9,9 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c011f95d6aeaefa4e99292811215e2a7, type: 3}
-  m_Name: Wand_Release
-  m_EditorClassIdentifier: 
-  clip: {fileID: 7400000, guid: 9f2832cd0e0c70f4c950c621a1bab2cc, type: 2}
-  speedMultiplier: 1
-  castPointTime: 0.25
+  m_Script: {fileID: 11500000, guid: 45511a8a71260e246ab8b481b77e60dc, type: 3}
+  m_Name: NPCSwingAnimationAction
+  m_EditorClassIdentifier: Assembly-CSharp::NPCAnimationAction
+  animationTrigger: Attack_FullSwing_1
+  durationTicks: 128

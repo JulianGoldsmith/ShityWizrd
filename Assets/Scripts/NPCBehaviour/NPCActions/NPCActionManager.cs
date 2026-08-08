@@ -14,7 +14,6 @@ public class NPCActionManager : CastActionController
 
     [Header("Actions")]
     public List<NPCAction> actionTemplates = new List<NPCAction>();
-    private List<NPCAction> _runtimeActions = new List<NPCAction>();
 
     public List<Vector3> spellCastPoints = new List<Vector3>();
 
@@ -25,26 +24,23 @@ public class NPCActionManager : CastActionController
     [Networked] public NetworkNPCActionChannelState ActionChannel { get; set; }
     [Networked] public ActiveCastID CurrentCastID { get; set; }
 
-    private int _localActiveRevision;
-    private int _localActiveActionID = -1;
-
-    public NetworkNPCActionData ActionData
-    {
-        get => ActionChannel.activeAction;
-        set
-        {
-            NetworkNPCActionChannelState channel = ActionChannel;
-            channel.activeAction = value;
-            ActionChannel = channel;
-        }
-    }
+    public NetworkNPCActionData ActionData => ActionChannel.activeAction;
 
     public bool HasActiveAction => ActionData.isActive;
     public bool HasPendingAction => ActionChannel.pendingAction.isValid;
+    public bool IsActionChannelBusy => HasActiveAction || HasPendingAction;
+
+    public bool CanStartAction(int actionID)
+    {
+        if (!HasStateAuthority || Runner == null) return false;
+        if (IsActionChannelBusy) return false;
+
+        return IsValidAction(actionID);
+    }
 
     public override void Spawned()
     {
-        base.Spawned(); // This initializes CastTracker in the base class!
+        base.Spawned();
 
         if (networkAnimator == null) networkAnimator = GetComponent<NetworkAnimator>();
         if (movementManager == null) movementManager = GetComponent<NPCMovementManager>();
@@ -53,63 +49,69 @@ public class NPCActionManager : CastActionController
 
         if (HasStateAuthority) ActionChannel = default;
 
-        _localActiveRevision = 0;
-        _localActiveActionID = -1;
         isCasting = false;
-
-        _runtimeActions.Clear();
-        for (int i = 0; i < actionTemplates.Count; i++)
-        {
-            if (actionTemplates[i] == null)
-            {
-                _runtimeActions.Add(null);
-                continue;
-            }
-
-            NPCAction runtimeInstance = Instantiate(actionTemplates[i]);
-            runtimeInstance.name = actionTemplates[i].name + " (Runtime)";
-            runtimeInstance.InitializeRuntime(this, i);
-            _runtimeActions.Add(runtimeInstance);
-        }
-
-        // (Note: Static Spell Hydration Logic remains exactly as you had it!)
-        foreach (var action in _runtimeActions)
-        {
-            if (action is NPCChargeSpellAction spellAction)
-            {
-                SpellGraphId staticId = new SpellGraphId(PlayerRef.None, spellAction.staticSpellIndex + 1);
-                SpellGraph graph = SpellStateManager.instance.GetSpellGraph(staticId);
-                if (graph != null && networkObjectBuffer != null) networkObjectBuffer.Initialise(graph);
-            }
-            else if (action is NPCChargeAndJumpSpellAction spellAction2)
-            {
-                SpellGraphId staticId = new SpellGraphId(PlayerRef.None, spellAction2.staticSpellIndex + 1);
-                SpellGraph graph = SpellStateManager.instance.GetSpellGraph(staticId);
-                if (graph != null && networkObjectBuffer != null) networkObjectBuffer.Initialise(graph);
-            }
-        }
     }
 
     public void TickActionChannel()
     {
         if (Runner == null) return;
 
-        TryPromotePendingAction();
-        SynchronizeLocalActionLifecycle();
+        if (HasStateAuthority) TryPromotePendingAction();
 
         NetworkNPCActionData actionData = ActionData;
-        if (actionData.isActive && IsValidAction(actionData.actionID))
+
+        if (!actionData.IsValid)
         {
-            _runtimeActions[actionData.actionID].Tick(actionData.actionID, Runner.DeltaTime);
+            isCasting = false;
+            return;
         }
 
-        TryPromotePendingAction();
-        SynchronizeLocalActionLifecycle();
+        NPCAction action = GetAction(actionData.actionID);
+
+        if (action == null || !action.IsImplemented)
+        {
+            isCasting = false;
+
+            if (HasStateAuthority) CompleteActiveAction(actionData.revision);
+            return;
+        }
+
+        if (!action.TryDeriveActionContext(actionData, Runner.Tick, out DerivedNPCActionContext context))
+        {
+            isCasting = false;
+
+            if (HasStateAuthority) CompleteActiveAction(actionData.revision);
+            return;
+        }
+
+        isCasting = action.CreatesSpellState && !context.IsComplete;
+
+        action.Tick(this, context);
+
+        if (context.IsComplete && HasStateAuthority)
+        {
+            CompleteActiveAction(actionData.revision);
+            TryPromotePendingAction();
+        }
     }
 
-    // ==========================================
-    // ACTION CHANNEL CONTROL API
-    // ==========================================
+    private void CompleteActiveAction(int expectedRevision)
+    {
+        NetworkNPCActionChannelState channel = ActionChannel;
+
+        if (!channel.activeAction.isActive) return;
+        if (channel.activeAction.revision != expectedRevision) return;
+
+        channel.activeAction = default;
+        ActionChannel = channel;
+    }
+
+    public bool TryStartAction(int actionID, NetworkId targetID, int earliestStartTick)
+    {
+        if (!CanStartAction(actionID)) return false;
+
+        return TryScheduleAction(actionID, targetID, earliestStartTick);
+    }
 
     public bool TryScheduleAction(int actionID, NetworkId targetID, int earliestStartTick)
     {
@@ -148,19 +150,19 @@ public class NPCActionManager : CastActionController
 
     public void StartAction(int actionID, NetworkId targetID)
     {
-        if (!HasStateAuthority || Runner == null) return;
-        if (HasActiveAction || HasPendingAction) return;
-        TryScheduleAction(actionID, targetID, Runner.Tick);
+        if (Runner == null) return;
+
+        TryStartAction(actionID, targetID, Runner.Tick);
     }
 
     public void EndCurrentAction()
     {
-        NetworkNPCActionChannelState channel = ActionChannel;
-        if (!channel.activeAction.isActive) return;
+        if (!HasStateAuthority) return;
 
-        EndLocalAction();
-        channel.activeAction = default;
-        ActionChannel = channel;
+        NetworkNPCActionData actionData = ActionData;
+        if (!actionData.isActive) return;
+
+        CompleteActiveAction(actionData.revision);
         isCasting = false;
     }
 
@@ -178,24 +180,40 @@ public class NPCActionManager : CastActionController
         ActionChannel = channel;
     }
 
+    public NPCAction GetAction(int actionID)
+    {
+        if (actionID < 0 || actionID >= actionTemplates.Count) return null;
+        return actionTemplates[actionID];
+    }
+
     private bool IsValidAction(int actionID)
     {
-        return actionID >= 0 && actionID < _runtimeActions.Count && _runtimeActions[actionID] != null;
+        NPCAction action = GetAction(actionID);
+        return action != null && action.IsImplemented;
     }
 
     private bool TryPromotePendingAction()
     {
         NetworkNPCActionChannelState channel = ActionChannel;
-        if (channel.activeAction.isActive || !channel.pendingAction.isValid) return false;
+
+        if (channel.activeAction.isActive) return false;
+        if (!channel.pendingAction.isValid) return false;
         if (Runner.Tick < channel.pendingAction.earliestStartTick) return false;
 
         NetworkNPCActionRequest request = channel.pendingAction;
-        if (!IsValidAction(request.actionID))
+        NPCAction action = GetAction(request.actionID);
+
+        if (action == null || !action.IsImplemented)
         {
             channel.pendingAction = default;
             ActionChannel = channel;
             return false;
         }
+
+        ActiveCastID castID = default;
+
+        if (action.CreatesSpellState)
+            castID = GenerateNewCastID();
 
         channel.activeAction = new NetworkNPCActionData
         {
@@ -204,62 +222,16 @@ public class NPCActionManager : CastActionController
             targetID = request.targetID,
             revision = request.revision,
             startTick = Runner.Tick,
-            phaseID = 1,
-            phaseStartTick = Runner.Tick,
-            chargeStartTick = Runner.Tick,
-            hasFired = false
+            castID = castID
         };
-        channel.pendingAction = default;
 
+        channel.pendingAction = default;
         ActionChannel = channel;
         return true;
     }
 
-    private void SynchronizeLocalActionLifecycle()
-    {
-        NetworkNPCActionData actionData = ActionData;
 
-        if (!actionData.isActive)
-        {
-            EndLocalAction();
-            isCasting = false;
-            return;
-        }
 
-        if (_localActiveRevision == actionData.revision && _localActiveActionID == actionData.actionID)
-        {
-            isCasting = true;
-            return;
-        }
-
-        EndLocalAction();
-
-        if (!IsValidAction(actionData.actionID))
-        {
-            isCasting = false;
-            return;
-        }
-
-        _localActiveRevision = actionData.revision;
-        _localActiveActionID = actionData.actionID;
-        isCasting = true;
-        _runtimeActions[actionData.actionID].OnStart(actionData.actionID);
-    }
-
-    private void EndLocalAction()
-    {
-        if (!IsValidAction(_localActiveActionID))
-        {
-            _localActiveRevision = 0;
-            _localActiveActionID = -1;
-            return;
-        }
-
-        int endedActionID = _localActiveActionID;
-        _localActiveRevision = 0;
-        _localActiveActionID = -1;
-        _runtimeActions[endedActionID].OnEnd(endedActionID);
-    }
 
     // ==========================================
     // THE SPATIAL CONTRACT (Fulfilling the Base)

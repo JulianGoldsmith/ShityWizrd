@@ -525,7 +525,7 @@ public class EquipableItem : InteractableItem, IAfterRender
 
         ItemAnimation animation = action.GetAnimationForPhase(phaseID);
 
-        if (animation == null)
+        if (animation.clip == null)
         {
             pos = idleWorldPos;
             rot = idleWorldRot;
@@ -587,8 +587,7 @@ public class EquipableItem : InteractableItem, IAfterRender
         localPos = default;
         localRot = default;
 
-        if (itemAnim == null || itemAnim.clip == null || _ghostSamplerPivot == null)
-            return false;
+        if (itemAnim.clip == null || _ghostSamplerPivot == null) return false;
 
         if (!_samplerGraph.IsValid()) return false;
 

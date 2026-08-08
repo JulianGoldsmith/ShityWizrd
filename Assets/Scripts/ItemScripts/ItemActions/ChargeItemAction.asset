@@ -12,11 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e3400fed2fb1a446a4b3c2f542e5c75, type: 3}
   m_Name: ChargeItemAction
   m_EditorClassIdentifier: 
-  windupAnimation: {fileID: 11400000, guid: e4d56a37d63038b48a0b0550cd5ced92, type: 2}
-  holdAnimation: {fileID: 11400000, guid: 63d237fa97a511346a82ad8bfbe5e4c1, type: 2}
-  releaseAnimation: {fileID: 11400000, guid: 7cb9b7eb5154bee46bfdb3a8bddbcf52, type: 2}
-  minChargeTime: 0.1
-  maxChargeTime: 1
-  chargeMult: 20
+  windupAnimation:
+    clip: {fileID: 7400000, guid: 0ceb07997c7e3254facd6cb6d915df58, type: 2}
+    speedMultiplier: 1
+  holdAnimation:
+    clip: {fileID: 7400000, guid: 0600ebee6eed3ef4bbb22b54512bd072, type: 2}
+    speedMultiplier: 1
+  releaseAnimation:
+    clip: {fileID: 7400000, guid: 9f2832cd0e0c70f4c950c621a1bab2cc, type: 2}
+    speedMultiplier: 1
+  windupTicks: 11
+  releaseTicks: 32
+  spellTickInRelease: 16
+  minChargeTicks: 6
+  maxChargeTicks: 60
+  chargeMult: 50
   cooldown: 0.4
   comboWindow: 0.7

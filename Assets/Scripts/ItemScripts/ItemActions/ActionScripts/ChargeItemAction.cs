@@ -21,13 +21,13 @@ public class ChargeItemAction : ItemAction
     public ItemAnimation releaseAnimation;
 
     [Header("Deterministic phase timings")]
-    [Min(0)] public int windupTicks = 10;
-    [Min(1)] public int releaseTicks = 10;
-    [Min(0)] public int spellTickInRelease = 3;
+    [TickDuration(0)] public int windupTicks = 10;
+    [TickDuration(1)] public int releaseTicks = 10;
+    [TickDuration(0)] public int spellTickInRelease = 3;
 
     [Header("Charge")]
-    [Min(0)] public int minChargeTicks = 6;
-    [Min(1)] public int maxChargeTicks = 90;
+    [TickDuration(0)] public int minChargeTicks = 6;
+    [TickDuration(1)] public int maxChargeTicks = 90;
     public float chargeMult = 50f;
 
     [Header("Cooldown & combo")]
@@ -149,16 +149,16 @@ public class ChargeItemAction : ItemAction
     }
 
 
-    public override ItemAnimation GetAnimationForPhase(int phaseIndex)
+    public override ItemAnimation GetAnimationForPhase(int phaseID)
     {
-        Phase p = (Phase)phaseIndex;
+        Phase phase = (Phase)phaseID;
 
-        switch (p)
+        switch (phase)
         {
             case Phase.Windup: return windupAnimation;
             case Phase.Hold: return holdAnimation;
             case Phase.Release: return releaseAnimation;
-            default: return null;
+            default: return default;
         }
     }
 
