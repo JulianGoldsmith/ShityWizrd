@@ -31,8 +31,8 @@ public class EquipableItem : InteractableItem, IAfterRender
 
 
     [Header("Item Actions")]
-    public List<ItemAction> primaryActionsRef = new List<ItemAction>();
-    public List<ItemAction> secondaryActionsRef = new List<ItemAction>();
+    public CastMethods PrimaryCastMethods = new CastMethods();
+    public CastMethods SecondaryCastMethods = new CastMethods();
     public ItemAction feedActionRef;
 
     public HandState heldHandState;
@@ -355,27 +355,98 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     #region ActionsAndCasting
 
-    public ItemAction GetAction(ItemActionChannel channel, int actionIndex)
+    public ItemAction GetAction(ItemActionChannel channel, int actionID)
+    {
+        if (channel == ItemActionChannel.Feed) return actionID == 0 ? feedActionRef : null;
+        if (actionID < 0 || actionID > (int)EntryPointType.Effect) return null;
+
+        EntryPointType entryPointType = (EntryPointType)actionID;
+
+        switch (channel)
+        {
+            case ItemActionChannel.Primary: return PrimaryCastMethods.GetAction(entryPointType);
+            case ItemActionChannel.Secondary: return SecondaryCastMethods.GetAction(entryPointType);
+            default: return null;
+        }
+    }
+
+    public SpellGraphId GetEquippedSpellID(ItemActionChannel channel)
     {
         switch (channel)
         {
+            case ItemActionChannel.Primary: return PrimarySpellID;
+            case ItemActionChannel.Secondary: return SecondarySpellID;
+            default: return default;
+        }
+    }
+
+    public bool TrySetEquippedSpellID(ItemActionChannel channel, SpellGraphId spellID)
+    {
+        if (!HasStateAuthority) return false;
+
+        switch (channel)
+        {
             case ItemActionChannel.Primary:
-                if (actionIndex >= 0 && actionIndex < primaryActionsRef.Count)
-                    return primaryActionsRef[actionIndex];
-                break;
+                PrimarySpellID = spellID;
+                return true;
 
             case ItemActionChannel.Secondary:
-                if (actionIndex >= 0 && actionIndex < secondaryActionsRef.Count)
-                    return secondaryActionsRef[actionIndex];
-                break;
+                SecondarySpellID = spellID;
+                return true;
 
-            case ItemActionChannel.Feed:
-                if (actionIndex == 0)
-                    return feedActionRef;
-                break;
+            default:
+                return false;
         }
+    }
 
-        return null;
+    public bool SupportsEntryPoint(ItemActionChannel channel, EntryPointType entryPointType)
+    {
+        switch (channel)
+        {
+            case ItemActionChannel.Primary: return PrimaryCastMethods.Supports(entryPointType);
+            case ItemActionChannel.Secondary: return SecondaryCastMethods.Supports(entryPointType);
+            default: return false;
+        }
+    }
+
+    public bool TryFindCompatibleChannel(EntryPointType entryPointType, out ItemActionChannel channel)
+    {
+        channel = ItemActionChannel.None;
+
+        bool primarySupports = PrimaryCastMethods.Supports(entryPointType);
+        bool secondarySupports = SecondaryCastMethods.Supports(entryPointType);
+
+        if (primarySupports == secondarySupports) return false;
+
+        channel = primarySupports ? ItemActionChannel.Primary : ItemActionChannel.Secondary;
+        return true;
+    }
+
+    public bool TryResolveCast(ItemActionChannel channel, out EntryPointType entryPointType, out ItemAction action, out SpellGraphId spellID)
+    {
+        entryPointType = default;
+        action = null;
+        spellID = GetEquippedSpellID(channel);
+
+        if (spellID.IsNull()) return false;
+        if (SpellStateManager.instance == null) return false;
+        if (!SpellStateManager.instance.TryGetSpellEntryPointType(spellID, out entryPointType)) return false;
+
+        action = GetAction(channel, (int)entryPointType);
+        return action != null && action.IsImplemented;
+    }
+
+    public bool TryFindSingleLoadedChannel(out ItemActionChannel channel)
+    {
+        channel = ItemActionChannel.None;
+
+        bool primaryLoaded = PrimarySpellID.NotNull();
+        bool secondaryLoaded = SecondarySpellID.NotNull();
+
+        if (primaryLoaded == secondaryLoaded) return false;
+
+        channel = primaryLoaded ? ItemActionChannel.Primary : ItemActionChannel.Secondary;
+        return true;
     }
 
     #endregion

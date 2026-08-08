@@ -131,4 +131,23 @@ public class SpellSystemMenu
             Debug.LogWarning("[Spell System] No MasterVFXDictionary found in the project! Please create one via Right Click -> Create -> Dictionary.");
         }
     }
+
+    [MenuItem("SpellSystem/Open StaticSpell Dictionary")]
+    public static void OpenStaticSpellDictionary()
+    {
+        string[] guids = AssetDatabase.FindAssets("t:StaticSpellDictionary");
+
+        if (guids.Length > 0)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            StaticSpellDictionary dictionary = AssetDatabase.LoadAssetAtPath<StaticSpellDictionary>(path);
+
+            Selection.activeObject = dictionary;
+            EditorGUIUtility.PingObject(dictionary);
+        }
+        else
+        {
+            Debug.LogWarning("[Spell System] No StaticSpellDictionary was found. Create one through Create > Dictionaries > Static Spell Dictionary.");
+        }
+    }
 }

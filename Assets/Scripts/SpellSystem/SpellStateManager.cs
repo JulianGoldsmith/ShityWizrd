@@ -30,8 +30,7 @@ public class SpellStateManager : NetworkBehaviour
 
     public Dictionary<ActiveCastID, ActiveSpell> activeSpells = new Dictionary<ActiveCastID, ActiveSpell>();
 
-    [Header("Static Spells")]
-    public StaticSpellDatabase staticSpellDatabase;
+
     [Networked, Capacity(100)] public NetworkArray<SpellGraphId> ActiveManifest { get; }
     //[Networked, Capacity(100)] public NetworkArray<NetworkCastData> ActiveCastsData { get; }
 
@@ -56,7 +55,6 @@ public class SpellStateManager : NetworkBehaviour
         base.Spawned();
         Runner.SetIsSimulated(this.Object, true);
 
-        LoadStaticSpells();
 
         _manifestChangeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
@@ -191,7 +189,41 @@ public class SpellStateManager : NetworkBehaviour
         return newId;
     }
 
+    public bool TryGetSpellEntryPointType(SpellGraphId spellID, out EntryPointType entryPointType)
+    {
+        entryPointType = default;
 
+        if (!hydratedSpells.TryGetValue(spellID, out RuntimeSpell runtimeSpell)) return false;
+        if (runtimeSpell == null || runtimeSpell.RootNode == null) return false;
+
+        IRuntimeNode rootNode = runtimeSpell.RootNode;
+
+        if (rootNode is RuntimeEntryPoint entryPoint)
+        {
+            entryPointType = entryPoint.ExpectedType;
+            return true;
+        }
+
+        if (rootNode is IRuntimeCore)
+        {
+            entryPointType = EntryPointType.SpawnCore;
+            return true;
+        }
+
+        if (rootNode is ITrigger)
+        {
+            entryPointType = EntryPointType.Trigger;
+            return true;
+        }
+
+        if (rootNode is IEffect)
+        {
+            entryPointType = EntryPointType.Effect;
+            return true;
+        }
+
+        return false;
+    }
 
     public bool TryGetRuneSpellBlueprint(SpellGraphId id, out RuneSpellBlueprintData blueprint)
     {
@@ -670,34 +702,6 @@ public class SpellStateManager : NetworkBehaviour
     }
 
 
-    private void LoadStaticSpells()
-    {
-        if (staticSpellDatabase == null) return;
-
-        for (int i = 0; i < staticSpellDatabase.staticSpells.Count; i++)
-        {
-            TextAsset spellJson = staticSpellDatabase.staticSpells[i];
-            if (spellJson == null || string.IsNullOrEmpty(spellJson.text)) continue;
-
-            try
-            {
-                SpellGraph graph = ScriptableObject.CreateInstance<SpellGraph>();
-                JsonUtility.FromJsonOverwrite(spellJson.text, graph);
-
-                SpellGraphId staticId = new SpellGraphId(PlayerRef.None, i + 1);
-                graph.spellGraphId = staticId;
-
-                active_spellblueprints[staticId] = graph;
-                HydrateAndStoreSpell(staticId, graph);
-                Debug.Log($"[SpellStateManager] Loaded Static Spell [{i + 1}]: {spellJson.name}");
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[SpellStateManager] Failed to load static spell at index {i + 1}: {e.Message}");
-            }
-        }
-        
-    }
 
     public SpellGraphId LoadBakedWeaponSpell(TextAsset spellJson)
     {

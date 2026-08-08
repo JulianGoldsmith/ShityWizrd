@@ -144,7 +144,7 @@ public class ChargeItemAction : ItemAction
             controller.gameObject
         );
 
-        ExecuteHydratedSpell(item, context.ActionData.Channel, triggerInfo);
+        ExecuteSpawnCoreSpell(context.ActionData.SpellID, triggerInfo);
         RemoveCastingToken(state);
     }
 

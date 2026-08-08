@@ -102,4 +102,45 @@ public static class RuneSpellBlueprintBuilder
         error = null;
         return true;
     }
+
+    public static bool TryGetEntryPointType(RuneSpellBlueprintData blueprint, out EntryPointType entryPointType, out string error)
+    {
+        entryPointType = default;
+
+        if (blueprint.NodeCount <= 0)
+        {
+            error = "The rune blueprint has no root node.";
+            return false;
+        }
+
+        RuneNodeData rootNode = blueprint.GetNode(0);
+
+        if (!NodeRegistry.TryGetNodeTemplate(rootNode.RuneDefinitionId, out SpellNode rootTemplate))
+        {
+            error = $"Root rune definition {rootNode.RuneDefinitionId} is not registered.";
+            return false;
+        }
+
+        switch (rootTemplate.GetRuneType())
+        {
+            case NodeType.Core:
+                entryPointType = EntryPointType.SpawnCore;
+                error = null;
+                return true;
+
+            case NodeType.Trigger:
+                entryPointType = EntryPointType.Trigger;
+                error = null;
+                return true;
+
+            case NodeType.Effect:
+                entryPointType = EntryPointType.Effect;
+                error = null;
+                return true;
+
+            default:
+                error = $"A {rootTemplate.GetRuneType()} rune cannot be used as a spell entry point.";
+                return false;
+        }
+    }
 }

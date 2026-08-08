@@ -21,13 +21,15 @@ public class RuneSpellContainer : MonoBehaviour
 
     public bool TryCommitFeed(NetworkInteractionTarget target)
     {
-        if (_item == null || !_item.HasStateAuthority)
-            return false;
+        if (_item == null || !_item.HasStateAuthority) return false;
 
-        if (_item.PrimarySpellID.NotNull())
-            return TryEject();
+        if (target.IsValid && target.Type == InteractionTargetType.RuneNode)
+            return TryAbsorb(target);
 
-        return TryAbsorb(target);
+        if (!target.IsValid && _item.TryFindSingleLoadedChannel(out ItemActionChannel loadedChannel))
+            return TryEject(loadedChannel);
+
+        return false;
     }
 
     private bool TryAbsorb(NetworkInteractionTarget target)
@@ -43,6 +45,8 @@ public class RuneSpellContainer : MonoBehaviour
 
         if (!targetRig.Object.HasStateAuthority)
             return false;
+
+        
 
         RuneObject selectedRune = targetRig.GetRuneObject(target.PartIndex);
 
@@ -65,6 +69,24 @@ public class RuneSpellContainer : MonoBehaviour
             return false;
         }
 
+        if (!RuneSpellBlueprintBuilder.TryGetEntryPointType(blueprint, out EntryPointType entryPointType, out string entryError))
+        {
+            Debug.LogWarning($"[RuneFeed] Could not determine spell entry type: {entryError}", _item);
+            return false;
+        }
+
+        if (!_item.TryFindCompatibleChannel(entryPointType, out ItemActionChannel compatibleChannel))
+        {
+            Debug.LogWarning($"[RuneFeed] '{_item.name}' has no unique channel supporting {entryPointType}.", _item);
+            return false;
+        }
+
+        if (_item.GetEquippedSpellID(compatibleChannel).NotNull())
+        {
+            Debug.LogWarning($"[RuneFeed] {compatibleChannel} is already occupied.", _item);
+            return false;
+        }
+
         PlayerRef author = _item.HoldingPlayer != null ? _item.HoldingPlayer.InputAuthority : _item.Object.InputAuthority;
 
         if (author == PlayerRef.None)
@@ -80,7 +102,7 @@ public class RuneSpellContainer : MonoBehaviour
 
         int absorbedNodeCount = targetRig.NodeCount;
 
-        _item.PrimarySpellID = spellId;
+        if (!_item.TrySetEquippedSpellID(compatibleChannel, spellId)) return false;
         targetRig.IsConsumed = true;
         _item.Runner.Despawn(targetRig.Object);
 
@@ -88,9 +110,10 @@ public class RuneSpellContainer : MonoBehaviour
         return true;
     }
 
-    private bool TryEject()
+    private bool TryEject(ItemActionChannel channel)
     {
-        SpellGraphId spellId = _item.PrimarySpellID;
+        SpellGraphId spellId = _item.GetEquippedSpellID(channel);
+        if (spellId.IsNull()) return false;
 
         if (!SpellStateManager.instance.TryGetRuneSpellBlueprint(spellId, out RuneSpellBlueprintData blueprint))
         {
@@ -150,7 +173,7 @@ public class RuneSpellContainer : MonoBehaviour
             return false;
         }
 
-        _item.PrimarySpellID = default;
+        if (!_item.TrySetEquippedSpellID(channel, default)) return false;
 
         Debug.Log($"[RuneFeed] Ejected spell {spellId.BlueprintNumber} as {looseRig.NodeCount} runes.", _item);
         return true;

@@ -12,6 +12,9 @@ public struct NetworkPlayerActionData : INetworkStruct
     public int ActionID;
     public int ComboIndex;
 
+    public SpellGraphId SpellID;
+    public EntryPointType EntryPointType;
+
     public int StartTick;
     public int ReleaseTick;
 
@@ -79,7 +82,7 @@ public class PlayerActionManager : NetworkBehaviour
             if (inventory == null || inventory.activeItem == null) return;
             if (!inventory.activeItem.TryGetComponent(out EquipableItem item)) return;
 
-            TryStartAction(item.Object, channel, 0, 0, interactionTarget);
+            TryStartAction(item.Object, channel, 0, interactionTarget);
             return;
         }
 
@@ -95,25 +98,38 @@ public class PlayerActionManager : NetworkBehaviour
     #endregion
 
 
-    public bool TryStartAction(NetworkObject itemObject, ItemActionChannel channel, int actionID, int comboIndex, NetworkInteractionTarget interactionTarget)
+    public bool TryStartAction(NetworkObject itemObject, ItemActionChannel channel, int comboIndex, NetworkInteractionTarget interactionTarget)
     {
         if (!CanAuthorActionState()) return false;
         if (HasActiveAction) return false;
         if (itemObject == null || !itemObject.IsValid) return false;
-        if (channel == ItemActionChannel.None || actionID < 0) return false;
+        if (channel == ItemActionChannel.None) return false;
         if (!itemObject.TryGetComponent(out EquipableItem item)) return false;
         if (item.HoldingPlayer != Object) return false;
 
-        ItemAction action = item.GetAction(channel, actionID);
+        ItemAction action;
+        SpellGraphId spellID = default;
+        EntryPointType entryPointType = default;
+        int actionID;
 
-        if (action == null) return false;
-        if (!action.IsImplemented) return false;
+        if (channel == ItemActionChannel.Feed)
+        {
+            actionID = 0;
+            action = item.GetAction(channel, actionID);
+        }
+        else
+        {
+            if (!item.TryResolveCast(channel, out entryPointType, out action, out spellID)) return false;
+            actionID = (int)entryPointType;
+        }
+
+        if (action == null || !action.IsImplemented) return false;
 
         ActiveCastID castID = default;
 
         if (action.CreatesSpellState)
         {
-            if (castController == null) return false;
+            if (castController == null || spellID.IsNull()) return false;
             castID = castController.GenerateNewCastID();
         }
 
@@ -127,6 +143,8 @@ public class PlayerActionManager : NetworkBehaviour
             Channel = channel,
             ActionID = actionID,
             ComboIndex = comboIndex,
+            SpellID = spellID,
+            EntryPointType = entryPointType,
             StartTick = Runner.Tick,
             ReleaseTick = -1,
             CastID = castID,

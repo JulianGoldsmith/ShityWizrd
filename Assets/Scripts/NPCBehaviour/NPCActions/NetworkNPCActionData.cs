@@ -8,6 +8,7 @@ public struct NetworkNPCActionData : INetworkStruct
     public int revision;
     public int startTick;
     public ActiveCastID castID;
+    public SpellGraphId spellID;
 
     public bool IsValid => isActive && actionID >= 0;
 }

@@ -1,11 +1,11 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public enum EntryPointType
+public enum EntryPointType : byte
 {
-    SpawnCore,   // For Wands/Guns -> Needs an IRuntimeCore (ObjectCore)
-    VirtualCore, // For Staffs/Channeling -> Needs an ITrigger (Raycast/AoE)
-    HitBox       // For Swords/Melee -> Needs an IEffect (Ignite/Push)
+    SpawnCore = 0,
+    Trigger = 1,
+    Effect = 2
 }
 
 [CreateAssetMenu(fileName = "EntryPointNode", menuName = "SpellNodes/Entry Point")]
@@ -25,13 +25,11 @@ public class EntryPointNode : SpellNode
                 sockets.Add(new SocketDefinition("Spawn Core", SocketType.ExecutionLink, SocketDirection.Output, DataTypeTag.Generic, null, this.InstanceGuid));
                 break;
 
-            case EntryPointType.VirtualCore:
-                // Virtual cores bypass physical spawning and go straight to math Triggers
+            case EntryPointType.Trigger:
                 sockets.Add(new SocketDefinition("Emission Trigger", SocketType.ExecutionLink, SocketDirection.Output, DataTypeTag.Generic, null, this.InstanceGuid));
                 break;
 
-            case EntryPointType.HitBox:
-                // Hitboxes bypass spawning and triggers entirely, going straight to Effects!
+            case EntryPointType.Effect:
                 sockets.Add(new SocketDefinition("On Hit Effect", SocketType.ExecutionLink, SocketDirection.Output, DataTypeTag.Generic, null, this.InstanceGuid));
                 break;
         }

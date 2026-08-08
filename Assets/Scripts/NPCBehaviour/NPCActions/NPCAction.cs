@@ -23,6 +23,7 @@ public abstract class NPCAction : ScriptableObject
     public virtual bool IsImplemented => false;
     public virtual bool CreatesSpellState => false;
 
+
     public virtual bool TryDeriveActionContext(in NetworkNPCActionData actionData, int currentTick, out DerivedNPCActionContext context)
     {
         context = default;
@@ -43,5 +44,11 @@ public abstract class NPCAction : ScriptableObject
             DurationTicks = durationTicks,
             IsComplete = currentTick >= actionData.startTick + durationTicks
         };
+    }
+
+    public virtual bool TryResolveSpellID(NPCActionManager manager, out SpellGraphId spellID)
+    {
+        spellID = default;
+        return false;
     }
 }

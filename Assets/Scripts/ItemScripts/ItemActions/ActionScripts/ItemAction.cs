@@ -1,4 +1,5 @@
 using Fusion;
+using System;
 using UnityEngine;
 
 public struct DerivedActionContext
@@ -50,7 +51,7 @@ public abstract class ItemAction : ScriptableObject
         }
 
         ItemActionChannel channel = context.ActionData.Channel;
-        SpellGraphId spellID = channel == ItemActionChannel.Secondary ? item.SecondarySpellID : item.PrimarySpellID;
+        SpellGraphId spellID = context.ActionData.SpellID;
 
         if (spellID.IsNull()) return null;
 
@@ -73,19 +74,29 @@ public abstract class ItemAction : ScriptableObject
         return state;
     }
 
-    protected void ExecuteHydratedSpell(EquipableItem item, ItemActionChannel channel, SpellTriggerInfo triggerInfo)
+    protected void ExecuteSpawnCoreSpell(SpellGraphId spellID, SpellTriggerInfo triggerInfo)
     {
-        if (item == null || channel == ItemActionChannel.Feed) return;
+        if (SpellStateManager.instance == null || spellID.IsNull()) return;
 
-        SpellGraphId spellID = channel == ItemActionChannel.Secondary ? item.SecondarySpellID : item.PrimarySpellID;
         IRuntimeNode rootNode = SpellStateManager.instance.GetHydratedSpell(spellID);
 
         if (rootNode is RuntimeEntryPoint entryPoint)
-            entryPoint.Execute(triggerInfo);
-        else if (rootNode is IRuntimeCore core)
+        {
+            if (entryPoint.ExpectedType != EntryPointType.SpawnCore)
+            {
+                Debug.LogError($"[ItemAction] Spell {spellID.BlueprintNumber} is not a SpawnCore spell.");
+                return;
+            }
+            rootNode = entryPoint.ConnectedLogic;
+        }
+
+        if (rootNode is IRuntimeCore core)
+        {
             core.ExecuteCore(triggerInfo);
-        else
-            Debug.LogError($"[ItemAction] Failed to execute spell {spellID.BlueprintNumber}.");
+            return;
+        }
+
+        Debug.LogError($"[ItemAction] Spell {spellID.BlueprintNumber} does not begin with a core.");
     }
     public virtual bool TryDeriveActionContext(in NetworkPlayerActionData actionData, int currentTick, out DerivedActionContext context)
     {
@@ -144,5 +155,30 @@ public struct EyePosAndLookDir
         Forward = forward.normalized;
         Up = up.normalized;
         Right = Vector3.Cross(Up, Forward).normalized;
+    }
+}
+
+
+[Serializable]
+public class CastMethods
+{
+    public ItemAction SpawnCore;
+    public ItemAction Trigger;
+    public ItemAction Effect;
+
+    public ItemAction GetAction(EntryPointType entryPointType)
+    {
+        switch (entryPointType)
+        {
+            case EntryPointType.SpawnCore: return SpawnCore;
+            case EntryPointType.Trigger: return Trigger;
+            case EntryPointType.Effect: return Effect;
+            default: return null;
+        }
+    }
+
+    public bool Supports(EntryPointType entryPointType)
+    {
+        return GetAction(entryPointType) != null;
     }
 }

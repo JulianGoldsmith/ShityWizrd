@@ -8,6 +8,8 @@ public class DictionaryInitializer : MonoBehaviour
     public MasterStatusDictionary statusDictionary;
     public MasterMaterialDictionary materialDictionary;
     public MasterVFXDictionary vfxDictionary;
+
+    public StaticSpellDictionary staticSpellDictionary;
     private void Awake()
     {
         if (nodeDictionary != null)
@@ -15,6 +17,16 @@ public class DictionaryInitializer : MonoBehaviour
             NodeRegistry.Initialize(nodeDictionary);
         }
         else Debug.LogError("[DictionaryInitializer] Missing MasterNodeDictionary asset!");
+
+
+        if (staticSpellDictionary != null && nodeDictionary != null)
+        {
+            StaticSpellRegistry.Initialize(staticSpellDictionary, nodeDictionary);
+        }
+        else
+        {
+            Debug.LogError("[DictionaryInitializer] Missing StaticSpellDictionary or MasterNodeDictionary asset!");
+        }
 
         if (statusDictionary != null)
         {
@@ -27,5 +39,6 @@ public class DictionaryInitializer : MonoBehaviour
 
         if (vfxDictionary != null) VFXRegistry.Initialize(vfxDictionary);
         else Debug.LogError("[DictionaryInitializer] Missing MasterVFXDictionary asset!");
+
     }
 }

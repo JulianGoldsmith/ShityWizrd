@@ -314,10 +314,15 @@ MonoBehaviour:
   itemName: EggWand
   defaultPrimarySpellJSON: {fileID: 4900000, guid: b52a3e7c19bdd434baff01bedc8d105a, type: 3}
   defaultSecondarySpellJSON: {fileID: 0}
-  primaryActionsRef:
-  - {fileID: 11400000, guid: a3f71c1f13b2e2f44bf05b4e08ecdf4e, type: 2}
-  secondaryActionsRef: []
-  feedActionRef: {fileID: 0}
+  PrimaryCastMethods:
+    SpawnCore: {fileID: 11400000, guid: a3f71c1f13b2e2f44bf05b4e08ecdf4e, type: 2}
+    Trigger: {fileID: 11400000, guid: e49da06048b8b1449b217dcbdfe6949b, type: 2}
+    Effect: {fileID: 0}
+  SecondaryCastMethods:
+    SpawnCore: {fileID: 0}
+    Trigger: {fileID: 0}
+    Effect: {fileID: 0}
+  feedActionRef: {fileID: 11400000, guid: bb2bffb411237aa488399b39bf12eb34, type: 2}
   heldHandState: {fileID: 11400000, guid: 903f93413bbf6744f8f636324924477b, type: 2}
   primaryHandle: {fileID: 70880927531738438}
   secondaryHandle: {fileID: 0}

@@ -59,6 +59,7 @@ public class RuneRigObject : DraggableItem
 
         _isSpawned = true;
         if (IsLocallyAwake) ReadNetworkDataAndRebuild();
+        Runner.SetIsSimulated(this.Object, true);
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -556,6 +557,9 @@ public class RuneRigObject : DraggableItem
 
         if (rb != null)
         {
+            rb.mass = 1;
+            rb.angularDamping = 0.05f;
+            rb.linearDamping = 0.0f;
             Physics.SyncTransforms();
             rb.ResetCenterOfMass();
             rb.ResetInertiaTensor();
