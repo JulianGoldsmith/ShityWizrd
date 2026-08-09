@@ -25,7 +25,7 @@ public abstract class TriggerNode : SpellNode
         {
             downstreamNodes.AddRange(context.GetDownstreamDefinitions());
         }
-        else if (context.GraphData.Wires != null && context.TemplateRegistry != null) ///legacy if using graph wires 
+        else if (context.GraphData.Wires != null) ///legacy if using graph wires 
         {
             for (int i = 0; i <= context.GraphData.MaxWireIndex; i++)
             {
@@ -35,9 +35,7 @@ public abstract class TriggerNode : SpellNode
                     continue;
 
                 NetworkNodeData targetNodeData = context.GraphData.Nodes[wire.ToNodeIndex];
-                SpellNode targetDefinition = context.TemplateRegistry.FirstOrDefault(node => node.NetworkNodeID == targetNodeData.TemplateID);
-
-                if (targetDefinition != null)
+                if (NodeRegistry.TryGetNodeTemplate(targetNodeData.TemplateID, out SpellNode targetDefinition))
                     downstreamNodes.Add(targetDefinition);
             }
         }

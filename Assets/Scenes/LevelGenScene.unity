@@ -11144,6 +11144,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5730047868571876105, guid: 5d020910a35670b46b872ddc9ec90890, type: 3}
+      propertyPath: staticSpellDictionary
+      value: 
+      objectReference: {fileID: 11400000, guid: c789a39cc16c6ee42b508f94c2db7cc1, type: 2}
     - target: {fileID: 6445999477124224864, guid: 5d020910a35670b46b872ddc9ec90890, type: 3}
       propertyPath: m_Name
       value: DataDictionary
@@ -20266,7 +20270,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   activeSpellsCount: 0
-  staticSpellDatabase: {fileID: 11400000, guid: 8ce094b35ee211d419c3176759f91e4a, type: 2}
 --- !u!114 &1974162384
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -242,18 +242,18 @@ public class VirtualCoreController : NetworkBehaviour
 
     private IRuntimeNode GetLogicNode(int slotIndex)
     {
-        SpellGraphId bpId = ActiveStates[slotIndex].BlueprintID;
-        if (SpellStateManager.instance.hydratedSpells.TryGetValue(bpId, out RuntimeSpell runtimeSpell))
-        {
-            IRuntimeNode node = runtimeSpell.HydratedNodes[ActiveStates[slotIndex].NodeArrayIndex];
+        SpellGraphId blueprintID = ActiveStates[slotIndex].BlueprintID;
 
-            if (node is RuntimeEntryPoint ep)
-            {
-                return ep.ConnectedLogic;
-            }
-            return node;
-        }
-        return null;
+        if (!SpellStateManager.instance.hydratedSpells.TryGetValue(blueprintID, out RuntimeSpell runtimeSpell))
+            return null;
+
+        if (!runtimeSpell.TryGetNode(ActiveStates[slotIndex].NodeArrayIndex, out IRuntimeNode node))
+            return null;
+
+        if (node is RuntimeEntryPoint entryPoint)
+            return entryPoint.ConnectedLogic;
+
+        return node;
     }
     #endregion
 }

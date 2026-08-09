@@ -421,7 +421,7 @@ public class RuneRigFoundationDebug : MonoBehaviour
             return;
         }
 
-        if (runtimeSpell.HydratedNodes.Length != 3 || runtimeSpell.RootNode is not RuntimeCoreBase runtimeCore)
+        if (runtimeSpell.NodeCount != 3 || runtimeSpell.RootNode is not RuntimeCoreBase runtimeCore)
         {
             Debug.LogError("[RuneRigDebug] Runtime spell has the wrong nodes or root.", this);
             return;

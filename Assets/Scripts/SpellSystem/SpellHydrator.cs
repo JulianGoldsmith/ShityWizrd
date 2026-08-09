@@ -4,30 +4,30 @@ using UnityEngine;
 
 public static class SpellHydrator
 {
-    /// <summary>
-    /// Converts a flat network array of bytes into a fully linked C# execution graph.
-    /// </summary>
-    public static IRuntimeNode[] HydrateFullGraph(SpellNetworkData data, List<SpellNode> templateRegistry, SpellCompilationContext context)
+
+    public static IRuntimeNode[] HydrateFullGraph(SpellNetworkData data, SpellCompilationContext context)
     {
+
         IRuntimeNode[] compiledNodes = new IRuntimeNode[data.MaxNodeIndex + 1];
 
         context.GraphData = data;
-        context.TemplateRegistry = templateRegistry;
 
         // ==========================================
         // PASS 1: INSTANTIATION (Read the Nodes)
         // ==========================================
         for (int i = 0; i <= data.MaxNodeIndex; i++)
         {
-            if (data.Nodes[i].TemplateID != 0)
-            {
-                SpellNode template = templateRegistry.FirstOrDefault(n => n.NetworkNodeID == data.Nodes[i].TemplateID);
-                if (template != null)
-                {
-                    context.CurrentNodeIndex = i; 
-                    compiledNodes[i] = template.CompileNode(context);
-                }
-            }
+            ushort templateID = data.Nodes[i].TemplateID;
+            if (templateID == 0) continue;
+
+            if (!NodeRegistry.TryGetNodeTemplate(templateID, out SpellNode template))
+                throw new System.InvalidOperationException($"Spell node {i} references missing template ID {templateID}.");
+
+            context.CurrentNodeIndex = i;
+            compiledNodes[i] = template.CompileNode(context);
+
+            if (compiledNodes[i] == null)
+                throw new System.InvalidOperationException($"Spell node {i}, template '{template.nodeName}', compiled to null.");
         }
 
         // ==========================================
@@ -68,8 +68,9 @@ public static class SpellHydrator
                 // 5. DATA WIRES (Source = Value Node, Target = Any Promotable Property)
                 else if (source is IRuntimeValueNode valueSource)
                 {
-                    SpellNode targetTemplate = templateRegistry.FirstOrDefault(n => n.NetworkNodeID == data.Nodes[wire.ToNodeIndex].TemplateID);
-                    if (targetTemplate != null)
+                    ushort targetTemplateID = data.Nodes[wire.ToNodeIndex].TemplateID;
+
+                    if (NodeRegistry.TryGetNodeTemplate(targetTemplateID, out SpellNode targetTemplate))
                     {
                         var sockets = targetTemplate.GetSockets();
                         if (wire.ToSocketIndex < sockets.Count)

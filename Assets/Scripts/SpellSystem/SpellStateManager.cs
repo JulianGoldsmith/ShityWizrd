@@ -194,35 +194,10 @@ public class SpellStateManager : NetworkBehaviour
         entryPointType = default;
 
         if (!hydratedSpells.TryGetValue(spellID, out RuntimeSpell runtimeSpell)) return false;
-        if (runtimeSpell == null || runtimeSpell.RootNode == null) return false;
+        if (runtimeSpell == null) return false;
 
-        IRuntimeNode rootNode = runtimeSpell.RootNode;
-
-        if (rootNode is RuntimeEntryPoint entryPoint)
-        {
-            entryPointType = entryPoint.ExpectedType;
-            return true;
-        }
-
-        if (rootNode is IRuntimeCore)
-        {
-            entryPointType = EntryPointType.SpawnCore;
-            return true;
-        }
-
-        if (rootNode is ITrigger)
-        {
-            entryPointType = EntryPointType.Trigger;
-            return true;
-        }
-
-        if (rootNode is IEffect)
-        {
-            entryPointType = EntryPointType.Effect;
-            return true;
-        }
-
-        return false;
+        entryPointType = runtimeSpell.EntryType;
+        return true;
     }
 
     public bool TryGetRuneSpellBlueprint(SpellGraphId id, out RuneSpellBlueprintData blueprint)
@@ -888,22 +863,22 @@ public class SpellStateManager : NetworkBehaviour
 
     public void HydrateAndStoreSpell(SpellGraphId id, SpellGraph graph)
     {
-        if (graph == null || graph.Data.Nodes == null) return;
-
-        SpellCompilationContext context = new SpellCompilationContext();
-
-        // 1. Run the Assembly Line to get the FULL array
-        // (We modify SpellHydrator to return the full array, not just the root)
-        IRuntimeNode[] hydratedGraph = SpellHydrator.HydrateFullGraph(graph.Data, SpellGraphController.Instance.availableNodeTemplates, context);
-
-        // 2. Store the whole package in RAM
-        hydratedSpells[id] = new RuntimeSpell()
+        if (!SpellBlueprintHydrator.TryHydrate(graph, out RuntimeSpell runtimeSpell, out string error))
         {
-            Format = SpellBlueprintFormat.LegacyGraph,
-            Blueprint = graph,
-            HydratedNodes = hydratedGraph,
-            RootNode = hydratedGraph[0]
-        };
+            Debug.LogError($"[SpellStateManager] Failed to hydrate spell {id.BlueprintNumber}: {error}", this);
+            return;
+        }
+
+        hydratedSpells[id] = runtimeSpell;
+    }
+
+    public bool TryGetDynamicRuntimeSpell(SpellGraphId spellID, out RuntimeSpell runtimeSpell)
+    {
+        runtimeSpell = null;
+
+        if (spellID.IsNull()) return false;
+
+        return hydratedSpells.TryGetValue(spellID, out runtimeSpell) && runtimeSpell != null;
     }
 
     public IRuntimeNode GetHydratedSpell(SpellGraphId id)
@@ -919,15 +894,13 @@ public class SpellStateManager : NetworkBehaviour
 
     public void HydrateAndStoreRuneSpell(SpellGraphId id, RuneSpellBlueprintData blueprint)
     {
-        IRuntimeNode[] hydratedNodes = RuneSpellHydrator.Hydrate(blueprint);
-
-        hydratedSpells[id] = new RuntimeSpell()
+        if (!SpellBlueprintHydrator.TryHydrate(blueprint, out RuntimeSpell runtimeSpell, out string error))
         {
-            Format = SpellBlueprintFormat.RuneRig,
-            RuneBlueprint = blueprint,
-            HydratedNodes = hydratedNodes,
-            RootNode = hydratedNodes[0]
-        };
+            Debug.LogError($"[SpellStateManager] Failed to hydrate rune spell {id.BlueprintNumber}: {error}", this);
+            return;
+        }
+
+        hydratedSpells[id] = runtimeSpell;
     }
 
 }
@@ -970,11 +943,31 @@ public enum SpellBlueprintFormat : byte
     RuneRig
 }
 
-public class RuntimeSpell
+public sealed class RuntimeSpell
 {
-    public SpellBlueprintFormat Format;
-    public SpellGraph Blueprint;
-    public RuneSpellBlueprintData RuneBlueprint;
-    public IRuntimeNode[] HydratedNodes;
-    public IRuntimeNode RootNode;
+    private readonly IRuntimeNode[] _hydratedNodes;
+    public SpellBlueprintFormat Format { get; }
+    public EntryPointType EntryType { get; }
+    public IRuntimeNode RootNode => _hydratedNodes[0];
+    public int NodeCount => _hydratedNodes.Length;
+
+    public RuntimeSpell(SpellBlueprintFormat format, EntryPointType entryType, IRuntimeNode[] hydratedNodes)
+    {
+        if (hydratedNodes == null || hydratedNodes.Length == 0)
+            throw new ArgumentException("A runtime spell must contain at least one hydrated node.", nameof(hydratedNodes));
+
+        Format = format;
+        EntryType = entryType;
+        _hydratedNodes = (IRuntimeNode[])hydratedNodes.Clone();
+    }
+
+    public bool TryGetNode(int nodeIndex, out IRuntimeNode node)
+    {
+        node = null;
+
+        if (nodeIndex < 0 || nodeIndex >= _hydratedNodes.Length) return false;
+
+        node = _hydratedNodes[nodeIndex];
+        return node != null;
+    }
 }

@@ -3,46 +3,16 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class StaticSpellBlueprint
-{
-    private readonly IRuntimeNode[] _hydratedNodes;
-
-    public ushort ID { get; }
-    public string Name { get; }
-    public SpellGraphId SpellID { get; }
-    public EntryPointType EntryType { get; }
-    public IRuntimeNode RootNode => _hydratedNodes[0];
-    public int NodeCount => _hydratedNodes.Length;
-
-    public StaticSpellBlueprint(ushort id, string name, EntryPointType entryType, IRuntimeNode[] hydratedNodes)
-    {
-        ID = id;
-        Name = name;
-        SpellID = new SpellGraphId(PlayerRef.None, id);
-        EntryType = entryType;
-        _hydratedNodes = hydratedNodes;
-    }
-
-    public bool TryGetNode(int nodeIndex, out IRuntimeNode node)
-    {
-        node = null;
-
-        if (nodeIndex < 0 || nodeIndex >= _hydratedNodes.Length) return false;
-
-        node = _hydratedNodes[nodeIndex];
-        return node != null;
-    }
-}
-
 public static class StaticSpellRegistry
 {
-    private static StaticSpellBlueprint[] _blueprints;
+    private static RuntimeSpell[] _blueprints;
+    private static string[] _names;
     private static Dictionary<string, ushort> _nameToID;
     private static bool _isInitialized;
-
+    public const ushort MaxStaticSpellID = 9999;
     public static bool IsInitialized => _isInitialized;
 
-    public static void Initialize(StaticSpellDictionary spellDictionary, MasterNodeDictionary nodeDictionary)
+    public static void Initialize(StaticSpellDictionary spellDictionary)
     {
         if (_isInitialized) return;
 
@@ -52,25 +22,20 @@ public static class StaticSpellRegistry
             return;
         }
 
-        if (nodeDictionary == null)
-        {
-            Debug.LogError("[StaticSpellRegistry] MasterNodeDictionary is missing.");
-            return;
-        }
-
         if (!NodeRegistry.IsInitialized)
         {
             Debug.LogError("[StaticSpellRegistry] NodeRegistry must be initialized first.");
             return;
         }
 
-        if (spellDictionary.Spells.Count > ushort.MaxValue)
+        if (spellDictionary.Spells.Count - 1 > MaxStaticSpellID)
         {
-            Debug.LogError("[StaticSpellRegistry] The dictionary exceeds the ushort ID limit.");
+            Debug.LogError($"[StaticSpellRegistry] Static spell IDs cannot exceed {MaxStaticSpellID}.");
             return;
         }
 
-        _blueprints = new StaticSpellBlueprint[spellDictionary.Spells.Count];
+        _blueprints = new RuntimeSpell[spellDictionary.Spells.Count];
+        _names = new string[spellDictionary.Spells.Count];
         _nameToID = new Dictionary<string, ushort>(StringComparer.OrdinalIgnoreCase);
 
         int hydratedCount = 0;
@@ -80,20 +45,23 @@ public static class StaticSpellRegistry
             StaticSpellDictionaryEntry entry = spellDictionary.Spells[i];
             if (!entry.IsValid) continue;
 
-            if (!TryHydrateEntry((ushort)i, entry, nodeDictionary, out StaticSpellBlueprint blueprint, out string error))
+            string spellName = string.IsNullOrWhiteSpace(entry.Name) ? entry.JSON.name : entry.Name;
+
+            if (_nameToID.ContainsKey(spellName))
             {
-                Debug.LogError($"[StaticSpellRegistry] Failed to hydrate static spell [{i}] '{entry.Name}': {error}");
+                Debug.LogError($"[StaticSpellRegistry] Duplicate static spell name '{spellName}'.");
                 continue;
             }
 
-            if (_nameToID.ContainsKey(blueprint.Name))
+            if (!TryHydrateEntry(entry, out RuntimeSpell runtimeSpell, out string error))
             {
-                Debug.LogError($"[StaticSpellRegistry] Duplicate static spell name '{blueprint.Name}'. Names must be unique.");
+                Debug.LogError($"[StaticSpellRegistry] Failed to hydrate [{i}] '{spellName}': {error}");
                 continue;
             }
 
-            _blueprints[i] = blueprint;
-            _nameToID.Add(blueprint.Name, blueprint.ID);
+            _blueprints[i] = runtimeSpell;
+            _names[i] = spellName;
+            _nameToID.Add(spellName, (ushort)i);
             hydratedCount++;
         }
 
@@ -101,35 +69,34 @@ public static class StaticSpellRegistry
         Debug.Log($"[StaticSpellRegistry] Hydrated {hydratedCount} permanent static spell blueprints.");
     }
 
-    public static bool TryGetBlueprint(ushort staticSpellID, out StaticSpellBlueprint blueprint)
+    public static bool TryGetBlueprint(ushort staticSpellID, out RuntimeSpell runtimeSpell)
     {
-        blueprint = null;
+        runtimeSpell = null;
 
         if (!_isInitialized || _blueprints == null) return false;
         if (staticSpellID == 0 || staticSpellID >= _blueprints.Length) return false;
 
-        blueprint = _blueprints[staticSpellID];
-        return blueprint != null;
+        runtimeSpell = _blueprints[staticSpellID];
+        return runtimeSpell != null;
     }
 
-    public static bool TryGetBlueprint(SpellGraphId spellID, out StaticSpellBlueprint blueprint)
+    public static bool TryGetBlueprint(SpellGraphId spellID, out RuntimeSpell runtimeSpell)
     {
-        blueprint = null;
+        runtimeSpell = null;
 
         if (spellID.AuthorRef != PlayerRef.None) return false;
         if (spellID.BlueprintNumber <= 0 || spellID.BlueprintNumber > ushort.MaxValue) return false;
 
-        return TryGetBlueprint((ushort)spellID.BlueprintNumber, out blueprint);
+        return TryGetBlueprint((ushort)spellID.BlueprintNumber, out runtimeSpell);
     }
 
-    public static bool TryGetBlueprint(string spellName, out StaticSpellBlueprint blueprint)
+    public static bool TryGetBlueprint(string spellName, out RuntimeSpell runtimeSpell)
     {
-        blueprint = null;
+        runtimeSpell = null;
 
-        if (!_isInitialized || string.IsNullOrWhiteSpace(spellName)) return false;
-        if (!_nameToID.TryGetValue(spellName, out ushort staticSpellID)) return false;
+        if (!TryGetID(spellName, out ushort staticSpellID)) return false;
 
-        return TryGetBlueprint(staticSpellID, out blueprint);
+        return TryGetBlueprint(staticSpellID, out runtimeSpell);
     }
 
     public static bool TryGetID(string spellName, out ushort staticSpellID)
@@ -141,9 +108,27 @@ public static class StaticSpellRegistry
         return _nameToID.TryGetValue(spellName, out staticSpellID);
     }
 
-    private static bool TryHydrateEntry(ushort staticSpellID, StaticSpellDictionaryEntry entry, MasterNodeDictionary nodeDictionary, out StaticSpellBlueprint blueprint, out string error)
+    public static bool TryGetSpellID(string spellName, out SpellGraphId spellID)
     {
-        blueprint = null;
+        spellID = default;
+
+        if (!TryGetID(spellName, out ushort staticSpellID)) return false;
+
+        spellID = new SpellGraphId(PlayerRef.None, staticSpellID);
+        return true;
+    }
+
+    public static string GetName(ushort staticSpellID)
+    {
+        if (!_isInitialized || _names == null) return null;
+        if (staticSpellID == 0 || staticSpellID >= _names.Length) return null;
+
+        return _names[staticSpellID];
+    }
+
+    private static bool TryHydrateEntry(StaticSpellDictionaryEntry entry, out RuntimeSpell runtimeSpell, out string error)
+    {
+        runtimeSpell = null;
         error = null;
 
         SpellGraph temporaryGraph = ScriptableObject.CreateInstance<SpellGraph>();
@@ -151,36 +136,7 @@ public static class StaticSpellRegistry
         try
         {
             JsonUtility.FromJsonOverwrite(entry.JSON.text, temporaryGraph);
-
-            if (temporaryGraph.Data.Nodes == null || temporaryGraph.Data.Nodes.Length == 0)
-            {
-                error = "JSON contains no spell nodes.";
-                return false;
-            }
-
-            SpellCompilationContext context = new SpellCompilationContext();
-
-            IRuntimeNode[] hydratedNodes = SpellHydrator.HydrateFullGraph(
-                temporaryGraph.Data,
-                nodeDictionary.BakedNodes,
-                context
-            );
-
-            if (hydratedNodes == null || hydratedNodes.Length == 0 || hydratedNodes[0] == null)
-            {
-                error = "Hydration produced no root node.";
-                return false;
-            }
-
-            if (!TryGetEntryType(hydratedNodes[0], out EntryPointType entryType))
-            {
-                error = $"Root node '{hydratedNodes[0].GetType().Name}' is not a valid spell entry.";
-                return false;
-            }
-
-            string spellName = string.IsNullOrWhiteSpace(entry.Name) ? entry.JSON.name : entry.Name;
-            blueprint = new StaticSpellBlueprint(staticSpellID, spellName, entryType, hydratedNodes);
-            return true;
+            return SpellBlueprintHydrator.TryHydrate(temporaryGraph, out runtimeSpell, out error);
         }
         catch (Exception exception)
         {
@@ -192,36 +148,5 @@ public static class StaticSpellRegistry
             if (temporaryGraph != null)
                 UnityEngine.Object.Destroy(temporaryGraph);
         }
-    }
-
-    private static bool TryGetEntryType(IRuntimeNode rootNode, out EntryPointType entryType)
-    {
-        entryType = default;
-
-        if (rootNode is RuntimeEntryPoint entryPoint)
-        {
-            entryType = entryPoint.ExpectedType;
-            return true;
-        }
-
-        if (rootNode is IRuntimeCore)
-        {
-            entryType = EntryPointType.SpawnCore;
-            return true;
-        }
-
-        if (rootNode is ITrigger)
-        {
-            entryType = EntryPointType.Trigger;
-            return true;
-        }
-
-        if (rootNode is IEffect)
-        {
-            entryType = EntryPointType.Effect;
-            return true;
-        }
-
-        return false;
     }
 }

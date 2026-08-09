@@ -274,8 +274,8 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     {
         if (SpellStateManager.instance == null) return false;
         if (!SpellStateManager.instance.hydratedSpells.TryGetValue(BlueprintID, out RuntimeSpell runtimeSpell)) return false;
-        if (runtimeSpell.HydratedNodes == null || NodeArrayIndex < 0 || NodeArrayIndex >= runtimeSpell.HydratedNodes.Length) return false;
-        if (runtimeSpell.HydratedNodes[NodeArrayIndex] is not RuntimeObjectCore runtimeCore) return false;
+        if (!runtimeSpell.TryGetNode(NodeArrayIndex, out IRuntimeNode runtimeNode)) return false;
+        if (runtimeNode is not RuntimeObjectCore runtimeCore) return false;
 
         bool payloadMissing = runtimeCore.AttachedSpellComponentsPrefab != null && _attachedComponents == null;
         bool payloadChanged = _myPlan == null || !_payloadBlueprintId.Equals(BlueprintID) || _payloadNodeArrayIndex != NodeArrayIndex || _payloadPrefab != runtimeCore.AttachedSpellComponentsPrefab || payloadMissing;
@@ -504,7 +504,6 @@ public class SpellCompilationContext
     public int CurrentNodeIndex { get; set; }
 
     public SpellNetworkData GraphData;
-    public List<SpellNode> TemplateRegistry;
     public List<SpellNode>[] DownstreamNodeDefinitions;
 
     private int _nextIntSlot;

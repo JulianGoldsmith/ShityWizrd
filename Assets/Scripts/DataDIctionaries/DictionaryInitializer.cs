@@ -21,7 +21,7 @@ public class DictionaryInitializer : MonoBehaviour
 
         if (staticSpellDictionary != null && nodeDictionary != null)
         {
-            StaticSpellRegistry.Initialize(staticSpellDictionary, nodeDictionary);
+            StaticSpellRegistry.Initialize(staticSpellDictionary);
         }
         else
         {
