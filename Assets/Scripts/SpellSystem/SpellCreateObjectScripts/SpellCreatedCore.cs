@@ -254,7 +254,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     {
         if (!ActiveCastID.IsValid || SpellStateManager.instance == null) return false;
         if (SpellStateManager.instance.GetActiveSpell(ActiveCastID) != null) return true;
-        if (!SpellStateManager.instance.hydratedSpells.ContainsKey(BlueprintID)) return false;
+        if (SpellBlueprintLibrary.Get(BlueprintID) == null) return false;
         if (!Runner.TryFindObject(ActiveCastID.CasterId, out NetworkObject casterObject)) return false;
         if (!casterObject.TryGetComponent(out ActiveCastTracker tracker)) return false;
 
@@ -273,8 +273,10 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     private bool EnsurePayloadHydrated()
     {
         if (SpellStateManager.instance == null) return false;
-        if (!SpellStateManager.instance.hydratedSpells.TryGetValue(BlueprintID, out RuntimeSpell runtimeSpell)) return false;
-        if (!runtimeSpell.TryGetNode(NodeArrayIndex, out IRuntimeNode runtimeNode)) return false;
+        RuntimeSpell runtimeSpell = SpellBlueprintLibrary.Get(BlueprintID);
+        if (runtimeSpell == null) return false;
+
+        IRuntimeNode runtimeNode = runtimeSpell.GetNode(NodeArrayIndex);
         if (runtimeNode is not RuntimeObjectCore runtimeCore) return false;
 
         bool payloadMissing = runtimeCore.AttachedSpellComponentsPrefab != null && _attachedComponents == null;
@@ -385,6 +387,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
             transform.SetPositionAndRotation(position, rotation);
 
         if (_rigidbody == null) return;
+        if (_rigidbody.isKinematic) return;
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
     }
@@ -392,6 +395,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     private void ResetPhysicsVelocity()
     {
         if (_rigidbody == null) return;
+        if (_rigidbody.isKinematic) return;
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
     }

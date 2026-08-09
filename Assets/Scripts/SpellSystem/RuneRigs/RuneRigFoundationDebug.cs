@@ -409,9 +409,11 @@ public class RuneRigFoundationDebug : MonoBehaviour
             return;
         }
 
-        if (!SpellStateManager.instance.hydratedSpells.TryGetValue(spellId, out RuntimeSpell runtimeSpell))
+        RuntimeSpell runtimeSpell = SpellBlueprintLibrary.Get(spellId);
+
+        if (runtimeSpell == null)
         {
-            Debug.LogError("[RuneRigDebug] Registered rune spell was not added to hydratedSpells.", this);
+            Debug.LogError("[RuneRigDebug] Registered rune spell was not added to SpellBlueprintLibrary.", this);
             return;
         }
 

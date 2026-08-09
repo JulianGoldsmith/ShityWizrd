@@ -55,7 +55,7 @@ public abstract class ItemAction : ScriptableObject
 
         if (spellID.IsNull()) return null;
 
-        if (SpellStateManager.instance.GetHydratedSpell(spellID) == null)
+        if (SpellBlueprintLibrary.Get(spellID) == null)
         {
             Debug.LogWarning($"[ItemAction] Spell {spellID.BlueprintNumber} is not hydrated.");
             return null;
@@ -76,9 +76,16 @@ public abstract class ItemAction : ScriptableObject
 
     protected void ExecuteSpawnCoreSpell(SpellGraphId spellID, SpellTriggerInfo triggerInfo)
     {
-        if (SpellStateManager.instance == null || spellID.IsNull()) return;
+        if (spellID.IsNull()) return;
+        RuntimeSpell runtimeSpell = SpellBlueprintLibrary.Get(spellID);
 
-        IRuntimeNode rootNode = SpellStateManager.instance.GetHydratedSpell(spellID);
+        if (runtimeSpell == null)
+        {
+            Debug.LogError($"[ItemAction] Spell {spellID.BlueprintNumber} could not be resolved.");
+            return;
+        }
+
+        IRuntimeNode rootNode = runtimeSpell.RootNode;
 
         if (rootNode is RuntimeEntryPoint entryPoint)
         {

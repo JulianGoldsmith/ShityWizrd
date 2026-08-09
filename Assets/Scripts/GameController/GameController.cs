@@ -127,13 +127,15 @@ public class GameController : MonoBehaviour
         Cursor.visible = true;
     }
 
-    public void ToggleSpellEditor()
+    public void ToggleSpellEditor(bool _overrideUseLegacyEditor = false)
     {
-        GameObject selectedInterface = _useLegacyEditor ? spellEditorWorld : runeSpawnerUI;
+        bool legacy = _overrideUseLegacyEditor? !_useLegacyEditor : _useLegacyEditor; 
+
+        GameObject selectedInterface = legacy ? spellEditorWorld : runeSpawnerUI;
 
         if (selectedInterface == null)
         {
-            Debug.LogError(_useLegacyEditor ? "Legacy spell editor is not assigned." : "Rune spawner UI is not assigned.", this);
+            Debug.LogError(legacy ? "Legacy spell editor is not assigned." : "Rune spawner UI is not assigned.", this);
             return;
         }
 
@@ -156,7 +158,7 @@ public class GameController : MonoBehaviour
         selectedInterface.SetActive(true);
         EnableUIInput();
 
-        if (!_useLegacyEditor)
+        if (!legacy)
             return;
 
         Vector3 position = Vector3.zero;

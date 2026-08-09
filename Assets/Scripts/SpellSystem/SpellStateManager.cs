@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 
 public class SpellStateManager : NetworkBehaviour
@@ -25,8 +26,6 @@ public class SpellStateManager : NetworkBehaviour
 
 
     public Dictionary<SpellGraphId, int> active_spellgraph_instances = new Dictionary<SpellGraphId, int>();
-
-    public Dictionary<SpellGraphId, RuntimeSpell> hydratedSpells = new Dictionary<SpellGraphId, RuntimeSpell>();
 
     public Dictionary<ActiveCastID, ActiveSpell> activeSpells = new Dictionary<ActiveCastID, ActiveSpell>();
 
@@ -189,17 +188,6 @@ public class SpellStateManager : NetworkBehaviour
         return newId;
     }
 
-    public bool TryGetSpellEntryPointType(SpellGraphId spellID, out EntryPointType entryPointType)
-    {
-        entryPointType = default;
-
-        if (!hydratedSpells.TryGetValue(spellID, out RuntimeSpell runtimeSpell)) return false;
-        if (runtimeSpell == null) return false;
-
-        entryPointType = runtimeSpell.EntryType;
-        return true;
-    }
-
     public bool TryGetRuneSpellBlueprint(SpellGraphId id, out RuneSpellBlueprintData blueprint)
     {
         if (id.IsNull())
@@ -309,7 +297,7 @@ public class SpellStateManager : NetworkBehaviour
         foreach (SpellGraphId key in keysToDelete)
         {
             activeRuneSpellBlueprints.Remove(key);
-            hydratedSpells.Remove(key);
+            SpellBlueprintLibrary.RemoveDynamic(key);
             Debug.Log($"[Manifest] Host deleted rune blueprint {key.BlueprintNumber}. Removed from local RAM.");
         }
     }
@@ -336,7 +324,7 @@ public class SpellStateManager : NetworkBehaviour
         // 1. Remove it from the Host's Master Library
         active_spellblueprints.Remove(idToRemove);
         activeRuneSpellBlueprints.Remove(idToRemove);
-        hydratedSpells.Remove(idToRemove);
+        SpellBlueprintLibrary.RemoveDynamic(idToRemove);
 
         // 2. Find it in the Networked Manifest and wipe the slot clean
         for (int i = 0; i < ActiveManifest.Length; i++)
@@ -767,8 +755,11 @@ public class SpellStateManager : NetworkBehaviour
 
         for(int i = 0; i < spellgraphs_to_cleanup.Count; i++)
         {
-            active_spellblueprints.Remove(spellgraphs_to_cleanup[i]);
-            active_spellgraph_instances.Remove(spellgraphs_to_cleanup[i]);
+            SpellGraphId spellID = spellgraphs_to_cleanup[i];
+
+            active_spellblueprints.Remove(spellID);
+            active_spellgraph_instances.Remove(spellID);
+            SpellBlueprintLibrary.RemoveDynamic(spellID);
         }
     }
 
@@ -863,44 +854,12 @@ public class SpellStateManager : NetworkBehaviour
 
     public void HydrateAndStoreSpell(SpellGraphId id, SpellGraph graph)
     {
-        if (!SpellBlueprintHydrator.TryHydrate(graph, out RuntimeSpell runtimeSpell, out string error))
-        {
-            Debug.LogError($"[SpellStateManager] Failed to hydrate spell {id.BlueprintNumber}: {error}", this);
-            return;
-        }
-
-        hydratedSpells[id] = runtimeSpell;
-    }
-
-    public bool TryGetDynamicRuntimeSpell(SpellGraphId spellID, out RuntimeSpell runtimeSpell)
-    {
-        runtimeSpell = null;
-
-        if (spellID.IsNull()) return false;
-
-        return hydratedSpells.TryGetValue(spellID, out runtimeSpell) && runtimeSpell != null;
-    }
-
-    public IRuntimeNode GetHydratedSpell(SpellGraphId id)
-    {
-        // 1. Output the RuntimeSpell container
-        if (hydratedSpells.TryGetValue(id, out RuntimeSpell runtimeSpell))
-        {
-            // 2. Return the RootNode from inside the container!
-            return runtimeSpell.RootNode;
-        }
-        return null;
+        SpellBlueprintLibrary.Store(id, graph);
     }
 
     public void HydrateAndStoreRuneSpell(SpellGraphId id, RuneSpellBlueprintData blueprint)
     {
-        if (!SpellBlueprintHydrator.TryHydrate(blueprint, out RuntimeSpell runtimeSpell, out string error))
-        {
-            Debug.LogError($"[SpellStateManager] Failed to hydrate rune spell {id.BlueprintNumber}: {error}", this);
-            return;
-        }
-
-        hydratedSpells[id] = runtimeSpell;
+        SpellBlueprintLibrary.Store(id, blueprint);
     }
 
 }
@@ -934,40 +893,4 @@ public struct SpellGraphId : INetworkStruct, IEquatable<SpellGraphId>
         return HashCode.Combine(AuthorRef, BlueprintNumber);
     }
 
-
-}
-
-public enum SpellBlueprintFormat : byte
-{
-    LegacyGraph,
-    RuneRig
-}
-
-public sealed class RuntimeSpell
-{
-    private readonly IRuntimeNode[] _hydratedNodes;
-    public SpellBlueprintFormat Format { get; }
-    public EntryPointType EntryType { get; }
-    public IRuntimeNode RootNode => _hydratedNodes[0];
-    public int NodeCount => _hydratedNodes.Length;
-
-    public RuntimeSpell(SpellBlueprintFormat format, EntryPointType entryType, IRuntimeNode[] hydratedNodes)
-    {
-        if (hydratedNodes == null || hydratedNodes.Length == 0)
-            throw new ArgumentException("A runtime spell must contain at least one hydrated node.", nameof(hydratedNodes));
-
-        Format = format;
-        EntryType = entryType;
-        _hydratedNodes = (IRuntimeNode[])hydratedNodes.Clone();
-    }
-
-    public bool TryGetNode(int nodeIndex, out IRuntimeNode node)
-    {
-        node = null;
-
-        if (nodeIndex < 0 || nodeIndex >= _hydratedNodes.Length) return false;
-
-        node = _hydratedNodes[nodeIndex];
-        return node != null;
-    }
 }

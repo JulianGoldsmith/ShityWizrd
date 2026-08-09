@@ -20,7 +20,7 @@ public class SpellVFX : MonoBehaviour
 
     public void Initialize(Color themeColor)
     {
-        Debug.Log($"[SpellVFX] Setting ThemeColor to {themeColor}");
+        //Debug.Log($"[SpellVFX] Setting ThemeColor to {themeColor}");
 
         // Bypass the HasVector4 check entirely.
         _vfx.SetVector4(_themeColorID, themeColor);
@@ -39,6 +39,6 @@ public class SpellVFX : MonoBehaviour
     public void StopAndCleanup()
     {
         _vfx.Stop();
-        Destroy(gameObject, 2f); // Give particles a moment to fade naturally
+        Destroy(gameObject); // Give particles a moment to fade naturally
     }
 }

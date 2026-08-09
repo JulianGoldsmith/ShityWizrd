@@ -80,7 +80,15 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
 
             if (keyboard.tabKey.wasPressedThisFrame)
             {
-                GameController.Instance.ToggleSpellEditor();
+                if (keyboard.leftCtrlKey.isPressed)
+                {
+                    GameController.Instance.ToggleSpellEditor(true);
+                }
+                else
+                {
+                    GameController.Instance.ToggleSpellEditor(false);
+                }
+                    
             }
 
             //Vector2 scroll = Mouse.current?.scroll.ReadValue() ?? Vector2.zero;

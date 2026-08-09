@@ -107,7 +107,7 @@ public class EquipableItem : InteractableItem, IAfterRender
     #region Equipping & Communicating
     public void EquipSpellToPrimary(SpellGraph graph)
     {
-        Debug.Log($"Sending '{graph.name}' to the Master Library...");
+        //Debug.Log($"Sending '{graph.name}' to the Master Library...");
         // Send it to the Host, and tell the Host to attach it to THIS weapon's Network ID!
         SpellStateManager.instance.SubmitNewSpellToHost(graph, this.Object.Id);
     }
@@ -347,7 +347,7 @@ public class EquipableItem : InteractableItem, IAfterRender
 
         RestCastingState();
 
-        Debug.Log($"dropped item {this.name}");
+        //Debug.Log($"dropped item {this.name}");
     }
 
     #endregion
@@ -430,7 +430,10 @@ public class EquipableItem : InteractableItem, IAfterRender
 
         if (spellID.IsNull()) return false;
         if (SpellStateManager.instance == null) return false;
-        if (!SpellStateManager.instance.TryGetSpellEntryPointType(spellID, out entryPointType)) return false;
+        RuntimeSpell runtimeSpell = SpellBlueprintLibrary.Get(spellID);
+        if (runtimeSpell == null) return false;
+
+        entryPointType = runtimeSpell.EntryType;
 
         action = GetAction(channel, (int)entryPointType);
         return action != null && action.IsImplemented;
