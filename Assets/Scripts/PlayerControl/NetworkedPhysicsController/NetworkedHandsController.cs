@@ -258,9 +258,9 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
                 //    targetRot = camTransform.rotation * Quaternion.Euler(rotOffset);
                 //}
 
-                if(inventoryManager.currentItemInHand != null &&inventoryManager.currentItemInHand.TryGetComponent(out EquipableItem equiptItem)){
-                    Transform handle = equiptItem.GetHandle(hand.isLeft);
-                   
+                if(inventoryManager.CurrentEquippedItem != null && inventoryManager.CurrentEquippedItem.TryGetComponent(out EquipableItem equiptItem)){
+                    Transform handle = equiptItem.GetHandle(hand.isLeft, localHand);
+
                     Vector3 pivotToPalmOffset2 = hand.transformLocal.transform.position - hand.palmTransform.position;
                     targetPos = handle.position + pivotToPalmOffset2;
                     targetRot = handle.rotation * Quaternion.Euler(180,0,0);
@@ -300,9 +300,9 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
 
                 if (IsProxy)
                 {
-                    if (inventoryManager.currentItemInHand != null && inventoryManager.localHandPosOnItem != Vector3.zero)
+                    if (inventoryManager.DraggedItem != null && inventoryManager.localHandPosOnItem != Vector3.zero)
                     {
-                        item = inventoryManager.currentItemInHand.transform;
+                        item = inventoryManager.DraggedItem.transform;
                         localPointOnItem = inventoryManager.localHandPosOnItem;
                     }
                     else
@@ -702,7 +702,7 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
                     hand.shouldUpdateInLateUpdate = true;
                     //hand.targetFORFinalArmature.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0, 0, 0));
                 }
-                else if(inventoryManager.currentItemInHand != null) //dragging rather than hovering
+                else if(inventoryManager.DraggedItem != null) //dragging rather than hovering
                 {
                     hand.visableHandObject.transform.parent = hand.transformLocal.transform;
                     hand.targetFORFinalArmature.transform.parent = hand.transformLocal.transform;
@@ -761,7 +761,7 @@ public class NetworkedHandsController : NetworkBehaviour, IAfterRender
                 break;
             case TargetingMode.HOLD:
                 AnimationClip clip = new AnimationClip();
-                if (inventoryManager.currentItemInHand.gameObject.TryGetComponent<EquipableItem>(out EquipableItem ei))
+                if (inventoryManager.CurrentEquippedItem != null && inventoryManager.CurrentEquippedItem.TryGetComponent(out EquipableItem ei))
                 {
                     clip = ei.heldHandState.targetPickUpClip;
                 }

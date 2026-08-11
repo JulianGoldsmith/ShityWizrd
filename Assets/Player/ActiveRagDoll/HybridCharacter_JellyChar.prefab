@@ -3552,7 +3552,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   followTarget: {fileID: 5162603037753169754}
   localEyeOffset: {x: 0, y: 0.85, z: 0}
-  positionSmoothTime: 0.07
+  positionSmoothTime: 0
   lookInput: {x: 0, y: 0}
   mouseSensitivity: 0.12
   lookSmoothing: 0.05
@@ -3579,9 +3579,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81f296b322af2644f9d3419adee5771e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activeItemIndex: 0
+  _EquippedItemIds: []
+  _ActiveSlot: 0
+  _DraggedItem: {fileID: 0}
   itemSocketR: {fileID: 0}
-  activeItem: {fileID: 0}
   snapPoint: {fileID: 0}
   handController: {fileID: 9045712812768551006}
   characterController: {fileID: 4480425943024258786}
@@ -3592,7 +3593,6 @@ MonoBehaviour:
     m_Bits: 327680
   RuneLevitationHoldDuration: 0.35
   RuneDetachmentHoldDuration: 0.35
-  _currentItemInHand: {fileID: 0}
   _potentialItemToPickup: {fileID: 0}
   _localHandPosOnItem: {x: 0, y: 0, z: 0}
   __dragTargetPos: {x: 0, y: 0, z: 0}
@@ -3611,6 +3611,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerActionManager
   inventory: {fileID: 3351947955755336054}
   castController: {fileID: 8374426935566782753}
+  _CurrentAction:
+    Valid:
+      _value: 0
+    Revision: 0
+    ItemID:
+      Raw: 0
+    Channel: 0
+    ActionID: 0
+    ComboIndex: 0
+    EntryPointType: 0
+    StartTick: 0
+    ReleaseTick: 0
 --- !u!114 &8374426935566782753
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3626,6 +3638,7 @@ MonoBehaviour:
   isCasting: 0
   _TotalSpellCasts: 0
   inventory: {fileID: 3351947955755336054}
+  playerActionManager: {fileID: 0}
   castPointOffset: {x: 0, y: 0.2, z: 1}
 --- !u!114 &1087551941607753607
 MonoBehaviour:

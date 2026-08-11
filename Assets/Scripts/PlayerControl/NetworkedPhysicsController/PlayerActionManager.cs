@@ -79,10 +79,10 @@ public class PlayerActionManager : NetworkBehaviour
     {
         if (isPress)
         {
-            if (inventory == null || inventory.activeItem == null) return;
-            if (!inventory.activeItem.TryGetComponent(out EquipableItem item)) return;
+            NetworkObject itemObject = inventory.CurrentEquippedItem;
+            if (itemObject == null || !itemObject.TryGetComponent(out EquipableItem item)) return;
 
-            TryStartAction(item.Object, channel, 0, interactionTarget);
+            TryStartAction(itemObject, channel, 0, interactionTarget);
             return;
         }
 
@@ -105,7 +105,7 @@ public class PlayerActionManager : NetworkBehaviour
         if (itemObject == null || !itemObject.IsValid) return false;
         if (channel == ItemActionChannel.None) return false;
         if (!itemObject.TryGetComponent(out EquipableItem item)) return false;
-        if (item.HoldingPlayer != Object) return false;
+        if (inventory.CurrentEquippedItemId != itemObject.Id) return false;
 
         ItemAction action;
         SpellGraphId spellID = default;
@@ -205,7 +205,7 @@ public class PlayerActionManager : NetworkBehaviour
             return;
         }
 
-        if (item.HoldingPlayer != Object)
+        if (inventory.CurrentEquippedItemId != actionData.ItemID)
         {
             if (CanAuthorActionState()) TryClearAction(actionData.Revision);
             return;

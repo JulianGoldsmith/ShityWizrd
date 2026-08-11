@@ -53,7 +53,7 @@ public class DraggableItem : InteractableItem, IBufferableComponent
             Vector3 targetPos = eyePos + (lookRot * offset);
             dragTargetPos = targetPos;
 
-            var itemNO = inv.currentItemInHand;
+            var itemNO = inv.DraggedItem;
             var item = itemNO.GetComponent<DraggableItem>();
             Vector3 com = (item != null && item.rb != null) ? item.rb.worldCenterOfMass : itemNO.transform.position;
 

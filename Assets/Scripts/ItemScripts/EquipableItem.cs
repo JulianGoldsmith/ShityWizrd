@@ -10,6 +10,22 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Animations;
 
+
+public enum EquippedState : byte
+{
+    None,
+    EquippedInactive,
+    EquippedActive
+}
+
+public struct DerivedEquipmentContext
+{
+    public EquippedState State;
+    public NetworkObject Holder;
+    public byte Slot;
+}
+
+
 [DefaultExecutionOrder(150)]
 public class EquipableItem : InteractableItem, IAfterRender
 {
@@ -38,6 +54,7 @@ public class EquipableItem : InteractableItem, IAfterRender
     public HandState heldHandState;
 
     public Transform primaryHandle, secondaryHandle;
+    public Transform visualPrimaryHandle, visualSecondaryHandle;
 
     public List<HitBoxBehaviour> hitboxes = new List<HitBoxBehaviour>();
     private bool _isHitboxActive = false;
@@ -46,33 +63,29 @@ public class EquipableItem : InteractableItem, IAfterRender
     [Header("Pickup Variables")]
     public Transform visualModel;
 
-    [HideInInspector] bool isKinematic;
-    [HideInInspector] bool collideractive;
-    Vector3 secretHiddenSpot = new Vector3(0, 200, 0); //lol dont look here
 
     //public GameObject hitbox;
     [Header("Hitbox ponts for melee sweep")]
+    [SerializeField] private Collider[] worldColliders;
     public Transform weaponBase, weaponEnd;
 
     public Transform projectileSpawnPoint;
 
-    [Networked, OnChangedRender(nameof(PickUpOrDrop))] 
-    public NetworkObject HoldingPlayer { get; set; }
-
-    public NetworkObject lastHoldingPlayer;
-
-    [Networked] public int HolderChangedCount {get; set; }
-
-    private ChangeDetector _changeDetector;
-
     public Vector3 throwDir = Vector3.zero;
 
     [Header("Visual Interpolation")]
-    private Vector3 _cashedVisualPos;
+    [SerializeField] private Transform worldRenderRoot;
 
-    int my_player_id { get { return Runner.LocalPlayer.PlayerId; } }
+    private bool _visualPDInitialized;
+    private bool _visualUsesLocalPose;
+    private NetworkObject _visualHolder;
+    private Vector3 _visualPosition;
+    private Quaternion _visualRotation = Quaternion.identity;
+    private Vector3 _visualLinVel;
+    private Vector3 _visualAngVel;
+    private Vector3 _previousVisualTargetPosition;
 
-    //public SpellState activeCast;
+
     [Networked] public ActiveCastID CurrentCastID { get; set; }
     public SpellState activeCast{ get {
             if (CurrentCastID.IsValid && SpellStateManager.instance != null)
@@ -92,7 +105,12 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     [Networked] public Vector3 LinVel { get; set; }
     [Networked] public Vector3 AngVel { get; set; }
-    public Vector3 visualLinVel, visualAngleVel;
+
+    [Networked] private Vector3 PDTargetPosition { get; set; }
+    [Networked] private Quaternion PDTargetRotation { get; set; }
+    [Networked] private NetworkBool PDTargetInitialized { get; set; }
+    [Networked] private NetworkId PDHolderId { get; set; }
+
 
     public ItemPD pdSettings;
     
@@ -103,6 +121,22 @@ public class EquipableItem : InteractableItem, IAfterRender
     private PlayableGraph _samplerGraph;
     private AnimationPlayableOutput _samplerOutput;
 
+
+    private DerivedEquipmentContext _pendingEquipmentContext;
+    private DerivedEquipmentContext _equipmentContext;
+    public EquippedState EquipmentState => _equipmentContext.State;
+    public NetworkObject HoldingPlayer => _equipmentContext.Holder;
+    public bool IsActivelyEquipped => _equipmentContext.State == EquippedState.EquippedActive;
+
+    public void AssignEquipmentContext(NetworkObject holder, byte slot, bool active)
+    {
+        _pendingEquipmentContext = new DerivedEquipmentContext
+        {
+            State = active ? EquippedState.EquippedActive : EquippedState.EquippedInactive,
+            Holder = holder,
+            Slot = slot
+        };
+    }
 
     #region Equipping & Communicating
     public void EquipSpellToPrimary(SpellGraph graph)
@@ -120,16 +154,127 @@ public class EquipableItem : InteractableItem, IAfterRender
     }
     #endregion
 
-    
-
     public void AfterRender()
     {
-        UpdateModelVisuals();
+
+        UpdateItemVisability();
+       // UpdateVisualWithRenderPD();
+    }
+
+    private void UpdateItemVisability()
+    {
+        if (visualModel == null) return;
+
+        if (EquipmentState == EquippedState.None)
+        {
+            _visualPDInitialized = false;
+
+            if (!visualModel.gameObject.activeSelf) visualModel.gameObject.SetActive(true);
+
+            visualModel.SetPositionAndRotation(worldRenderRoot.position, worldRenderRoot.rotation);
+            return;
+        }
+
+        if (EquipmentState == EquippedState.EquippedInactive || activeHolder == null)
+        {
+            _visualPDInitialized = false;
+
+            if (visualModel.gameObject.activeSelf) visualModel.gameObject.SetActive(false);
+            return;
+        }
+
+        if (!visualModel.gameObject.activeSelf) visualModel.gameObject.SetActive(true);
+
+    }
+
+    private void UpdateVisualWithRenderPD()
+    {
+        if (EquipmentState != EquippedState.EquippedActive) return;
+
+        NetworkObject localPlayer = Runner.GetPlayerObject(Runner.LocalPlayer);
+        bool useLocalPose = HoldingPlayer == localPlayer;
+
+        Vector3 eyePosition;
+        Quaternion eyeRotation;
+
+        if (useLocalPose)
+        {
+            Transform cameraTransform = activeHolder.camController.cameraTransform;
+            eyePosition = cameraTransform.position;
+            eyeRotation = cameraTransform.rotation;
+        }
+        else
+        {
+            eyeRotation = Quaternion.Slerp(activeHolder.previousLookRot, activeHolder.lookRot, Runner.LocalAlpha);
+            eyePosition = activeHolder.smoothedNetworkedRenderRoot.position
+                + activeHolder.camController.localEyeOffset
+                + activeHolder.camController.GetEyePosBasedOnPitch(eyeRotation);
+        }
+
+        EyePosAndLookDir eye = new EyePosAndLookDir(eyePosition, eyeRotation * Vector3.forward, eyeRotation * Vector3.up);
+
+        double renderTime = Runner.LocalRenderTime;
+        int renderTick = (int)Math.Floor(renderTime / Runner.DeltaTime);
+
+        GetDerivedActionPose(renderTick, renderTime, out ItemAction action, out int phaseID, out float phaseTime);
+
+        if (!GetTargetPose(action, phaseID, phaseTime, eye, out Vector3 targetPosition, out Quaternion targetRotation)) return;
+
+        bool presentationChanged = !_visualPDInitialized || _visualHolder != HoldingPlayer || _visualUsesLocalPose != useLocalPose;
+
+        if (presentationChanged)
+        {
+            _visualPDInitialized = true;
+            _visualHolder = HoldingPlayer;
+            _visualUsesLocalPose = useLocalPose;
+            _visualPosition = targetPosition;
+            _visualRotation = targetRotation;
+            _visualLinVel = Vector3.zero;
+            _visualAngVel = Vector3.zero;
+            _previousVisualTargetPosition = targetPosition;
+
+            visualModel.SetPositionAndRotation(_visualPosition, _visualRotation);
+            return;
+        }
+
+        float dt = Mathf.Max(Time.deltaTime, 0.0001f);
+        Vector3 targetVelocity = activeHolder.camController.RenderVelocity;
+        _previousVisualTargetPosition = targetPosition;
+
+        //if (pdSettings == null)
+        if (true)
+        {
+            _visualPosition = targetPosition;
+            _visualRotation = targetRotation;
+        }
+        else
+        {
+            Vector3 currentPosition = _visualPosition;
+            Quaternion currentRotation = _visualRotation;
+
+            ItemPDStepResult result = pdSettings.CalculateStep(
+                 _visualPosition,
+                 _visualRotation,
+                 _visualLinVel,
+                 _visualAngVel,
+                 targetPosition,
+                 targetRotation,
+                 targetVelocity,
+                 Vector3.zero,
+                 Vector3.zero,
+                 dt
+             );
+            _visualPosition = result.Position;
+            _visualRotation = result.Rotation;
+            _visualLinVel = result.LinearVelocity;
+            _visualAngVel = result.AngularVelocity;
+        }
+
+        visualModel.SetPositionAndRotation(_visualPosition, _visualRotation);
     }
 
     public override void Spawned()
     {
-        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         networkedRB = this.GetComponent<NetworkRigidbody3D>();
 
         _hasLocalSimState = false;
@@ -147,8 +292,10 @@ public class EquipableItem : InteractableItem, IAfterRender
         }
     }
 
-    public void UpdateModelVisuals()
+   /* public void UpdateModelVisuals()
     {
+        if (!IsActivelyEquipped) return;
+
         if (visualModel == null || HoldingPlayer == null) return;
         if (!HoldingPlayer.TryGetComponent(out HybridCharacterController hcc)) return;
 
@@ -205,150 +352,51 @@ public class EquipableItem : InteractableItem, IAfterRender
             visualModel.position = newPos;
             visualModel.rotation = newRot;
         }
-    }
+    }*/
 
     public override void FixedUpdateNetwork()
     {
-        
-        if (HoldingPlayer == null)
+        DerivedEquipmentContext context = _pendingEquipmentContext;
+        _pendingEquipmentContext = default;
+        _equipmentContext = context;
+
+        bool equipped = context.State != EquippedState.None;
+        networkedRB.RBIsKinematic = equipped;
+
+        foreach (Collider worldCollider in worldColliders)
         {
-           // Debug.Log($"Item {this.name} holder is NULL");
+            worldCollider.enabled = !equipped;
+        }
+
+        if (context.State != EquippedState.EquippedActive)
+        {
+            activeCaster = null;
+            activeHolder = null;
+
+            PDTargetInitialized = false;
+            PDHolderId = default;
+            LinVel = Vector3.zero;
+            AngVel = Vector3.zero;
             return;
         }
-        else
-        {
-           // Debug.Log($"Item {this.name} is held by {HoldingPlayer.name}");
-        }
-        
-        SimulatePhysics(HoldingPlayer.GetComponent<HybridCharacterController>(), Runner.DeltaTime);
-        //Debug.Log($"Simulating tick and hold pos on {this.name}");
 
-        //SimulateHeldPose(hcc, cac, Runner.DeltaTime);
+        activeCaster = context.Holder.GetComponent<PlayerCastActionController>();
+        activeHolder = context.Holder.GetComponent<HybridCharacterController>();
+
+        if (PDHolderId != context.Holder.Id)
+        {
+            PDTargetInitialized = false;
+            PDHolderId = context.Holder.Id;
+            LinVel = Vector3.zero;
+            AngVel = Vector3.zero;
+        }
+
+        SimulatePhysics(activeHolder, Runner.DeltaTime);
     }
 
-    void PickUpOrDrop()
-    {
-        Debug.Log($"PickUpOrDropCalled On this client new holdingPLayer = {HoldingPlayer}");
-        if (HasStateAuthority) return;
-        if (HoldingPlayer != null)
-        {
-            PickUpItem(HoldingPlayer);
-        }
-        else
-        {
-            DropItem(lastHoldingPlayer, HasInputAuthority, HasStateAuthority);
-        }
-        lastHoldingPlayer = HoldingPlayer;
-    }
 
     #region PickUpDrop
-
-    public override void PickUpItem(NetworkObject playerObject)
-    {
-        bool localPlayer = playerObject.InputAuthority == Runner.LocalPlayer; //if youre the local player
-
-        if (playerObject.TryGetComponent(out NetworkedInventoryManager inventory))
-        {
-            inventory.activeItem = gameObject;
-            inventory.currentItemInHand = this.GetComponent<NetworkObject>();
-        }
-
-      this.Object.AssignInputAuthority(playerObject.InputAuthority);
-
-        if (HasStateAuthority || HasInputAuthority)
-        {
-            HoldingPlayer = playerObject;
-            HolderChangedCount++;
-
-            LinVel = Vector3.zero;
-            AngVel = Vector3.zero;
-        }
-        _hasLocalSimState = false;
-        //networkedRB.Rigidbody.isKinematic = true;
-        networkedRB.RBIsKinematic = true;
-        networkedRB.GetComponent<Collider>().enabled = false;
-
-        //networkedRB.Rigidbody.angularVelocity = Vector3.zero;
-        //networkedRB.Rigidbody.linearVelocity = Vector3.zero;
-
-        visualModel.localPosition = Vector3.zero;
-        visualModel.localRotation = Quaternion.identity;
-        visualModel.transform.SetParent(null);
-
-        if (playerObject.TryGetComponent(out NetworkedHandsController hands))
-        {
-            Debug.Log($"Holding player {playerObject} picked up item {this.name}");
-
-            //Transform handPalm = hands.rightHand.palmTransform;
-            //Transform itemHandle = this.primaryHandle;
-
-            //Quaternion handleRelRot = Quaternion.Inverse(visualModel.transform.rotation) * itemHandle.rotation;
-            //Vector3 handleRelPos = Quaternion.Inverse(visualModel.transform.rotation) * (itemHandle.position - visualModel.transform.position);
-            //Quaternion modelRot = (handPalm.rotation * Quaternion.Euler(hands.pickUpItemRotOffset) *  Quaternion.Inverse(handleRelRot));
-            //Vector3 modelPos = handPalm.position - (modelRot * handleRelPos);
-
-            //transform.SetPositionAndRotation(modelPos, modelRot);
-
-            
-
-            //if (localPlayer)
-            //{
-               
-                //visualModel.transform.SetPositionAndRotation(modelPos, modelRot);
-            //}
-            
-            hands.SetHandTarget_ToHold(false, heldHandState);
-            if (secondaryHandle != null)
-                hands.SetHandTarget_ToHold(true, heldHandState);
-        }
-
-        RestCastingState();
-        activeCaster = playerObject.GetComponent<PlayerCastActionController>();
-        activeHolder = playerObject.GetComponent<HybridCharacterController>();
-
-        Debug.Log($"{this.name} item picked up by {playerObject.name}");
-    }
     
-    public override void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority)
-    {
-
-        var handController = playerObject.GetComponent<NetworkedHandsController>();
-
-        if (playerObject.TryGetComponent(out NetworkedInventoryManager inventory))
-        {
-            inventory.activeItem = null;
-            inventory.currentItemInHand = null;
-        }
-
-
-        if (HasStateAuthority || HasInputAuthority)
-        {
-            HoldingPlayer = null;
-            HolderChangedCount++;
-
-            LinVel = Vector3.zero;
-            AngVel = Vector3.zero;
-           
-        }
-        _hasLocalSimState = false;
-
-        Vector3 dropPosition = visualModel.transform.position;
-        Quaternion dropRotation = visualModel.rotation;
-
-        networkedRB.Teleport(dropPosition, dropRotation);
-        networkedRB.RBIsKinematic = false;
-        networkedRB.GetComponent<Collider>().enabled = true;
-
-        visualModel.SetParent(this.transform);
-        visualModel.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-        handController.SetHandTarget_ToArmature(false);
-        handController.SetHandTarget_ToArmature(true);
-
-        RestCastingState();
-
-        //Debug.Log($"dropped item {this.name}");
-    }
 
     #endregion
 
@@ -464,38 +512,76 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     private void SimulatePhysics(HybridCharacterController hcc, float dt)
     {
-        EyePosAndLookDir eye = hcc.GetEyePosAndLookDir();
+        EyePosAndLookDir eye = hcc.GetEyePosAndLookDirSim();
         double simulationTime = Runner.Tick * (double)Runner.DeltaTime;
+
         GetDerivedActionPose(Runner.Tick, simulationTime, out ItemAction action, out int phaseID, out float phaseTime);
 
-        if (!GetTargetPose(action, phaseID, phaseTime, eye, out Vector3 targetPos, out Quaternion targetRot))
-            return; 
+        if (!GetTargetPose(action, phaseID, phaseTime, eye, out Vector3 targetPos, out Quaternion targetRot)) return;
 
-        Vector3 currentLinVel = LinVel;
-        Vector3 currentAngVel = AngVel;
+        float safeDt = Mathf.Max(dt, 0.0001f);
+        Vector3 targetLinVel = Vector3.zero;
+        Vector3 targetAngVel = Vector3.zero;
 
-        Vector3 ownerVel = hcc.calculatedFixedVel;
-        Vector3 ownerAccel = hcc.calculatedFixedAccel;
-        //Vector3 ownerVel = hcc.rendererVelocity * hcc.lastRenderDt / Runner.DeltaTime;
-        //Vector3 ownerAccel = hcc.rendererAccel * hcc.lastRenderDt / Runner.DeltaTime; 
-
-        if (pdSettings != null)
+        if (PDTargetInitialized)
         {
-            pdSettings.CalculateStep(
-                networkedRB.Rigidbody.position, networkedRB.Rigidbody.rotation,
-                targetPos, targetRot,
-                ownerVel, ownerAccel,
-                dt,
-                ref currentLinVel, ref currentAngVel,
-                out Vector3 newPos, out Quaternion newRot
-            );
+            targetLinVel = (targetPos - PDTargetPosition) / safeDt;
 
-            networkedRB.Rigidbody.MovePosition(newPos);
-            networkedRB.Rigidbody.MoveRotation(newRot);
+            Quaternion targetRotationDelta = Quaternion.Normalize(targetRot * Quaternion.Inverse(PDTargetRotation));
+
+            if (targetRotationDelta.w < 0f)
+            {
+                targetRotationDelta.x = -targetRotationDelta.x;
+                targetRotationDelta.y = -targetRotationDelta.y;
+                targetRotationDelta.z = -targetRotationDelta.z;
+                targetRotationDelta.w = -targetRotationDelta.w;
+            }
+
+            targetRotationDelta.ToAngleAxis(out float targetAngleDeg, out Vector3 targetAxis);
+
+            if (targetAngleDeg > 180f) targetAngleDeg -= 360f;
+
+            if (targetAxis.sqrMagnitude > 0.000001f && Mathf.Abs(targetAngleDeg) > 0.0001f)
+            {
+                targetAngVel = targetAxis.normalized * targetAngleDeg * Mathf.Deg2Rad / safeDt;
+            }
+        }
+        else
+        {
+            PDTargetInitialized = true;
         }
 
-        LinVel = currentLinVel;
-        AngVel = currentAngVel;
+        PDTargetPosition = targetPos;
+        PDTargetRotation = targetRot;
+
+        if (pdSettings == null)
+        {
+            networkedRB.Rigidbody.MovePosition(targetPos);
+            networkedRB.Rigidbody.MoveRotation(targetRot);
+
+            LinVel = targetLinVel;
+            AngVel = targetAngVel;
+            return;
+        }
+
+        ItemPDStepResult result = pdSettings.CalculateStep(
+            networkedRB.Rigidbody.position,
+            networkedRB.Rigidbody.rotation,
+            LinVel,
+            AngVel,
+            targetPos,
+            targetRot,
+            targetLinVel,
+            targetAngVel,
+            Vector3.zero,
+            safeDt
+        );
+
+        networkedRB.Rigidbody.MovePosition(result.Position);
+        networkedRB.Rigidbody.MoveRotation(result.Rotation);
+
+        LinVel = result.LinearVelocity;
+        AngVel = result.AngularVelocity;
     }
 
     //private void CalculatePD(Vector3 currentPos, Quaternion currentRot,Vector3 targetPos, Quaternion targetRot,
@@ -689,20 +775,15 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     public bool IsLocalPlayerHoldingThisItem()
     {
-        if (activeCaster == null) return false;
-        return activeCaster.GetComponent<NetworkObject>().InputAuthority == Runner.LocalPlayer;
+        if (HoldingPlayer == null) return false;
+
+        return HoldingPlayer == Runner.GetPlayerObject(Runner.LocalPlayer);
     }
 
     #endregion
 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        // Clean up the unparented visual model to prevent scene leaks
-        if (visualModel != null)
-        {
-            Destroy(visualModel.gameObject);
-        }
-
         CleanupAnimClipSampler();
     }
 
@@ -718,8 +799,14 @@ public class EquipableItem : InteractableItem, IAfterRender
         CurrentCastID = default;
     }
 
-    public Transform GetHandle(bool isLeft)
+    public Transform GetHandle(bool isLeft, bool visual)
     {
+        if (visual)
+        {
+            if (isLeft && visualSecondaryHandle != null) return visualSecondaryHandle;
+            return visualPrimaryHandle;
+        }
+
         if (isLeft && secondaryHandle != null) return secondaryHandle;
         return primaryHandle;
     }

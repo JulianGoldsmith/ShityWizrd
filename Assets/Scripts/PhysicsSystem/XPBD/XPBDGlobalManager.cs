@@ -804,7 +804,13 @@ public class XPBDGlobalManager : NetworkBehaviour
 
         if (playerRoot.TryGetComponent(out inventory))
         {
-            AddNetworkObjectId(heldItemIds, inventory.currentItemInHand);
+            AddNetworkObjectId(heldItemIds, inventory.DraggedItem);
+
+            for (int slot = 0; slot < NetworkedInventoryManager.InventoryCapacity; slot++)
+            {
+                NetworkId equippedItemId = inventory.EquippedItemIds[slot];
+                if (equippedItemId.IsValid) heldItemIds.Add(equippedItemId);
+            }
         }
 
         // Also reconcile equipable items through their replicated holder.
@@ -891,9 +897,14 @@ public class XPBDGlobalManager : NetworkBehaviour
         // Clear player inventory references while the root remains valid.
         if (inventory != null)
         {
-            inventory.currentItemInHand = null;
+            inventory.DraggedItem = null;
             inventory.potentialItemToPickup = null;
-            inventory.activeItem = null;
+            inventory.ActiveSlot = NetworkedInventoryManager.NoActiveSlot;
+
+            for (int slot = 0; slot < NetworkedInventoryManager.InventoryCapacity; slot++)
+            {
+                inventory.EquippedItemIds.Set(slot, default);
+            }
         }
 
         // 4. Remove this player's solver from the local ordered registry.

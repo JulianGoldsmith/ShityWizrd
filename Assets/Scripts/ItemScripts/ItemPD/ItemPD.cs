@@ -1,5 +1,14 @@
 using UnityEngine;
 
+public struct ItemPDStepResult
+{
+    public Vector3 Position;
+    public Quaternion Rotation;
+    public Vector3 LinearVelocity;
+    public Vector3 AngularVelocity;
+}
+
+
 [CreateAssetMenu(fileName = "NewItemPD", menuName = "Items/Item PD Settings")]
 public class ItemPD : ScriptableObject
 {
@@ -30,66 +39,91 @@ public class ItemPD : ScriptableObject
     public float inertiaScale = 0.5f;
 
 
-    public void CalculateStep(Vector3 currentPos, Quaternion currentRot, Vector3 targetPos, Quaternion targetRot, Vector3 ownerVel, Vector3 ownerAccel,float dt,ref Vector3 linVel, ref Vector3 angVel,
-        out Vector3 newPos, out Quaternion newRot)
+    public ItemPDStepResult CalculateStep(Vector3 currentPos, Quaternion currentRot, Vector3 currentLinVel, Vector3 currentAngVel, Vector3 targetPos, Quaternion targetRot, Vector3 targetLinVel, Vector3 targetAngVel, Vector3 targetAccel, float dt)
     {
-        float safeDt = Mathf.Max(dt, 1e-4f);
+        float safeDt = Mathf.Max(dt, 0.0001f);
 
         Vector3 posError = targetPos - currentPos;
-        float dist = posError.magnitude;
+        float normalizedPosError = posMaxErrorDist > 0.001f ? Mathf.Clamp01(posError.magnitude / posMaxErrorDist) : 0f;
+        float posCurveMult = Mathf.Max(0f, posStiffnessCurve.Evaluate(normalizedPosError));
 
-        float posCurveMult = 1.0f;
-        if (posMaxErrorDist > 0.001f)
-            posCurveMult = posStiffnessCurve.Evaluate(Mathf.Clamp01(dist / posMaxErrorDist));
+        float positionKp = Mathf.Max(0f, posStiffness * posCurveMult);
+        float positionKd = Mathf.Max(0f, posDamping * Mathf.Sqrt(posCurveMult));
 
-        Vector3 relativeVel = linVel - ownerVel;
+        float positionGain = 1f / (1f + positionKd * safeDt + positionKp * safeDt * safeDt);
+        float stablePositionKp = positionKp * positionGain;
+        float stablePositionKd = (positionKd + positionKp * safeDt) * positionGain;
 
-        Vector3 force = (posError * (posStiffness * posCurveMult)) - (relativeVel * posDamping);
+        Vector3 linearAcceleration = posError * stablePositionKp + (targetLinVel - currentLinVel) * stablePositionKd;
+        linearAcceleration += targetAccel * inertiaScale;
 
-        force += ownerAccel * inertiaScale;
+        Vector3 newLinVel = currentLinVel + linearAcceleration * safeDt;
+        Vector3 relativeLinVel = newLinVel - targetLinVel;
 
-        linVel += force * safeDt;
+        if (maxLinearSpeed > 0f && relativeLinVel.sqrMagnitude > maxLinearSpeed * maxLinearSpeed)
+        {
+            relativeLinVel = relativeLinVel.normalized * maxLinearSpeed;
+            newLinVel = targetLinVel + relativeLinVel;
+        }
 
-        float speed = linVel.magnitude;
-        if (speed > maxLinearSpeed && speed > 1e-5f)
-            linVel *= (maxLinearSpeed / speed);
+        Vector3 newPos = currentPos + newLinVel * safeDt;
 
-        newPos = currentPos + linVel * safeDt;
+        Quaternion rotationError = Quaternion.Normalize(targetRot * Quaternion.Inverse(currentRot));
 
-        Quaternion rotError = targetRot * Quaternion.Inverse(currentRot);
-        rotError.ToAngleAxis(out float angleDeg, out Vector3 axis);
+        if (rotationError.w < 0f)
+        {
+            rotationError.x = -rotationError.x;
+            rotationError.y = -rotationError.y;
+            rotationError.z = -rotationError.z;
+            rotationError.w = -rotationError.w;
+        }
+
+        rotationError.ToAngleAxis(out float angleDeg, out Vector3 axis);
+
         if (angleDeg > 180f) angleDeg -= 360f;
 
-        if (axis.sqrMagnitude < 1e-6f || Mathf.Abs(angleDeg) < 0.05f)
+        Vector3 angularError = Vector3.zero;
+
+        if (axis.sqrMagnitude > 0.000001f && Mathf.Abs(angleDeg) > 0.0001f)
         {
-            newRot = targetRot;
-            angVel *= (1.0f - (rotDamping * safeDt));
-            return;
+            angularError = axis.normalized * angleDeg * Mathf.Deg2Rad;
         }
 
-        axis.Normalize();
+        float normalizedRotError = rotMaxErrorDeg > 0.001f ? Mathf.Clamp01(Mathf.Abs(angleDeg) / rotMaxErrorDeg) : 0f;
+        float rotCurveMult = Mathf.Max(0f, rotStiffnessCurve.Evaluate(normalizedRotError));
 
-        float rotCurveMult = 1.0f;
-        if (rotMaxErrorDeg > 0.001f)
-            rotCurveMult = rotStiffnessCurve.Evaluate(Mathf.Clamp01(Mathf.Abs(angleDeg) / rotMaxErrorDeg));
+        float rotationKp = Mathf.Max(0f, rotStiffness * rotCurveMult);
+        float rotationKd = Mathf.Max(0f, rotDamping * Mathf.Sqrt(rotCurveMult));
 
-        Vector3 angError = axis * (angleDeg * Mathf.Deg2Rad);
+        float rotationGain = 1f / (1f + rotationKd * safeDt + rotationKp * safeDt * safeDt);
+        float stableRotationKp = rotationKp * rotationGain;
+        float stableRotationKd = (rotationKd + rotationKp * safeDt) * rotationGain;
 
-        Vector3 torque = (angError * (rotStiffness * rotCurveMult)) - (angVel * rotDamping);
+        Vector3 angularAcceleration = angularError * stableRotationKp + (targetAngVel - currentAngVel) * stableRotationKd;
+        Vector3 newAngVel = currentAngVel + angularAcceleration * safeDt;
+        Vector3 relativeAngVel = newAngVel - targetAngVel;
 
-        angVel += torque * safeDt;
-
-        float angSpeed = angVel.magnitude;
-        if (angSpeed > maxAngularSpeed)
-            angVel *= (maxAngularSpeed / angSpeed);
-
-        Quaternion deltaRot = Quaternion.identity;
-        if (angVel.sqrMagnitude > 0.0001f)
+        if (maxAngularSpeed > 0f && relativeAngVel.sqrMagnitude > maxAngularSpeed * maxAngularSpeed)
         {
-            float deltaAngle = angVel.magnitude * Mathf.Rad2Deg * safeDt;
-            deltaRot = Quaternion.AngleAxis(deltaAngle, angVel.normalized);
+            relativeAngVel = relativeAngVel.normalized * maxAngularSpeed;
+            newAngVel = targetAngVel + relativeAngVel;
         }
 
-        newRot = deltaRot * currentRot;
+        Quaternion newRot = currentRot;
+        float angularStep = newAngVel.magnitude * safeDt;
+
+        if (angularStep > 0.000001f)
+        {
+            Quaternion deltaRotation = Quaternion.AngleAxis(angularStep * Mathf.Rad2Deg, newAngVel.normalized);
+            newRot = Quaternion.Normalize(deltaRotation * currentRot);
+        }
+
+        return new ItemPDStepResult
+        {
+            Position = newPos,
+            Rotation = newRot,
+            LinearVelocity = newLinVel,
+            AngularVelocity = newAngVel
+        };
     }
 }

@@ -924,9 +924,9 @@ public class SpellGraphController : MonoBehaviour
     }
     public void EquipSpellToActiveItem(SpellGraph graphToEquip)
     {
-        if (inventory != null && inventory.activeItem != null)
+        if (inventory != null && inventory.CurrentEquippedItem != null)
         {
-            EquipableItem itemComponent = inventory.activeItem.GetComponent<EquipableItem>();
+            EquipableItem itemComponent = inventory.CurrentEquippedItem.GetComponent<EquipableItem>();
             if (itemComponent != null)
             {
                 itemComponent.EquipSpellToPrimary(currentGraph);
@@ -949,9 +949,9 @@ public class SpellGraphController : MonoBehaviour
 
         SpellGraph spellToEdit = null;
 
-        if (inventory != null && inventory.activeItem != null)
+        if (inventory != null && inventory.CurrentEquippedItem != null)
         {
-            EquipableItem itemComponent = inventory.activeItem.GetComponent<EquipableItem>();
+            EquipableItem itemComponent = inventory.CurrentEquippedItem.GetComponent<EquipableItem>();
 
             if (itemComponent != null)
             {
@@ -1007,7 +1007,7 @@ public class SpellGraphController : MonoBehaviour
     public void ClearAndCreateNewSpellOnActiveItem()
     {
         CreateNewGraph();
-        EquipableItem item = inventory.activeItem.GetComponent<EquipableItem>();
+        EquipableItem item = inventory.CurrentEquippedItem.GetComponent<EquipableItem>();
         item.EquipSpellToPrimary(currentGraph);
     }
 

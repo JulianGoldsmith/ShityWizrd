@@ -14,6 +14,7 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
     public Vector3 localEyeOffset = new Vector3(0f, 1.55f, 0f);
     public float positionSmoothTime = 0.05f; // Add positional smoothing
     private Vector3 _posVelocity; // Reference for SmoothDamp
+    public Vector3 RenderVelocity => _posVelocity;
 
     [Header("Input")]
     public Vector2 lookInput;
@@ -41,6 +42,10 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
     private float _pitchVel;
     public Transform cameraTransform;
 
+    public Quaternion LocalLookRotation => Quaternion.Euler(finalPitch, finalYaw, 0f);
+
+
+
     public void Spawned(bool _isLocalAuthority)
     {
         isLocalAuthority = _isLocalAuthority;
@@ -59,6 +64,31 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
         }
     }
 
+
+    private void Update()
+    {
+        if (!isLocalAuthority) return;
+
+        if (grabRotationActive) lookInput = Vector2.zero;
+
+        targetYaw += lookInput.x * mouseSensitivity;
+        targetPitch -= lookInput.y * mouseSensitivity;
+        targetPitch = Mathf.Clamp(targetPitch, minPitch, maxPitch);
+        lookInput = Vector2.zero;
+
+        if (lookSmoothing <= 0f)
+        {
+            finalYaw = targetYaw;
+            finalPitch = targetPitch;
+        }
+        else
+        {
+            finalYaw = Mathf.SmoothDampAngle(finalYaw, targetYaw, ref _yawVel, lookSmoothing);
+            finalPitch = Mathf.SmoothDampAngle(finalPitch, targetPitch, ref _pitchVel, lookSmoothing);
+        }
+    }
+
+
     // Explicitly use Fusion's AfterRender
     void IAfterRender.AfterRender()
     {
@@ -69,8 +99,17 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
     {
        // UpdateCam();
     }
-
     private void UpdateCam()
+    {
+        if (!isLocalAuthority || cameraTransform == null || followTarget == null) return;
+
+        cameraTransform.rotation = LocalLookRotation;
+
+        Vector3 desiredEyePos = GetTargetEyePosition();
+
+        cameraTransform.position = NetworkSmoothing.ExponentialSmooth(cameraTransform.position, desiredEyePos, Time.deltaTime);
+    }
+    /*private void UpdateCam()
     {
         if (!isLocalAuthority || cameraTransform == null || followTarget == null) return;
 
@@ -109,7 +148,7 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
                 positionSmoothTime
             );
         }
-    }
+    }*/
 
     private Vector3 GetTargetEyePosition()
     {
@@ -146,7 +185,8 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
 
         if (camActive && !grabRotationActive)
         {
-            lookInput = context.ReadValue<Vector2>();
+            lookInput += context.ReadValue<Vector2>();
         }
     }
+
 }

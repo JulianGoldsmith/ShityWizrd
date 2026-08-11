@@ -6,9 +6,9 @@ public abstract class InteractableItem : NetworkBehaviour
 {
     public NetworkRigidbody3D networkedRB;
 
-    public abstract void PickUpItem(NetworkObject playerObject);
+    public virtual void PickUpItem(NetworkObject playerObject) { }
 
-    public abstract void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority);
+    public virtual void DropItem(NetworkObject playerObject, bool hasInputAuthority, bool hasStateAuthority) { }
 
     public virtual void ForceReleaseForDisconnect(NetworkObject playerObject)
     {

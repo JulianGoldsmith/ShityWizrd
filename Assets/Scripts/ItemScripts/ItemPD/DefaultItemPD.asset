@@ -13,26 +13,26 @@ MonoBehaviour:
   m_Name: DefaultItemPD
   m_EditorClassIdentifier: 
   posStiffness: 80
-  posDamping: 6
+  posDamping: 14
   maxLinearSpeed: 25
   posStiffnessCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
-      inSlope: 1.833621
-      outSlope: 1.833621
-      tangentMode: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
-      outWeight: 0.0880467
+      outWeight: 0
     - serializedVersion: 3
       time: 1
       value: 1
       inSlope: 0
       outSlope: 0
-      tangentMode: 0
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -41,7 +41,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   posMaxErrorDist: 1
   rotStiffness: 100
-  rotDamping: 10
+  rotDamping: 16
   maxAngularSpeed: 30
   rotStiffnessCurve:
     serializedVersion: 2

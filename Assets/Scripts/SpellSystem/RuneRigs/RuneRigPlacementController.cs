@@ -45,12 +45,12 @@ public sealed class RuneRigPlacementController : MonoBehaviour
         _lastRefreshFrame = Time.frameCount;
         CurrentAttachmentTarget = default;
 
-        if (_playerObject == null || !_playerObject.IsValid || !_playerObject.HasInputAuthority || Inventory == null || Inventory.currentItemInHand == null) {
+        if (_playerObject == null || !_playerObject.IsValid || !_playerObject.HasInputAuthority || Inventory == null || Inventory.DraggedItem == null) {
             HideGhost();
             return;
         }
 
-        if (!Inventory.currentItemInHand.TryGetComponent(out RuneRigObject sourceRig)) {
+        if (!Inventory.DraggedItem.TryGetComponent(out RuneRigObject sourceRig)) {
             HideGhost();
             return;
         }

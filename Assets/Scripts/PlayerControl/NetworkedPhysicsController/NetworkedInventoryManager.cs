@@ -5,15 +5,28 @@ using UnityEngine;
 [DefaultExecutionOrder(-10)]
 public class NetworkedInventoryManager : NetworkBehaviour
 {
-    //public List<GameObject> equippedItems = new List<GameObject>();
 
-    public int activeItemIndex = 0;
+    public const int InventoryCapacity = 3;
+    public const byte NoActiveSlot = byte.MaxValue;
+    [Networked, Capacity(InventoryCapacity)]
+    public NetworkArray<NetworkId> EquippedItemIds { get; }
+    [Networked] public byte ActiveSlot { get; set; }
+    [Networked] public NetworkObject DraggedItem { get; set; }
 
-    //public GameObject activeItem => equippedItems[activeItemIndex];
+    public NetworkId CurrentEquippedItemId => DraggedItem == null && ActiveSlot < InventoryCapacity ? EquippedItemIds[ActiveSlot] : default;
+
+    public NetworkObject CurrentEquippedItem
+    {
+        get
+        {
+            NetworkId itemId = CurrentEquippedItemId;
+            return itemId.IsValid && Runner.TryFindObject(itemId, out NetworkObject item) ? item : null;
+        }
+    }
+
 
     public Transform itemSocketR;
 
-    public GameObject activeItem;
 
     public Transform snapPoint;
 
@@ -31,7 +44,6 @@ public class NetworkedInventoryManager : NetworkBehaviour
     [Header("Rune Detachment")]
     [Min(0.05f)] public float RuneDetachmentHoldDuration = 0.35f;
 
-    [Networked] public NetworkObject currentItemInHand { get; set; }
     [Networked] public NetworkObject potentialItemToPickup { get; set; }
     [Networked] private NetworkId ReleaseHoldItemId { get; set; }
     [Networked] private TickTimer ReleaseHoldTimer { get; set; }
@@ -60,12 +72,34 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
     public override void Spawned()
     {
-        if (!HasInputAuthority)
-            return;
-        GameController.Instance.spellGraphController.inventory = this;
+        Runner.SetIsSimulated(Object, true);
+        if (HasStateAuthority) ActiveSlot = 0;
+        if (HasInputAuthority) GameController.Instance.spellGraphController.inventory = this;
     }
 
     public override void FixedUpdateNetwork()
+    {
+        if (!Object.IsProxy)
+        {
+            SimulateInventory();
+            ApplyEquipmentHandState();
+        }
+
+        AssignEquipmentContexts();
+    }
+
+    private void AssignEquipmentContexts()
+    {
+        for (byte slot = 0; slot < InventoryCapacity; slot++)
+        {
+            NetworkId itemId = EquippedItemIds[slot];
+            if (!itemId.IsValid || !Runner.TryFindObject(itemId, out NetworkObject itemObject) || !itemObject.TryGetComponent(out EquipableItem item)) continue;
+
+            item.AssignEquipmentContext(Object, slot, slot == ActiveSlot && DraggedItem == null);
+        }
+    }
+
+    public void SimulateInventory()
     {
         if (Object.IsProxy) return;
         if (GetInput(out NetworkInputData data))
@@ -77,7 +111,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (PendingDetachedPickupItemId.IsValid && PendingDetachedPickupTimer.Expired(Runner))
             {
-                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED && currentItemInHand == null)
+                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED && DraggedItem == null)
                     PickupItem(PendingDetachedPickupItemId);
 
                 PendingDetachedPickupItemId = default;
@@ -93,7 +127,11 @@ public class NetworkedInventoryManager : NetworkBehaviour
                 levitatingRig.LevitationTargetRotation = Quaternion.Normalize(data.levitationTargetRotation);
             }
 
-            if (currentItemInHand == null)
+            if (data.buttons.WasPressed(Prior_buttons, EInputButton.SLOT_1)) SelectSlot(0);
+            if (data.buttons.WasPressed(Prior_buttons, EInputButton.SLOT_2)) SelectSlot(1);
+            if (data.buttons.WasPressed(Prior_buttons, EInputButton.SLOT_3)) SelectSlot(2);
+
+            if (DraggedItem == null)
             {
                 LookForItems();
             }
@@ -102,7 +140,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
             {
                 if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
                 {
-                    if (currentItemInHand == null)
+                    if (DraggedItem == null)
                     {
                         InteractHoldItemId = potentialItemToPickup != null ? potentialItemToPickup.Id : default;
                         InteractHoldTarget = data.interactionTarget;
@@ -130,15 +168,15 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (data.buttons.WasReleased(Prior_buttons, EInputButton.PICKUP))
             {
-                if (!InteractHoldTriggered && InteractHoldItemId.IsValid && currentItemInHand == null)
+                if (!InteractHoldTriggered && InteractHoldItemId.IsValid && DraggedItem == null)
                     PickupItem(InteractHoldItemId);
 
                 ClearInteractHoldState();
             }
 
-            if (data.buttons.WasPressed(Prior_buttons, EInputButton.RELEASE) && currentItemInHand != null)
+            if (data.buttons.WasPressed(Prior_buttons, EInputButton.RELEASE) && DraggedItem != null)
             {
-                ReleaseHoldItemId = currentItemInHand.Id;
+                ReleaseHoldItemId = DraggedItem.Id;
                 ReleaseHoldTimer = TickTimer.CreateFromSeconds(Runner, RuneLevitationHoldDuration);
                 ReleaseHoldTriggered = false;
             }
@@ -147,9 +185,9 @@ public class NetworkedInventoryManager : NetworkBehaviour
                 !ReleaseHoldTriggered &&
                 ReleaseHoldItemId.IsValid &&
                 ReleaseHoldTimer.Expired(Runner) &&
-                currentItemInHand != null &&
-                currentItemInHand.Id == ReleaseHoldItemId &&
-                currentItemInHand.TryGetComponent(out RuneRigObject heldRuneRig))
+                DraggedItem != null &&
+                DraggedItem.Id == ReleaseHoldItemId &&
+                DraggedItem.TryGetComponent(out RuneRigObject heldRuneRig))
             {
                 if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
                 {
@@ -160,13 +198,16 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (data.buttons.WasReleased(Prior_buttons, EInputButton.RELEASE))
             {
-                if (!ReleaseHoldTriggered &&
-                    ReleaseHoldItemId.IsValid &&
-                    currentItemInHand != null &&
-                    currentItemInHand.Id == ReleaseHoldItemId &&
-                    characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
+                if (!ReleaseHoldTriggered && characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
                 {
-                    DropItem();
+                    if (ReleaseHoldItemId.IsValid && DraggedItem != null && DraggedItem.Id == ReleaseHoldItemId)
+                    {
+                        DropItem();
+                    }
+                    else if (DraggedItem == null && CurrentEquippedItem != null)
+                    {
+                        DropActiveEquippedItem();
+                    }
                 }
 
                 ClearReleaseHoldState();
@@ -177,29 +218,42 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         if (characterController.bonkController.BonkedState == BONKEDSTATE.BONKED)
         {
-            if (currentItemInHand != null)
-            {
-                DropItem();
-            }
+            if (DraggedItem != null) DropItem();
+            if (CurrentEquippedItem != null) DropActiveEquippedItem();
 
             ClearReleaseHoldState();
             ClearInteractHoldState();
-
-            if (potentialItemToPickup != null)
-            {
-                potentialItemToPickup = null;
-            }
+            potentialItemToPickup = null;
             return;
         }
 
-        if (currentItemInHand != null && !currentItemInHand.gameObject.activeInHierarchy)
+        if (DraggedItem != null && !DraggedItem.gameObject.activeInHierarchy)
         {
-            currentItemInHand = null;
+            DraggedItem = null;
             ClearReleaseHoldState();
             ClearInteractHoldState();
         }
 
         
+    }
+    private void SelectSlot(byte slot)
+    {
+        if (DraggedItem != null || slot >= InventoryCapacity) return;
+        ActiveSlot = slot;
+    }
+    public bool TrySetActiveSlot(byte slot)
+    {
+        if (slot >= InventoryCapacity || !EquippedItemIds[slot].IsValid) return false;
+
+        if (DraggedItem != null) DropItem();
+
+        ActiveSlot = slot;
+        return true;
+    }
+
+    public void HolsterActiveItem()
+    {
+        ActiveSlot = NoActiveSlot;
     }
 
     private void LookForItems()
@@ -279,49 +333,96 @@ public class NetworkedInventoryManager : NetworkBehaviour
                 }
             }
         }
-        else if (bestCandidate == null && potentialItemToPickup != null && currentItemInHand == null)
+        else if (bestCandidate == null && potentialItemToPickup != null && DraggedItem == null)
         {
             handController.SetHandTarget_ToArmature(false);
             potentialItemToPickup = null;
-            currentItemInHand = null;
+            DraggedItem = null;
             handController.leftHand.draggingTransform = null;
             handController.rightHand.draggingTransform = null;
         }
     }
 
-    private void PickupItem(NetworkId itemId)
+    private void ApplyEquipmentHandState()
     {
-        if (!itemId.IsValid || !Runner.TryFindObject(itemId, out NetworkObject itemObject) || !itemObject.TryGetComponent(out InteractableItem item))
+        if (DraggedItem != null) return;
+
+        NetworkObject itemObject = CurrentEquippedItem;
+
+        if (itemObject != null && itemObject.TryGetComponent(out EquipableItem item))
+        {
+            handController.SetHandTarget_ToHold(false, item.heldHandState);
+
+            if (item.secondaryHandle != null)
+            {
+                handController.SetHandTarget_ToHold(true, item.heldHandState);
+            }
+            else
+            {
+                handController.SetHandTarget_ToArmature(true);
+            }
+
             return;
+        }
 
-        currentItemInHand = itemObject;
-        potentialItemToPickup = null;
+        if (potentialItemToPickup != null) return;
 
-        if (item is DraggableItem draggable)
-            handController.SetHandTarget_ToDraggPoint(false, draggable, draggable.transform.TransformPoint(localHandPosOnItem));
-
-        item.PickUpItem(Object);
+        handController.SetHandTarget_ToArmature(false);
+        handController.SetHandTarget_ToArmature(true);
     }
 
+    private void PickupItem(NetworkId itemId)
+    {
+        if (!itemId.IsValid || !Runner.TryFindObject(itemId, out NetworkObject itemObject) || !itemObject.TryGetComponent(out InteractableItem item)) return;
+
+        potentialItemToPickup = null;
+
+        if (item is EquipableItem)
+        {
+            TryEquipItem(itemObject);
+            return;
+        }
+
+        if (item is DraggableItem draggable)
+        {
+            DraggedItem = itemObject;
+            draggable.PickUpItem(Object);
+        }
+    }
 
     private void DropItem()
     {
-        if (currentItemInHand == null)
+        if (DraggedItem == null)
             return;
 
-        NetworkObject droppedObject = currentItemInHand;
+        NetworkObject droppedObject = DraggedItem;
         InteractableItem droppedItem = droppedObject.GetComponent<InteractableItem>();
 
         droppedItem.DropItem(GetComponent<NetworkObject>(), HasInputAuthority, HasStateAuthority);
 
         handController.DragDistance = 0;
-        currentItemInHand = null;
+        DraggedItem = null;
+    }
+
+    private bool TryEquipItem(NetworkObject item)
+    {
+        if (ActiveSlot >= InventoryCapacity || EquippedItemIds[ActiveSlot].IsValid) return false;
+
+        EquippedItemIds.Set(ActiveSlot, item.Id);
+        return true;
+    }
+
+    private void DropActiveEquippedItem()
+    {
+        if (ActiveSlot >= InventoryCapacity || !EquippedItemIds[ActiveSlot].IsValid) return;
+
+        EquippedItemIds.Set(ActiveSlot, default);
     }
 
     private bool TryAttachHeldRuneRig(NetworkInputData data)
     {
-        if (currentItemInHand == null ||
-            !currentItemInHand.TryGetComponent(out RuneRigObject runeRig) ||
+        if (DraggedItem == null ||
+            !DraggedItem.TryGetComponent(out RuneRigObject runeRig) ||
             data.interactionTarget.Type != InteractionTargetType.RuneBay ||
             !data.interactionTarget.ObjectId.IsValid)
         {
@@ -332,21 +433,21 @@ public class NetworkedInventoryManager : NetworkBehaviour
         bool attached = runeRig.TryAttachToBay(data.interactionTarget.ObjectId, data.interactionTarget.PartIndex, data.interactionTarget.BayIndex);
 
         handController.DragDistance = 0;
-        currentItemInHand = null;
+        DraggedItem = null;
         ClearReleaseHoldState();
         return attached;
     }
 
     private void LevitateHeldRuneRig(RuneRigObject runeRig)
     {
-        if (currentItemInHand == null || runeRig == null || currentItemInHand != runeRig.Object)
+        if (DraggedItem == null || runeRig == null || DraggedItem != runeRig.Object)
             return;
 
         runeRig.DropItem(Object, HasInputAuthority, HasStateAuthority);
         runeRig.BeginLevitation();
 
         handController.DragDistance = 0;
-        currentItemInHand = null;
+        DraggedItem = null;
     }
 
     private void ClearReleaseHoldState()
@@ -428,4 +529,6 @@ public class NetworkedInventoryManager : NetworkBehaviour
         target = NetworkInteractionTarget.CreateItem(interactableItem.Object.Id);
         return true;
     }
+
+
 }

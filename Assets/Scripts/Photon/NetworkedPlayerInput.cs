@@ -109,7 +109,10 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.buttons.Set(EInputButton.UN_SELF_BONK, keyboard.uKey.isPressed);
                 _accumulatedInput.buttons.Set(EInputButton.TEST_COUNT, keyboard.cKey.isPressed);
 
-               // _accumulatedInput.scroll = scroll.y/5f;
+                _accumulatedInput.buttons.Set(EInputButton.SLOT_1, keyboard.digit1Key.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.SLOT_2, keyboard.digit2Key.isPressed);
+                _accumulatedInput.buttons.Set(EInputButton.SLOT_3, keyboard.digit3Key.isPressed);
+                // _accumulatedInput.scroll = scroll.y/5f;
             }
 
         }
@@ -124,10 +127,10 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             playerObject.TryGetComponent(out HybridCharacterController controller) &&
             playerObject.TryGetComponent(out NetworkedInventoryManager inventory) &&
             hands.RightHandMode == TargetingMode.DRAGG &&
-            inventory.currentItemInHand != null)
+            inventory.DraggedItem != null)
         {
 
-            NetworkId heldItemId = inventory.currentItemInHand.Id;
+            NetworkId heldItemId = inventory.DraggedItem.Id;
 
             if (_localGrabItemId != heldItemId)
             {
@@ -138,7 +141,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                     _localGrabRotationOffset = controller.GrabRotationOffset;
                 }
                 else {
-                    _localGrabTargetDistance = Vector3.Distance(controller.GetEyePos(), inventory.currentItemInHand.transform.position);
+                    _localGrabTargetDistance = Vector3.Distance(controller.GetEyePos(), inventory.DraggedItem.transform.position);
                     _localGrabRotationOffset = Quaternion.identity;
                 }
             }
@@ -183,7 +186,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             playerObject != null &&
             playerObject.TryGetComponent(out HybridCharacterController levitationController) &&
             playerObject.TryGetComponent(out NetworkedInventoryManager levitationInventory) &&
-            levitationInventory.currentItemInHand == null &&
+            levitationInventory.DraggedItem == null &&
             mouse != null)
         {
             if (mouse.middleButton.wasPressedThisFrame &&
@@ -244,9 +247,9 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
         }
 
         if (playerObject != null && playerObject.TryGetComponent(out HybridCharacterController cameraController))
+        {
             cameraController.camController.grabRotationActive = rotatingHeldGrab || rotatingLevitatingRig;
-
-        _accumulatedInput.lookRotation = Camera.main.transform.rotation;
+        }
     }
 
     private void OnInput(NetworkRunner runner, NetworkInput networkInput)
@@ -259,7 +262,10 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
             playerObj.TryGetComponent(out HybridCharacterController controller) &&
             playerObj.TryGetComponent(out NetworkedInventoryManager inv))
         {
-            if (hands.RightHandMode == TargetingMode.DRAGG && inv.currentItemInHand != null)
+
+            _accumulatedInput.lookRotation = controller.camController.LocalLookRotation;
+
+            if (hands.RightHandMode == TargetingMode.DRAGG && inv.DraggedItem != null)
             {
                 //Debug.Log("sending drag Input");
                 
@@ -279,7 +285,7 @@ public sealed class NetworkedPlayerInput : NetworkBehaviour, IBeforeUpdate
                 _accumulatedInput.dragTargetPos = targetPos;
 
                 // FACING: aim from the item COM to the eye (same as your server logic conceptually)
-                var itemNO = inv.currentItemInHand;
+                var itemNO = inv.DraggedItem;
                 var item = itemNO.GetComponent<DraggableItem>();
                 Vector3 com = (item != null && item.rb != null) ? item.rb.worldCenterOfMass : itemNO.transform.position;
 

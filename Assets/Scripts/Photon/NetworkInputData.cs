@@ -15,7 +15,10 @@ public enum EInputButton
     UN_SELF_BONK = 9,
     TEST_COUNT = 10,
     FEED = 11,
-    ROTATE = 12
+    ROTATE = 12,
+    SLOT_1 = 13,
+    SLOT_2 = 14,
+    SLOT_3 = 15
 }
 public struct NetworkInputData : INetworkInput
 {
