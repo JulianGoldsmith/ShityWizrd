@@ -5,12 +5,16 @@ public enum SmoothingSchedule
 {
     Render,
     AfterRender,
+    Update, 
     LateUpdate
 }
 
 [DefaultExecutionOrder(175)]
 public class VisualNetworkSmoothing : NetworkBehaviour, IAfterRender
 {
+    [Header("Local Control")]
+    public bool enableLocalSmoothing = true;
+
     [Header("Transforms")]
     [SerializeField] private Transform targetTransform;
     [SerializeField] private Transform smoothedTransform;
@@ -87,7 +91,7 @@ public class VisualNetworkSmoothing : NetworkBehaviour, IAfterRender
         }
 
         float dt = Mathf.Max(Time.deltaTime, 0.0001f);
-        _smoothedPosition = NetworkSmoothing.ExponentialSmooth(_smoothedPosition, targetPosition, dt);
+        _smoothedPosition = GlobalNetworkSmoothing.Smooth(_smoothedPosition, targetPosition, dt, enableLocalSmoothing);
         _smoothedRotation = targetRotation;
         _smoothedLocalScale = targetScale;
 

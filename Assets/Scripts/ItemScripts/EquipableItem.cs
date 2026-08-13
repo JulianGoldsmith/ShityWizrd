@@ -1,6 +1,5 @@
 ﻿using Fusion;
 using Fusion.Addons.Physics;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,18 +72,31 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     public Vector3 throwDir = Vector3.zero;
 
-    [Header("Visual Interpolation")]
-    [SerializeField] private Transform worldRenderRoot;
+    [Header("Local Presentation PD")]
+    [SerializeField] private bool useVisualPD = true;
+    [SerializeField] private ItemPD visualPDSettings;
+    [SerializeField, Range(0f, 1f)] private float visualTargetVelocityInfluence = 1f;
+    [SerializeField, Range(0f, 1f)] private float visualTargetAccelerationInfluence = 0.2f;
+    [SerializeField, Min(0.001f)] private float visualMaxDeltaTime = 0.05f;
+    [SerializeField, Min(0f)] private float visualMaxTargetAcceleration = 100f;
+    [SerializeField, Min(0.01f)] private float visualReseedDistance = 1.5f;
+    [SerializeField, Range(1f, 180f)] private float visualReseedAngle = 120f;
 
     private bool _visualPDInitialized;
-    private bool _visualUsesLocalPose;
-    private NetworkObject _visualHolder;
+    private NetworkObject _visualPDHolder;
     private Vector3 _visualPosition;
     private Quaternion _visualRotation = Quaternion.identity;
-    private Vector3 _visualLinVel;
-    private Vector3 _visualAngVel;
+    private Vector3 _visualLinearVelocity;
+    private Vector3 _visualAngularVelocity;
     private Vector3 _previousVisualTargetPosition;
+    private Quaternion _previousVisualTargetRotation = Quaternion.identity;
+    private Vector3 _previousVisualTargetVelocity;
+    private Transform _visualOriginalParent;
 
+    public Transform worldRenderRoot;
+    public bool usePD = true;
+
+    private XPBDGlobalManager _xpbdGlobalManager;
 
     [Networked] public ActiveCastID CurrentCastID { get; set; }
     public SpellState activeCast{ get {
@@ -156,126 +168,161 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     public void AfterRender()
     {
-
-        UpdateItemVisability();
-       // UpdateVisualWithRenderPD();
-    }
-
-    private void UpdateItemVisability()
-    {
         if (visualModel == null) return;
 
-        if (EquipmentState == EquippedState.None)
+        if (EquipmentState == EquippedState.EquippedInactive || (EquipmentState == EquippedState.EquippedActive && activeHolder == null))
         {
-            _visualPDInitialized = false;
-
-            if (!visualModel.gameObject.activeSelf) visualModel.gameObject.SetActive(true);
-
-            visualModel.SetPositionAndRotation(worldRenderRoot.position, worldRenderRoot.rotation);
-            return;
-        }
-
-        if (EquipmentState == EquippedState.EquippedInactive || activeHolder == null)
-        {
-            _visualPDInitialized = false;
-
             if (visualModel.gameObject.activeSelf) visualModel.gameObject.SetActive(false);
+            if (visualModel.parent != _visualOriginalParent) visualModel.SetParent(_visualOriginalParent, true);
+
+            ResetLocalPresentation();
             return;
         }
 
         if (!visualModel.gameObject.activeSelf) visualModel.gameObject.SetActive(true);
 
+        if (EquipmentState == EquippedState.None)
+        {
+            ResetLocalPresentation();
+            if (visualModel.parent != _visualOriginalParent) visualModel.SetParent(_visualOriginalParent, true);
+            visualModel.SetPositionAndRotation(worldRenderRoot.position, worldRenderRoot.rotation);
+
+            return;
+        }
+
+        if (!IsLocalPlayerHoldingThisItem())
+        {
+            ResetLocalPresentation();
+            if (visualModel.parent != _visualOriginalParent) visualModel.SetParent(_visualOriginalParent, true);
+            visualModel.SetPositionAndRotation(worldRenderRoot.position, worldRenderRoot.rotation);
+            return;
+        }
+
+        if (visualModel.parent != null) visualModel.SetParent(null, true);
+        UpdateLocalPresentation();
     }
 
-    private void UpdateVisualWithRenderPD()
+    private void ResetLocalPresentation()
     {
-        if (EquipmentState != EquippedState.EquippedActive) return;
+        _visualPDInitialized = false;
+        _visualPDHolder = null;
+        _visualLinearVelocity = Vector3.zero;
+        _visualAngularVelocity = Vector3.zero;
+        _previousVisualTargetVelocity = Vector3.zero;
+    }
 
-        NetworkObject localPlayer = Runner.GetPlayerObject(Runner.LocalPlayer);
-        bool useLocalPose = HoldingPlayer == localPlayer;
-
-        Vector3 eyePosition;
-        Quaternion eyeRotation;
-
-        if (useLocalPose)
-        {
-            Transform cameraTransform = activeHolder.camController.cameraTransform;
-            eyePosition = cameraTransform.position;
-            eyeRotation = cameraTransform.rotation;
-        }
-        else
-        {
-            eyeRotation = Quaternion.Slerp(activeHolder.previousLookRot, activeHolder.lookRot, Runner.LocalAlpha);
-            eyePosition = activeHolder.smoothedNetworkedRenderRoot.position
-                + activeHolder.camController.localEyeOffset
-                + activeHolder.camController.GetEyePosBasedOnPitch(eyeRotation);
-        }
-
-        EyePosAndLookDir eye = new EyePosAndLookDir(eyePosition, eyeRotation * Vector3.forward, eyeRotation * Vector3.up);
-
+    private void UpdateLocalPresentation()
+    {
         double renderTime = Runner.LocalRenderTime;
         int renderTick = (int)Math.Floor(renderTime / Runner.DeltaTime);
 
         GetDerivedActionPose(renderTick, renderTime, out ItemAction action, out int phaseID, out float phaseTime);
 
-        if (!GetTargetPose(action, phaseID, phaseTime, eye, out Vector3 targetPosition, out Quaternion targetRotation)) return;
+        Transform cameraTransform = activeHolder.camController.cameraTransform;
+        Quaternion cameraRotation = cameraTransform.rotation;
 
-        bool presentationChanged = !_visualPDInitialized || _visualHolder != HoldingPlayer || _visualUsesLocalPose != useLocalPose;
+        EyePosAndLookDir cameraEye = new EyePosAndLookDir(
+            cameraTransform.position,
+            cameraRotation * Vector3.forward,
+            cameraRotation * Vector3.up
+        );
 
-        if (presentationChanged)
+        if (!GetTargetPose(action, phaseID, phaseTime, cameraEye, out Vector3 targetPosition, out Quaternion targetRotation)) return;
+
+        float frameDt = Time.deltaTime;
+        bool reseed = !_visualPDInitialized || _visualPDHolder != HoldingPlayer || frameDt <= 0f || frameDt > visualMaxDeltaTime;
+
+        if (reseed)
         {
             _visualPDInitialized = true;
-            _visualHolder = HoldingPlayer;
-            _visualUsesLocalPose = useLocalPose;
-            _visualPosition = targetPosition;
-            _visualRotation = targetRotation;
-            _visualLinVel = Vector3.zero;
-            _visualAngVel = Vector3.zero;
-            _previousVisualTargetPosition = targetPosition;
+            _visualPDHolder = HoldingPlayer;
+            _visualPosition = worldRenderRoot.position;
+            _visualRotation = worldRenderRoot.rotation;
 
+            NetworkBehaviourBufferInterpolator interpolator = new NetworkBehaviourBufferInterpolator(this);
+
+            if (interpolator.Valid)
+            {
+                Vector3 interpolatedPDTargetPosition = interpolator.Vector3(nameof(PDTargetPosition));
+                Quaternion interpolatedPDTargetRotation = Quaternion.Normalize(interpolator.Quaternion(nameof(PDTargetRotation)));
+                Quaternion inversePDTargetRotation = Quaternion.Inverse(interpolatedPDTargetRotation);
+                Vector3 localPositionError = inversePDTargetRotation * (worldRenderRoot.position - interpolatedPDTargetPosition);
+                Quaternion localRotationError = Quaternion.Normalize(inversePDTargetRotation * worldRenderRoot.rotation);
+
+                _visualPosition = targetPosition + targetRotation * localPositionError;
+                _visualRotation = Quaternion.Normalize(targetRotation * localRotationError);
+            }
+
+            _visualLinearVelocity = activeHolder.hipsRb.linearVelocity;
+            _visualAngularVelocity = Vector3.zero;
+            _previousVisualTargetPosition = targetPosition;
+            _previousVisualTargetRotation = targetRotation;
+            _previousVisualTargetVelocity = _visualLinearVelocity;
             visualModel.SetPositionAndRotation(_visualPosition, _visualRotation);
             return;
         }
 
-        float dt = Mathf.Max(Time.deltaTime, 0.0001f);
-        Vector3 targetVelocity = activeHolder.camController.RenderVelocity;
-        _previousVisualTargetPosition = targetPosition;
+        float safeDt = Mathf.Max(frameDt, 0.0001f);
+        Vector3 targetLinearVelocity = (targetPosition - _previousVisualTargetPosition) / safeDt;
+        Vector3 targetAngularVelocity = CalculateAngularVelocity(targetRotation, _previousVisualTargetRotation, safeDt);
+        Vector3 targetAcceleration = (targetLinearVelocity - _previousVisualTargetVelocity) / safeDt;
 
-        //if (pdSettings == null)
-        if (true)
+        if (visualMaxTargetAcceleration > 0f) targetAcceleration = Vector3.ClampMagnitude(targetAcceleration, visualMaxTargetAcceleration);
+
+        ItemPD settings = null;
+        if (useVisualPD) settings = visualPDSettings != null ? visualPDSettings : pdSettings;
+
+        if (settings == null)
         {
             _visualPosition = targetPosition;
             _visualRotation = targetRotation;
+            _visualLinearVelocity = targetLinearVelocity;
+            _visualAngularVelocity = targetAngularVelocity;
         }
         else
         {
-            Vector3 currentPosition = _visualPosition;
-            Quaternion currentRotation = _visualRotation;
+            ItemPDStepResult result = settings.CalculateStep(
+                _visualPosition,
+                _visualRotation,
+                _visualLinearVelocity,
+                _visualAngularVelocity,
+                targetPosition,
+                targetRotation,
+                targetLinearVelocity * visualTargetVelocityInfluence,
+                targetAngularVelocity * visualTargetVelocityInfluence,
+                targetAcceleration * visualTargetAccelerationInfluence,
+                safeDt
+            );
 
-            ItemPDStepResult result = pdSettings.CalculateStep(
-                 _visualPosition,
-                 _visualRotation,
-                 _visualLinVel,
-                 _visualAngVel,
-                 targetPosition,
-                 targetRotation,
-                 targetVelocity,
-                 Vector3.zero,
-                 Vector3.zero,
-                 dt
-             );
             _visualPosition = result.Position;
             _visualRotation = result.Rotation;
-            _visualLinVel = result.LinearVelocity;
-            _visualAngVel = result.AngularVelocity;
+            _visualLinearVelocity = result.LinearVelocity;
+            _visualAngularVelocity = result.AngularVelocity;
+
+            if (Vector3.Distance(_visualPosition, targetPosition) > visualReseedDistance || Quaternion.Angle(_visualRotation, targetRotation) > visualReseedAngle)
+            {
+                _visualPosition = targetPosition;
+                _visualRotation = targetRotation;
+                _visualLinearVelocity = targetLinearVelocity;
+                _visualAngularVelocity = targetAngularVelocity;
+            }
         }
+
+        _previousVisualTargetPosition = targetPosition;
+        _previousVisualTargetRotation = targetRotation;
+        _previousVisualTargetVelocity = targetLinearVelocity;
 
         visualModel.SetPositionAndRotation(_visualPosition, _visualRotation);
     }
 
+
+
+
+
     public override void Spawned()
     {
         networkedRB = this.GetComponent<NetworkRigidbody3D>();
+        if (visualModel != null) _visualOriginalParent = visualModel.parent;
 
         _hasLocalSimState = false;
         LinVel = Vector3.zero;
@@ -290,69 +337,15 @@ public class EquipableItem : InteractableItem, IAfterRender
         {
             InitializeBakedSpells();
         }
+
+        if (GameController.Instance != null && GameController.Instance.xPBDGlobalManager != null)
+        {
+            _xpbdGlobalManager = GameController.Instance.xPBDGlobalManager;
+            _xpbdGlobalManager.AfterXPBDBeforePhysics += SimulateBeforePhysics;
+        }
+
+        ResetLocalPresentation();
     }
-
-   /* public void UpdateModelVisuals()
-    {
-        if (!IsActivelyEquipped) return;
-
-        if (visualModel == null || HoldingPlayer == null) return;
-        if (!HoldingPlayer.TryGetComponent(out HybridCharacterController hcc)) return;
-
-        bool local = IsLocalPlayerHoldingThisItem();
-        // 1. GET THE PERFECTLY SMOOTH VISUAL TARGET
-        Vector3 eyePos;
-        Quaternion eyeRot;
-
-        if (local)
-        {
-            // The local player's camera is the ONLY perfectly smooth reference point
-            Transform camTransform = hcc.camController.cameraTransform;
-            eyePos = camTransform.position;
-            eyeRot = camTransform.rotation;
-        }
-        else
-        {
-            // Proxies must use the specifically smoothed visual root
-            eyePos = hcc.smoothedNetworkedRenderRoot.position + hcc.camController.localEyeOffset + hcc.camController.GetEyePosBasedOnPitch(hcc.lookRot);
-            eyeRot = hcc.lookRot;
-        }
-
-        EyePosAndLookDir eye = new EyePosAndLookDir(eyePos, eyeRot * Vector3.forward, eyeRot * Vector3.up);
-        double renderTime = Runner.LocalRenderTime;
-        int renderTick = (int)Math.Floor(renderTime / Runner.DeltaTime);
-        GetDerivedActionPose(renderTick, renderTime, out ItemAction action, out int phaseID, out float phaseTime);
-
-        if (!GetTargetPose(action, phaseID, phaseTime, eye, out Vector3 targetPos, out Quaternion targetRot))
-            return;
-
-        // 2. CALCULATE CONTINUOUS VISUAL VELOCITY
-        // Just like the HandsController, we MUST calculate velocity in Render time 
-        // to keep the PD spring mathematically stable at monitor refresh rates.
-        Vector3 currentVisualPos = local ? hcc.camController.cameraTransform.position : hcc.smoothedNetworkedRenderRoot.position;
-
-        float dtRender = Mathf.Max(Time.deltaTime, 1e-6f);
-        Vector3 ownerVel = (currentVisualPos - _cashedVisualPos) / dtRender;
-        _cashedVisualPos = currentVisualPos;
-
-        // Safety: If the network teleports the player, prevent the velocity from exploding
-        if (ownerVel.sqrMagnitude > 1000f) ownerVel = Vector3.zero;
-
-        if (pdSettings != null)
-        {
-            pdSettings.CalculateStep(
-                visualModel.position, visualModel.rotation,
-                targetPos, targetRot,
-                ownerVel, Vector3.zero, // Zero out acceleration; velocity delta handles the sway naturally
-                dtRender,
-                ref visualLinVel, ref visualAngleVel,
-                out Vector3 newPos, out Quaternion newRot
-            );
-
-            visualModel.position = newPos;
-            visualModel.rotation = newRot;
-        }
-    }*/
 
     public override void FixedUpdateNetwork()
     {
@@ -391,7 +384,7 @@ public class EquipableItem : InteractableItem, IAfterRender
             AngVel = Vector3.zero;
         }
 
-        SimulatePhysics(activeHolder, Runner.DeltaTime);
+        //SimulatePhysics(activeHolder, Runner.DeltaTime);
     }
 
 
@@ -506,6 +499,14 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     #region posesAndItemAnims
 
+    private void SimulateBeforePhysics()
+    {
+        if (_equipmentContext.State != EquippedState.EquippedActive || activeHolder == null) return;
+
+        SimulatePhysics(activeHolder, Runner.DeltaTime);
+    }
+
+
     [Header("Idle Pose Settings")]
     public Vector3 idleLocalPos = new Vector3(0.3f, -0.25f, 0.6f);
     public Vector3 idleLocalRotEuler = Vector3.zero;
@@ -520,30 +521,27 @@ public class EquipableItem : InteractableItem, IAfterRender
         if (!GetTargetPose(action, phaseID, phaseTime, eye, out Vector3 targetPos, out Quaternion targetRot)) return;
 
         float safeDt = Mathf.Max(dt, 0.0001f);
-        Vector3 targetLinVel = Vector3.zero;
+        Vector3 targetLinVel = hcc.hipsRb.linearVelocity;
         Vector3 targetAngVel = Vector3.zero;
 
         if (PDTargetInitialized)
         {
-            targetLinVel = (targetPos - PDTargetPosition) / safeDt;
+            int previousTick = Runner.Tick - 1;
+            double previousSimulationTime = simulationTime - safeDt;
 
-            Quaternion targetRotationDelta = Quaternion.Normalize(targetRot * Quaternion.Inverse(PDTargetRotation));
+            GetDerivedActionPose(previousTick, previousSimulationTime, out ItemAction previousAction, out int previousPhaseID, out float previousPhaseTime);
 
-            if (targetRotationDelta.w < 0f)
+            Vector3 previousEyePosition = hcc.GetEyePosSim(hcc.hipsRb.position, hcc.previousLookRot);
+            EyePosAndLookDir previousEye = new EyePosAndLookDir(
+                previousEyePosition,
+                hcc.previousLookRot * Vector3.forward,
+                hcc.previousLookRot * Vector3.up
+            );
+
+            if (GetTargetPose(previousAction, previousPhaseID, previousPhaseTime, previousEye, out Vector3 previousTargetPosition, out Quaternion previousTargetRotation))
             {
-                targetRotationDelta.x = -targetRotationDelta.x;
-                targetRotationDelta.y = -targetRotationDelta.y;
-                targetRotationDelta.z = -targetRotationDelta.z;
-                targetRotationDelta.w = -targetRotationDelta.w;
-            }
-
-            targetRotationDelta.ToAngleAxis(out float targetAngleDeg, out Vector3 targetAxis);
-
-            if (targetAngleDeg > 180f) targetAngleDeg -= 360f;
-
-            if (targetAxis.sqrMagnitude > 0.000001f && Mathf.Abs(targetAngleDeg) > 0.0001f)
-            {
-                targetAngVel = targetAxis.normalized * targetAngleDeg * Mathf.Deg2Rad / safeDt;
+                targetLinVel += (targetPos - previousTargetPosition) / safeDt;
+                targetAngVel = CalculateAngularVelocity(targetRot, previousTargetRotation, safeDt);
             }
         }
         else
@@ -554,7 +552,7 @@ public class EquipableItem : InteractableItem, IAfterRender
         PDTargetPosition = targetPos;
         PDTargetRotation = targetRot;
 
-        if (pdSettings == null)
+        if (pdSettings == null || !usePD)
         {
             networkedRB.Rigidbody.MovePosition(targetPos);
             networkedRB.Rigidbody.MoveRotation(targetRot);
@@ -584,62 +582,19 @@ public class EquipableItem : InteractableItem, IAfterRender
         AngVel = result.AngularVelocity;
     }
 
-    //private void CalculatePD(Vector3 currentPos, Quaternion currentRot,Vector3 targetPos, Quaternion targetRot,
-    //    Vector3 ownerVelocity, Vector3 ownerAcceleration, float dt, ref Vector3 linVel, ref Vector3 angVel,  out Vector3 newPos, out Quaternion newRot)
-    //{
-    //    float safeDt = Mathf.Max(dt, 1e-4f);
+    private Vector3 CalculateAngularVelocity(Quaternion currentRotation, Quaternion previousRotation, float dt)
+    {
+        Quaternion delta = Quaternion.Normalize(currentRotation * Quaternion.Inverse(previousRotation));
 
-    //    Vector3 posError = targetPos - currentPos;
+        if (delta.w < 0f) delta = new Quaternion(-delta.x, -delta.y, -delta.z, -delta.w);
 
-    //    float inertiaScale = 0.5f;
-    //    Vector3 inertialForce = ownerAcceleration * inertiaScale;
+        delta.ToAngleAxis(out float angleDegrees, out Vector3 axis);
 
-    //    Vector3 relativeVel = linVel - ownerVelocity;
+        if (angleDegrees > 180f) angleDegrees -= 360f;
+        if (axis.sqrMagnitude <= 0.000001f || Mathf.Abs(angleDegrees) <= 0.0001f) return Vector3.zero;
 
-    //    Vector3 accel = (positionStiffness * posError) - (positionDamping * relativeVel);
-    //    accel += inertialForce;
-
-    //    linVel += accel * safeDt;
-
-
-    //    float speed = linVel.magnitude;
-    //    if (speed > maxLinearSpeed && speed > 1e-5f)
-    //        linVel *= (maxLinearSpeed / speed);
-
-    //    newPos = currentPos + linVel * safeDt;
-
-    //    Quaternion rotError = targetRot * Quaternion.Inverse(currentRot);
-    //    rotError.ToAngleAxis(out float angleDeg, out Vector3 axis);
-    //    if (angleDeg > 180f) angleDeg -= 360f;
-
-    //    if (axis.sqrMagnitude < 1e-6f || Mathf.Abs(angleDeg) < 0.05f)
-    //    {
-    //        newRot = targetRot;
-    //        angVel *= (1.0f - (rotationDamping * safeDt));
-    //        return;
-    //    }
-
-    //    axis.Normalize();
-    //    Vector3 angError = axis * (angleDeg * Mathf.Deg2Rad);
-
-    //    Vector3 angAccel = rotationStiffness * angError - rotationDamping * angVel;
-    //    angVel += angAccel * safeDt;
-
-    //    float angSpeed = angVel.magnitude;
-    //    if (angSpeed > maxAngularSpeed && angSpeed > 1e-6f)
-    //    {
-    //        angVel *= (maxAngularSpeed / angSpeed);
-    //    }
-
-    //    Quaternion deltaRot = Quaternion.identity;
-    //    if (angVel.magnitude > 1e-6f)
-    //    {
-    //        float deltaAngleDeg = angVel.magnitude * Mathf.Rad2Deg * safeDt;
-    //        deltaRot = Quaternion.AngleAxis(deltaAngleDeg, angVel.normalized);
-    //    }
-
-    //    newRot = deltaRot * currentRot;
-    //}
+        return axis.normalized * angleDegrees * Mathf.Deg2Rad / Mathf.Max(dt, 0.0001f);
+    }
 
 
 
@@ -784,6 +739,13 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
+        if (_xpbdGlobalManager != null)
+        {
+            _xpbdGlobalManager.AfterXPBDBeforePhysics -= SimulateBeforePhysics;
+        }
+
+        if (visualModel != null && visualModel.parent != _visualOriginalParent) visualModel.SetParent(_visualOriginalParent, true);
+
         CleanupAnimClipSampler();
     }
 

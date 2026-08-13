@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
 using Fusion.Addons.Physics;
+using System;
 
 public class XPBDGlobalManager : NetworkBehaviour
 {
@@ -44,6 +45,9 @@ public class XPBDGlobalManager : NetworkBehaviour
 
     public float dragRange = 10f;
 
+    public event Action AfterXPBDBeforePhysics;
+   // public event Action AfterPhysics;
+
     public override void Spawned()
     {
         Runner.SetIsSimulated(this.Object, true);
@@ -71,15 +75,18 @@ public class XPBDGlobalManager : NetworkBehaviour
     {
         RemoveInvalidRagdollRegistrations();
 
-        // Phase 1: Sample every simulation animation pose in deterministic ragdoll order.
         foreach (XPBDPosAndRotSolver ragdoll in registeredRagdolls)
+        {
             ragdoll.PreparePoseForSolve();
+        }
 
-        if (!enableSolver) return;
+        if (enableSolver)
+        {
+            SolveRegularConstraintsBeforePhysics();
+            PreparePostPhysicsGrabs();
+        }
 
-        // Phase 2: XPBD consumes those poses. Fusion runs PhysX after this callback returns.
-        SolveRegularConstraintsBeforePhysics();
-        PreparePostPhysicsGrabs();
+        AfterXPBDBeforePhysics?.Invoke();
     }
 
     private void SolveRegularConstraintsBeforePhysics()
@@ -198,8 +205,8 @@ public class XPBDGlobalManager : NetworkBehaviour
 
     private void AfterPhysicsSimulation()
     {
-        if (!enableSolver)
-            return;
+        if (!enableSolver) return;
+
 
         float dt = Runner.DeltaTime;
 
@@ -302,6 +309,7 @@ public class XPBDGlobalManager : NetworkBehaviour
 
             grab.preparedForPostPhysics = false;
         }
+
     }
 
     private void SyncHydratedTmpJoints()

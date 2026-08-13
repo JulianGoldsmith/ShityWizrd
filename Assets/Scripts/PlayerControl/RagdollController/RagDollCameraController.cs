@@ -10,11 +10,18 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
     [Tooltip("Drag the transform you want to follow here (e.g., Physics Rigidbody, Render Root, or Smoothed Render Root)")]
     public Transform followTarget;
 
+    [SerializeField] private SmoothingSchedule updateShedule = SmoothingSchedule.AfterRender;
+
+
     [Header("Positional Settings")]
     public Vector3 localEyeOffset = new Vector3(0f, 1.55f, 0f);
-    public float positionSmoothTime = 0.05f; // Add positional smoothing
+  
     private Vector3 _posVelocity; // Reference for SmoothDamp
     public Vector3 RenderVelocity => _posVelocity;
+
+    [Header("Presentation Smoothing")]
+    public bool enableLocalSmoothing = true;
+    public Vector3 PresentationPositionCorrection { get; private set; }
 
     [Header("Input")]
     public Vector2 lookInput;
@@ -61,7 +68,10 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
         {
             // Snap to initial position immediately to avoid a giant swoop at spawn
             cameraTransform.position = GetTargetEyePosition();
+            PresentationPositionCorrection = Vector3.zero;
         }
+
+
     }
 
 
@@ -86,28 +96,35 @@ public class RagDollCameraController : NetworkBehaviour, IAfterRender
             finalYaw = Mathf.SmoothDampAngle(finalYaw, targetYaw, ref _yawVel, lookSmoothing);
             finalPitch = Mathf.SmoothDampAngle(finalPitch, targetPitch, ref _pitchVel, lookSmoothing);
         }
+
+        if (updateShedule == SmoothingSchedule.Update) UpdateCam();
     }
 
 
-    // Explicitly use Fusion's AfterRender
-    void IAfterRender.AfterRender()
+    public override void Render()
+    { 
+        if (updateShedule == SmoothingSchedule.Render) UpdateCam();
+    }
+
+    public void AfterRender()
     {
-        UpdateCam();
+        if (updateShedule == SmoothingSchedule.AfterRender) UpdateCam();
     }
 
-    void LateUpdate()
+    private void LateUpdate()
     {
-       // UpdateCam();
+        if (updateShedule == SmoothingSchedule.LateUpdate) UpdateCam();
     }
+
+
     private void UpdateCam()
     {
         if (!isLocalAuthority || cameraTransform == null || followTarget == null) return;
 
         cameraTransform.rotation = LocalLookRotation;
 
-        Vector3 desiredEyePos = GetTargetEyePosition();
-
-        cameraTransform.position = NetworkSmoothing.ExponentialSmooth(cameraTransform.position, desiredEyePos, Time.deltaTime);
+        Vector3 desiredEyePosition = GetTargetEyePosition();
+        cameraTransform.position = GlobalNetworkSmoothing.Smooth(cameraTransform.position, desiredEyePosition, Time.deltaTime, enableLocalSmoothing);
     }
     /*private void UpdateCam()
     {
