@@ -23,8 +23,18 @@ public class AttatchedSpellComponent : MonoBehaviour
         parentSpellCore.OnCollisionEnter(collision);
     }
 
+    private void OnCollisionStay(Collision collision)
+    {
+        parentSpellCore.OnCollisionStay(collision);
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         parentSpellCore.OnTriggerEnter(other);
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        parentSpellCore.OnTriggerStay(other);
     }
 }

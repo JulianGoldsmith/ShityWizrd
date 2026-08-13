@@ -1,4 +1,5 @@
 using Fusion;
+using Fusion.Addons.Physics;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -70,6 +71,7 @@ public class VirtualCoreContext : ISpellExecutionCore
 
 
 [RequireComponent(typeof(CastActionController))]
+[DefaultExecutionOrder(-4)]
 public class VirtualCoreController : NetworkBehaviour
 {
     public const int MAX_VIRTUAL_CORES = 8;
@@ -87,8 +89,10 @@ public class VirtualCoreController : NetworkBehaviour
     [Networked, Capacity(MAX_VIRTUAL_CORES)] public NetworkArray<int> BoolMemory { get; }
 
     private VirtualCoreContext[] _contexts;
+    private ActiveCastID[] _scheduledTriggerCasts;
 
     private VirtualCoreSlot[] _slots;
+    private RunnerSimulatePhysics3D _physicsSimulator;
 
     public override void Spawned()
     {
@@ -98,6 +102,7 @@ public class VirtualCoreController : NetworkBehaviour
         for (int i = 0; i < MAX_VIRTUAL_CORES; i++) _slots[i] = new VirtualCoreSlot();
 
         _contexts = new VirtualCoreContext[MAX_VIRTUAL_CORES];
+        _scheduledTriggerCasts = new ActiveCastID[MAX_VIRTUAL_CORES];
 
         for (int i = 0; i < MAX_VIRTUAL_CORES; i++)
         {
@@ -108,6 +113,8 @@ public class VirtualCoreController : NetworkBehaviour
                 Context = new CoreContext()
             };
         }
+
+        if (!Runner.TryGetComponent(out _physicsSimulator)) Debug.LogError("[VirtualCoreController] RunnerSimulatePhysics3D was not found.", this);
     }
 
     #region The Lifecycle API
@@ -175,33 +182,37 @@ public class VirtualCoreController : NetworkBehaviour
     #region The Execution Loops
     public override void FixedUpdateNetwork()
     {
+        bool hasActiveTrigger = false;
+
         for (int i = 0; i < MAX_VIRTUAL_CORES; i++)
         {
-            if (ActiveStates[i].IsActive)
-            {
-                IRuntimeNode rootNode = GetLogicNode(i);
+            _scheduledTriggerCasts[i] = default;
+            if (!ActiveStates[i].IsActive) continue;
 
-                if (rootNode is ITrigger trigger)
-                {
-                    if (trigger.Tick(_contexts[i], Runner.DeltaTime, out List<SpellTriggerInfo> hitInfos))
-                    {
-                        /*if (Object.HasStateAuthority || (Object.HasInputAuthority && Runner.IsForward))
-                        {*/
-                            if (trigger is RuntimeTriggerBase baseTrigger)
-                            {
-                                foreach (var outcome in baseTrigger.Outcomes)
-                                {
-                                    if (outcome is IEffect effect) effect.Execute(_contexts[i], hitInfos);
-                                }
-                            }
-                        //}
-                    }
-                }
-                else if (rootNode is IBehaviour behaviour)
-                {
-                    // For things like continuous self-healing or levitation auras
-                    behaviour.Tick(_contexts[i], Runner.DeltaTime);
-                }
+            IRuntimeNode rootNode = GetLogicNode(i);
+            if (rootNode is ITrigger)
+            {
+                _scheduledTriggerCasts[i] = ActiveStates[i].CastID;
+                hasActiveTrigger = true;
+            }
+            else if (rootNode is IBehaviour behaviour) behaviour.Tick(_contexts[i], Runner.DeltaTime);
+        }
+
+        if (hasActiveTrigger && _physicsSimulator != null) _physicsSimulator.QueueAfterSimulationCallback(TickTriggersAfterPhysics);
+    }
+
+    private void TickTriggersAfterPhysics()
+    {
+        for (int i = 0; i < MAX_VIRTUAL_CORES; i++)
+        {
+            if (!ActiveStates[i].IsActive) continue;
+            if (!_scheduledTriggerCasts[i].IsValid || !ActiveStates[i].CastID.Equals(_scheduledTriggerCasts[i])) continue;
+            if (GetLogicNode(i) is not RuntimeTriggerBase trigger) continue;
+            if (!trigger.Tick(_contexts[i], Runner.DeltaTime, out List<SpellTriggerInfo> hitInfos)) continue;
+
+            foreach (IRuntimeNode outcome in trigger.Outcomes)
+            {
+                if (outcome is IEffect effect) effect.Execute(_contexts[i], hitInfos);
             }
         }
     }

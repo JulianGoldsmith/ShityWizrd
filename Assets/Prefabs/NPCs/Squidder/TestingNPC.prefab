@@ -107,6 +107,7 @@ GameObject:
   - component: {fileID: 6697534619558627041}
   - component: {fileID: 6211924996856723778}
   - component: {fileID: 4644533653492926155}
+  - component: {fileID: 5075704358649779253}
   m_Layer: 0
   m_Name: TestingNPC
   m_TagString: Untagged
@@ -165,6 +166,7 @@ MonoBehaviour:
   - {fileID: 2033750985627491913}
   - {fileID: 6211924996856723778}
   - {fileID: 4644533653492926155}
+  - {fileID: 5075704358649779253}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &800159727264757731
 MonoBehaviour:
@@ -196,12 +198,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coreRB: {fileID: 7963236490338355818}
+  xpbdPosAndRotSolver: {fileID: 0}
   _ragDollStrength: 0.67
   _IsGrounded:
     _value: 0
   _LastJumpTick: 0
   jumpSuspensionDuration: 0.2
-  sizeMult: 0.3
   extraRideHeight: 0.13
   extraGroundCheckDistance: 1
   groundLayer:
@@ -210,9 +212,13 @@ MonoBehaviour:
   suspensionCastRadius: 0.04
   rideSpringStrength: 1000
   rideSpringDampingRatio: 1
-  rideSpringDamper: 100
+  _HasStartingRagdollSupport:
+    _value: 0
+  _StartingRagdollSupportForce: 0
   uprightSpringStrength: 100
   uprightSpringDamper: 12
+  turnSpringStrength: 50
+  turnSpringDamper: 5
   maxWalkSpeed: 2
   maxSprintSpeed: 5
   acceleration: 20
@@ -225,6 +231,8 @@ MonoBehaviour:
   - {fileID: 173163635148667022}
   - {fileID: 7834450559577288110}
   networkAnimator: {fileID: 8674375420992578888}
+  armatureRetargeter: {fileID: 0}
+  controllerAnimScale: 1
   hipsOffset: {x: 0, y: -0.08, z: 0}
   rootMotionForceStrength: 5
   useRootMotionXZ: 1
@@ -232,7 +240,6 @@ MonoBehaviour:
   rootYMult: 20
   _currentAbsoluteRM_Y: 0
   _currentAbsoluteRM_Rot: {x: 0, y: 0, z: 0, w: 0}
-  xpbdSolver: {fileID: 4006108517833671664}
   characterBonkController: {fileID: 5223596664221797998}
 --- !u!114 &4006108517833671664
 MonoBehaviour:
@@ -381,7 +388,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   showCommandDebug: 1
   _debugCommandChannels: []
-  _debugActionChannel: ''
+  _debugActionChannel: 
+  _CommandRevision: 0
   _CurrentWaypointIndex: 0
   _PathVersion: 0
   _IsFrozen: 0
@@ -420,7 +428,6 @@ MonoBehaviour:
   _TotalSpellCasts: 0
   networkAnimator: {fileID: 0}
   movementManager: {fileID: 0}
-  aggroController: {fileID: 0}
   networkObjectBuffer: {fileID: 0}
   activeRagdollController: {fileID: 0}
   actionTemplates:
@@ -442,6 +449,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Profile: {fileID: 11400000, guid: eb6bc5b073d98a04c999220e46a97d61, type: 2}
   UnityAnimator: {fileID: 2445745140208927606}
+  _LocomotionCycle: 0
+  _LocomotionCycleRate: 0
   AimConstraints: []
   _floatParams: []
   _boolParams: 
@@ -485,24 +494,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55a47827fb9403844a902d3ec8175ced, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultGravityScale: 1
   physicsObjectProperties: {fileID: 0}
   rb: {fileID: 0}
-  tPO: {fileID: 0}
   physicsMaterial: {fileID: 0}
-  objectMaterial: {fileID: 0}
+  bonkManager: {fileID: 0}
   physicsSubObjects: []
-  _current_bonkedness: 0
   creator: {fileID: 0}
   lastInteractor: {fileID: 0}
+  nonChildRenderers: []
+  defaultGravityScale: 1
   velocity_before_physics_update: {x: 0, y: 0, z: 0}
   halo_radius_scale_modifier: 1
-  OnZeroBonk_event:
-    m_PersistentCalls:
-      m_Calls: []
-  OnRecoverFromBonk_event:
-    m_PersistentCalls:
-      m_Calls: []
   bonkController: {fileID: 0}
 --- !u!114 &2033750985627491913
 MonoBehaviour:
@@ -618,8 +620,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc6934a32f23ec547acdcb9a3e7fd632, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntityVFXManager
-  _RecentOneShots: []
-  _OneShotHeadIndex: 0
+  SpatialMatchThreshold: 1.5
+  _NetworkHitBuffer: []
+  _NetworkHitCount: 0
+--- !u!114 &5075704358649779253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4526936778991103423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3c0f5bca6524b039e2e8f3f111a9274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeExecutionCore
+  _HitTargetIds: []
 --- !u!1 &4577340965753083559
 GameObject:
   m_ObjectHideFlags: 0
@@ -1530,6 +1546,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animationSourceArmature: {fileID: 4860555596030913089}
+  creatureVisualScaleRoot: {fileID: 0}
   retargetedBones:
   - sourceBone: {fileID: 4860555596030913089}
     targetBone: {fileID: 6718729960294334128}

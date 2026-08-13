@@ -7230,6 +7230,7 @@ GameObject:
   - component: {fileID: 4864686867756283139}
   - component: {fileID: 7884067904759870489}
   - component: {fileID: 7235055901303356269}
+  - component: {fileID: 5761994723088472262}
   m_Layer: 0
   m_Name: NetWorkedGoober
   m_TagString: Untagged
@@ -7293,6 +7294,7 @@ MonoBehaviour:
   - {fileID: 4864686867756283139}
   - {fileID: 7884067904759870489}
   - {fileID: 7235055901303356269}
+  - {fileID: 5761994723088472262}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3746105418634596271
 MonoBehaviour:
@@ -7419,7 +7421,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   showCommandDebug: 1
   _debugCommandChannels: []
-  _debugActionChannel: ''
+  _debugActionChannel: 
+  _CommandRevision: 0
   _CurrentWaypointIndex: 0
   _PathVersion: 0
   _IsFrozen: 0
@@ -7579,7 +7582,6 @@ MonoBehaviour:
   _TotalSpellCasts: 0
   networkAnimator: {fileID: 0}
   movementManager: {fileID: 0}
-  aggroController: {fileID: 0}
   networkObjectBuffer: {fileID: 0}
   activeRagdollController: {fileID: 0}
   actionTemplates:
@@ -8077,6 +8079,19 @@ MonoBehaviour:
   SpatialMatchThreshold: 1.5
   _NetworkHitBuffer: []
   _NetworkHitCount: 0
+--- !u!114 &5761994723088472262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9055020635152288778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3c0f5bca6524b039e2e8f3f111a9274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeExecutionCore
+  _HitTargetIds: []
 --- !u!1 &9110468450381859461
 GameObject:
   m_ObjectHideFlags: 0

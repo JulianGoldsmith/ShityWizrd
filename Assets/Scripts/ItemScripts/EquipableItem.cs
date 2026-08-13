@@ -59,6 +59,9 @@ public class EquipableItem : InteractableItem, IAfterRender
     private bool _isHitboxActive = false;
     public bool IsHitboxActive => _isHitboxActive;
 
+    [Header("Melee Hitboxes")]
+    public List<ItemHitBox> meleeHitBoxes = new List<ItemHitBox>();
+
     [Header("Pickup Variables")]
     public Transform visualModel;
 
@@ -782,6 +785,12 @@ public class EquipableItem : InteractableItem, IAfterRender
         hitboxes[index].Initialize(this, activeCast);
         hitboxes[index].EnableHitBox();
         _isHitboxActive = true;
+    }
+
+    public ItemHitBox GetMeleeHitBox(int index)
+    {
+        if (index < 0 || index >= meleeHitBoxes.Count) return null;
+        return meleeHitBoxes[index];
     }
 
     public void DisableHitbox(int index)

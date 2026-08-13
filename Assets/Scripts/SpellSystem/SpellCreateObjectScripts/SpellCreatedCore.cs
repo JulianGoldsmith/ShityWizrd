@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+[DefaultExecutionOrder(-4)]
 public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferableComponent
 {
     private const int IntMemoryCapacity = 8;
@@ -34,6 +35,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     public Dictionary<int, GameObject> ActiveVisuals { get; private set; } = new Dictionary<int, GameObject>();
 
     private BufferedObject _bufferedObject;
+    private RunnerSimulatePhysics3D _physicsSimulator;
     private NetworkRigidbody3D _networkRigidbody;
     private NetworkTransform _networkTransform;
     private Rigidbody _rigidbody;
@@ -48,6 +50,9 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     private float _configuredLifetime;
     private ActiveSpell _tokenOwnerSpell;
     private ActiveCastID _tokenOwnerCastId;
+    private ActiveCastID _scheduledTriggerCastID;
+    private SpellGraphId _scheduledTriggerBlueprintID;
+    private int _scheduledTriggerNodeIndex = -1;
     private bool _isInitialized;
     private bool _isCountedActive;
 
@@ -71,6 +76,8 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
         _rigidbody = GetComponent<Rigidbody>();
         _physicsObject = GetComponent<PhysicsObject>();
 
+        if (!Runner.TryGetComponent(out _physicsSimulator)) Debug.LogError("[SpellCreatedCore] RunnerSimulatePhysics3D was not found.", this);
+
         if (_bufferedObject == null && TryGetComponent(out BufferedObject bufferedObject)) BindBufferedObject(bufferedObject);
     }
 
@@ -90,6 +97,18 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
 
         foreach (IBehaviour behaviour in _myPlan.Behaviours)
             behaviour.Tick(this, Runner.DeltaTime);
+
+        TickContacts.Clear();
+        _scheduledTriggerCastID = ActiveCastID;
+        _scheduledTriggerBlueprintID = BlueprintID;
+        _scheduledTriggerNodeIndex = NodeArrayIndex;
+        if (_physicsSimulator != null) _physicsSimulator.QueueAfterSimulationCallback(TickTriggersAfterPhysics);
+    }
+
+    private void TickTriggersAfterPhysics()
+    {
+        if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
+        if (!ActiveCastID.Equals(_scheduledTriggerCastID) || !BlueprintID.Equals(_scheduledTriggerBlueprintID) || NodeArrayIndex != _scheduledTriggerNodeIndex) return;
 
         for (int i = _myPlan.Triggers.Count - 1; i >= 0; i--)
         {
@@ -191,8 +210,17 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
 
     public void OnCollisionEnter(Collision collision)
     {
-        if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
-        if (collision.contactCount == 0) return;
+        AccumulateCollision(collision);
+    }
+
+    public void OnCollisionStay(Collision collision)
+    {
+        AccumulateCollision(collision);
+    }
+
+    private void AccumulateCollision(Collision collision)
+    {
+        if (!IsLocallyAwake || !_isInitialized || _myPlan == null || collision.contactCount == 0) return;
 
         GameObject hitObject = SpellSystemHelpers.GetHitGameObject(collision.collider);
         TickContacts.Add(new PendingContact
@@ -204,6 +232,16 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     }
 
     public void OnTriggerEnter(Collider other)
+    {
+        AccumulateTrigger(other);
+    }
+
+    public void OnTriggerStay(Collider other)
+    {
+        AccumulateTrigger(other);
+    }
+
+    private void AccumulateTrigger(Collider other)
     {
         if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
 

@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 438906705822167246}
   - component: {fileID: 8831320186818111645}
   - component: {fileID: 6445894236218027429}
+  - component: {fileID: 2114124827336463774}
   m_Layer: 16
   m_Name: UnSword
   m_TagString: Untagged
@@ -134,21 +135,23 @@ MonoBehaviour:
   PrimaryCastMethods:
     SpawnCore: {fileID: 0}
     Trigger: {fileID: 0}
-    Effect: {fileID: 11400000, guid: 300fd8da02109b44ea6846d6ccc95c70, type: 2}
+    Effect: {fileID: 11400000, guid: d2bd8004b44daad43a2a872b9a260f23, type: 2}
   SecondaryCastMethods:
     SpawnCore: {fileID: 0}
     Trigger: {fileID: 0}
     Effect: {fileID: 0}
-  feedActionRef: {fileID: 0}
+  feedActionRef: {fileID: 11400000, guid: bb2bffb411237aa488399b39bf12eb34, type: 2}
   heldHandState: {fileID: 11400000, guid: 903f93413bbf6744f8f636324924477b, type: 2}
   primaryHandle: {fileID: 7652668622956814722}
   secondaryHandle: {fileID: 7708728178803097969}
-  visualPrimaryHandle: {fileID: 0}
-  visualSecondaryHandle: {fileID: 0}
-  hitboxes:
-  - {fileID: 1699240843655512979}
+  visualPrimaryHandle: {fileID: 7652668622956814722}
+  visualSecondaryHandle: {fileID: 7708728178803097969}
+  hitboxes: []
+  meleeHitBoxes:
+  - {fileID: 3236296168036098605}
   visualModel: {fileID: 4376650748800195523}
-  worldColliders: []
+  worldColliders:
+  - {fileID: 6445894236218027429}
   weaponBase: {fileID: 0}
   weaponEnd: {fileID: 0}
   projectileSpawnPoint: {fileID: 5918303325306716532}
@@ -242,6 +245,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.32, y: 2.5, z: 0.1}
   m_Center: {x: 0, y: 1.3, z: 0}
+--- !u!114 &2114124827336463774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164962625547995175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 437439dce9e8be94fb6698758b9c8ed2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RuneSpellContainer
+  IntakePoint: {fileID: 8963157901366089820}
+  EjectionPoint: {fileID: 8963157901366089820}
+  FeedRange: 4
+  EjectionSpeed: 2
 --- !u!1 &723173702629322559
 GameObject:
   m_ObjectHideFlags: 0
@@ -438,7 +457,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6872823562204308791}
   - component: {fileID: 1521847941466633210}
-  - component: {fileID: 1699240843655512979}
+  - component: {fileID: 3236296168036098605}
   m_Layer: 0
   m_Name: HitBox
   m_TagString: Untagged
@@ -482,7 +501,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.5, y: 2.2946205, z: 0.2}
   m_Center: {x: 0, y: 1.3704429, z: 0}
---- !u!114 &1699240843655512979
+--- !u!114 &3236296168036098605
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -491,12 +510,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 4536191718284508406}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 94a6885e98ba7d6408a6e99ded72e192, type: 3}
+  m_Script: {fileID: 11500000, guid: 4d2591f30af84f19b4369f974d4e2b2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  objectsHitThisActivation: []
+  m_EditorClassIdentifier: Assembly-CSharp::ItemHitBox
   hitBoxCollider: {fileID: 1521847941466633210}
-  _drivingRigidbody: {fileID: 4045910277057975014}
+  drivingRigidbody: {fileID: 4045910277057975014}
 --- !u!1 &8593952334938364189
 GameObject:
   m_ObjectHideFlags: 0

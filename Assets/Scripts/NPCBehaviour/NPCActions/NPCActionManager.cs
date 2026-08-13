@@ -4,6 +4,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(ActiveCastTracker))]
 [RequireComponent(typeof(NetworkObjectBuffer))]
+[RequireComponent(typeof(MeleeExecutionCore))]
 public class NPCActionManager : CastActionController
 {
     [Header("Core Components")]
@@ -11,6 +12,7 @@ public class NPCActionManager : CastActionController
     public NPCMovementManager movementManager;
     public NetworkObjectBuffer networkObjectBuffer;
     public NPCActiveRagdollController activeRagdollController;
+    public MeleeExecutionCore MeleeCore { get; private set; }
 
     [Header("Actions")]
     public List<NPCAction> actionTemplates = new List<NPCAction>();
@@ -46,6 +48,7 @@ public class NPCActionManager : CastActionController
         if (movementManager == null) movementManager = GetComponent<NPCMovementManager>();
         if (networkObjectBuffer == null) networkObjectBuffer = GetComponent<NetworkObjectBuffer>();
         if (activeRagdollController == null) activeRagdollController = GetComponent<NPCActiveRagdollController>();
+        MeleeCore = GetComponent<MeleeExecutionCore>();
 
         if (HasStateAuthority) ActionChannel = default;
 

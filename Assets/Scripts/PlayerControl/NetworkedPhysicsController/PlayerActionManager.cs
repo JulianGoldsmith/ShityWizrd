@@ -27,6 +27,8 @@ public struct NetworkPlayerActionData : INetworkStruct
 
 [RequireComponent(typeof(NetworkedInventoryManager))]
 [RequireComponent(typeof(PlayerCastActionController))]
+[RequireComponent(typeof(MeleeExecutionCore))]
+[DefaultExecutionOrder(-4)]
 public class PlayerActionManager : NetworkBehaviour
 {
     [Header("References")]
@@ -42,11 +44,13 @@ public class PlayerActionManager : NetworkBehaviour
     public bool HasActiveAction => CurrentAction.IsValid;
     public NetworkedInventoryManager Inventory => inventory;
     public PlayerCastActionController CastController => castController;
+    public MeleeExecutionCore MeleeCore { get; private set; }
 
     public override void Spawned()
     {
         if (inventory == null) inventory = GetComponent<NetworkedInventoryManager>();
         if (castController == null) castController = GetComponent<PlayerCastActionController>();
+        MeleeCore = GetComponent<MeleeExecutionCore>();
     }
 
     #region INPUT  + FIXED UPDATE 
@@ -175,6 +179,7 @@ public class PlayerActionManager : NetworkBehaviour
         if (!CurrentAction.IsValid) return false;
         if (CurrentAction.Revision != expectedRevision) return false;
 
+        if (MeleeCore != null) MeleeCore.EndSwing(CurrentAction.CastID);
         CurrentAction = default;
         return true;
     }
@@ -197,22 +202,31 @@ public class PlayerActionManager : NetworkBehaviour
     private void TickCurrentAction()
     {
         NetworkPlayerActionData actionData = CurrentAction;
-        if (!actionData.IsValid) return;
+        if (!actionData.IsValid)
+        {
+            if (MeleeCore != null && MeleeCore.ActiveCastID.IsValid) MeleeCore.EndSwing(MeleeCore.ActiveCastID);
+            return;
+        }
+
+        if (MeleeCore != null && MeleeCore.ActiveCastID.IsValid && !MeleeCore.ActiveCastID.Equals(actionData.CastID)) MeleeCore.EndSwing(MeleeCore.ActiveCastID);
 
         if (!TryResolveCurrentItem(out EquipableItem item))
         {
+            if (MeleeCore != null) MeleeCore.EndSwing(actionData.CastID);
             if (CanAuthorActionState()) TryClearAction(actionData.Revision);
             return;
         }
 
         if (inventory.CurrentEquippedItemId != actionData.ItemID)
         {
+            if (MeleeCore != null) MeleeCore.EndSwing(actionData.CastID);
             if (CanAuthorActionState()) TryClearAction(actionData.Revision);
             return;
         }
 
         if (!TryGetActionContextForItem(item, Runner.Tick, out ItemAction action, out DerivedActionContext context))
         {
+            if (MeleeCore != null) MeleeCore.EndSwing(actionData.CastID);
             if (CanAuthorActionState()) TryClearAction(actionData.Revision);
             return;
         }

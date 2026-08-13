@@ -1,9 +1,11 @@
-/*using Fusion;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "MeeleItemAction", menuName = "Items/Actions/Meele Item Action")]
+[CreateAssetMenu(fileName = "MeleeItemAction", menuName = "Items/Actions/Melee Item Action")]
 public class MeeleItemAction : ItemAction
 {
+    public override bool IsImplemented => true;
+    public override bool CreatesSpellState => true;
+
     private enum Phase
     {
         Idle,
@@ -17,203 +19,112 @@ public class MeeleItemAction : ItemAction
     public ItemAnimation holdAnimation;
     public ItemAnimation releaseAnimation;
 
-    [Header("Charge timings")]
-    [Min(0f)] public float minChargeTime = 0.1f;
-    [Min(0.01f)] public float maxChargeTime = 1.5f;
+    [Header("Deterministic phase timings")]
+    [TickDuration(0)] public int windupTicks = 10;
+    [TickDuration(1)] public int releaseTicks = 20;
+    [TickDuration(0)] public int hitStartTick = 4;
+    [TickDuration(1)] public int hitEndTick = 10;
+
+    [Header("Hitbox")]
+    [Min(0)] public int hitBoxIndex;
+
+    [Header("Charge")]
+    [TickDuration(0)] public int minChargeTicks = 6;
+    [TickDuration(1)] public int maxChargeTicks = 90;
     public float chargeMult = 50f;
 
-    [Header("Cooldown & combo")]
-    public float cooldown = 0.4f;
-    public float comboWindow = 0.6f;
-
-    public override void OnPress(int comboIndex, bool isAlreadyReleased)
+    public override bool TryDeriveActionContext(in NetworkPlayerActionData actionData, int currentTick, out DerivedActionContext context)
     {
+        context = default;
 
-        Item.EnterNewPhaseAtTick((int)Phase.Windup, Item.Runner.Tick, comboIndex, Item.Runner.Tick);
-        Item.activeCaster.isCasting = true;
+        if (!actionData.IsValid || currentTick < actionData.StartTick) return false;
 
-        CreateAndRegisterSpellState(comboIndex);
-    }
+        int windupEndTick = actionData.StartTick + windupTicks;
 
-    public override void OnRelease(int comboIndex)
-    {
-        var pose =*//* Item.activeCaster.HasInputAuthority ? Item.localItemActionData :*//* Item.ItemActionData;
-        if (pose.actionID != comboIndex) return;
-        if ((Phase)pose.phaseID == Phase.Idle) return;
-
-        Item.EnterNewPhaseAtTick((int)Phase.Release, Item.Runner.Tick, comboIndex);
-
-        //Item.activeCaster.SetCoolDown(cooldown);
-        //Item.activeCaster.StartComboTimer(comboWindow);
-
-    }
-
-    public override void Tick(int comboIndex, float deltaTime)
-    {
-        var pose =*//* Item.activeCaster.HasInputAuthority ? Item.localItemActionData : *//*Item.ItemActionData;
-        if (pose.actionID != comboIndex) return;
-
-        Phase currentPhase = (Phase)pose.phaseID;
-
-        int ticksInPhase = Item.Runner.Tick - pose.phaseStartTick;
-        float timeInPhase = ticksInPhase * Item.Runner.DeltaTime;
-
-        ItemAnimation currentAnim = GetAnimationForPhase((int)currentPhase);
-
-        switch (currentPhase)
+        if (currentTick < windupEndTick)
         {
-            case Phase.Windup:
-                if (currentAnim.IsFinished(timeInPhase))
-                {
-                    Item.EnterNewPhaseAtTick((int)Phase.Hold, Item.Runner.Tick, comboIndex);
-                }
-                break;
-
-            case Phase.Hold:
-                // Wait for release...
-                break;
-
-            case Phase.Release:
-
-                //if (!pose.hasFired && (Item.HasInputAuthority || Item.HasStateAuthority))
-                //{
-                //    if (currentAnim.HasPassedCastPoint(timeInPhase))
-                //    {
-                //        int chargeTicks = Item.Runner.Tick - pose.chargeStartTick;
-                //        float chargeSeconds = chargeTicks * Item.Runner.DeltaTime;
-                //        ExecuteSpell(comboIndex, chargeSeconds);
-                //        Item.MarkFired();
-                //    }
-                //}
-
-                if (currentAnim.IsInActiveWindowTicks(ticksInPhase))
-                {
-                    // Enable Hitbox if not already enabled
-                    // You might need a flag on the item 'isHitboxActive' to avoid calling Enable every frame
-                    if (!Item.IsHitboxActive)
-                    {
-                        Item.EnableHitbox(0); // Index 0 = Main Blade
-                        //Item.IsHitboxActive = true;
-                    }
-                }
-                else
-                {
-                    // Disable if we passed the window
-                    if (Item.IsHitboxActive)
-                    {
-                        Item.DisableHitbox(0);
-                        //Item.IsHitboxActive = false;
-                    }
-                }
-
-                if (currentAnim.IsFinished(timeInPhase))
-                {
-                    Item.activeCaster.isCasting = false;
-                    Item.ClearItemActionData();
-                    RemoveSpellState();
-                }
-                break;
+            context = CreateDerivedContext(actionData, currentTick, (int)Phase.Windup, actionData.StartTick, windupTicks);
+            return true;
         }
-    }
 
-
-
-    private void ExecuteSpell(int comboIndex, float chargeDuration)
-    {
-        var controller = Item.activeCaster;
-        SpellState state = Item.activeCast;
-        if (state == null) return;
-
-        // Apply Charge
-        float chargeT = Mathf.InverseLerp(minChargeTime, maxChargeTime, chargeDuration);
-        state.CastChargeLevel = Mathf.Clamp01(chargeT) * chargeMult;
-        state.isHeld = false;
-
-        // Fire Logic
-        SpellGraph graph = Item.primaryActionSpell;
-
-        Vector3 spawnPosition = Item.projectileSpawnPoint.position;
-        Quaternion spawnRotation = Quaternion.LookRotation(controller.GetSpellCastDir());
-
-        var triggerInfo = new SpellTriggerInfo(
-            true,
-            controller.gameObject,
-            state,
-            spawnPosition,
-            spawnRotation,
-            controller.GetSpellCastDir() * state.CastChargeLevel,
-            controller.gameObject
-        );
-        triggerInfo.State.CastAimTargetPos = controller.GetAimTarget();
-        state.CastRotation = spawnRotation;
-        state.CastPosition = spawnPosition;
-
-        // Execute
-        graph.ExecuteComboIndex(comboIndex, state, controller);
-
-        Debug.Log($"Fired at {chargeDuration}s charge.");
-    }
-
-
-    public override ItemAnimation GetAnimationForPhase(int phaseIndex)
-    {
-        Phase p = (Phase)phaseIndex;
-
-        switch (p)
+        if (!actionData.HasReleased)
         {
-            case Phase.Windup: return windupAnimation;
-            case Phase.Hold: return holdAnimation;
-            case Phase.Release: return releaseAnimation;
-            default: return null;
+            context = CreateDerivedContext(actionData, currentTick, (int)Phase.Hold, windupEndTick, 0);
+            return true;
         }
+
+        int releaseStartTick = Mathf.Max(windupEndTick, actionData.ReleaseTick);
+
+        if (currentTick < releaseStartTick)
+        {
+            context = CreateDerivedContext(actionData, currentTick, (int)Phase.Hold, windupEndTick, releaseStartTick - windupEndTick);
+            return true;
+        }
+
+        bool isComplete = currentTick >= releaseStartTick + releaseTicks;
+        context = CreateDerivedContext(actionData, currentTick, (int)Phase.Release, releaseStartTick, releaseTicks, isComplete);
+        return true;
     }
 
-    protected override void InitializeAnimationTickCache(float dt)
+    public override void Tick(PlayerActionManager manager, EquipableItem item, in DerivedActionContext context)
     {
-        if (windupAnimation != null) windupAnimation.InitializeTickCache(dt);
-        if (holdAnimation != null) holdAnimation.InitializeTickCache(dt);
-        if (releaseAnimation != null) releaseAnimation.InitializeTickCache(dt);
+        MeleeExecutionCore meleeCore = manager.MeleeCore;
+
+        if (context.IsComplete)
+        {
+            if (meleeCore != null) meleeCore.EndSwing(context.ActionData.CastID);
+
+            ActiveSpell activeSpell = SpellStateManager.instance != null ? SpellStateManager.instance.GetActiveSpell(context.ActionData.CastID) : null;
+            if (activeSpell != null)
+            {
+                activeSpell.State.isHeld = false;
+                RemoveCastingToken(activeSpell.State);
+            }
+            return;
+        }
+
+        SpellState state = EnsureSpellState(manager, item, context);
+        ItemHitBox hitBox = item.GetMeleeHitBox(hitBoxIndex);
+        if (state == null || meleeCore == null || hitBox == null) return;
+
+        manager.CastController.isCasting = true;
+        state.CastChargeLevel = GetNormalizedCharge(context) * chargeMult;
+        state.isHeld = context.PhaseID != (int)Phase.Release;
+
+        bool hitBoxActive = context.PhaseID == (int)Phase.Release && context.TickInPhase >= hitStartTick && context.TickInPhase < hitEndTick;
+        meleeCore.BeginSwing(context.ActionData.CastID, context.ActionData.SpellID, item, hitBox, state, context.ActionData.StartTick, hitBoxActive);
     }
 
-
-
-}*/
-
-using UnityEngine;
-
-[CreateAssetMenu(fileName = "MeeleItemAction", menuName = "Items/Actions/Meele Item Action")]
-public class MeeleItemAction : ItemAction
-{
-    private enum Phase
+    private int GetChargeTicks(in DerivedActionContext context)
     {
-        Idle,
-        Windup,
-        Hold,
-        Release
+        if (!context.ActionData.HasReleased) return Mathf.Max(0, context.CurrentTick - context.ActionData.StartTick);
+        return Mathf.Max(0, context.ActionData.ReleaseTick - context.ActionData.StartTick);
     }
 
-    [Header("Animations")]
-    public ItemAnimation windupAnimation;
-    public ItemAnimation holdAnimation;
-    public ItemAnimation releaseAnimation;
-
-    [Header("Legacy authoring values")]
-    public float minChargeTime = 0.1f;
-    public float maxChargeTime = 1.5f;
-    public float chargeMult = 50f;
-    public float cooldown = 0.4f;
-    public float comboWindow = 0.6f;
+    private float GetNormalizedCharge(in DerivedActionContext context)
+    {
+        int chargeTicks = GetChargeTicks(context);
+        if (maxChargeTicks <= minChargeTicks) return chargeTicks >= minChargeTicks ? 1f : 0f;
+        return Mathf.Clamp01(Mathf.InverseLerp(minChargeTicks, maxChargeTicks, chargeTicks));
+    }
 
     public override ItemAnimation GetAnimationForPhase(int phaseID)
     {
-        Phase phase = (Phase)phaseID;
-
-        switch (phase)
+        switch ((Phase)phaseID)
         {
             case Phase.Windup: return windupAnimation;
             case Phase.Hold: return holdAnimation;
             case Phase.Release: return releaseAnimation;
             default: return null;
         }
+    }
+
+    private void OnValidate()
+    {
+        windupTicks = Mathf.Max(0, windupTicks);
+        releaseTicks = Mathf.Max(1, releaseTicks);
+        hitStartTick = Mathf.Clamp(hitStartTick, 0, releaseTicks - 1);
+        hitEndTick = Mathf.Clamp(hitEndTick, hitStartTick + 1, releaseTicks);
+        maxChargeTicks = Mathf.Max(minChargeTicks, maxChargeTicks);
     }
 }
