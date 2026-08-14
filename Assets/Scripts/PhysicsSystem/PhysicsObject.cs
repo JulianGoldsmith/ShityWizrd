@@ -21,6 +21,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned, IBufferableComponent
     public PhysicsObjectProperties physicsObjectProperties;
     public Rigidbody rb;
     public PhysicsMaterial physicsMaterial;
+    [System.NonSerialized] public XPBDPosAndRotSolver ragdollController;
 
     [Header("Composure / Bonk System")]
     public BonkManager bonkManager;

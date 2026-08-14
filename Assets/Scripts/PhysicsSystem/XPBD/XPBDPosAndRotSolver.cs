@@ -202,9 +202,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
     public float StartScale => _hasSpawned && NetworkedStartScale > 0f ? NetworkedStartScale : Mathf.Max(0.01f, authoredScale);
     public float CurrentScale => _hasSpawned && NetworkedCurrentScale > 0f ? NetworkedCurrentScale : StartScale;
 
-    [Header("Scale Compliance")]
-    [Min(0f)] public float distanceComplianceScaleExponent = 1f;
-    [Min(0f)] public float angularComplianceScaleExponent = 3f;
+
 
     public Transform targetArmatureRoot;
 
@@ -246,6 +244,12 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
 
         manager.RegisterRagdoll(this);
         _registeredManager = manager;
+
+        foreach (XPBDTestJoint joint in joints)
+        {
+            if (joint.parent != null && joint.parent.TryGetComponent(out PhysicsObject parentObject)) parentObject.ragdollController = this;
+            if (joint.child != null && joint.child.TryGetComponent(out PhysicsObject childObject)) childObject.ragdollController = this;
+        }
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -312,18 +316,20 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
             Runner.SetIsSimulated(networkObject, true);
     }
 
-    private float ScaleCompliance(float compliance, float exponent) => compliance / Mathf.Pow(StartScale, exponent);
+    private float ScaleCompliance(float compliance, float exponent)
+    {
+        return compliance / CustomPhysicsFormulas.CalculateScalePower(StartScale, exponent);
+    }
 
     private float ScaleDistanceDamping(float damping)
     {
-        float dampingExponent = (distanceComplianceScaleExponent + 2f) * 0.5f;
-        return damping * Mathf.Pow(StartScale, dampingExponent);
+        return damping * CustomPhysicsFormulas.CalculateScalePower(StartScale, CustomPhysicsFormulas.DistanceDampingExponent);
     }
 
     private float ScaleAngularDamping(float damping, float complianceCurveMultiplier)
     {
-        float dampingExponent = (angularComplianceScaleExponent + 4f) * 0.5f;
-        return damping * Mathf.Pow(StartScale, dampingExponent) / Mathf.Sqrt(Mathf.Max(0.0001f, complianceCurveMultiplier));
+        float dampingScale = CustomPhysicsFormulas.CalculateScalePower(StartScale, CustomPhysicsFormulas.AngularDampingExponent);
+        return damping * dampingScale / Mathf.Sqrt(Mathf.Max(0.0001f, complianceCurveMultiplier));
     }
 
     public void InitializeStates(float dt, Dictionary<Rigidbody, XPBDState> globalStates)
@@ -398,8 +404,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         Vector3 r1 = cState.q * Vector3.Scale(joint.childAnchorLocal, cScaleMod);
         Vector3 dir = (cState.p + r1) - (pState.p + r0);
 
-        float baseAlpha = joint.distanceCompliance / (dt * dt);
-        float alpha = ScaleCompliance(joint.distanceCompliance, distanceComplianceScaleExponent) / (dt * dt);
+        float alpha = ScaleCompliance(joint.distanceCompliance, CustomPhysicsFormulas.DistanceConstraintStrengthExponent) / (dt * dt);
         float scaledDamping = ScaleDistanceDamping(joint.distanceDamping);
         float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
 
@@ -439,7 +444,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         float angleRad = 2f * Mathf.Atan2(new Vector3(qError.x, qError.y, qError.z).magnitude, qError.w);
 
         float curveMultiplier = Mathf.Max(0.0001f, complianceCurve.Evaluate(Mathf.Clamp01(angleRad / Mathf.PI)));
-        float alpha = (ScaleCompliance(joint.muscleCompliance, angularComplianceScaleExponent) * curveMultiplier) / (dt * dt);
+        float alpha = (ScaleCompliance(joint.muscleCompliance, CustomPhysicsFormulas.AngularConstraintStrengthExponent) * curveMultiplier) / (dt * dt);
         float scaledDamping = ScaleAngularDamping(joint.muscleDamping, curveMultiplier);
         float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
 
@@ -457,7 +462,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         Quaternion relRotNow = Quaternion.Inverse(pState.q) * cState.q;
         Quaternion rotDiff = relRotNow * Quaternion.Inverse(joint.restChildLocalRotation);
         rotDiff = XPBDMath.NormalizeQuaternion(rotDiff);
-        float alpha = ScaleCompliance(joint.limitCompliance, angularComplianceScaleExponent) / (dt * dt);
+        float alpha = ScaleCompliance(joint.limitCompliance, CustomPhysicsFormulas.AngularConstraintStrengthExponent) / (dt * dt);
         float scaledDamping = ScaleAngularDamping(joint.limitDamping, 1f);
         float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
 

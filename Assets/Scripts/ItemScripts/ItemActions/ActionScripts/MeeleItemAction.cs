@@ -6,6 +6,8 @@ public class MeeleItemAction : ItemAction
     public override bool IsImplemented => true;
     public override bool CreatesSpellState => true;
 
+    [Header("Collision")]
+    public bool excludeSelfCollisions = true;
     private enum Phase
     {
         Idle,
@@ -92,7 +94,7 @@ public class MeeleItemAction : ItemAction
         state.isHeld = context.PhaseID != (int)Phase.Release;
 
         bool hitBoxActive = context.PhaseID == (int)Phase.Release && context.TickInPhase >= hitStartTick && context.TickInPhase < hitEndTick;
-        meleeCore.BeginSwing(context.ActionData.CastID, context.ActionData.SpellID, item, hitBox, state, context.ActionData.StartTick, hitBoxActive);
+        meleeCore.BeginSwing(context.ActionData.CastID, context.ActionData.SpellID, item, hitBox, state, context.ActionData.StartTick, hitBoxActive, excludeSelfCollisions);
     }
 
     private int GetChargeTicks(in DerivedActionContext context)

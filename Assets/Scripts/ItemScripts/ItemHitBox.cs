@@ -68,15 +68,34 @@ public class ItemHitBox : MonoBehaviour
         GameObject hitObject = SpellSystemHelpers.GetHitGameObject(other);
         if (hitObject == null) return;
 
-        NetworkObject targetObject = null;
-        PhysicsSubObject subObject = hitObject.GetComponent<PhysicsSubObject>();
+        PhysicsObject targetPhysicsObject = hitObject.GetComponent<PhysicsObject>();
+        NetworkObject targetObject = targetPhysicsObject != null ? targetPhysicsObject.Object : hitObject.GetComponent<NetworkObject>();
 
-        if (subObject != null && subObject.parent_physics_object != null) targetObject = subObject.parent_physics_object.Object;
-        if (targetObject == null) targetObject = hitObject.GetComponent<NetworkObject>();
         if (targetObject == null) targetObject = hitObject.GetComponentInParent<NetworkObject>();
         if (targetObject == null || !targetObject.Id.IsValid) return;
 
+        NetworkId ragdollRootID = default;
+        if (targetPhysicsObject != null && targetPhysicsObject.ragdollController != null) ragdollRootID = targetPhysicsObject.ragdollController.Object.Id;
+
         Vector3 velocity = drivingRigidbody != null ? drivingRigidbody.GetPointVelocity(point) : transform.forward;
-        _executionCore.AccumulateHit(targetObject.Id, hitObject, point, normal, velocity);
+        _executionCore.AccumulateHit(targetObject.Id, ragdollRootID, hitObject, point, normal, velocity);
+    }
+
+    private NetworkObject ResolveHitIdentity(GameObject hitObject)
+    {
+        Transform current = hitObject.transform;
+
+        while (current != null)
+        {
+            if (current.TryGetComponent(out IHasPhysicalCore coreProvider))
+            {
+                NetworkObject coreObject = coreProvider.GetCoreNetworkObject();
+                if (coreObject != null) return coreObject;
+            }
+
+            current = current.parent;
+        }
+
+        return hitObject.GetComponentInParent<NetworkObject>();
     }
 }

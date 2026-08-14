@@ -286,11 +286,11 @@ public class PhysicsObjectMaterial : ScriptableObject
         finalProps.Brittleness = Mathf.Max(0f, calculatedProperties.Brittleness);
         finalProps.Stickiness = Mathf.Clamp01(calculatedProperties.Stickiness);
 
-        float finalDensity = Mathf.Max(0.01f, calculatedProperties.Density * state.DensityMultiplier);
+        float finalDensity = CustomPhysicsFormulas.CalculateDensity(calculatedProperties.Density, state.DensityMultiplier);
         float currentScale = baseSize * state.ScaleMultiplier;
-        float volume = currentScale * currentScale;
+        float massScale = CustomPhysicsFormulas.CalculateMassScale(currentScale);
 
-        finalProps.Mass = Mathf.Max(0.01f, (finalDensity * volume) + (state.Wetness * volume * 0.5f));
+        finalProps.Mass = CustomPhysicsFormulas.ClampMass((finalDensity * massScale) + (state.Wetness * massScale * 0.5f));
         finalProps.Scale = currentScale;
         finalProps.GravityMultiplier = baseGravityMultiplier * state.GravityMultiplier;
         finalProps.LinearDamping = finalProps.Hardness * 0.5f + (currentScale * 0.1f);

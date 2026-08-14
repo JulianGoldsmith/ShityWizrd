@@ -34,6 +34,8 @@ public class GameController : MonoBehaviour
 
     public XPBDGlobalManager xPBDGlobalManager;
 
+    public CustomPhysicsFormulas customPhysicsFormulas;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -44,6 +46,8 @@ public class GameController : MonoBehaviour
         {
             Instance = this;
         }
+        if (customPhysicsFormulas == null) customPhysicsFormulas = GetComponent<CustomPhysicsFormulas>();
+
         if (levelGenerator != null)
         {
             levelGenerator.OnLevelReady += TeleportExistingPlayers;

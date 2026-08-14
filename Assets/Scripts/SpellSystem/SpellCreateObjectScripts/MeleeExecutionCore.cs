@@ -22,6 +22,9 @@ public class MeleeExecutionCore : NetworkBehaviour, ISpellExecutionCore
     public PlayerRef InputAuthority => Object.InputAuthority;
     public GameObject SourceObject => _sourceItem != null ? _sourceItem.gameObject : gameObject;
     public NetworkId CoreNetworkId => Object != null ? Object.Id : default;
+
+    private bool _excludeSelfCollisions;
+
     public Dictionary<int, GameObject> ActiveVisuals { get; } = new Dictionary<int, GameObject>();
 
     private readonly List<PendingMeleeHit> _pendingHits = new List<PendingMeleeHit>();
@@ -41,9 +44,10 @@ public class MeleeExecutionCore : NetworkBehaviour, ISpellExecutionCore
         if (!Runner.TryGetComponent(out _physicsSimulator)) Debug.LogError("[MeleeExecutionCore] RunnerSimulatePhysics3D was not found.", this);
     }
 
-    public void BeginSwing(ActiveCastID castID, SpellGraphId blueprintID, EquipableItem item, ItemHitBox hitBox, SpellState state, int startTick, bool hitBoxActive)
+    public void BeginSwing(ActiveCastID castID, SpellGraphId blueprintID, EquipableItem item, ItemHitBox hitBox, SpellState state, int startTick, bool hitBoxActive, bool excludeSelfCollisions)
     {
         if (!castID.IsValid || blueprintID.IsNull() || item == null || hitBox == null || state == null) return;
+        _excludeSelfCollisions = excludeSelfCollisions;
 
         if (!ActiveCastID.Equals(castID))
         {
@@ -75,9 +79,10 @@ public class MeleeExecutionCore : NetworkBehaviour, ISpellExecutionCore
         }
     }
 
-    public void AccumulateHit(NetworkId targetID, GameObject target, Vector3 point, Vector3 normal, Vector3 velocity)
+    public void AccumulateHit(NetworkId targetID, NetworkId ragdollRootID, GameObject target, Vector3 point, Vector3 normal, Vector3 velocity)
     {
         if (!ActiveCastID.IsValid || !targetID.IsValid || target == null) return;
+        if (_excludeSelfCollisions && ragdollRootID.IsValid && ragdollRootID == ActiveCastID.CasterId) return;
 
         _pendingHits.Add(new PendingMeleeHit
         {
@@ -131,7 +136,6 @@ public class MeleeExecutionCore : NetworkBehaviour, ISpellExecutionCore
         for (int i = 0; i < _pendingHits.Count; i++)
         {
             PendingMeleeHit hit = _pendingHits[i];
-            if (activeSpell.State.Caster != null && hit.TargetID == activeSpell.State.Caster.Id) continue;
             if (_sourceItem != null && _sourceItem.Object != null && hit.TargetID == _sourceItem.Object.Id) continue;
             if (!TryRecordHit(hit.TargetID)) continue;
 
