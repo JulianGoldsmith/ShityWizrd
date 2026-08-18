@@ -38,6 +38,7 @@ public class ArmatureRetargeter : MonoBehaviour
         public bool enabled = true;
         public bool ragDollBone = false;
         public bool injectAnimatedHipsRootMotion = false;
+        [System.NonSerialized] public Quaternion proxyToTargetRotation = Quaternion.identity;
         [System.NonSerialized] public PhysicsObjectProperties physicsProperties;
     }
 
@@ -54,6 +55,15 @@ public class ArmatureRetargeter : MonoBehaviour
 
             if(b.physicsProxy != null)
             {
+
+                Transform proxyRotationSource = b.physicsProxy;
+
+                if (b.physicsProxy.TryGetComponent(out LocalSmoothingForNetworkedRenderTarget smoothing) && smoothing.target != null)
+                    proxyRotationSource = smoothing.target;
+
+                if (b.targetBone != null)
+                    b.proxyToTargetRotation = Quaternion.Inverse(proxyRotationSource.rotation) * b.targetBone.rotation;
+
                 PhysicsObject po = b.physicsProxy.TryGetComponent<PhysicsObject>(out po) ? po:
                     b.physicsProxy.TryGetComponent<LocalSmoothingForNetworkedRenderTarget>(out var lsnrt)? lsnrt.target.parent.GetComponent<PhysicsObject>() : null;
 
@@ -160,7 +170,8 @@ public class ArmatureRetargeter : MonoBehaviour
         var rootBone = retargetedBones[0];
         if (rootBone.physicsProxy != null && !disableRetargetingToProxys)
         {
-            rootBone.targetBone.SetPositionAndRotation(rootBone.physicsProxy.position, rootBone.physicsProxy.rotation);
+            Quaternion proxyRotation = rootBone.physicsProxy.rotation * rootBone.proxyToTargetRotation;
+            rootBone.targetBone.SetPositionAndRotation(rootBone.physicsProxy.position, proxyRotation);
             rootBone.targetBone.localScale = GetProxyTargetScale(rootBone, ragdollScale);
 
             if (rootBone.injectAnimatedHipsRootMotion || overRideAndInjectAnimatedHipsRootMotionToAll)
@@ -196,7 +207,7 @@ public class ArmatureRetargeter : MonoBehaviour
                 if (hasActiveProxy)
                 {
                     Vector3 proxyPos = bone.physicsProxy.position;
-                    Quaternion proxyRot = bone.physicsProxy.rotation;
+                    Quaternion proxyRot = bone.physicsProxy.rotation * bone.proxyToTargetRotation;
 
                     Vector3 targetPos = Vector3.Lerp(projectedPos, proxyPos, lerpTProxy);
                     Quaternion targetRot = Quaternion.Slerp(projectedRot, proxyRot, lerpTProxy);
@@ -215,7 +226,8 @@ public class ArmatureRetargeter : MonoBehaviour
             {
                 if (hasActiveProxy)
                 {
-                    bone.targetBone.SetPositionAndRotation(bone.physicsProxy.position, bone.physicsProxy.rotation);
+                    Quaternion proxyRotation = bone.physicsProxy.rotation * bone.proxyToTargetRotation;
+                    bone.targetBone.SetPositionAndRotation(bone.physicsProxy.position, proxyRotation);
                     bone.targetBone.localScale = GetProxyTargetScale(bone, ragdollScale);
                 }
                 else

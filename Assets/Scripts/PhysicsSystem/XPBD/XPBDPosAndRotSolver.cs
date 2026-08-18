@@ -62,9 +62,21 @@ public class XPBDTestJoint
     [HideInInspector] public Vector3 bakedChildScale = Vector3.one;
 
     [HideInInspector] public Quaternion restChildLocalRotation = Quaternion.identity;
+    [HideInInspector] public Quaternion parentTargetToBodyRotation = Quaternion.identity;
+    [HideInInspector] public Quaternion childTargetToBodyRotation = Quaternion.identity;
+
+
+    /// <summary>
+    /// parentTarget.rotation * parentTargetToBodyRotation = parent Rigidbody rotation
+    ////childTarget.rotation* childTargetToBodyRotation = child Rigidbody rotation
+    /// </summary>
+    /// 
+
     [HideInInspector] public Vector3 twistAxisParent;
     [HideInInspector] public Vector3 swing1AxisParent;
     [HideInInspector] public Vector3 swing2AxisParent;
+
+
 
     [Range(0f, 2f)] public float leverArmScale = 1f;           
     [Range(0f, 1f)] public float parentRotationInfluence = 1f;
@@ -132,22 +144,19 @@ public class XPBDTestJoint
 
     public void BakeRestPose()
     {
-        if (parentTarget != null && childTarget != null && parent != null && child != null)
+        if (parent == null || child == null) return;
+
+        restChildLocalRotation = Quaternion.Inverse(parent.rotation) * child.rotation;
+
+        if (parentTarget != null && childTarget != null)
         {
-            // 1. Find the constant rotational offset between the Visuals and the Rigidbodies
-            Quaternion parentOffset = Quaternion.Inverse(parentTarget.rotation) * parent.rotation;
-            Quaternion childOffset = Quaternion.Inverse(childTarget.rotation) * child.rotation;
-
-            // 2. Capture the pristine visual relative rest pose
-            Quaternion visRest = Quaternion.Inverse(parentTarget.rotation) * childTarget.rotation;
-
-            // 3. Transform the Visual Rest Pose into pure Rigidbody Local Space!
-            restChildLocalRotation = Quaternion.Inverse(parentOffset) * visRest * childOffset;
+            parentTargetToBodyRotation = Quaternion.Inverse(parentTarget.rotation) * parent.rotation;
+            childTargetToBodyRotation = Quaternion.Inverse(childTarget.rotation) * child.rotation;
         }
-        else if (parent != null && child != null)
+        else
         {
-            // Fallback if no visuals are assigned
-            restChildLocalRotation = Quaternion.Inverse(parent.rotation) * child.rotation;
+            parentTargetToBodyRotation = Quaternion.identity;
+            childTargetToBodyRotation = Quaternion.identity;
         }
 
         RecalculateAxes();
@@ -439,7 +448,8 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         float muscleStrength = Mathf.Max(0f, MuscleStrengthMultiplier);
         if (muscleStrength <= 0.0001f) return;
 
-        Quaternion targetLocalRotation = Quaternion.Inverse(joint.parentTarget.rotation) * joint.childTarget.rotation;
+        Quaternion animatedTargetLocalRotation = Quaternion.Inverse(joint.parentTarget.rotation) * joint.childTarget.rotation;
+        Quaternion targetLocalRotation = Quaternion.Inverse(joint.parentTargetToBodyRotation) * animatedTargetLocalRotation * joint.childTargetToBodyRotation;
         Quaternion targetQ = pState.q * targetLocalRotation;
 
         Quaternion qError = targetQ * Quaternion.Inverse(cState.q);
@@ -506,7 +516,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
                 if (snapToTargets && joint.childTarget != null)
                 {
                     rb.position = joint.childTarget.position;
-                    rb.rotation = joint.childTarget.rotation;
+                    rb.rotation = joint.childTarget.rotation * joint.childTargetToBodyRotation;
 
                     if (nrb) nrb.Teleport(rb.position, rb.rotation);
 

@@ -3732,8 +3732,6 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   authoredScale: 1
-  distanceComplianceScaleExponent: 1
-  angularComplianceScaleExponent: 3
   targetArmatureRoot: {fileID: 6635827893456137172}
   joints:
   - parent: {fileID: 6006997495019278083}
@@ -3766,6 +3764,8 @@ MonoBehaviour:
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
     restChildLocalRotation: {x: -0.036217954, y: -0.00000013960677, z: 0.0000000050595896, w: 0.99934393}
+    parentTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1}
+    childTargetToBodyRotation: {x: -0.0000000037228463, y: 1.8848447e-17, z: 5.2007574e-16, w: 1}
     twistAxisParent: {x: 2.6645353e-15, y: 0.9973765, z: -0.07238839}
     swing1AxisParent: {x: 1, y: 0.000000020225084, z: 0.00000027866386}
     swing2AxisParent: {x: 0.00000027939686, y: -0.07238839, z: -0.9973765}
@@ -3829,6 +3829,8 @@ MonoBehaviour:
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
     restChildLocalRotation: {x: 0.03621793, y: 0.0000001396068, z: -0.0000000050595887, w: 0.99934393}
+    parentTargetToBodyRotation: {x: -0.0000000037228463, y: 1.8848447e-17, z: 5.2007574e-16, w: 1}
+    childTargetToBodyRotation: {x: -0.0000000014937243, y: -5.3067904e-24, z: 3.8106228e-22, w: 1}
     twistAxisParent: {x: 0.000000020225077, y: 0.9973765, z: 0.07238834}
     swing1AxisParent: {x: 1, y: 8.881784e-16, z: -0.00000027939691}
     swing2AxisParent: {x: -0.00000027866392, y: 0.07238834, z: -0.9973765}
@@ -3891,10 +3893,12 @@ MonoBehaviour:
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
-    restChildLocalRotation: {x: -0.534944, y: 0.42836612, z: 0.5242503, w: 0.50546944}
-    twistAxisParent: {x: -0.9882884, y: -0.12200695, z: -0.09165348}
-    swing1AxisParent: {x: -0.1278371, y: 0.9899375, z: 0.060674734}
-    swing2AxisParent: {x: 0.08332807, y: 0.07168127, z: -0.9939407}
+    restChildLocalRotation: {x: -0.53494394, y: 0.42836607, z: 0.52425027, w: 0.5054694}
+    parentTargetToBodyRotation: {x: -0.0000000037228463, y: 1.8848447e-17, z: 5.2007574e-16, w: 1}
+    childTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1.0000001}
+    twistAxisParent: {x: -0.9882884, y: -0.12200676, z: -0.09165352}
+    swing1AxisParent: {x: -0.12783714, y: 0.9899375, z: 0.060674958}
+    swing2AxisParent: {x: 0.0833283, y: 0.071681224, z: -0.9939407}
     leverArmScale: 0.3
     parentRotationInfluence: 0.3
     parentPositionInfluence: 1
@@ -3954,10 +3958,12 @@ MonoBehaviour:
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
-    restChildLocalRotation: {x: -0.024906382, y: -0.0069960393, z: 0.0436983, w: 0.9987101}
-    twistAxisParent: {x: -0.08693537, y: 0.9949403, z: -0.050359942}
-    swing1AxisParent: {x: -0.016150763, y: 0.04913708, z: 0.99866146}
-    swing2AxisParent: {x: 0.996083, y: 0.08763236, z: 0.011797298}
+    restChildLocalRotation: {x: -0.024906375, y: -0.0069960374, z: 0.043698292, w: 0.99870986}
+    parentTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1.0000001}
+    childTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1.0000001}
+    twistAxisParent: {x: -0.086935334, y: 0.9949403, z: -0.050359912}
+    swing1AxisParent: {x: -0.016150756, y: 0.049137056, z: 0.99866146}
+    swing2AxisParent: {x: 0.996083, y: 0.08763232, z: 0.011797291}
     leverArmScale: 1
     parentRotationInfluence: 1
     parentPositionInfluence: 1
@@ -4017,10 +4023,12 @@ MonoBehaviour:
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
-    restChildLocalRotation: {x: -0.53214836, y: -0.42824095, z: -0.5273014, w: 0.5053528}
-    twistAxisParent: {x: 0.98872143, y: -0.12245715, z: -0.08622117}
-    swing1AxisParent: {x: 0.12837957, y: 0.98946905, z: 0.06685559}
-    swing2AxisParent: {x: 0.07712588, y: -0.077171, z: 0.99403036}
+    restChildLocalRotation: {x: -0.5321483, y: -0.4282409, z: -0.5273013, w: 0.50535274}
+    parentTargetToBodyRotation: {x: -0.0000000037228463, y: 1.8848447e-17, z: 5.2007574e-16, w: 1}
+    childTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1.0000001}
+    twistAxisParent: {x: 0.98872155, y: -0.12245695, z: -0.08622121}
+    swing1AxisParent: {x: 0.12837954, y: 0.98946905, z: 0.06685584}
+    swing2AxisParent: {x: 0.07712614, y: -0.07717102, z: 0.99403024}
     leverArmScale: 0.3
     parentRotationInfluence: 0.3
     parentPositionInfluence: 1
@@ -4080,10 +4088,12 @@ MonoBehaviour:
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
-    restChildLocalRotation: {x: -0.024781382, y: 0.0032453851, z: -0.03732449, w: 0.998991}
-    twistAxisParent: {x: 0.07441281, y: 0.9959855, z: -0.04975502}
-    swing1AxisParent: {x: 0.008334126, y: 0.049270492, z: 0.9987507}
-    swing2AxisParent: {x: 0.9971927, y: -0.07473451, z: -0.0046343165}
+    restChildLocalRotation: {x: -0.024781372, y: 0.003245384, z: -0.037324477, w: 0.9989907}
+    parentTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1.0000001}
+    childTargetToBodyRotation: {x: 0.000000021713609, y: -4.5620396e-11, z: 1.0466472e-10, w: 1.0000001}
+    twistAxisParent: {x: 0.07441276, y: 0.9959855, z: -0.049754985}
+    swing1AxisParent: {x: 0.008334121, y: 0.04927046, z: 0.9987507}
+    swing2AxisParent: {x: 0.9971927, y: -0.074734464, z: -0.0046343133}
     leverArmScale: 1
     parentRotationInfluence: 1
     parentPositionInfluence: 1
@@ -4144,6 +4154,8 @@ MonoBehaviour:
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
     restChildLocalRotation: {x: 0.9993478, y: -0.030799001, z: -0.0023593965, w: -0.018704379}
+    parentTargetToBodyRotation: {x: -0.0000000037228463, y: 1.8848447e-17, z: 5.2007574e-16, w: 1}
+    childTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1}
     twistAxisParent: {x: -0.061646085, y: -0.9974031, z: -0.037239023}
     swing1AxisParent: {x: -0.9980917, y: 0.061469566, z: 0.0058678677}
     swing2AxisParent: {x: -0.003563563, y: 0.037529696, z: -0.9992892}
@@ -4206,10 +4218,12 @@ MonoBehaviour:
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
-    restChildLocalRotation: {x: 0.99394864, y: 0.029178439, z: 0.10447379, w: -0.017329138}
-    twistAxisParent: {x: 0.061624583, y: -0.9976967, z: -0.028351763}
-    swing1AxisParent: {x: 0.97646767, y: 0.054382857, z: 0.20869443}
-    swing2AxisParent: {x: -0.20667174, y: -0.04054528, z: 0.9775698}
+    restChildLocalRotation: {x: 0.9939485, y: 0.029178435, z: 0.104473785, w: -0.017329136}
+    parentTargetToBodyRotation: {x: -0.0000000037228463, y: 1.8848447e-17, z: 5.2007574e-16, w: 1}
+    childTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1.0000001}
+    twistAxisParent: {x: 0.061624598, y: -0.9976967, z: -0.02835177}
+    swing1AxisParent: {x: 0.97646767, y: 0.054382842, z: 0.2086944}
+    swing2AxisParent: {x: -0.20667182, y: -0.04054529, z: 0.9775698}
     leverArmScale: 0.3
     parentRotationInfluence: 0.3
     parentPositionInfluence: 1
@@ -4269,10 +4283,12 @@ MonoBehaviour:
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
-    restChildLocalRotation: {x: 0.03157884, y: 0.00069855584, z: 0.0011816148, w: 0.9995003}
+    restChildLocalRotation: {x: 0.03157884, y: 0.0006985559, z: 0.0011816148, w: 0.99950033}
+    parentTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1}
+    childTargetToBodyRotation: {x: 9.300868e-11, y: 2.4611061e-11, z: 0.0000000018122924, w: 1}
     twistAxisParent: {x: -0.0023179296, y: 0.99800277, z: 0.06312777}
-    swing1AxisParent: {x: -0.99999624, y: -0.0024061678, z: 0.0013217855}
-    swing2AxisParent: {x: 0.0014710416, y: -0.06312446, z: 0.99800456}
+    swing1AxisParent: {x: -0.99999624, y: -0.0024061678, z: 0.0013217856}
+    swing2AxisParent: {x: 0.0014710417, y: -0.06312446, z: 0.99800456}
     leverArmScale: 1
     parentRotationInfluence: 1
     parentPositionInfluence: 1
@@ -4332,10 +4348,12 @@ MonoBehaviour:
     lambdaLimits: {x: 0, y: 0, z: 0}
     bakedParentScale: {x: 1, y: 1, z: 1}
     bakedChildScale: {x: 1, y: 1, z: 1}
-    restChildLocalRotation: {x: 0.040140558, y: -0.10266151, z: 0.0029362733, w: 0.99390215}
-    twistAxisParent: {x: -0.014078518, y: 0.99676025, z: 0.07918869}
-    swing1AxisParent: {x: 0.978904, y: -0.0024050442, z: 0.20430672}
-    swing2AxisParent: {x: 0.20383528, y: 0.08039446, z: -0.9756987}
+    restChildLocalRotation: {x: 0.04014055, y: -0.10266148, z: 0.0029362724, w: 0.9939019}
+    parentTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1.0000001}
+    childTargetToBodyRotation: {x: 0, y: 0, z: 0, w: 1.0000001}
+    twistAxisParent: {x: -0.014078511, y: 0.99676025, z: 0.07918865}
+    swing1AxisParent: {x: 0.978904, y: -0.0024050437, z: 0.2043066}
+    swing2AxisParent: {x: 0.20383516, y: 0.080394424, z: -0.9756987}
     leverArmScale: 1
     parentRotationInfluence: 1
     parentPositionInfluence: 1
@@ -4434,7 +4452,7 @@ MonoBehaviour:
     TotalBonk: 0
     KineticSpike: 0
     ElementalFloor: 0
-    IsBroken: 0
+    IsAtCapacity: 0
   debugProcessBonk: 0
   debugCollisionStay: 0
   minimumStayImpulse: 0.05
@@ -4452,16 +4470,11 @@ MonoBehaviour:
     weight: 1
   _KineticBonk: 0
   showBonkBar: 1
-  bonkBarPrefab: {fileID: 736921252166812421, guid: 09ba228e315fe3a4cbe0d8e9382a1587, type: 3}
+  bonkCanvasPrefab: {fileID: 0}
   bonkBarOffset: {x: 0, y: 1.5, z: 0}
   bonkBarScale: 0.01
-  bonkCanvas: {fileID: 0}
   uiBarMaxWidth: 500
   followTarget: {fileID: 8932821910823328615}
-  kineticUI: {fileID: 0}
-  hotUI: {fileID: 0}
-  coldUI: {fileID: 0}
-  burnUI: {fileID: 0}
   baseSmoothingFactor: 20
   scaleByPing: 1
   pingScalar: 5
