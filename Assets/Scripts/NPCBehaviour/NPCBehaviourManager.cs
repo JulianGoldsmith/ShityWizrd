@@ -4,7 +4,7 @@ using Unity.Behavior;
 using UnityEngine;
 using static GlobalNPCCommandRegistry;
 
-public class NPCBehaviourManager : NetworkBehaviour
+public class NPCBehaviourManager : NetworkBehaviour, ISubduable
 {
     private const int COMMAND_CHANNEL_COUNT = 4;
 
@@ -31,11 +31,36 @@ public class NPCBehaviourManager : NetworkBehaviour
 
     [Header("Engine References")]
     public NPCActiveRagdollController muscleController;
-
     public BehaviorGraphAgent behaviorAgent;
 
+    [Header("Bonk State")]
+    [SerializeField] private BonkManager bonkManager;
+    [Range(0f, 1f)][SerializeField] private float rattledThreshold = 0.25f;
+    [Range(0f, 1f)][SerializeField] private float overwhelmedThreshold = 0.45f;
+    [Range(0f, 1f)][SerializeField] private float subduedThreshold = 0.70f;
+    [Range(0f, 1f)][SerializeField] private float unconsciousThreshold = 0.95f;
+
+    public float CurrentBonkNormalized => bonkManager != null ? bonkManager.CurrentBonkNormalized : 0f;
+
+    public NPCBonkState CurrentBonkState
+    {
+        get
+        {
+            float bonk = CurrentBonkNormalized;
+            if (bonk >= unconsciousThreshold) return NPCBonkState.Unconscious;
+            if (bonk >= subduedThreshold) return NPCBonkState.Subdued;
+            if (bonk >= overwhelmedThreshold) return NPCBonkState.Overwhelmed;
+            if (bonk >= rattledThreshold) return NPCBonkState.Rattled;
+            return NPCBonkState.Composed;
+        }
+    }
+
+    public bool IsSubdued => CurrentBonkState == NPCBonkState.Subdued || CurrentBonkState == NPCBonkState.Unconscious;
+
+    public bool CanDeliberatelyAct => !IsSubdued;
+
     [Header("Global Defaults")]
-    public GlobalNPCCommandRegistry globalRegistry; // Assign your 1 master asset here
+    public GlobalNPCCommandRegistry globalRegistry;
 
     [Header("Local Overrides (Only add weird behaviors here!)")]
     public List<Mapping> commandOverrides;
@@ -59,6 +84,8 @@ public class NPCBehaviourManager : NetworkBehaviour
         {
             actionManager = this.GetComponent<NPCActionManager>();
         }
+
+        if (bonkManager == null) bonkManager = GetComponent<BonkManager>();
 
         foreach (var mapping in commandOverrides)
         {
@@ -421,4 +448,20 @@ public class NPCBehaviourManager : NetworkBehaviour
         string pendingAction = actionChannel.pendingAction.isValid ? $"{actionChannel.pendingAction.actionID} rev {actionChannel.pendingAction.revision} @ {actionChannel.pendingAction.earliestStartTick}" : "None";
         _debugActionChannel = $"Action: Active={activeAction} | Pending={pendingAction}";
     }
+}
+
+
+[BlackboardEnum]
+public enum NPCBonkState
+{
+    Composed,
+    Rattled,
+    Overwhelmed,
+    Subdued,
+    Unconscious
+}
+
+public interface ISubduable
+{
+    bool IsSubdued { get; }
 }

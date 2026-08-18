@@ -29,6 +29,7 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
     public float rideSpringDampingRatio = 1.0f;
     [Networked] public NetworkBool HasStartingRagdollSupport { get; set; }
     [Networked] public float StartingRagdollSupportForce { get; set; }
+    [Networked] public float StartingRagdollMass { get; set; }
 
     [Header("Upright Settings")]
     public float uprightSpringStrength = 50f;
@@ -43,6 +44,8 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
     public float acceleration = 20f;
     public float braking = 20f;
     public float jumpForce = 50f;
+    [Min(0f)] public float maxLocomotiveForce = 80f;
+    [Min(0f)] public float maxBrakingForce = 80f;
 
     [Header("Network Pos")]
     [SerializeField] public Transform networkedRenderRoot;
@@ -82,11 +85,31 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
     private bool _wantsToJump;
 
 
+    [Header("Bonk Response")]
+    [SerializeField] private BonkManager bonkManager;
 
+    private float CurrentBonkNormalized => bonkManager != null ? bonkManager.CurrentBonkNormalized : 0f;
 
+    private float EvaluateBonkCurve(AnimationCurve curve, float normalizedBonk)
+    {
+        if (curve == null || curve.length == 0) return 1f;
+        return Mathf.Clamp01(curve.Evaluate(normalizedBonk));
+    }
 
-    public CharacterBonkController characterBonkController;
+    [Tooltip("X: normalized bonk 0-1. Y: available horizontal force 0-1.")]
+    [SerializeField] private AnimationCurve locomotiveForceByBonk = AnimationCurve.Linear(0f, 1f, 0.7f, 0f);
 
+    [Tooltip("X: normalized bonk 0-1. Y: desired movement speed 0-1.")]
+    [SerializeField] private AnimationCurve movementSpeedByBonk = AnimationCurve.Linear(0f, 1f, 0.7f, 0f);
+
+    [Tooltip("Controls upright and turning stabilization.")]
+    [SerializeField] private AnimationCurve uprightPowerByBonk = AnimationCurve.Linear(0f, 1f, 0.7f, 0f);
+
+    [Tooltip("Controls active suspension and body support.")]
+    [SerializeField] private AnimationCurve suspensionPowerByBonk = AnimationCurve.Linear(0f, 1f, 0.7f, 0f);
+
+    [Tooltip("Controls the XPBD animation muscle strength.")]
+    [SerializeField] private AnimationCurve poseStrengthByBonk = AnimationCurve.Linear(0f, 1f, 0.95f, 0f);
 
     public float GetMovementSpeed(NPCMovementMode movementMode)
     {
@@ -95,7 +118,7 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
         if (movementMode == NPCMovementMode.Walk) speed = maxWalkSpeed;
         else if (movementMode == NPCMovementMode.Run) speed = maxSprintSpeed;
 
-        return speed * Mathf.Sqrt(CurrentRagdollScale);
+        return speed * Mathf.Sqrt(CurrentRagdollScale) * EvaluateBonkCurve(movementSpeedByBonk, CurrentBonkNormalized);
     }
 
     public void SetMovementTarget(Vector3 direction, NPCMovementMode movementMode)
@@ -143,8 +166,8 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
         {
             Runner.SetIsSimulated(nrb.Object, true);
         }
-       
-        characterBonkController = this.GetComponent<CharacterBonkController>();
+
+        if (bonkManager == null) bonkManager = GetComponent<BonkManager>();
         if (HasStateAuthority) TryInitializeStartingRagdollSupport();
     }
 
@@ -152,16 +175,13 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
     {
         if (HasStateAuthority && !HasStartingRagdollSupport) TryInitializeStartingRagdollSupport();
 
-        if (characterBonkController.BonkedState == BONKEDSTATE.ALIVE)
-        {
-            ApplyUprightStabilization();
+        float bonk = CurrentBonkNormalized;
+        float locomotivePower = EvaluateBonkCurve(locomotiveForceByBonk, bonk);
+        float uprightPower = EvaluateBonkCurve(uprightPowerByBonk, bonk);
+        float suspensionPower = EvaluateBonkCurve(suspensionPowerByBonk, bonk);
 
-            UpdateCoreMovement();
-
-            //ApplyCoreSuspention();
-        }
-
-
+        ApplyUprightStabilization(uprightPower);
+        UpdateCoreMovement(locomotivePower, suspensionPower);
         UpdateAnimatorParameters(true);
         _xpbdPoseRequestTick = Runner.Tick;
 
@@ -206,6 +226,9 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
 
     public void PrepareXPBDPose()
     {
+        float bonkPoseStrength = EvaluateBonkCurve(poseStrengthByBonk, CurrentBonkNormalized);
+        xpbdPosAndRotSolver.MuscleStrengthMultiplier = Mathf.Clamp01(ragDollStrength) * bonkPoseStrength;
+
         if (_xpbdPoseRequestTick != Runner.Tick) return;
 
         if (networkAnimator == null)
@@ -238,7 +261,7 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
         coreRB.AddForce(force, ForceMode.Acceleration);
     }
 
-    private void ApplyCoreSuspention()
+    private void ApplyCoreSuspention(float power, float forceScale)
     {
         float ragdollScale = CurrentRagdollScale;
         float rootMotionRideHeight = useRootMotionY ? _currentAbsoluteRM_Y * rootYMult : 0f;
@@ -264,12 +287,12 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
             if (compression >= 0f)
             {
                 springAcceleration = kp * compression;
-                if (HasStartingRagdollSupport) gravitySupportAcceleration = StartingRagdollSupportForce / Mathf.Max(0.01f, coreRB.mass);
+                if (HasStartingRagdollSupport) gravitySupportAcceleration = StartingRagdollSupportForce * forceScale / Mathf.Max(0.01f, coreRB.mass);
             }
 
             float verticalVelocity = Vector3.Dot(coreRB.linearVelocity, Vector3.up);
             float dampingAcceleration = kd * verticalVelocity;
-            Vector3 suspensionAcceleration = Vector3.up * (gravitySupportAcceleration + springAcceleration - dampingAcceleration);
+            Vector3 suspensionAcceleration = Vector3.up * (gravitySupportAcceleration + springAcceleration - dampingAcceleration) * power;
             coreRB.AddForce(suspensionAcceleration, ForceMode.Acceleration);
         }
         else
@@ -290,26 +313,29 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
             if (body != null) startingBodies.Add(body);
         }
 
+        float startingMass = 0f;
         float startingSupportForce = 0f;
         foreach (Rigidbody body in startingBodies)
         {
             PhysicsObjectProperties properties = body.GetComponent<PhysicsObjectProperties>();
             if (properties != null && properties.CurrentSimData.Mass <= 0f) return false;
 
-            float startingMass = properties != null ? properties.CurrentSimData.Mass : body.mass;
+            float bodyMass = properties != null ? properties.CurrentSimData.Mass : body.mass;
             float gravityMultiplier = properties != null ? properties.CurrentSimData.GravityMultiplier : body.useGravity ? 1f : 0f;
             float downwardGravityAcceleration = Mathf.Max(0f, -Vector3.Dot(Physics.gravity * gravityMultiplier, Vector3.up));
-            startingSupportForce += Mathf.Max(0.01f, startingMass) * downwardGravityAcceleration;
+            startingMass += Mathf.Max(0.01f, bodyMass);
+            startingSupportForce += Mathf.Max(0.01f, bodyMass) * downwardGravityAcceleration;
         }
 
-        if (float.IsNaN(startingSupportForce) || float.IsInfinity(startingSupportForce)) return false;
+        if (float.IsNaN(startingMass) || float.IsInfinity(startingMass) || float.IsNaN(startingSupportForce) || float.IsInfinity(startingSupportForce)) return false;
 
+        StartingRagdollMass = startingMass;
         StartingRagdollSupportForce = startingSupportForce;
         HasStartingRagdollSupport = true;
         return true;
     }
 
-    private void ApplyUprightStabilization()
+    private void ApplyUprightStabilization(float power)
     {
         Vector3 flatLook = Vector3.ProjectOnPlane(_desiredLookDirection, Vector3.up);
         if (flatLook.sqrMagnitude < 1e-6f) flatLook = Vector3.ProjectOnPlane(coreRB.transform.forward, Vector3.up);
@@ -323,13 +349,13 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
         float strengthSquared = strength * strength;
         float groundedMultiplier = IsGrounded ? 1f : 0.2f;
 
-        float uprightKp = uprightSpringStrength * strengthSquared * groundedMultiplier;
-        float uprightKd = uprightSpringDamper * strength * groundedMultiplier;
-        float turnKp = turnSpringStrength * strengthSquared * groundedMultiplier;
-        float turnKd = turnSpringDamper * strength * groundedMultiplier;
+        float uprightKp = uprightSpringStrength * strengthSquared * groundedMultiplier * power;
+        float uprightKd = uprightSpringDamper * strength * groundedMultiplier * power;
+        float turnKp = turnSpringStrength * strengthSquared * groundedMultiplier * power;
+        float turnKd = turnSpringDamper * strength * groundedMultiplier * power;
 
         float maxAngleRad = 60f * Mathf.Deg2Rad;
-        float maxAccel = 4000f;
+        float maxAccel = 4000f * power;
 
         Vector3 uprightAcceleration = CalculateUprightAcceleration(uprightKp, uprightKd, maxAngleRad);
         Vector3 turnAcceleration = CalculateTurnAcceleration(targetRot, turnKp, turnKd, maxAngleRad);
@@ -383,44 +409,29 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
         return Vector3.up * ((yawError * kp) - (yawAngularVelocity * kd));
     }
 
-    private void UpdateCoreMovement()
+    private void UpdateCoreMovement(float locomotivePower, float suspensionPower)
     {
         int ticksSinceJump = Runner.Tick - LastJumpTick;
-
         int suspensionBlindTicks = Mathf.CeilToInt(jumpSuspensionDuration / Runner.DeltaTime);
         bool isJumpBlindWindow = ticksSinceJump <= suspensionBlindTicks;
+        float startScale = xpbdPosAndRotSolver != null ? xpbdPosAndRotSolver.StartScale : 1f;
+        float scaleRatio = CurrentRagdollScale / Mathf.Max(0.01f, startScale);
+        float forceScale = CustomPhysicsFormulas.CalculateScalePower(scaleRatio, CustomPhysicsFormulas.DistanceConstraintStrengthExponent);
 
-        if (ticksSinceJump == 0)
-        {
-            coreRB.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-        }
+        if (ticksSinceJump == 0) coreRB.AddForce(Vector3.up * jumpForce * forceScale * locomotivePower, ForceMode.Impulse);
 
+        Vector3 currentHorizontalVelocity = Vector3.ProjectOnPlane(coreRB.linearVelocity, Vector3.up);
+        Vector3 desiredHorizontalVelocity = Vector3.ProjectOnPlane(_desiredMoveVelocity, Vector3.up);
+        Vector3 velocityError = desiredHorizontalVelocity - currentHorizontalVelocity;
+        bool isTryingToMove = desiredHorizontalVelocity.sqrMagnitude > 0.0001f;
+        float responseGain = isTryingToMove ? acceleration : braking;
+        float startingMass = StartingRagdollMass > 0f ? StartingRagdollMass : coreRB.mass;
+        Vector3 requestedForce = velocityError * responseGain * startingMass * forceScale;
+        float maximumForce = (isTryingToMove ? maxLocomotiveForce : maxBrakingForce) * forceScale * locomotivePower;
+        Vector3 force = Vector3.ClampMagnitude(requestedForce, maximumForce);
 
-        Vector3 currentHorizontalVelocity = new Vector3(coreRB.linearVelocity.x, 0, coreRB.linearVelocity.z);
-        Vector3 velocityError = _desiredMoveVelocity - currentHorizontalVelocity;
-
-        Vector3 force;
-        if (_desiredMoveVelocity.magnitude > 0.01f)
-        {
-            force = velocityError * acceleration;
-        }
-        else
-        {
-            force = velocityError * braking;
-        }
-
-        if (IsGrounded)
-        {
-            coreRB.AddForce(force, ForceMode.Acceleration);
-        }
-
-       
-
-
-        if (!isJumpBlindWindow)
-        {
-            ApplyCoreSuspention();
-        }
+        if (IsGrounded) coreRB.AddForce(force, ForceMode.Force);
+        if (!isJumpBlindWindow) ApplyCoreSuspention(suspensionPower, forceScale);
     }
 
    

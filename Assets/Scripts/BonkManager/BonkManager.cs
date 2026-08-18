@@ -1,7 +1,6 @@
 using Fusion;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 
 
@@ -26,9 +25,6 @@ public class BonkManager : NetworkBehaviour
     [Min(0f)]
     public float minimumStayNormalSpeed = 0.5f;
 
-    private float _lastRenderedKineticBonk = float.NaN;
-    private float _lastActualKineticWidth = float.NaN;
-
     [Header("Composure Thresholds")]
     public float MaxComposure = 100f;
 
@@ -46,24 +42,21 @@ public class BonkManager : NetworkBehaviour
 
     [Networked] public float KineticBonk { get; set; }
 
-    public float CurrentTotalBonk { get; private set; }
-    public bool IsBroken => CurrentTotalBonk >= MaxComposure;
-    private bool _wasBrokenLastTick;
+    public float CurrentElementalBonk => CalculateElementalBonk();
+    public float CurrentTotalBonk => KineticBonk + CurrentElementalBonk;
+    public float CurrentBonkNormalized => Mathf.Clamp01(CurrentTotalBonk / Mathf.Max(0.0001f, MaxComposure));
+    public float CurrentBonkPercent => CurrentBonkNormalized * 100f;
+    public bool IsAtCapacity => CurrentBonkNormalized >= 1f;
 
     [Header("In-Game BonkBar UI")]
     public bool showBonkBar = false;
-    public GameObject bonkBarPrefab;
-    public Vector3 bonkBarOffset = new Vector3(0, 1f, 0);
-    public float bonkBarScale = 0.01f; // Defaulted to 0.01 so a 500-width canvas fits nicely in world space
-    public GameObject bonkCanvas;
-    public float uiBarMaxWidth = 500f; // Updated to match your 500 width default
-    public Transform followTarget;
+    [SerializeField] private BonkCanvas bonkCanvasPrefab;
+    [SerializeField] private Vector3 bonkBarOffset = new Vector3(0f, 1f, 0f);
+    [SerializeField] private float bonkBarScale = 0.001f;
+    [SerializeField] private float uiBarMaxWidth = 500f;
+    [SerializeField] private Transform followTarget;
 
-    [Header("Bonk Source UI Elements")]
-    public LayoutElement kineticUI;
-    public LayoutElement hotUI;
-    public LayoutElement coldUI;
-    public LayoutElement burnUI;
+    private BonkCanvas spawnedBonkCanvas;
 
     public float baseSmoothingFactor = 20f;
     public bool scaleByPing = true;
@@ -100,9 +93,6 @@ public class BonkManager : NetworkBehaviour
 
         if (Object == null || !Object.IsValid) return;
 
-        float renderedKineticBonk = KineticBonk;
-
-        // 1. Copy the raw state for the inspector
         debugState.RawNetworkState = new NetworkedBonkState
         {
             Tick = Runner.Tick,
@@ -110,41 +100,6 @@ public class BonkManager : NetworkBehaviour
         };
 
         UpdateBonkUI();
-
-        float requestedKineticWidth =
-        (_smoothedKineticBonk / MaxComposure) * uiBarMaxWidth;
-
-        float actualKineticWidth = kineticUI != null
-            ? ((RectTransform)kineticUI.transform).rect.width
-            : -1f;
-
-        bool kineticBonkChanged =
-            float.IsNaN(_lastRenderedKineticBonk) ||
-            Mathf.Abs(renderedKineticBonk - _lastRenderedKineticBonk) > 0.001f;
-
-        bool actualWidthChanged =
-            float.IsNaN(_lastActualKineticWidth) ||
-            Mathf.Abs(actualKineticWidth - _lastActualKineticWidth) > 0.1f;
-
-        /*if (kineticBonkChanged || actualWidthChanged)
-        {
-            Debug.Log(
-                $"[BONK RENDER CHANGE] " +
-                $"Peer={(Runner.IsServer ? "HOST" : "CLIENT")} " +
-                $"Frame={Time.frameCount} " +
-                $"Tick={Runner.Tick} " +
-                $"StateAuthority={HasStateAuthority} " +
-                $"PreviousRaw={_lastRenderedKineticBonk:F3} " +
-                $"Raw={renderedKineticBonk:F3} " +
-                $"Smoothed={_smoothedKineticBonk:F3} " +
-                $"RequestedWidth={requestedKineticWidth:F2} " +
-                $"ActualWidth={actualKineticWidth:F2}",
-                this
-            );
-        }*/
-
-        _lastRenderedKineticBonk = renderedKineticBonk;
-        _lastActualKineticWidth = actualKineticWidth;
     }
 
     void UpdateBonkUI()
@@ -186,152 +141,54 @@ public class BonkManager : NetworkBehaviour
         debugState.ElementalFloor = hotBonk + coldBonk + burnBonk;
         debugState.KineticSpike = kineticBonk;
         debugState.TotalBonk = debugState.KineticSpike + debugState.ElementalFloor;
-        debugState.IsBroken = debugState.TotalBonk >= MaxComposure;
+        debugState.IsAtCapacity = debugState.TotalBonk >= MaxComposure;
 
-        Transform flwTgt = followTarget!=null ? followTarget.transform : this.transform;  
+        Transform target = followTarget != null ? followTarget : transform;
 
-        // 4. Update the In-Game UI
-        if (showBonkBar && bonkCanvas == null && bonkBarPrefab != null)
+        if (showBonkBar && spawnedBonkCanvas == null && bonkCanvasPrefab != null)
         {
-            // Instantiate the prefab
-            bonkCanvas = Instantiate(bonkBarPrefab, transform.position + bonkBarOffset, Quaternion.identity);
-            bonkCanvas.transform.parent = flwTgt.transform;
-            // Auto-wire the layout elements by finding them in the spawned prefab
-            LayoutElement[] elements = bonkCanvas.GetComponentsInChildren<LayoutElement>(true);
-            foreach (var el in elements)
-            {
-                if (el.gameObject.name.Contains("Kinetic")) kineticUI = el;
-                else if (el.gameObject.name.Contains("Hot")) hotUI = el;
-                else if (el.gameObject.name.Contains("Cold")) coldUI = el;
-                else if (el.gameObject.name.Contains("Burn")) burnUI = el;
-            }
+            spawnedBonkCanvas = Instantiate(bonkCanvasPrefab);
         }
 
-        if (bonkCanvas != null)
-        {
-            bonkCanvas.SetActive(showBonkBar);
+        if (spawnedBonkCanvas == null) return;
 
-            if (showBonkBar)
-            {
-                // Constantly track the object's position with the offset and apply the scale
-                bonkCanvas.transform.position = flwTgt.transform.position + bonkBarOffset;
-                bonkCanvas.transform.localScale = Vector3.one * bonkBarScale;
+        spawnedBonkCanvas.gameObject.SetActive(showBonkBar);
+        if (!showBonkBar) return;
 
-                // By setting minWidth, we forbid Unity from squishing them when they exceed the max bar width!
-                if (kineticUI != null)
-                {
-                    float w = (_smoothedKineticBonk / MaxComposure) * uiBarMaxWidth;
-                    kineticUI.preferredWidth = w;
-                    kineticUI.minWidth = w;
-                }
-                if (hotUI != null)
-                {
-                    float w = (_smoothedHotBonk / MaxComposure) * uiBarMaxWidth;
-                    hotUI.preferredWidth = w;
-                    hotUI.minWidth = w;
-                }
-                if (coldUI != null)
-                {
-                    float w = (_smoothedColdBonk / MaxComposure) * uiBarMaxWidth;
-                    coldUI.preferredWidth = w;
-                    coldUI.minWidth = w;
-                }
-                if (burnUI != null)
-                {
-                    float w = (_smoothedBurnBonk / MaxComposure) * uiBarMaxWidth;
-                    burnUI.preferredWidth = w;
-                    burnUI.minWidth = w;
-                }
-            }
-        }
+        spawnedBonkCanvas.transform.position = target.position + bonkBarOffset;
+        spawnedBonkCanvas.transform.localScale = Vector3.one * bonkBarScale;
+
+        spawnedBonkCanvas.SetBonkValues(_smoothedKineticBonk,_smoothedHotBonk,_smoothedColdBonk,_smoothedBurnBonk,MaxComposure,uiBarMaxWidth);
     }
 
     public override void FixedUpdateNetwork()
     {
-        /*// ==========================================
-        // 1. ROLLBACK / LATE-JOIN DETECTION
-        // ==========================================
-        if (CachedNetworkState.Tick != Runner.Tick - 1)
-        {
-            CachedNetworkState = CheckpointState;
-        }
-
-        // ==========================================
-        // 2. THE CATCH-UP LOOP (Simulation)
-        // ==========================================
-        int ticksToSimulate = Runner.Tick - CachedNetworkState.Tick;
-
-        if (ticksToSimulate > 0)
-        {
-            for (int simTick = CachedNetworkState.Tick + 1; simTick <= Runner.Tick; simTick++)
-            {
-                // Decay the Spike (Kinetic Trauma) naturally over time
-                CachedNetworkState.KineticBonk = Mathf.Max(0f, CachedNetworkState.KineticBonk - (kineticBonkDecayRate * Runner.DeltaTime));
-            }
-            CachedNetworkState.Tick = Runner.Tick;
-        }
-
-        // ==========================================
-        // 3. PERIODIC CHECKPOINTING
-        // ==========================================
-        if (Object != null && Object.IsValid)
-        {
-            int staggerOffset = (int)Object.Id.Raw % 30;
-            if (Runner.Tick - CheckpointState.Tick >= 30 + staggerOffset)
-            {
-                CheckpointState = CachedNetworkState;
-            }
-        }
-*/
-        // ==========================================
-        // 4. CALCULATE TOTAL BONK (Floor + Spike)
-        // ==========================================
-
         KineticBonk = Mathf.Max(0f, KineticBonk - (kineticBonkDecayRate * Runner.DeltaTime));
-
-        CalculateTotalBonk();
-
-
     }
 
-    private void CalculateTotalBonk()
+    private float CalculateElementalBonk()
     {
-        float elementalFloor = 0f;
+        float elementalBonk = 0f;
 
-        // Sum up the persistent state conditions from the bones
-        foreach (var bw in bones)
+        foreach (BoneWeight bw in bones)
         {
             if (bw.bone == null || bw.bone.physicsObjectProperties == null) continue;
 
-            // Read the rigid networked state of the material
-            MaterialState matState = bw.bone.physicsObjectProperties.CachedNetworkState.State;
+            MaterialState state = bw.bone.physicsObjectProperties.CachedNetworkState.State;
+            float hotBonk = state.Heated * maxHotBonkPerBone * bw.weight;
+            float burningBonk = state.Burning * maxHotBonkPerBone * bw.weight;
+            float coldBonk = state.Frozen * maxColdBonkPerBone * bw.weight;
 
-            // Evaluate the elemental conditions (0 to 1) multiplied by max scaling and bone weight
-            float hotStress = matState.Heated * maxHotBonkPerBone * bw.weight;
-            float burnStress = matState.Burning * maxHotBonkPerBone * bw.weight;
-            float coldStress = matState.Frozen * maxColdBonkPerBone * bw.weight;
-
-            elementalFloor += hotStress + coldStress + burnStress;
+            elementalBonk += hotBonk + burningBonk + coldBonk;
         }
 
-        // Total Composure = The Spikes + The Floor
-        CurrentTotalBonk = KineticBonk + elementalFloor;
-        // Temporary Break Logic Evaluation (For debugging/testing)
-        bool isCurrentlyBroken = IsBroken;
-        if (isCurrentlyBroken && !_wasBrokenLastTick)
-        {
-            Debug.Log($"[BonkManager] {gameObject.name} COMPOSURE BROKEN! (Bonk: {CurrentTotalBonk:F1} / {MaxComposure})");
-        }
-        _wasBrokenLastTick = isCurrentlyBroken;
+        return elementalBonk;
     }
 
     #region Trauma Ingestion
 
 
-    public void ReportCollisionStay(
-    PhysicsObject hitBone,
-    Collision collision,
-    NetworkObject instigator)
+    public void ReportCollisionStay(PhysicsObject hitBone,Collision collision,NetworkObject instigator)
     {
         if (hitBone == null || hitBone.physicsObjectProperties == null)
             return;
@@ -624,6 +481,13 @@ public class BonkManager : NetworkBehaviour
         RPC_RequestClearBonk();
     }
 
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        if (spawnedBonkCanvas != null) Destroy(spawnedBonkCanvas.gameObject);
+
+        base.Despawned(runner, hasState);
+    }
+
     private void ClearBonkLocal()
     {
         KineticBonk = 0f;
@@ -666,7 +530,7 @@ public class BonkDebugState
     public float TotalBonk;
     public float KineticSpike;
     public float ElementalFloor;
-    public bool IsBroken;
+    public bool IsAtCapacity;
 
     // We can even expose the raw struct copy if you want to see the exact Tick!
     public NetworkedBonkState RawNetworkState;

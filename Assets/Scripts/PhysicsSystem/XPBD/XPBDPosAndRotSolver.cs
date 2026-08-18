@@ -202,7 +202,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
     public float StartScale => _hasSpawned && NetworkedStartScale > 0f ? NetworkedStartScale : Mathf.Max(0.01f, authoredScale);
     public float CurrentScale => _hasSpawned && NetworkedCurrentScale > 0f ? NetworkedCurrentScale : StartScale;
 
-
+    public float MuscleStrengthMultiplier { get; set; } = 1f;
 
     public Transform targetArmatureRoot;
 
@@ -436,6 +436,9 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         if (pState.isKinematic && cState.isKinematic) return;
         if (joint.parentTarget == null || joint.childTarget == null) return;
 
+        float muscleStrength = Mathf.Max(0f, MuscleStrengthMultiplier);
+        if (muscleStrength <= 0.0001f) return;
+
         Quaternion targetLocalRotation = Quaternion.Inverse(joint.parentTarget.rotation) * joint.childTarget.rotation;
         Quaternion targetQ = pState.q * targetLocalRotation;
 
@@ -444,8 +447,9 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         float angleRad = 2f * Mathf.Atan2(new Vector3(qError.x, qError.y, qError.z).magnitude, qError.w);
 
         float curveMultiplier = Mathf.Max(0.0001f, complianceCurve.Evaluate(Mathf.Clamp01(angleRad / Mathf.PI)));
-        float alpha = (ScaleCompliance(joint.muscleCompliance, CustomPhysicsFormulas.AngularConstraintStrengthExponent) * curveMultiplier) / (dt * dt);
-        float scaledDamping = ScaleAngularDamping(joint.muscleDamping, curveMultiplier);
+        float complianceMultiplier = curveMultiplier / muscleStrength;
+        float alpha = (ScaleCompliance(joint.muscleCompliance, CustomPhysicsFormulas.AngularConstraintStrengthExponent) * complianceMultiplier) / (dt * dt);
+        float scaledDamping = ScaleAngularDamping(joint.muscleDamping, complianceMultiplier);
         float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
 
         XPBDMath.SolveSphericalRotation(pState, cState, targetQ, alpha, gamma, ref joint.lambdaRotation, isRagdolling ? 1 : joint.parentRotationInfluence);

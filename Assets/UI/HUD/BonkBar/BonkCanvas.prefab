@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3545579266423757311}
   - component: {fileID: 1192989190278743766}
   - component: {fileID: 1853304000448615042}
+  - component: {fileID: -1531031530254707247}
   m_Layer: 0
   m_Name: BonkCanvas
   m_TagString: Untagged
@@ -85,7 +86,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &1192989190278743766
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -115,6 +116,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aaf339b4fd734224abffe93af8c3e085, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIBillboard
+--- !u!114 &-1531031530254707247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 736921252166812421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1bf21b1d78b59440ad9652b9b68599c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BonkCanvas
+  kineticUI: {fileID: 525461904184267973}
+  hotUI: {fileID: 8803425258275800696}
+  coldUI: {fileID: 6853833534606684705}
+  burnUI: {fileID: 7616126434008693967}
 --- !u!1 &1880702023557553781
 GameObject:
   m_ObjectHideFlags: 0
