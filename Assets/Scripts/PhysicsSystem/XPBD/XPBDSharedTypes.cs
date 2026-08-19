@@ -149,11 +149,7 @@ public static class XPBDMath
 
     public static Vector3 GetDeltaTheta(Quaternion qPrev, Quaternion qCurr)
     {
-        Quaternion dq = qCurr * Quaternion.Inverse(qPrev);
-        dq.ToAngleAxis(out float angle, out Vector3 axis);
-        if (angle > 180f) angle -= 360f;
-        if (Mathf.Abs(angle) < 1e-6f || axis.sqrMagnitude < 1e-6f) return Vector3.zero;
-        return axis.normalized * (angle * Mathf.Deg2Rad);
+        return GetRotationErrorVector(qCurr, qPrev, out _);
     }
 
     public static Quaternion NormalizeQuaternion(Quaternion q)
@@ -165,26 +161,21 @@ public static class XPBDMath
 
     public static float GetAngleAroundAxis(Quaternion rotation, Vector3 axis)
     {
-        axis = axis.normalized;
-        if (axis.sqrMagnitude < 1e-8f) return 0f;
+        float axisSqrMagnitude = axis.sqrMagnitude;
+        if (axisSqrMagnitude < 1e-8f) return 0f;
 
-        Vector3 vectorRot = new Vector3(rotation.x, rotation.y, rotation.z);
-        Vector3 proj = Vector3.Dot(vectorRot, axis) * axis;
+        if (Mathf.Abs(axisSqrMagnitude - 1f) > 1e-6f) axis /= Mathf.Sqrt(axisSqrMagnitude);
 
-        Quaternion twist = new Quaternion(proj.x, proj.y, proj.z, rotation.w);
-        float sqMag = twist.x * twist.x + twist.y * twist.y + twist.z * twist.z + twist.w * twist.w;
-        if (sqMag < 1e-8f) return 0f;
+        float projectedSinHalfAngle = rotation.x * axis.x + rotation.y * axis.y + rotation.z * axis.z;
+        float twistSqrMagnitude = projectedSinHalfAngle * projectedSinHalfAngle + rotation.w * rotation.w;
+        if (twistSqrMagnitude < 1e-8f) return 0f;
 
-        twist = NormalizeQuaternion(twist);
-        twist.ToAngleAxis(out float angleDeg, out Vector3 outAxis);
+        float angleDeg = 2f * Mathf.Atan2(projectedSinHalfAngle, rotation.w) * Mathf.Rad2Deg;
 
         if (angleDeg > 180f) angleDeg -= 360f;
+        else if (angleDeg < -180f) angleDeg += 360f;
 
-        // Check if the axis flipped
-        Vector3 twistVec = new Vector3(twist.x, twist.y, twist.z);
-        float sign = Vector3.Dot(axis, twistVec) >= 0f ? 1f : -1f;
-
-        return angleDeg * sign;
+        return angleDeg;
     }
 
     public static void SolveSphericalPosition(XPBDState pState, XPBDState cState, Vector3 r0, Vector3 r1, Vector3 dir,
@@ -193,10 +184,9 @@ public static class XPBDMath
         Vector3 dx0 = pState.p - pState.p_prev, dw0 = GetDeltaTheta(pState.q_prev, pState.q);
         Vector3 dx1 = cState.p - cState.p_prev, dw1 = GetDeltaTheta(cState.q_prev, cState.q);
 
-        Vector3[] axes = { Vector3.right, Vector3.up, Vector3.forward };
         for (int i = 0; i < 3; i++)
         {
-            Vector3 cAxis = axes[i];
+            Vector3 cAxis = i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
             float C = Vector3.Dot(dir, cAxis);
 
             Vector3 gradP0 = -cAxis;
@@ -205,8 +195,13 @@ public static class XPBDMath
             Vector3 gradQ1 = Vector3.Cross(r1, gradP1);
 
             // Apply parentPositionInfluence to w0 so the solver views the parent as heavier
-            float w0 = pState.isKinematic ? 0f : (pState.invMass + Vector3.Dot(gradQ0, ApplyInvInertiaWorld(gradQ0, pState.q, pState.qInertia, pState.invInertiaLocal))) * parentPositionInfluence;
-            float w1 = cState.isKinematic ? 0f : cState.invMass + Vector3.Dot(gradQ1, ApplyInvInertiaWorld(gradQ1, cState.q, cState.qInertia, cState.invInertiaLocal));
+            Vector3 inverseInertiaGradQ0 = pState.isKinematic ? Vector3.zero : ApplyInvInertiaWorld(gradQ0, pState.q, pState.qInertia, pState.invInertiaLocal);
+
+            Vector3 inverseInertiaGradQ1 = cState.isKinematic ? Vector3.zero : ApplyInvInertiaWorld(gradQ1, cState.q, cState.qInertia, cState.invInertiaLocal);
+
+            float w0 = pState.isKinematic ? 0f : (pState.invMass + Vector3.Dot(gradQ0, inverseInertiaGradQ0)) * parentPositionInfluence;
+
+            float w1 = cState.isKinematic ? 0f : cState.invMass + Vector3.Dot(gradQ1, inverseInertiaGradQ1);
 
             float wSum = w0 + w1;
             if (wSum < 1e-6f) continue;
@@ -222,55 +217,75 @@ public static class XPBDMath
                 // Apply influence to the positional shift
                 pState.p += pState.invMass * deltaLambda * gradP0 * parentPositionInfluence;
                 // Multiply the rotation by the leverArmScale AND the positional influence!
-                ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * gradQ0 * leverArmScale * parentPositionInfluence, pState.q, pState.qInertia, pState.invInertiaLocal));
+                ApplyDeltaRotation(pState, inverseInertiaGradQ0 * (deltaLambda * leverArmScale * parentPositionInfluence));
             }
             if (!cState.isKinematic)
             {
                 cState.p += cState.invMass * deltaLambda * gradP1;
                 //Multiply ONLY the rotation by the leverArmScale!
-                ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * gradQ1 * leverArmScale, cState.q, cState.qInertia, cState.invInertiaLocal));
+                ApplyDeltaRotation(cState, inverseInertiaGradQ1 * (deltaLambda * leverArmScale));
             }
         }
     }
 
-    public static void SolveSphericalRotation(XPBDState pState, XPBDState cState, Quaternion targetQ,
-        float alpha, float gamma, ref Vector3 lambdaRotation, float parentRotationInfluence = 1.0f)
+    public static Vector3 GetRotationErrorVector(Quaternion targetQ, Quaternion currentQ, out float angleRadians)
     {
-        Quaternion qError = targetQ * Quaternion.Inverse(cState.q);
+        Quaternion qError = targetQ * Quaternion.Inverse(currentQ);
 
         if (qError.w < 0f) { qError.x = -qError.x; qError.y = -qError.y; qError.z = -qError.z; qError.w = -qError.w; }
 
-        Vector3 v = new Vector3(qError.x, qError.y, qError.z);
-        float sinHalfAngle = v.magnitude;
-        if (sinHalfAngle < 1e-6f) return;
+        Vector3 quaternionVector = new Vector3(qError.x, qError.y, qError.z);
+        float sinHalfAngle = quaternionVector.magnitude;
 
-        Vector3 axis = v / sinHalfAngle;
-        float angleRad = 2f * Mathf.Atan2(sinHalfAngle, qError.w);
+        if (sinHalfAngle < 1e-6f)
+        {
+            angleRadians = 0f;
+            return Vector3.zero;
+        }
 
-        Vector3 rotVec = axis * angleRad;
-        Vector3[] axes = { Vector3.right, Vector3.up, Vector3.forward };
+        angleRadians = 2f * Mathf.Atan2(sinHalfAngle, qError.w);
+        return quaternionVector * (angleRadians / sinHalfAngle);
+    }
+
+    public static void SolveSphericalRotation(XPBDState pState, XPBDState cState, Vector3 rotationError, float alpha, float gamma,
+    ref Vector3 lambdaRotation, float parentRotationInfluence = 1.0f)
+    {
+        if (rotationError.sqrMagnitude == 0f) return;
 
         for (int i = 0; i < 3; i++)
         {
-            Vector3 cAxis = axes[i];
-            float C = Vector3.Dot(rotVec, cAxis);
+            Vector3 cAxis = i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
+            float C = Vector3.Dot(rotationError, cAxis);
 
-            float w0 = pState.isKinematic ? 0f : Vector3.Dot(cAxis, ApplyInvInertiaWorld(cAxis, pState.q, pState.qInertia, pState.invInertiaLocal)) * parentRotationInfluence;
-            float w1 = cState.isKinematic ? 0f : Vector3.Dot(-cAxis, ApplyInvInertiaWorld(-cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
+            Vector3 gradP = cAxis;
+            Vector3 gradC = -cAxis;
+
+            Vector3 inverseInertiaGradP = pState.isKinematic ? Vector3.zero :
+                ApplyInvInertiaWorld(gradP, pState.q, pState.qInertia, pState.invInertiaLocal);
+
+            Vector3 inverseInertiaGradC = cState.isKinematic ? Vector3.zero :
+                ApplyInvInertiaWorld(gradC, cState.q, cState.qInertia, cState.invInertiaLocal);
+
+            float w0 = pState.isKinematic ? 0f : Vector3.Dot(gradP, inverseInertiaGradP) * parentRotationInfluence;
+            float w1 = cState.isKinematic ? 0f : Vector3.Dot(gradC, inverseInertiaGradC);
             float wSum = w0 + w1;
             if (wSum < 1e-6f) continue;
 
-            float dC = Vector3.Dot(cAxis, GetDeltaTheta(pState.q_prev, pState.q)) + Vector3.Dot(-cAxis, GetDeltaTheta(cState.q_prev, cState.q));
-            float currentLambda = i == 0 ? lambdaRotation.x : (i == 1 ? lambdaRotation.y : lambdaRotation.z);
+            float dC = Vector3.Dot(gradP, GetDeltaTheta(pState.q_prev, pState.q)) +
+                Vector3.Dot(gradC, GetDeltaTheta(cState.q_prev, cState.q));
 
+            float currentLambda = i == 0 ? lambdaRotation.x : i == 1 ? lambdaRotation.y : lambdaRotation.z;
             float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * wSum + alpha);
 
-            if (i == 0) lambdaRotation.x += deltaLambda; else if (i == 1) lambdaRotation.y += deltaLambda; else lambdaRotation.z += deltaLambda;
+            if (i == 0) lambdaRotation.x += deltaLambda;
+            else if (i == 1) lambdaRotation.y += deltaLambda;
+            else lambdaRotation.z += deltaLambda;
 
-            if(!pState.isKinematic) ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * cAxis * parentRotationInfluence, pState.q, pState.qInertia, pState.invInertiaLocal));
-            if (!cState.isKinematic) ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * -cAxis, cState.q, cState.qInertia, cState.invInertiaLocal));
+            if (!pState.isKinematic) ApplyDeltaRotation(pState, inverseInertiaGradP * (deltaLambda * parentRotationInfluence));
+            if (!cState.isKinematic) ApplyDeltaRotation(cState, inverseInertiaGradC * deltaLambda);
         }
     }
+
     public static void SolveKinematicGrabPosition(XPBDKinematicTargetState targetState, XPBDState itemState, Vector3 itemAnchorFromCenterOfMassLocal, float alpha, float gamma, ref Vector3 lambdaPosition)
     {
         Vector3 targetDisplacement = targetState.p - targetState.p_prev;
@@ -472,20 +487,24 @@ public static class XPBDMath
         Vector3 gradP = -axisWorld;
         Vector3 gradC = axisWorld;
 
-        float w0 = pState.isKinematic ? 0f : Vector3.Dot(gradP, ApplyInvInertiaWorld(gradP, pState.q, pState.qInertia, pState.invInertiaLocal)) * parentRotationInfluence;
-        float w1 = cState.isKinematic ? 0f : Vector3.Dot(gradC, ApplyInvInertiaWorld(gradC, cState.q, cState.qInertia, cState.invInertiaLocal));
-        float wSum = w0 + w1;
+        Vector3 inverseInertiaGradP = pState.isKinematic ? Vector3.zero :
+            ApplyInvInertiaWorld(gradP, pState.q, pState.qInertia, pState.invInertiaLocal);
 
+        Vector3 inverseInertiaGradC = cState.isKinematic ? Vector3.zero :
+            ApplyInvInertiaWorld(gradC, cState.q, cState.qInertia, cState.invInertiaLocal);
+
+        float w0 = pState.isKinematic ? 0f : Vector3.Dot(gradP, inverseInertiaGradP) * parentRotationInfluence;
+        float w1 = cState.isKinematic ? 0f : Vector3.Dot(gradC, inverseInertiaGradC);
+        float wSum = w0 + w1;
         if (wSum < 1e-6f) return;
 
-        float dC = Vector3.Dot(gradP, GetDeltaTheta(pState.q_prev, pState.q)) + Vector3.Dot(gradC, GetDeltaTheta(cState.q_prev, cState.q));
+        float dC = Vector3.Dot(gradP, GetDeltaTheta(pState.q_prev, pState.q)) +
+            Vector3.Dot(gradC, GetDeltaTheta(cState.q_prev, cState.q));
 
         float deltaLambda = -(violationRad + alpha * lambdaLimit + gamma * dC) / ((1f + gamma) * wSum + alpha);
-
         lambdaLimit += deltaLambda;
 
-        // Apply the corrected gradients to the bodies!
-        if (!pState.isKinematic) ApplyDeltaRotation(pState, ApplyInvInertiaWorld(deltaLambda * gradP * parentRotationInfluence, pState.q, pState.qInertia, pState.invInertiaLocal));
-        if (!cState.isKinematic) ApplyDeltaRotation(cState, ApplyInvInertiaWorld(deltaLambda * gradC, cState.q, cState.qInertia, cState.invInertiaLocal));
+        if (!pState.isKinematic) ApplyDeltaRotation(pState, inverseInertiaGradP * (deltaLambda * parentRotationInfluence));
+        if (!cState.isKinematic) ApplyDeltaRotation(cState, inverseInertiaGradC * deltaLambda);
     }
 }

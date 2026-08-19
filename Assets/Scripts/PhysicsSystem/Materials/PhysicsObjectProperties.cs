@@ -75,11 +75,11 @@ public class PhysicsObjectProperties : NetworkBehaviour, IBufferableComponent
     {
         base.Render();
         if (_bufferedObject != null && !_bufferedObject.IsAwake) return;
-        debugState.Clear();
+        /*debugState.Clear();
         debugState.Add($"Temp  = {CachedNetworkState.State.Temperature}");
         debugState.Add($"Wetness  = {CachedNetworkState.State.Wetness}");
         //debugState.Add($"Charge  = {CachedNetworkState.State.Charge}");
-        debugState.Add($"Scale  = {CachedNetworkState.State.ScaleMultiplier}");
+        debugState.Add($"Scale  = {CachedNetworkState.State.ScaleMultiplier}");*/
 
 
     }

@@ -58,6 +58,20 @@ public class XPBDTestJoint
     [HideInInspector] public Vector3 lambdaPosition;
     [HideInInspector] public Vector3 lambdaRotation;
     [HideInInspector] public Vector3 lambdaLimits;
+    [System.NonSerialized] public XPBDState parentState;
+    [System.NonSerialized] public XPBDState childState;
+
+    [System.NonSerialized] public Vector3 scaledParentAnchorLocal;
+    [System.NonSerialized] public Vector3 scaledChildAnchorLocal;
+    [System.NonSerialized] public Quaternion targetLocalRotation;
+    [System.NonSerialized] public Quaternion inverseRestChildLocalRotation;
+    [System.NonSerialized] public float distanceAlpha;
+    [System.NonSerialized] public float distanceGamma;
+    [System.NonSerialized] public float limitAlpha;
+    [System.NonSerialized] public float limitGamma;
+    [System.NonSerialized] public float muscleAlphaBase;
+    [System.NonSerialized] public float muscleDampingBase;
+
     [HideInInspector] public Vector3 bakedParentScale = Vector3.one;
     [HideInInspector] public Vector3 bakedChildScale = Vector3.one;
 
@@ -224,6 +238,12 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
     private IXPBDPoseProvider _poseProvider;
     private bool _hasSpawned;
 
+    private float _inverseDeltaTimeSquared;
+    private float _distanceComplianceScale;
+    private float _angularComplianceScale;
+    private float _distanceDampingScale;
+    private float _angularDampingScale;
+
     public override void Spawned()
     {
         base.Spawned();
@@ -325,24 +345,18 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
             Runner.SetIsSimulated(networkObject, true);
     }
 
-    private float ScaleCompliance(float compliance, float exponent)
-    {
-        return compliance / CustomPhysicsFormulas.CalculateScalePower(StartScale, exponent);
-    }
 
-    private float ScaleDistanceDamping(float damping)
-    {
-        return damping * CustomPhysicsFormulas.CalculateScalePower(StartScale, CustomPhysicsFormulas.DistanceDampingExponent);
-    }
-
-    private float ScaleAngularDamping(float damping, float complianceCurveMultiplier)
-    {
-        float dampingScale = CustomPhysicsFormulas.CalculateScalePower(StartScale, CustomPhysicsFormulas.AngularDampingExponent);
-        return damping * dampingScale / Mathf.Sqrt(Mathf.Max(0.0001f, complianceCurveMultiplier));
-    }
 
     public void InitializeStates(float dt, Dictionary<Rigidbody, XPBDState> globalStates)
     {
+        float startScale = StartScale;
+
+        _inverseDeltaTimeSquared = 1f / (dt * dt);
+        _distanceComplianceScale = 1f / CustomPhysicsFormulas.CalculateScalePower(startScale, CustomPhysicsFormulas.DistanceConstraintStrengthExponent);
+        _angularComplianceScale = 1f / CustomPhysicsFormulas.CalculateScalePower(startScale, CustomPhysicsFormulas.AngularConstraintStrengthExponent);
+        _distanceDampingScale = CustomPhysicsFormulas.CalculateScalePower(startScale, CustomPhysicsFormulas.DistanceDampingExponent);
+        _angularDampingScale = CustomPhysicsFormulas.CalculateScalePower(startScale, CustomPhysicsFormulas.AngularDampingExponent);
+
         foreach (var joint in joints)
         {
             joint.lambdaPosition = Vector3.zero;
@@ -351,6 +365,42 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
 
             AddStateIfMissing(joint.parent, dt, globalStates);
             AddStateIfMissing(joint.child, dt, globalStates);
+
+            joint.parentState = globalStates[joint.parent];
+            joint.childState = globalStates[joint.child];
+
+            Vector3 parentScale = joint.parent.transform.localScale;
+            Vector3 childScale = joint.child.transform.localScale;
+
+            Vector3 parentScaleMultiplier = new Vector3(parentScale.x / joint.bakedParentScale.x, parentScale.y / joint.bakedParentScale.y,
+                parentScale.z / joint.bakedParentScale.z);
+
+            Vector3 childScaleMultiplier = new Vector3(childScale.x / joint.bakedChildScale.x, childScale.y / joint.bakedChildScale.y,
+                childScale.z / joint.bakedChildScale.z);
+
+            joint.scaledParentAnchorLocal = Vector3.Scale(joint.parentAnchorLocal, parentScaleMultiplier);
+            joint.scaledChildAnchorLocal = Vector3.Scale(joint.childAnchorLocal, childScaleMultiplier);
+
+            joint.targetLocalRotation = Quaternion.identity;
+
+            if (joint.parentTarget != null && joint.childTarget != null)
+            {
+                Quaternion animatedTargetLocalRotation = Quaternion.Inverse(joint.parentTarget.rotation) * joint.childTarget.rotation;
+                joint.targetLocalRotation = Quaternion.Inverse(joint.parentTargetToBodyRotation) * animatedTargetLocalRotation * joint.childTargetToBodyRotation;
+            }
+
+            joint.inverseRestChildLocalRotation = Quaternion.Inverse(joint.restChildLocalRotation);
+
+            joint.distanceAlpha = joint.distanceCompliance * _distanceComplianceScale * _inverseDeltaTimeSquared;
+            float scaledDistanceDamping = joint.distanceDamping * _distanceDampingScale;
+            joint.distanceGamma = (joint.distanceAlpha * (0.5f * dt * scaledDistanceDamping)) / dt;
+
+            joint.limitAlpha = joint.limitCompliance * _angularComplianceScale * _inverseDeltaTimeSquared;
+            float scaledLimitDamping = joint.limitDamping * _angularDampingScale;
+            joint.limitGamma = (joint.limitAlpha * (0.5f * dt * scaledLimitDamping)) / dt;
+
+            joint.muscleAlphaBase = joint.muscleCompliance * _angularComplianceScale * _inverseDeltaTimeSquared;
+            joint.muscleDampingBase = joint.muscleDamping * _angularDampingScale;
         }
     }
 
@@ -387,35 +437,32 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
     }
 
     // 2. SOLVE CONSTRAINTS USING THE GLOBAL DICTIONARY
-    public void SolveConstraints(float dt, Dictionary<Rigidbody, XPBDState> globalStates)
+    public void SolveConstraints(float dt)
     {
         foreach (var joint in joints)
         {
             if (joint.isRagdollJoint && !isRagdolling) continue;
-            SolveDistanceConstraint(joint, dt, globalStates);
-            if(!isRagdolling)
-                SolveRotationConstraint(joint, dt, globalStates);
-            SolveAngularLimitsConstraint(joint, dt, globalStates);
+            SolveDistanceConstraint(joint);
+            if (!isRagdolling) SolveRotationConstraint(joint, dt);
+            SolveAngularLimitsConstraint(joint);
         }
     }
 
-    private void SolveDistanceConstraint(XPBDTestJoint joint, float dt, Dictionary<Rigidbody, XPBDState> states)
+    private void SolveDistanceConstraint(XPBDTestJoint joint)
     {
         if (!joint.enablePosition) return;
-        var pState = states[joint.parent];
-        var cState = states[joint.child];
+
+        XPBDState pState = joint.parentState;
+        XPBDState cState = joint.childState;
+
         if (pState.isKinematic && cState.isKinematic) return;
 
-        Vector3 pScaleMod = new Vector3(pState.rb.transform.localScale.x / joint.bakedParentScale.x, pState.rb.transform.localScale.y / joint.bakedParentScale.y, pState.rb.transform.localScale.z / joint.bakedParentScale.z);
-        Vector3 cScaleMod = new Vector3(cState.rb.transform.localScale.x / joint.bakedChildScale.x, cState.rb.transform.localScale.y / joint.bakedChildScale.y, cState.rb.transform.localScale.z / joint.bakedChildScale.z);
+        Vector3 r0 = pState.q * joint.scaledParentAnchorLocal;
+        Vector3 r1 = cState.q * joint.scaledChildAnchorLocal;
 
-        Vector3 r0 = pState.q * Vector3.Scale(joint.parentAnchorLocal, pScaleMod);
-        Vector3 r1 = cState.q * Vector3.Scale(joint.childAnchorLocal, cScaleMod);
         Vector3 dir = (cState.p + r1) - (pState.p + r0);
 
-        float alpha = ScaleCompliance(joint.distanceCompliance, CustomPhysicsFormulas.DistanceConstraintStrengthExponent) / (dt * dt);
-        float scaledDamping = ScaleDistanceDamping(joint.distanceDamping);
-        float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
+        
 
         // --- ------------------------------- DYNAMIC TENSION INFLUENCE --------------------------
         float effectivePosInfluence = isRagdolling ? 1f : joint.parentPositionInfluence;
@@ -433,63 +480,61 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         }
         // --------------------------------------
 
-        XPBDMath.SolveSphericalPosition(pState, cState, r0, r1, dir, alpha, gamma, ref joint.lambdaPosition,
-            isRagdolling ? 1f : joint.leverArmScale, effectivePosInfluence);
+        XPBDMath.SolveSphericalPosition(pState, cState, r0, r1, dir, joint.distanceAlpha, joint.distanceGamma, ref joint.lambdaPosition,
+    isRagdolling ? 1f : joint.leverArmScale, effectivePosInfluence);
     }
 
-    private void SolveRotationConstraint(XPBDTestJoint joint, float dt, Dictionary<Rigidbody, XPBDState> states)
+    private void SolveRotationConstraint(XPBDTestJoint joint, float dt)
     {
         if (!joint.enableRotation) return;
-        var pState = states[joint.parent];
-        var cState = states[joint.child];
+
+        XPBDState pState = joint.parentState;
+        XPBDState cState = joint.childState;
+
         if (pState.isKinematic && cState.isKinematic) return;
         if (joint.parentTarget == null || joint.childTarget == null) return;
 
         float muscleStrength = Mathf.Max(0f, MuscleStrengthMultiplier);
         if (muscleStrength <= 0.0001f) return;
 
-        Quaternion animatedTargetLocalRotation = Quaternion.Inverse(joint.parentTarget.rotation) * joint.childTarget.rotation;
-        Quaternion targetLocalRotation = Quaternion.Inverse(joint.parentTargetToBodyRotation) * animatedTargetLocalRotation * joint.childTargetToBodyRotation;
-        Quaternion targetQ = pState.q * targetLocalRotation;
 
-        Quaternion qError = targetQ * Quaternion.Inverse(cState.q);
-        if (qError.w < 0f) { qError.x = -qError.x; qError.y = -qError.y; qError.z = -qError.z; qError.w = -qError.w; }
-        float angleRad = 2f * Mathf.Atan2(new Vector3(qError.x, qError.y, qError.z).magnitude, qError.w);
+        Quaternion targetQ = pState.q * joint.targetLocalRotation;
+        Vector3 rotationError = XPBDMath.GetRotationErrorVector(targetQ, cState.q, out float angleRad);
 
         float curveMultiplier = Mathf.Max(0.0001f, complianceCurve.Evaluate(Mathf.Clamp01(angleRad / Mathf.PI)));
         float complianceMultiplier = curveMultiplier / muscleStrength;
-        float alpha = (ScaleCompliance(joint.muscleCompliance, CustomPhysicsFormulas.AngularConstraintStrengthExponent) * complianceMultiplier) / (dt * dt);
-        float scaledDamping = ScaleAngularDamping(joint.muscleDamping, complianceMultiplier);
+        float alpha = joint.muscleAlphaBase * complianceMultiplier;
+        float scaledDamping = joint.muscleDampingBase / Mathf.Sqrt(Mathf.Max(0.0001f, complianceMultiplier));
         float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
 
-        XPBDMath.SolveSphericalRotation(pState, cState, targetQ, alpha, gamma, ref joint.lambdaRotation, isRagdolling ? 1 : joint.parentRotationInfluence);
+        XPBDMath.SolveSphericalRotation(pState, cState, rotationError, alpha, gamma, ref joint.lambdaRotation, isRagdolling ? 1 : joint.parentRotationInfluence);
     }
 
-    private void SolveAngularLimitsConstraint(XPBDTestJoint joint, float dt, Dictionary<Rigidbody, XPBDState> states)
+    private void SolveAngularLimitsConstraint(XPBDTestJoint joint)
     {
         if (!joint.enableAngularLimits) return;
-        var pState = states[joint.parent];
-        var cState = states[joint.child];
+
+        XPBDState pState = joint.parentState;
+        XPBDState cState = joint.childState;
+
         if (pState.isKinematic && cState.isKinematic) return;
 
         // 1. Calculate how much the bone has bent away from the T-Pose Rest State
         Quaternion relRotNow = Quaternion.Inverse(pState.q) * cState.q;
-        Quaternion rotDiff = relRotNow * Quaternion.Inverse(joint.restChildLocalRotation);
+        Quaternion rotDiff = relRotNow * joint.inverseRestChildLocalRotation;
         rotDiff = XPBDMath.NormalizeQuaternion(rotDiff);
-        float alpha = ScaleCompliance(joint.limitCompliance, CustomPhysicsFormulas.AngularConstraintStrengthExponent) / (dt * dt);
-        float scaledDamping = ScaleAngularDamping(joint.limitDamping, 1f);
-        float gamma = (alpha * (0.5f * dt * scaledDamping)) / dt;
+        
 
 
         // 2. Test Twist Limits (X)
         if (joint.twistAxisParent.sqrMagnitude > 1e-6f)
-            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.twistAxisParent, joint.twistLimits.x, joint.twistLimits.y, alpha, gamma, ref joint.lambdaLimits.x, joint.parentRotationInfluence);
+            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.twistAxisParent, joint.twistLimits.x, joint.twistLimits.y, joint.limitAlpha, joint.limitGamma, ref joint.lambdaLimits.x, joint.parentRotationInfluence);
 
         if (joint.swing1AxisParent.sqrMagnitude > 1e-6f)
-            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing1AxisParent, joint.swing1Limits.x, joint.swing1Limits.y, alpha, gamma, ref joint.lambdaLimits.y, joint.parentRotationInfluence);
+            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing1AxisParent, joint.swing1Limits.x, joint.swing1Limits.y, joint.limitAlpha, joint.limitGamma, ref joint.lambdaLimits.y, joint.parentRotationInfluence);
 
         if (joint.swing2AxisParent.sqrMagnitude > 1e-6f)
-            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing2AxisParent, joint.swing2Limits.x, joint.swing2Limits.y, alpha, gamma, ref joint.lambdaLimits.z, joint.parentRotationInfluence);
+            XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing2AxisParent, joint.swing2Limits.x, joint.swing2Limits.y, joint.limitAlpha, joint.limitGamma, ref joint.lambdaLimits.z, joint.parentRotationInfluence);
     }
 
 

@@ -11,7 +11,7 @@ public class FusionDebugOverlay : MonoBehaviour
 
     private GUIStyle _style;
     private readonly StringBuilder _sb = new StringBuilder(1024);
-    private bool _visible = true;
+    private bool _visible = false;
 
     // Averages for jittery data
     private MovingAverage _fpsAvg = new MovingAverage();

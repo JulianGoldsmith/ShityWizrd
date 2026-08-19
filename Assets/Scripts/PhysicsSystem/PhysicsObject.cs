@@ -309,7 +309,7 @@ public class PhysicsObject : NetworkBehaviour, ISpawned, IBufferableComponent
             velocity_before_physics_update = rb.linearVelocity;
         }
 
-        RunHaloCollisions();
+        //RunHaloCollisions();
     }
 
     public void SimMaterialStateAndEffects()

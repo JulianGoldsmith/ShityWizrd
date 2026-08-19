@@ -117,7 +117,7 @@ public class XPBDGlobalManager : NetworkBehaviour
         for (int i = 0; i < iterations; i++)
         {
             foreach (var ragdoll in registeredRagdolls)
-                ragdoll.SolveConstraints(dt, _globalStates);
+                ragdoll.SolveConstraints(dt);
 
             foreach (var joint in _hydratedTempJoints)
             {
@@ -465,11 +465,12 @@ public class XPBDGlobalManager : NetworkBehaviour
         if (pState.isKinematic && cState.isKinematic) return;
 
         Quaternion targetQ = pState.q * grab.networkedData.targetLocalRotation;
+        Vector3 rotationError = XPBDMath.GetRotationErrorVector(targetQ, cState.q, out _);
 
         float alpha = grab.networkedData.muscleCompliance / (dt * dt);
         float gamma = (alpha * (0.5f * dt * grab.networkedData.muscleDamping)) / dt;
 
-        XPBDMath.SolveSphericalRotation(pState, cState, targetQ, alpha, gamma, ref grab.lambdaRotation);
+        XPBDMath.SolveSphericalRotation(pState, cState, rotationError, alpha, gamma, ref grab.lambdaRotation);
     }
 
     private void SolvePostPhysicsGrabPosition(HydratedGrabJoint grab, float dt)
