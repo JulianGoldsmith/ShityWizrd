@@ -46,7 +46,7 @@ public class XPBDGlobalManager : NetworkBehaviour
     public float dragRange = 10f;
 
     public event Action AfterXPBDBeforePhysics;
-   // public event Action AfterPhysics;
+    // public event Action AfterPhysics;
 
     public override void Spawned()
     {
@@ -108,8 +108,8 @@ public class XPBDGlobalManager : NetworkBehaviour
             if (!joint.IsValid())
                 continue;
 
-            AddStateIfMissing(joint.parentRb, dt);
-            AddStateIfMissing(joint.childRb, dt);
+            joint.parentState = GetOrInitializeTempState(joint.parentRb, joint.parentState, dt);
+            joint.childState = GetOrInitializeTempState(joint.childRb, joint.childState, dt);
             joint.lambdaPosition = Vector3.zero;
             joint.lambdaRotation = Vector3.zero;
         }
@@ -124,8 +124,8 @@ public class XPBDGlobalManager : NetworkBehaviour
                 if (!joint.IsValid())
                     continue;
 
-                SolveTempDistance(joint, dt, _globalStates);
-                SolveTempRotation(joint, dt, _globalStates);
+                SolveTempDistance(joint, dt);
+                SolveTempRotation(joint, dt);
             }
         }
 
@@ -343,6 +343,8 @@ public class XPBDGlobalManager : NetworkBehaviour
 
                 localJoint.lambdaPosition = Vector3.zero;
                 localJoint.lambdaRotation = Vector3.zero;
+                localJoint.parentState = null;
+                localJoint.childState = null;
             }
             else
             {
@@ -406,46 +408,60 @@ public class XPBDGlobalManager : NetworkBehaviour
         }
     }
 
-    private void AddStateIfMissing(Rigidbody rb, float dt)
+    private XPBDState GetOrInitializeTempState(Rigidbody rb, XPBDState cachedState, float dt)
     {
-        if (rb == null || _globalStates.ContainsKey(rb)) return;
+        if (rb == null) return null;
+        if (_globalStates.TryGetValue(rb, out XPBDState existingState)) return existingState;
 
-        XPBDState state = new XPBDState
+        XPBDState state = cachedState != null && cachedState.rb == rb
+            ? cachedState
+            : new XPBDState { rb = rb };
+
+        bool isKinematic = rb.isKinematic;
+        Vector3 position = rb.position;
+        Quaternion rotation = rb.rotation;
+        Vector3 linearVelocity = rb.linearVelocity;
+        Vector3 angularVelocity = rb.angularVelocity;
+
+        state.rb = rb;
+        state.isKinematic = isKinematic;
+        state.invMass = isKinematic ? 0f : 1f / rb.mass;
+        state.invInertiaLocal = isKinematic
+            ? Vector3.zero
+            : new Vector3(1f / rb.inertiaTensor.x, 1f / rb.inertiaTensor.y, 1f / rb.inertiaTensor.z);
+        state.qInertia = rb.inertiaTensorRotation;
+        state.p_prev = position;
+        state.q_prev = rotation;
+        state.v = linearVelocity;
+        state.w = angularVelocity;
+
+        if (!isKinematic)
         {
-            rb = rb,
-            isKinematic = rb.isKinematic,
-            invMass = rb.isKinematic ? 0f : 1f / rb.mass,
-            invInertiaLocal = rb.isKinematic ? Vector3.zero : new Vector3(1f / rb.inertiaTensor.x, 1f / rb.inertiaTensor.y, 1f / rb.inertiaTensor.z),
-            qInertia = rb.inertiaTensorRotation
-        };
+            state.p = position + linearVelocity * dt;
 
-        state.p_prev = rb.position;
-        state.q_prev = rb.rotation;
-
-        if (!state.isKinematic)
-        {
-            state.p = rb.position + rb.linearVelocity * dt;
-            Vector3 angVel = rb.angularVelocity;
-            float angle = angVel.magnitude;
-            state.q = (angle > 1e-6f) ? Quaternion.AngleAxis(angle * Mathf.Rad2Deg * dt, angVel / angle) * rb.rotation : rb.rotation;
+            float angularSpeed = angularVelocity.magnitude;
+            state.q = angularSpeed > 1e-6f
+                ? Quaternion.AngleAxis(angularSpeed * Mathf.Rad2Deg * dt, angularVelocity / angularSpeed) * rotation
+                : rotation;
         }
         else
         {
-            state.p = rb.position;
-            state.q = rb.rotation;
+            state.p = position;
+            state.q = rotation;
         }
 
-        _globalStates[rb] = state;
+        _globalStates.Add(rb, state);
+        return state;
     }
 
     // --- TEMPORARY JOINT MATH (Matches Ragdoll Math exactly) ---
 
     #region solver              /////////////////////////////SOLVER///////////////////////////////
 
-    private void SolveTempDistance(HydratedTempJoint grab, float dt, Dictionary<Rigidbody, XPBDState> states)
+    private void SolveTempDistance(HydratedTempJoint grab, float dt)
     {
-        var pState = states[grab.parentRb];
-        var cState = states[grab.childRb];
+        XPBDState pState = grab.parentState;
+        XPBDState cState = grab.childState;
         if (pState.isKinematic && cState.isKinematic) return;
 
         Vector3 r0 = pState.q * grab.networkedData.parentAnchorLocal;
@@ -458,10 +474,10 @@ public class XPBDGlobalManager : NetworkBehaviour
         XPBDMath.SolveSphericalPosition(pState, cState, r0, r1, dir, alpha, gamma, ref grab.lambdaPosition);
     }
 
-    private void SolveTempRotation(HydratedTempJoint grab, float dt, Dictionary<Rigidbody, XPBDState> states)
+    private void SolveTempRotation(HydratedTempJoint grab, float dt)
     {
-        var pState = states[grab.parentRb];
-        var cState = states[grab.childRb];
+        XPBDState pState = grab.parentState;
+        XPBDState cState = grab.childState;
         if (pState.isKinematic && cState.isKinematic) return;
 
         Quaternion targetQ = pState.q * grab.networkedData.targetLocalRotation;

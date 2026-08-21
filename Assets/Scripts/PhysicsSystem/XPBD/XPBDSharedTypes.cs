@@ -50,6 +50,9 @@ public class HydratedTempJoint
     public Vector3 lambdaPosition;
     public Vector3 lambdaRotation;
 
+    public XPBDState parentState;
+    public XPBDState childState;
+
     public bool IsValid() => parentRb != null && childRb != null;
 
     public void Clear()
@@ -59,6 +62,8 @@ public class HydratedTempJoint
         networkedData = default(NetworkTempJoint);
         lambdaPosition = Vector3.zero;
         lambdaRotation = Vector3.zero;
+        parentState = null;
+        childState = null;
     }
 }
 
@@ -252,6 +257,9 @@ public static class XPBDMath
     {
         if (rotationError.sqrMagnitude == 0f) return;
 
+        Vector3 parentAngularDisplacement = GetDeltaTheta(pState.q_prev, pState.q);
+        Vector3 childAngularDisplacement = GetDeltaTheta(cState.q_prev, cState.q);
+
         for (int i = 0; i < 3; i++)
         {
             Vector3 cAxis = i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
@@ -271,8 +279,8 @@ public static class XPBDMath
             float wSum = w0 + w1;
             if (wSum < 1e-6f) continue;
 
-            float dC = Vector3.Dot(gradP, GetDeltaTheta(pState.q_prev, pState.q)) +
-                Vector3.Dot(gradC, GetDeltaTheta(cState.q_prev, cState.q));
+            float dC = Vector3.Dot(gradP, parentAngularDisplacement) +
+                Vector3.Dot(gradC, childAngularDisplacement);
 
             float currentLambda = i == 0 ? lambdaRotation.x : i == 1 ? lambdaRotation.y : lambdaRotation.z;
             float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * wSum + alpha);
@@ -323,6 +331,9 @@ public static class XPBDMath
     {
         Vector3 targetAngularDisplacement = GetDeltaTheta(targetState.q_prev, targetState.q);
 
+        Vector3 itemAngularDisplacement = GetDeltaTheta(itemState.q_prev, itemState.q);
+
+
         for (int i = 0; i < 3; i++)
         {
             Vector3 axis = i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
@@ -353,7 +364,6 @@ public static class XPBDMath
             if (w < 1e-6f)
                 continue;
 
-            Vector3 itemAngularDisplacement = GetDeltaTheta(itemState.q_prev, itemState.q);
             float dC = Vector3.Dot(axis, targetAngularDisplacement - itemAngularDisplacement);
             float currentLambda = i == 0 ? lambdaRotation.x : i == 1 ? lambdaRotation.y : lambdaRotation.z;
             float deltaLambda = -(C + alpha * currentLambda + gamma * dC) / ((1f + gamma) * w + alpha);

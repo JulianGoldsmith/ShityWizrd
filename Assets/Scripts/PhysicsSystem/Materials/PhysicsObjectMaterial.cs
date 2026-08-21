@@ -293,8 +293,8 @@ public class PhysicsObjectMaterial : ScriptableObject
         finalProps.Mass = CustomPhysicsFormulas.ClampMass((finalDensity * massScale) + (state.Wetness * massScale * 0.5f));
         finalProps.Scale = currentScale;
         finalProps.GravityMultiplier = baseGravityMultiplier * state.GravityMultiplier;
-        finalProps.LinearDamping = finalProps.Hardness * 0.5f + (currentScale * 0.1f);
-        finalProps.AngularDamping = finalProps.Mass * 0.05f;
+        //finalProps.LinearDamping = finalProps.Hardness * 0.5f + (currentScale * 0.1f);
+        //finalProps.AngularDamping = finalProps.Mass * 0.05f;
 
         return finalProps;
     }

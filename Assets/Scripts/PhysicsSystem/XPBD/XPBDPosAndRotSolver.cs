@@ -212,6 +212,11 @@ public interface IXPBDPoseProvider
 [RequireComponent(typeof(NetworkObject))]
 public class XPBDPosAndRotSolver : NetworkBehaviour
 {
+    private Dictionary<Rigidbody, XPBDState> _stateByBody = new Dictionary<Rigidbody, XPBDState>();
+    private List<XPBDState> _bodyStates = new List<XPBDState>();
+
+    public IReadOnlyList<XPBDState> BodyStates => _bodyStates;
+
     [Header("Compliance curve 0 = 0 1 = 180 higher is weaker")]
     public AnimationCurve complianceCurve = new AnimationCurve(
         new Keyframe(0f, 10f),
@@ -270,7 +275,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
                 this);
             return;
         }
-
+        BuildBodyStateCache();
         manager.RegisterRagdoll(this);
         _registeredManager = manager;
 
@@ -278,7 +283,52 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         {
             if (joint.parent != null && joint.parent.TryGetComponent(out PhysicsObject parentObject)) parentObject.ragdollController = this;
             if (joint.child != null && joint.child.TryGetComponent(out PhysicsObject childObject)) childObject.ragdollController = this;
+
+            if (joint.parent == null || joint.child == null) continue;
+
+            Collider parentCollider = joint.parent.GetComponent<Collider>();
+            Collider childCollider = joint.child.GetComponent<Collider>();
+
+            if (parentCollider != null && childCollider != null) Physics.IgnoreCollision(parentCollider, childCollider, true);
         }
+    }
+
+    private void BuildBodyStateCache()
+    {
+        _bodyStates.Clear();
+        _stateByBody.Clear();
+
+        foreach (XPBDTestJoint joint in joints)
+        {
+            if (joint.parent != null)
+            {
+                if (!_stateByBody.TryGetValue(joint.parent, out XPBDState parentState))
+                {
+                    parentState = new XPBDState { rb = joint.parent };
+                    _stateByBody.Add(joint.parent, parentState);
+                    _bodyStates.Add(parentState);
+                }
+
+                joint.parentState = parentState;
+            }
+
+            if (joint.child != null)
+            {
+                if (!_stateByBody.TryGetValue(joint.child, out XPBDState childState))
+                {
+                    childState = new XPBDState { rb = joint.child };
+                    _stateByBody.Add(joint.child, childState);
+                    _bodyStates.Add(childState);
+                }
+
+                joint.childState = childState;
+            }
+        }
+    }
+
+    public bool TryGetBodyState(Rigidbody rb, out XPBDState state)
+    {
+        return _stateByBody.TryGetValue(rb, out state);
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -357,17 +407,50 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         _distanceDampingScale = CustomPhysicsFormulas.CalculateScalePower(startScale, CustomPhysicsFormulas.DistanceDampingExponent);
         _angularDampingScale = CustomPhysicsFormulas.CalculateScalePower(startScale, CustomPhysicsFormulas.AngularDampingExponent);
 
+        for (int i = 0; i < _bodyStates.Count; i++)
+        {
+            XPBDState state = _bodyStates[i];
+            Rigidbody rb = state.rb;
+
+            bool isKinematic = rb.isKinematic;
+            Vector3 position = rb.position;
+            Quaternion rotation = rb.rotation;
+            Vector3 linearVelocity = rb.linearVelocity;
+            Vector3 angularVelocity = rb.angularVelocity;
+
+            state.isKinematic = isKinematic;
+            state.invMass = isKinematic ? 0f : 1f / rb.mass;
+            state.invInertiaLocal = isKinematic
+                ? Vector3.zero
+                : new Vector3(1f / rb.inertiaTensor.x, 1f / rb.inertiaTensor.y, 1f / rb.inertiaTensor.z);
+            state.qInertia = rb.inertiaTensorRotation;
+            state.p_prev = position;
+            state.q_prev = rotation;
+            state.v = linearVelocity;
+            state.w = angularVelocity;
+
+            if (!isKinematic)
+            {
+                state.p = position + linearVelocity * dt;
+
+                float angularSpeed = angularVelocity.magnitude;
+                state.q = angularSpeed > 1e-6f
+                    ? Quaternion.AngleAxis(angularSpeed * Mathf.Rad2Deg * dt, angularVelocity / angularSpeed) * rotation
+                    : rotation;
+            }
+            else
+            {
+                state.p = position;
+                state.q = rotation;
+            }
+            globalStates[rb] = state;
+        }
+
         foreach (var joint in joints)
         {
             joint.lambdaPosition = Vector3.zero;
             joint.lambdaRotation = Vector3.zero;
             joint.lambdaLimits = Vector3.zero;
-
-            AddStateIfMissing(joint.parent, dt, globalStates);
-            AddStateIfMissing(joint.child, dt, globalStates);
-
-            joint.parentState = globalStates[joint.parent];
-            joint.childState = globalStates[joint.child];
 
             Vector3 parentScale = joint.parent.transform.localScale;
             Vector3 childScale = joint.child.transform.localScale;
@@ -404,7 +487,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         }
     }
 
-    private void AddStateIfMissing(Rigidbody rb, float dt, Dictionary<Rigidbody, XPBDState> globalStates)
+    /*private void AddStateIfMissing(Rigidbody rb, float dt, Dictionary<Rigidbody, XPBDState> globalStates)
     {
         if (rb == null || globalStates.ContainsKey(rb)) return;
 
@@ -434,7 +517,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         }
 
         globalStates[rb] = state;
-    }
+    }*/
 
     // 2. SOLVE CONSTRAINTS USING THE GLOBAL DICTIONARY
     public void SolveConstraints(float dt)

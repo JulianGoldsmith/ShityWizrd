@@ -111,14 +111,20 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
     [Tooltip("Controls the XPBD animation muscle strength.")]
     [SerializeField] private AnimationCurve poseStrengthByBonk = AnimationCurve.Linear(0f, 1f, 0.95f, 0f);
 
-    public float GetMovementSpeed(NPCMovementMode movementMode)
+    private float GetBaseMovementSpeed(NPCMovementMode movementMode)
     {
         float speed = 0f;
 
         if (movementMode == NPCMovementMode.Walk) speed = maxWalkSpeed;
         else if (movementMode == NPCMovementMode.Run) speed = maxSprintSpeed;
 
-        return speed * Mathf.Sqrt(CurrentRagdollScale) * EvaluateBonkCurve(movementSpeedByBonk, CurrentBonkNormalized);
+        return speed * Mathf.Sqrt(CurrentRagdollScale);
+    }
+
+    public float GetMovementSpeed(NPCMovementMode movementMode)
+    {
+        float bonkSpeedMultiplier = EvaluateBonkCurve(movementSpeedByBonk, CurrentBonkNormalized);
+        return GetBaseMovementSpeed(movementMode) * bonkSpeedMultiplier;
     }
 
     public void SetMovementTarget(Vector3 direction, NPCMovementMode movementMode)
@@ -487,9 +493,9 @@ public class NPCActiveRagdollController : NetworkBehaviour, IHasPhysicalCore, IX
         Vector3 currentVel = isSim ? coreRB.linearVelocity : _renderedVelocity;
         Vector2 localPlanarVelocity = new Vector2(Vector3.Dot(currentVel, right), Vector3.Dot(currentVel, fwd));
         float planarSpeed = localPlanarVelocity.magnitude;
-        float scaledWalkSpeed = Mathf.Max(0.01f, GetMovementSpeed(NPCMovementMode.Walk));
-        float scaledRunSpeed = Mathf.Max(scaledWalkSpeed, GetMovementSpeed(NPCMovementMode.Run));
-        float animationSpeed = GetNormalizedAnimationSpeed(planarSpeed, scaledWalkSpeed, scaledRunSpeed);
+        float baseWalkSpeed = Mathf.Max(0.01f, GetBaseMovementSpeed(NPCMovementMode.Walk));
+        float baseRunSpeed = Mathf.Max(baseWalkSpeed, GetBaseMovementSpeed(NPCMovementMode.Run));
+        float animationSpeed = GetNormalizedAnimationSpeed(planarSpeed, baseWalkSpeed, baseRunSpeed);
         Vector2 animationVelocity = planarSpeed > 0.001f ? localPlanarVelocity / planarSpeed * animationSpeed : Vector2.zero;
         float verticalVelocity = currentVel.y;
 

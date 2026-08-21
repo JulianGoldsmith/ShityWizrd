@@ -11,6 +11,8 @@ public struct NetworkedMaterialState : INetworkStruct
 
 public class PhysicsObjectProperties : NetworkBehaviour, IBufferableComponent
 {
+    private const int SimCheckPointInterval = 10;
+
     private BufferedObject _bufferedObject;
     #region Base Networked Properties (Promotable)
     // By using { get; set; }, Fusion networks these automatically. 
@@ -45,6 +47,9 @@ public class PhysicsObjectProperties : NetworkBehaviour, IBufferableComponent
     #endregion
     [SerializeField]
     public List<string> debugState = new List<string>();
+
+    private PhysicsObjectMaterial _cachedMaterial;
+    private ushort _cachedMaterialLabel = ushort.MaxValue;
 
     private void Awake()
     {
@@ -87,19 +92,15 @@ public class PhysicsObjectProperties : NetworkBehaviour, IBufferableComponent
     #region The Simulation Engine
     public void CalculateSimState(NetworkRunner runner, PhysicsObject target, NetworkedMemoryAllocator memory, StatusEffectManager effectManager)
     {
-        if (physicsobjectmaterial == null) return;
+        PhysicsObjectMaterial currentMaterial = physicsobjectmaterial;
+        if (currentMaterial == null) return;
 
-        
-
-        // 1. ROLLBACK / LATE-JOIN DETECTION
         if (CachedNetworkState.Tick != runner.Tick - 1)
         {
             CachedNetworkState = CheckpointState;
         }
 
-        // 2. THE CATCH-UP LOOP
         int ticksToSimulate = runner.Tick - CachedNetworkState.Tick;
-        PhysicsObjectMaterial currentMaterial = physicsobjectmaterial;
 
         if (ticksToSimulate > 0)
         {
@@ -129,9 +130,9 @@ public class PhysicsObjectProperties : NetworkBehaviour, IBufferableComponent
         // 3. PERIODIC CHECKPOINTING
         if (Object != null && Object.IsValid)
         {
-            int staggerOffset = (int)Object.Id.Raw % 30;
+            int staggerOffset = (int)Object.Id.Raw % SimCheckPointInterval;
 
-            if (runner.Tick - CheckpointState.Tick >= 30 + staggerOffset)
+            if (runner.Tick - CheckpointState.Tick >= SimCheckPointInterval + staggerOffset)
             {
                 ForceCheckpoint();
             }
@@ -164,7 +165,18 @@ public class PhysicsObjectProperties : NetworkBehaviour, IBufferableComponent
     #region Material Lookup
     public PhysicsObjectMaterial physicsobjectmaterial
     {
-        get { return MaterialRegistry.GetMaterial(Material_label); }
+        get
+        {
+            ushort currentLabel = Material_label;
+
+            if (_cachedMaterial == null || _cachedMaterialLabel != currentLabel)
+            {
+                _cachedMaterialLabel = currentLabel;
+                _cachedMaterial = MaterialRegistry.GetMaterial(currentLabel);
+            }
+
+            return _cachedMaterial;
+        }
     }
     #endregion
 

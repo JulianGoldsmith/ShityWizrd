@@ -17,6 +17,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned, IBufferableComponent
     private IMovementHandler _movementHandler;
     private BufferedObject _bufferedObject;
 
+    private StatusEffectManager _statusEffectManager;
+    private NetworkedMemoryAllocator _statusEffectMemory;
+
     [Header("Dependancies")]
     public PhysicsObjectProperties physicsObjectProperties;
     public Rigidbody rb;
@@ -47,6 +50,9 @@ public class PhysicsObject : NetworkBehaviour, ISpawned, IBufferableComponent
     private void Awake()
     {
         physicsObjectProperties = GetComponent<PhysicsObjectProperties>();
+        _statusEffectManager = GetComponent<StatusEffectManager>();
+        if (_statusEffectManager != null) _statusEffectMemory = GetComponent<NetworkedMemoryAllocator>();
+
         InitilizeCoreInterfaces();
     }
 
@@ -65,16 +71,12 @@ public class PhysicsObject : NetworkBehaviour, ISpawned, IBufferableComponent
     public override void Render()
     {
         if (_bufferedObject != null && !_bufferedObject.CanRunSimulationCode) return;
-        if (physicsObjectProperties == null || _renderers == null || physicsObjectProperties.physicsobjectmaterial == null)
-            return;
+        if (physicsObjectProperties == null || _renderers == null) return;
 
-        physicsObjectProperties.physicsobjectmaterial.UpdateVisuals(
-            this,
-            VisualState,
-            _mpb,
-            _renderers,
-            Time.deltaTime
-        );
+        PhysicsObjectMaterial currentMaterial = physicsObjectProperties.physicsobjectmaterial;
+        if (currentMaterial == null) return;
+
+        currentMaterial.UpdateVisuals(this, VisualState, _mpb, _renderers, Time.deltaTime);
     }
 
     #region Initialisation
@@ -314,24 +316,13 @@ public class PhysicsObject : NetworkBehaviour, ISpawned, IBufferableComponent
 
     public void SimMaterialStateAndEffects()
     {
-        StatusEffectManager effectManager = null;
-        NetworkedMemoryAllocator memory = null;
-
-        if (TryGetComponent<StatusEffectManager>(out effectManager))
-        {
-            effectManager.CleanUpExpiredEffects(Runner.Tick);
-            memory = GetComponent<NetworkedMemoryAllocator>();
-        }
+        if (_statusEffectManager != null) _statusEffectManager.CleanUpExpiredEffects(Runner.Tick);
 
         // 1. RUN THE SIMULATION ENGINE
-        physicsObjectProperties.CalculateSimState(Runner, this, memory, effectManager);
 
+        physicsObjectProperties.CalculateSimState(Runner, this, _statusEffectMemory, _statusEffectManager);
 
-
-        if (TryGetComponent<StatusEffectManager>(out effectManager))
-        {
-            effectManager.ClearPersistanceCache();
-        }
+        if (_statusEffectManager != null) _statusEffectManager.ClearPersistanceCache();
         
 
         // 2. APPLY TO UNITY PHYSICS
