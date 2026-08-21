@@ -20,9 +20,13 @@ public class XPBDPosAndRotSolverEditor : Editor
 
         XPBDPosAndRotSolver solver = (XPBDPosAndRotSolver)target;
         SerializedProperty complianceCurve = serializedObject.FindProperty("complianceCurve");
+        SerializedProperty maximumSolverAngularVelocity = serializedObject.FindProperty("maximumSolverAngularVelocity");
+        SerializedProperty ragdollAngularResistance = serializedObject.FindProperty("ragdollAngularResistance");
         SerializedProperty authoredScale = serializedObject.FindProperty("authoredScale");
         SerializedProperty targetArmatureRoot = serializedObject.FindProperty("targetArmatureRoot");
+        SerializedProperty showAngularLimits = serializedObject.FindProperty("showAngularLimits");
         SerializedProperty joints = serializedObject.FindProperty("joints");
+        
 
         EditorGUILayout.PropertyField(complianceCurve);
         EditorGUILayout.Space(5);
@@ -47,6 +51,12 @@ public class XPBDPosAndRotSolverEditor : Editor
         EditorGUILayout.Space(5);
         EditorGUILayout.PropertyField(targetArmatureRoot, new GUIContent("Target Armature Root"));
         EditorGUILayout.Space(10);
+        EditorGUILayout.Space(5);
+        EditorGUILayout.PropertyField(maximumSolverAngularVelocity, new GUIContent("Maximum Angular Velocity"));
+        EditorGUILayout.Space(5);
+        EditorGUILayout.PropertyField(ragdollAngularResistance, new GUIContent("Angular Resistance"));
+        EditorGUILayout.Space(5);
+        EditorGUILayout.PropertyField(showAngularLimits, new GUIContent("Show Angular Limits"));
 
         for (int i = 0; i < joints.arraySize; i++)
         {

@@ -223,6 +223,11 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         new Keyframe(1f, 1f)
     );
 
+    [Header("Velocity Handoff")]
+    [Min(0.01f)] public float maximumSolverAngularVelocity = 50f;
+    [Header("Ragdoll Passive Resistance")]
+    [Min(0f)] public float ragdollAngularResistance = 5f;
+
     [Header("Ragdoll Scale")]
     [Min(0.01f)] public float authoredScale = 1f;
     [Networked] private float NetworkedStartScale { get; set; }
@@ -233,6 +238,8 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
     public float MuscleStrengthMultiplier { get; set; } = 1f;
 
     public Transform targetArmatureRoot;
+
+    public bool showAngularLimits = false;
 
     [Header("Joints")]
     public List<XPBDTestJoint> joints = new List<XPBDTestJoint>();
@@ -411,6 +418,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
         {
             XPBDState state = _bodyStates[i];
             Rigidbody rb = state.rb;
+            rb.maxAngularVelocity = maximumSolverAngularVelocity;
 
             bool isKinematic = rb.isKinematic;
             Vector3 position = rb.worldCenterOfMass;
@@ -621,6 +629,40 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
             XPBDMath.SolveAngularLimit(pState, cState, rotDiff, joint.swing2AxisParent, joint.swing2Limits.x, joint.swing2Limits.y, joint.limitAlpha, joint.limitGamma, ref joint.lambdaLimits.z, joint.parentRotationInfluence);
     }
 
+    public void ApplyRagdollPassiveResistance(float dt)
+    {
+        float ragdollAmount = isRagdolling ? 1f : 1f - Mathf.Clamp01(MuscleStrengthMultiplier);
+
+        if (ragdollAmount <= 0f || ragdollAngularResistance <= 0f || dt <= 0f) return;
+
+        float dampingFraction = 1f - Mathf.Exp(-ragdollAngularResistance * ragdollAmount * dt);
+
+        foreach (XPBDTestJoint joint in joints)
+        {
+            XPBDState parentState = joint.parentState;
+            XPBDState childState = joint.childState;
+
+            if (parentState.isKinematic && childState.isKinematic) continue;
+
+            Vector3 relativeAngularVelocity = childState.w - parentState.w;
+            float relativeSpeed = relativeAngularVelocity.magnitude;
+
+            if (relativeSpeed < 0.0001f) continue;
+
+            Vector3 axis = relativeAngularVelocity / relativeSpeed;
+            Vector3 parentResponse = parentState.isKinematic ? Vector3.zero : XPBDMath.ApplyInvInertiaWorld(axis, parentState.q, parentState.qInertia, parentState.invInertiaLocal);
+            Vector3 childResponse = childState.isKinematic ? Vector3.zero : XPBDMath.ApplyInvInertiaWorld(axis, childState.q, childState.qInertia, childState.invInertiaLocal);
+            float effectiveInverseInertia = Vector3.Dot(axis, parentResponse + childResponse);
+
+            if (effectiveInverseInertia < 0.000001f) continue;
+
+            float angularImpulse = relativeSpeed * dampingFraction / effectiveInverseInertia;
+
+            if (!parentState.isKinematic) parentState.w += parentResponse * angularImpulse;
+            if (!childState.isKinematic) childState.w -= childResponse * angularImpulse;
+        }
+    }
+
 
     //Ragdoll logic (ie bonked ragdoll - when character have more bones when ragdolled) 
 
@@ -730,6 +772,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
     private void OnDrawGizmosSelected()
     {
         if (joints == null) return;
+        if (showAngularLimits == false) return;
 
         foreach (var joint in joints)
         {

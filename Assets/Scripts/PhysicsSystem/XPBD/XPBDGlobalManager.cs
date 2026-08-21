@@ -130,7 +130,13 @@ public class XPBDGlobalManager : NetworkBehaviour
         }
 
         DeriveAllVelocities(dt);
-        ApplyAllToUnity();
+
+        foreach (XPBDPosAndRotSolver ragdoll in registeredRagdolls)
+        {
+            ragdoll.ApplyRagdollPassiveResistance(dt);
+        }
+
+        ApplyAllVelocities();
     }
 
     private void PreparePostPhysicsGrabs()
@@ -623,17 +629,15 @@ public class XPBDGlobalManager : NetworkBehaviour
         }
     }
 
-    private void ApplyAllToUnity()
+    private void ApplyAllVelocities()
     {
         foreach (var kvp in _globalStates)
         {
-            var state = kvp.Value;
+            XPBDState state = kvp.Value;
             if (state.isKinematic) continue;
 
             state.rb.linearVelocity = state.v;
             state.rb.angularVelocity = state.w;
-            state.rb.position = state.p - state.q * state.centerOfMassOffsetLocal;
-            state.rb.rotation = state.q;
         }
     }
 
