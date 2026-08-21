@@ -165,8 +165,11 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     private Vector3 previousVelocity;
     public Vector3 Acceleration { get; private set; }
 
-    [Header("Bonked Variables")]
-    public CharacterBonkController bonkController;
+    [Header("Bonk State")]
+    [SerializeField] private BonkManager bonkManager;
+    [SerializeField] private List<StretchyArmIK> armIKs = new List<StretchyArmIK>();
+
+    public bool IsBroken => bonkManager != null && bonkManager.IsBroken;
 
 
 
@@ -232,8 +235,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
         this.cameraAnchorTransform.parent = null;
 
-        bonkController = this.GetComponent<CharacterBonkController>();
-      //  Debug.Log($"Bonk controller loaded {bonkController != null}");
+        if (bonkManager == null) bonkManager = GetComponent<BonkManager>();      //  Debug.Log($"Bonk controller loaded {bonkController != null}");
 
         hipsRb.maxDepenetrationVelocity = 10f;
         hipsRb.maxAngularVelocity = 20f;
@@ -255,6 +257,11 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         netAnimator = GetComponent<NetworkAnimator>();
 
         if (xpbdPosAndRotSolver == null) xpbdPosAndRotSolver = GetComponent<XPBDPosAndRotSolver>();
+        if (xpbdPosAndRotSolver != null)
+        {
+            xpbdPosAndRotSolver.MuscleStrengthMultiplier = IsBroken ? 0f : 1f;
+            xpbdPosAndRotSolver.SetRagdollState(IsBroken, false);
+        }
     }
 
 
@@ -282,7 +289,11 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
             // return;
         }
 
+        bool physicalRagdollActive = IsBroken && Runner.Tick > bonkManager.BrokenTick;
+        bool activateRagdollThisTick = physicalRagdollActive && Runner.Tick == bonkManager.BrokenTick + 1;
 
+        xpbdPosAndRotSolver.MuscleStrengthMultiplier = physicalRagdollActive ? 0f : 1f;
+        xpbdPosAndRotSolver.SetRagdollState(physicalRagdollActive, activateRagdollThisTick);
 
         if (_teleportRequested)
         {
@@ -326,7 +337,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
             sprint = data.buttons.IsSet(EInputButton.SPRINT);
 
-            if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.JUMP) && IsGrounded)
+            if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.JUMP) && IsGrounded && !IsBroken)
             {
                 //ApplyJump(); 
                 TriggerJump();
@@ -334,51 +345,39 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.SELF_BONK))
             {
-                if (bonkController.BonkedState != BONKEDSTATE.BONKED)
-                {
-                    if (TryGetComponent<PlayerPhysicsObject>(out PlayerPhysicsObject PPO))
-                    {
-                        //GetBonked();
-                        //PPO.current_bonkedness = -50f;
-
-                        //////////////////////////////////////////////////////NEED BONK LOGIC ///////////////////////////////////////////////////////////
-                    }
-                }
-                    //GetBonked(); //animation is applied in Render -> Update Animations()
+                bonkManager.SetBonkToCapacity();
             }
 
             if (data.buttons.WasPressed(_lastButtonsInput, EInputButton.UN_SELF_BONK))
             {
-                if (TryGetComponent<PlayerPhysicsObject>(out PlayerPhysicsObject PPO))
-                {
-                    //////////////////////////////////////////////////////NEED BONK LOGIC ///////////////////////////////////////////////////////////
-                }
-                //GetUnBonked(); //animation is applied in Render -> Update Animations()
+                bonkManager.RestoreAndClearBonk();
             }
+
             _lastButtonsInput = data.buttons;
 
             AuthInputTick = Runner.Tick;
         }
 
 
-       
-        if (bonkController.BonkedState != BONKEDSTATE.BONKED)
+
+        if (!IsBroken)
         {
             bool isJumping = CheckIsJumpingAndApplyJump();
 
             ApplyUprightTorque();
-
             ApplyLookRotation();
-
             CalculateObservedAccelerationAndVelocity();
-            
-            if(!isJumping)
-                ApplyHipsSuspension();
-            
+
+            if (!isJumping) ApplyHipsSuspension();
+
             ApplyHipsHorizontalMovement();
 
             _xpbdPoseRequestTick = Runner.Tick;
             UpdateSpineIK();
+        }
+        else
+        {
+            IsGrounded = false;
         }
 
 
@@ -401,6 +400,21 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     {
 
         if (disableCC > 0){ return; }
+
+
+        armatureRetargetingLerp = IsBroken ? 1f : 0f;
+
+        foreach (StretchyArmIK armIK in armIKs)
+        {
+            if (armIK != null) armIK.enabled = !IsBroken;
+        }
+
+        if (handController != null)
+        {
+            if (IsBroken) handController.DisableHands();
+            else handController.EnableHands();
+        }
+
 
         //UpdateCameraAnchor();
         CasheMovement();
@@ -505,18 +519,7 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
     }
 
 
-    public void GetBonked()
-    {
-        bonkController.GetBonked();
-    }
-
-    public void GetUnBonked()
-    {
-        bonkController.GetUnBonked();
-    }
-
-
-    void UpdateAnimator(bool isSim)
+    void UpdateAnimator(bool isSim) 
     {
         if (netAnimator == null) return;
 
@@ -605,7 +608,12 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
 
     public void PrepareXPBDPose()
     {
-        if (_xpbdPoseRequestTick != Runner.Tick) return;
+        if (xpbdPosAndRotSolver == null) return;
+
+        xpbdPosAndRotSolver.MuscleStrengthMultiplier = IsBroken ? 0f : 1f;
+
+        if (IsBroken || _xpbdPoseRequestTick != Runner.Tick) return;
+
         UpdateAnimator(true);
     }
 
@@ -1029,9 +1037,9 @@ public class HybridCharacterController : NetworkBehaviour, IAnimVarSpeed, IAnimV
         if (xpbdSolver == null) return;
         
         float dt = Runner.DeltaTime;
-        xpbdSolver.ApplyRotationalPD(bonkController.BonkedState == BONKEDSTATE.ALIVE? strenght: 0f, dt);
-        xpbdSolver.Solve(dt, bonkController.BonkedState != BONKEDSTATE.ALIVE);
-       // xpbdSolver.ApplyAnchorTorqueFromLambda(1, dt);
+        xpbdSolver.ApplyRotationalPD(IsBroken ? 0f : strenght, dt);
+        xpbdSolver.Solve(dt, IsBroken);
+        // xpbdSolver.ApplyAnchorTorqueFromLambda(1, dt);
     }
 
     public void BeginGrabControl(NetworkId itemId, float initialDistance, float initialTetherLength)

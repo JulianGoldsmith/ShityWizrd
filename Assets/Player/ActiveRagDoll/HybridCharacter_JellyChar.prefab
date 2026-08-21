@@ -656,7 +656,6 @@ GameObject:
   - component: {fileID: 4140752877036543051}
   - component: {fileID: 2527442773869624014}
   - component: {fileID: 6385770397196525003}
-  - component: {fileID: 8578960332665255133}
   - component: {fileID: 3864803359139239159}
   m_Layer: 18
   m_Name: UpLegL
@@ -749,7 +748,6 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 6385770397196525003}
-  - {fileID: 8578960332665255133}
   - {fileID: 3864803359139239159}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6385770397196525003
@@ -775,20 +773,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 5
     Scale: 0.01
---- !u!114 &8578960332665255133
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 545429536081481940}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 0}
-  rb: {fileID: 8198824362954624908}
 --- !u!114 &3864803359139239159
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1977,7 +1961,6 @@ GameObject:
   - component: {fileID: 5911674453836158114}
   - component: {fileID: 536918686107954034}
   - component: {fileID: 5175957042883489565}
-  - component: {fileID: 5335990998989581762}
   - component: {fileID: 4705917934321563973}
   m_Layer: 18
   m_Name: ForeArmR
@@ -2070,7 +2053,6 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 5175957042883489565}
-  - {fileID: 5335990998989581762}
   - {fileID: 4705917934321563973}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &5175957042883489565
@@ -2096,20 +2078,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 5
     Scale: 0.01
---- !u!114 &5335990998989581762
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1372815321146486381}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 0}
-  rb: {fileID: 6363294540991803081}
 --- !u!114 &4705917934321563973
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2673,7 +2641,6 @@ GameObject:
   - component: {fileID: 1760587690114921678}
   - component: {fileID: -1497651292432260581}
   - component: {fileID: 2657514714551797806}
-  - component: {fileID: 2204065667809111582}
   - component: {fileID: 7708030507857023425}
   - component: {fileID: 3253866803604232212}
   - component: {fileID: 6813547189123401123}
@@ -2933,7 +2900,6 @@ MonoBehaviour:
   - {fileID: 1760587690114921678}
   - {fileID: -1497651292432260581}
   - {fileID: 2657514714551797806}
-  - {fileID: 2204065667809111582}
   - {fileID: 7708030507857023425}
   - {fileID: 3253866803604232212}
   - {fileID: 4865734607238229140}
@@ -3194,7 +3160,10 @@ MonoBehaviour:
   cameraAnchorTransform: {fileID: 4764458825425314577}
   cameraAnchorSmoothSpeed: 20
   handController: {fileID: 9045712812768551006}
-  bonkController: {fileID: 0}
+  bonkManager: {fileID: 7708030507857023425}
+  armIKs:
+  - {fileID: 3147677537925249661}
+  - {fileID: 3703387793165805207}
   xpbdSolver: {fileID: 0}
   xpbdPosAndRotSolver: {fileID: 1760587690114921678}
   _AuthInputTick: 0
@@ -3731,8 +3700,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  maximumSolverAngularVelocity: 50
+  ragdollAngularResistance: 5
   authoredScale: 1
   targetArmatureRoot: {fileID: 6635827893456137172}
+  showAngularLimits: 0
   joints:
   - parent: {fileID: 6006997495019278083}
     child: {fileID: 2010255686653279327}
@@ -4416,26 +4388,6 @@ MonoBehaviour:
   SpatialMatchThreshold: 1.5
   _NetworkHitBuffer: []
   _NetworkHitCount: 0
---- !u!114 &2204065667809111582
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1481138972719167153}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e194d49a7d7076d479a7071deb44422c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  characterController: {fileID: 4480425943024258786}
-  armIKs:
-  - {fileID: 3147677537925249661}
-  - {fileID: 3703387793165805207}
-  ragdollProxysRoot: {fileID: 4934047322141794123}
-  ragDollSolver: {fileID: 1760587690114921678}
-  _BonkTick: 0
-  _UnbonkTick: 0
 --- !u!114 &7708030507857023425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4449,6 +4401,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BonkManager
   debugState:
+    IsBroken: 0
     TotalBonk: 0
     KineticSpike: 0
     ElementalFloor: 0
@@ -4469,6 +4422,8 @@ MonoBehaviour:
   - bone: {fileID: 6633720660449960508}
     weight: 1
   _KineticBonk: 0
+  _BrokenTick: 0
+  _RestoredTick: 0
   showBonkBar: 1
   bonkCanvasPrefab: {fileID: 0}
   bonkBarOffset: {x: 0, y: 1.5, z: 0}
@@ -4713,7 +4668,6 @@ GameObject:
   - component: {fileID: 5438853620981138093}
   - component: {fileID: 2086072523962302752}
   - component: {fileID: 7501283642854008574}
-  - component: {fileID: 5623804175495429177}
   - component: {fileID: 45922376261768807}
   m_Layer: 18
   m_Name: UpLegR
@@ -4806,7 +4760,6 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 7501283642854008574}
-  - {fileID: 5623804175495429177}
   - {fileID: 45922376261768807}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &7501283642854008574
@@ -4832,20 +4785,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 5
     Scale: 0.01
---- !u!114 &5623804175495429177
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1610882170402385978}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 0}
-  rb: {fileID: 7964538190193888579}
 --- !u!114 &45922376261768807
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6446,7 +6385,6 @@ GameObject:
   - component: {fileID: 8752953959643994222}
   - component: {fileID: 2033863982355710526}
   - component: {fileID: 2407225106719026320}
-  - component: {fileID: 6156399821244977765}
   - component: {fileID: 8655242790400942206}
   m_Layer: 18
   m_Name: ArmR
@@ -6539,7 +6477,6 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 2407225106719026320}
-  - {fileID: 6156399821244977765}
   - {fileID: 8655242790400942206}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2407225106719026320
@@ -6565,20 +6502,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 5
     Scale: 0.01
---- !u!114 &6156399821244977765
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2654225641904023665}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 0}
-  rb: {fileID: 6246534985040638846}
 --- !u!114 &8655242790400942206
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7244,7 +7167,6 @@ GameObject:
   - component: {fileID: 3870065166938470150}
   - component: {fileID: 8907080803833079463}
   - component: {fileID: 4529699843610064920}
-  - component: {fileID: 4356942689486585789}
   - component: {fileID: 2423621696358809361}
   m_Layer: 18
   m_Name: LegR
@@ -7337,7 +7259,6 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 4529699843610064920}
-  - {fileID: 4356942689486585789}
   - {fileID: 2423621696358809361}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4529699843610064920
@@ -7363,20 +7284,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 5
     Scale: 0.01
---- !u!114 &4356942689486585789
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3271502939722627158}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 0}
-  rb: {fileID: 5898820116323520833}
 --- !u!114 &2423621696358809361
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9429,7 +9336,6 @@ GameObject:
   - component: {fileID: 4405928463865795541}
   - component: {fileID: 7901766132956333590}
   - component: {fileID: 2893546184362524742}
-  - component: {fileID: 2607105267496176968}
   - component: {fileID: 5042701406273380585}
   m_Layer: 18
   m_Name: 'ForeArmL '
@@ -9522,7 +9428,6 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 2893546184362524742}
-  - {fileID: 2607105267496176968}
   - {fileID: 5042701406273380585}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2893546184362524742
@@ -9548,20 +9453,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 5
     Scale: 0.01
---- !u!114 &2607105267496176968
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5597273127743235778}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 0}
-  rb: {fileID: 5481002710832188955}
 --- !u!114 &5042701406273380585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9719,7 +9610,6 @@ GameObject:
   - component: {fileID: 2875029847731320512}
   - component: {fileID: 8097585769499775230}
   - component: {fileID: 6339113199551495255}
-  - component: {fileID: 101436487122465281}
   - component: {fileID: 4210299989686400718}
   m_Layer: 18
   m_Name: ArmL
@@ -9812,7 +9702,6 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 6339113199551495255}
-  - {fileID: 101436487122465281}
   - {fileID: 4210299989686400718}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6339113199551495255
@@ -9838,20 +9727,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 5
     Scale: 0.01
---- !u!114 &101436487122465281
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5889478560791453522}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 0}
-  rb: {fileID: 6101142755508974218}
 --- !u!114 &4210299989686400718
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11512,7 +11387,6 @@ GameObject:
   - component: {fileID: 5441984096338912242}
   - component: {fileID: 2689296150054671778}
   - component: {fileID: 8270905504867422628}
-  - component: {fileID: 8895640843263694974}
   - component: {fileID: 286498313047450585}
   m_Layer: 18
   m_Name: LegL
@@ -11605,7 +11479,6 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 8270905504867422628}
-  - {fileID: 8895640843263694974}
   - {fileID: 286498313047450585}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &8270905504867422628
@@ -11631,20 +11504,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 5
     Scale: 0.01
---- !u!114 &8895640843263694974
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7152904124470506548}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b17d00919322f149a1c3cdae2390f3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parent_physics_object: {fileID: 0}
-  rb: {fileID: 380827262451331305}
 --- !u!114 &286498313047450585
 MonoBehaviour:
   m_ObjectHideFlags: 0

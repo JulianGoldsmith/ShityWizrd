@@ -42,6 +42,11 @@ public class BonkManager : NetworkBehaviour
 
     [Networked] public float KineticBonk { get; set; }
 
+    [Networked] public int BrokenTick { get; set; }
+    [Networked] public int RestoredTick { get; set; }
+
+    public bool IsBroken => BrokenTick > RestoredTick;
+
     public float CurrentElementalBonk => CalculateElementalBonk();
     public float CurrentTotalBonk => KineticBonk + CurrentElementalBonk;
     public float CurrentBonkNormalized => Mathf.Clamp01(CurrentTotalBonk / Mathf.Max(0.0001f, MaxComposure));
@@ -84,6 +89,8 @@ public class BonkManager : NetworkBehaviour
         if (HasStateAuthority)
         {
             KineticBonk = 0f;
+            BrokenTick = 0;
+            RestoredTick = 0;
         }
     }
 
@@ -142,6 +149,7 @@ public class BonkManager : NetworkBehaviour
         debugState.KineticSpike = kineticBonk;
         debugState.TotalBonk = debugState.KineticSpike + debugState.ElementalFloor;
         debugState.IsAtCapacity = debugState.TotalBonk >= MaxComposure;
+        debugState.IsBroken = IsBroken;
 
         Transform target = followTarget != null ? followTarget : transform;
 
@@ -163,6 +171,8 @@ public class BonkManager : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (!IsBroken && IsAtCapacity) BrokenTick = Runner.Tick;
+
         KineticBonk = Mathf.Max(0f, KineticBonk - (kineticBonkDecayRate * Runner.DeltaTime));
     }
 
@@ -334,7 +344,7 @@ public class BonkManager : NetworkBehaviour
 
         if (collisionImpulse <= 0.01f)
         {
-            if (debugProcessBonk)
+            /*if (debugProcessBonk)
             {
                 Debug.Log(
                 $"[BONK IGNORED] " +
@@ -344,13 +354,13 @@ public class BonkManager : NetworkBehaviour
                 $"Impulse={collisionImpulse:F8} " +
                 $"Other={collision.gameObject.name} ({otherObjectId})",
                 this);
-            }
+            }*/
 
             return;
         }
 
         ProcessKineticBonk(hitBone, collisionImpulse, otherProps);
-        if (debugProcessBonk)
+       /* if (debugProcessBonk)
         {
             Debug.Log(
             $"[BONK APPLIED #{_bonkDebugCallCount}] " +
@@ -372,7 +382,7 @@ public class BonkManager : NetworkBehaviour
             $"KineticBefore={kineticBonkBefore:F3} " +
             $"KineticAfter={KineticBonk:F3}",
             this);
-        }
+        }*/
     }
 
     public void ReportImpulse(PhysicsObject hitBone, float impulseMagnitude, PhysicsObjectProperties otherProperties, NetworkObject instigator, Vector3 contactPoint)
@@ -407,8 +417,18 @@ public class BonkManager : NetworkBehaviour
 
         // 3. Inject the weighted spike into the active trauma bucket
         KineticBonk += rawBonk * weight;
+
+        if (!IsBroken && IsAtCapacity) BrokenTick = Runner.Tick;
         //ForceCheckpoint();
     }
+
+    public void SetBonkToCapacity()
+    {
+        KineticBonk = MaxComposure + 1f;
+
+        if (!IsBroken) BrokenTick = Runner.Tick;
+    }
+
     #endregion
     /* public void ForceCheckpoint()
      {
@@ -472,10 +492,8 @@ public class BonkManager : NetworkBehaviour
     [ContextMenu("ClearBonk")]
     public void ClearBonk()
     {
-        // Predict the clear immediately on the requesting client.
-        ClearBonkLocal();
+        RestoreAndClearBonk();
 
-        // The host has already changed the authoritative value.
         if (HasStateAuthority) return;
 
         RPC_RequestClearBonk();
@@ -488,16 +506,17 @@ public class BonkManager : NetworkBehaviour
         base.Despawned(runner, hasState);
     }
 
-    private void ClearBonkLocal()
+    public void RestoreAndClearBonk()
     {
         KineticBonk = 0f;
+        RestoredTick = Runner.Tick;
         _smoothedKineticBonk = 0f;
     }
 
     [Rpc(RpcSources.Proxies | RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void RPC_RequestClearBonk(RpcInfo info = default)
     {
-        ClearBonkLocal();
+        RestoreAndClearBonk();
 
         Debug.Log($"[BonkManager] ClearBonk requested by {info.Source}.");
     }
@@ -527,6 +546,7 @@ public struct BoneWeight
 [System.Serializable]
 public class BonkDebugState
 {
+    public bool IsBroken;
     public float TotalBonk;
     public float KineticSpike;
     public float ElementalFloor;

@@ -111,7 +111,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (PendingDetachedPickupItemId.IsValid && PendingDetachedPickupTimer.Expired(Runner))
             {
-                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED && DraggedItem == null)
+                if (!characterController.IsBroken && DraggedItem == null)
                     PickupItem(PendingDetachedPickupItemId);
 
                 PendingDetachedPickupItemId = default;
@@ -138,7 +138,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (data.buttons.WasPressed(Prior_buttons, EInputButton.PICKUP))
             {
-                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
+                if (!characterController.IsBroken)
                 {
                     if (DraggedItem == null)
                     {
@@ -189,7 +189,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
                 DraggedItem.Id == ReleaseHoldItemId &&
                 DraggedItem.TryGetComponent(out RuneRigObject heldRuneRig))
             {
-                if (characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
+                if (!characterController.IsBroken)
                 {
                     ReleaseHoldTriggered = true;
                     LevitateHeldRuneRig(heldRuneRig);
@@ -198,7 +198,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (data.buttons.WasReleased(Prior_buttons, EInputButton.RELEASE))
             {
-                if (!ReleaseHoldTriggered && characterController.bonkController.BonkedState != BONKEDSTATE.BONKED)
+                if (!ReleaseHoldTriggered && !characterController.IsBroken)
                 {
                     if (ReleaseHoldItemId.IsValid && DraggedItem != null && DraggedItem.Id == ReleaseHoldItemId)
                     {
@@ -216,7 +216,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
             Prior_buttons = data.buttons;
         }
 
-        if (characterController.bonkController.BonkedState == BONKEDSTATE.BONKED)
+        if (characterController.IsBroken)
         {
             if (DraggedItem != null) DropItem();
             if (CurrentEquippedItem != null) DropActiveEquippedItem();
