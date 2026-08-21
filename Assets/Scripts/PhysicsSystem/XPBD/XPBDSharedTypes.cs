@@ -14,6 +14,7 @@ public class XPBDState
     public float invMass;
     public Vector3 invInertiaLocal;
     public Quaternion qInertia;
+    public Vector3 centerOfMassOffsetLocal;
     public bool isKinematic;
 }
 

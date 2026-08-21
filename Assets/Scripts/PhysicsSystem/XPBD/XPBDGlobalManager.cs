@@ -418,7 +418,7 @@ public class XPBDGlobalManager : NetworkBehaviour
             : new XPBDState { rb = rb };
 
         bool isKinematic = rb.isKinematic;
-        Vector3 position = rb.position;
+        Vector3 position = rb.worldCenterOfMass;
         Quaternion rotation = rb.rotation;
         Vector3 linearVelocity = rb.linearVelocity;
         Vector3 angularVelocity = rb.angularVelocity;
@@ -430,6 +430,7 @@ public class XPBDGlobalManager : NetworkBehaviour
             ? Vector3.zero
             : new Vector3(1f / rb.inertiaTensor.x, 1f / rb.inertiaTensor.y, 1f / rb.inertiaTensor.z);
         state.qInertia = rb.inertiaTensorRotation;
+        state.centerOfMassOffsetLocal = Quaternion.Inverse(rotation) * (position - rb.position);
         state.p_prev = position;
         state.q_prev = rotation;
         state.v = linearVelocity;
@@ -464,8 +465,8 @@ public class XPBDGlobalManager : NetworkBehaviour
         XPBDState cState = grab.childState;
         if (pState.isKinematic && cState.isKinematic) return;
 
-        Vector3 r0 = pState.q * grab.networkedData.parentAnchorLocal;
-        Vector3 r1 = cState.q * grab.networkedData.childAnchorLocal;
+        Vector3 r0 = pState.q * (grab.networkedData.parentAnchorLocal - pState.centerOfMassOffsetLocal);
+        Vector3 r1 = cState.q * (grab.networkedData.childAnchorLocal - cState.centerOfMassOffsetLocal);
         Vector3 dir = (cState.p + r1) - (pState.p + r0);
 
         float alpha = grab.networkedData.distanceCompliance / (dt * dt);
@@ -631,7 +632,7 @@ public class XPBDGlobalManager : NetworkBehaviour
 
             state.rb.linearVelocity = state.v;
             state.rb.angularVelocity = state.w;
-            state.rb.position = state.p;
+            state.rb.position = state.p - state.q * state.centerOfMassOffsetLocal;
             state.rb.rotation = state.q;
         }
     }

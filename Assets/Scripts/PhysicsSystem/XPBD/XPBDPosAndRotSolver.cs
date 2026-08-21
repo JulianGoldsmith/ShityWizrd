@@ -413,7 +413,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
             Rigidbody rb = state.rb;
 
             bool isKinematic = rb.isKinematic;
-            Vector3 position = rb.position;
+            Vector3 position = rb.worldCenterOfMass;
             Quaternion rotation = rb.rotation;
             Vector3 linearVelocity = rb.linearVelocity;
             Vector3 angularVelocity = rb.angularVelocity;
@@ -424,6 +424,7 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
                 ? Vector3.zero
                 : new Vector3(1f / rb.inertiaTensor.x, 1f / rb.inertiaTensor.y, 1f / rb.inertiaTensor.z);
             state.qInertia = rb.inertiaTensorRotation;
+            state.centerOfMassOffsetLocal = Quaternion.Inverse(rotation) * (position - rb.position);
             state.p_prev = position;
             state.q_prev = rotation;
             state.v = linearVelocity;
@@ -540,8 +541,8 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
 
         if (pState.isKinematic && cState.isKinematic) return;
 
-        Vector3 r0 = pState.q * joint.scaledParentAnchorLocal;
-        Vector3 r1 = cState.q * joint.scaledChildAnchorLocal;
+        Vector3 r0 = pState.q * (joint.scaledParentAnchorLocal - pState.centerOfMassOffsetLocal);
+        Vector3 r1 = cState.q * (joint.scaledChildAnchorLocal - cState.centerOfMassOffsetLocal);
 
         Vector3 dir = (cState.p + r1) - (pState.p + r0);
 
