@@ -68,6 +68,19 @@ public class HydratedTempJoint
     }
 }
 
+public class HydratedTetherLink
+{
+    public ActiveLinkState Link;
+
+    public Rigidbody BodyA;
+    public Rigidbody BodyB;
+
+    public XPBDState StateA;
+    public XPBDState StateB;
+
+    public float Lambda;
+}
+
 [System.Serializable]
 public struct NetworkGrabJoint : INetworkStruct
 {

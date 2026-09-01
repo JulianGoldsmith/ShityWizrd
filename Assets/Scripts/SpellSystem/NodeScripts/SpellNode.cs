@@ -180,6 +180,8 @@ public abstract class SpellNode : ScriptableObject
     public static NodeType GetTypeCategory(System.Type type)
     {
         if (typeof(EntryPointNode).IsAssignableFrom(type)) return NodeType.System;
+        if (typeof(LinkNode).IsAssignableFrom(type)) return NodeType.Link;
+        if (typeof(LinkLawNode).IsAssignableFrom(type)) return NodeType.LinkLaw;
         if (typeof(CoreNode).IsAssignableFrom(type)) return NodeType.Core;
         if (typeof(BehaviourNode).IsAssignableFrom(type)) return NodeType.Behaviour;
         if (typeof(TriggerNode).IsAssignableFrom(type)) return NodeType.Trigger;
@@ -207,7 +209,9 @@ public enum NodeType
     Effect = 4,
     Value = 5,
     Subgraph = 6,
-    Misc = 7
+    Misc = 7,
+    Link = 8,
+    LinkLaw = 9
 }
 
 

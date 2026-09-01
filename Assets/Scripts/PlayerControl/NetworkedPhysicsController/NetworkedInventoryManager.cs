@@ -501,8 +501,9 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         Vector3 origin = characterController.GetEyePos();
         Vector3 direction = characterController.GetLookRot() * Vector3.forward;
+        int targetLayers = itemLayer.value | LayerMask.GetMask("Ragdoll", "Enviroment", "Default");
 
-        if (!Physics.Raycast(origin, direction, out RaycastHit hit, pickupRadius * 2f, itemLayer))
+        if (!Physics.Raycast(origin, direction, out RaycastHit hit, pickupRadius * 2f, targetLayers))
             return false;
 
         RuneObject runeObject = hit.collider.GetComponentInParent<RuneObject>();
@@ -513,20 +514,31 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (runeRig.HasRigData && runeRig.Object != null && runeRig.Object.IsValid)
             {
-                target = NetworkInteractionTarget.CreateRuneNode(runeRig.Object.Id, (byte)runeObject.NodeIndex);
+                target = NetworkInteractionTarget.CreateRuneNode(runeRig.Object.Id, (byte)runeObject.NodeIndex, hit.point);
                 return true;
             }
         }
 
         GameObject hitObject = SpellSystemHelpers.GetHitGameObject(hit.collider);
 
-        if (hitObject == null || !hitObject.TryGetComponent(out InteractableItem interactableItem))
-            return false;
+        if (hitObject != null && hitObject.TryGetComponent(out InteractableItem interactableItem))
+        {
+            if (interactableItem.Object == null || !interactableItem.Object.IsValid)
+                return false;
 
-        if (interactableItem.Object == null || !interactableItem.Object.IsValid)
-            return false;
+            target = NetworkInteractionTarget.CreateItem(interactableItem.Object.Id, hit.point);
+            return true;
+        }
 
-        target = NetworkInteractionTarget.CreateItem(interactableItem.Object.Id);
+        Rigidbody targetBody = hit.rigidbody;
+
+        if (targetBody != null && targetBody.TryGetComponent(out NetworkObject bodyObject) && bodyObject.IsValid)
+        {
+            target = NetworkInteractionTarget.CreatePhysicsBody(bodyObject.Id, hit.point);
+            return true;
+        }
+
+        target = NetworkInteractionTarget.CreateWorldPoint(hit.point);
         return true;
     }
 

@@ -138,6 +138,11 @@ public static class RuneSpellBlueprintBuilder
                 error = null;
                 return true;
 
+            case NodeType.Link:
+                entryPointType = EntryPointType.Link;
+                error = null;
+                return true;
+
             default:
                 error = $"A {rootTemplate.GetRuneType()} rune cannot be used as a spell entry point.";
                 return false;

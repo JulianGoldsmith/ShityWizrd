@@ -2645,6 +2645,7 @@ GameObject:
   - component: {fileID: 3253866803604232212}
   - component: {fileID: 6813547189123401123}
   - component: {fileID: 4865734607238229140}
+  - component: {fileID: -5003443835875312202}
   m_Layer: 0
   m_Name: HybridCharacter_JellyChar
   m_TagString: Untagged
@@ -2903,6 +2904,7 @@ MonoBehaviour:
   - {fileID: 7708030507857023425}
   - {fileID: 3253866803604232212}
   - {fileID: 4865734607238229140}
+  - {fileID: -5003443835875312202}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &7409370852185625710
 MonoBehaviour:
@@ -4477,6 +4479,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeExecutionCore
   _HitTargetIds: []
+--- !u!114 &-5003443835875312202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481138972719167153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcf033555c8250a4a95bb8a599d88ee2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CasterLinkController
 --- !u!1 &1509911169854208335
 GameObject:
   m_ObjectHideFlags: 0

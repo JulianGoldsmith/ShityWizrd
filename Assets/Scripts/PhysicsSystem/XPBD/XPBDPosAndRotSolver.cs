@@ -700,8 +700,8 @@ public class XPBDPosAndRotSolver : NetworkBehaviour
             }
             else //if de-activating ragdoll /////////////////////////////////////////////////////////////////////////
             {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
+                //rb.linearVelocity = Vector3.zero;
+                //rb.angularVelocity = Vector3.zero;
 
                 if (col) col.enabled = false;
                 if (nrb) nrb.RBIsKinematic = true;

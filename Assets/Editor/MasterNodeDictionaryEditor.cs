@@ -12,6 +12,8 @@ public class MasterNodeDictionaryEditor : Editor
     private readonly Color triggerColor = new Color(0.6f, 1f, 0.6f);   // Green
     private readonly Color effectColor = new Color(1f, 0.6f, 0.6f);    // Red (Standardized for Effects)
     private readonly Color valueColor = new Color(1f, 1f, 0.6f);       // Yellow
+    private readonly Color linkColor = new Color(0.4f, 1f, 1f);
+    private readonly Color linkLawColor = new Color(0.4f, 0.7f, 1f);
 
     public override void OnInspectorGUI()
     {
@@ -27,17 +29,13 @@ public class MasterNodeDictionaryEditor : Editor
         DrawCategory<TriggerNode>("Triggers", triggerColor, dict);
         DrawCategory<EffectNode>("Effects", effectColor, dict);
         DrawCategory<ValueNode>("Values", valueColor, dict);
+        DrawCategory<LinkNode>("Links", linkColor, dict);
+        DrawCategory<LinkLawNode>("Link Laws", linkLawColor, dict);
 
         EditorGUILayout.Space(20);
-        if (GUILayout.Button("Clean Up Trailing Tombstones", GUILayout.Height(30)))
-        {
-            CleanTrailingNulls(dict);
-        }
 
-        if (GUI.changed)
-        {
-            EditorUtility.SetDirty(dict);
-        }
+        if (GUILayout.Button("Clean Up Trailing Tombstones", GUILayout.Height(30))) CleanTrailingNulls(dict);
+        if (GUI.changed) EditorUtility.SetDirty(dict);
     }
 
     private void DrawCategory<T>(string header, Color rowColor, MasterNodeDictionary dict) where T : SpellNode
@@ -101,11 +99,13 @@ public class MasterNodeDictionaryEditor : Editor
     private void ShowAddMenu<T>(MasterNodeDictionary dict) where T : SpellNode
     {
         GenericMenu menu = new GenericMenu();
-        var types = TypeCache.GetTypesDerivedFrom<T>();
+        var types = TypeCache.GetTypesDerivedFrom<T>().ToList();
+
+        if (!typeof(T).IsAbstract) types.Insert(0, typeof(T));
 
         foreach (var type in types)
         {
-            if (type.IsAbstract) continue; 
+            if (type.IsAbstract) continue;
             menu.AddItem(new GUIContent(type.Name), false, () => CreateNewNode(type, dict));
         }
 

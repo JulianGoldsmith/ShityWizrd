@@ -10,6 +10,7 @@ public class XPBDGlobalManager : NetworkBehaviour
     public int iterations = 4;
     public bool enableSolver = true;
     public List<XPBDPosAndRotSolver> registeredRagdolls = new List<XPBDPosAndRotSolver>();
+    private readonly List<CasterLinkController> _registeredLinkControllers = new List<CasterLinkController>();
 
     [Networked, Capacity(32)]
     public NetworkArray<NetworkTempJoint> NetworkedTempJoints { get; }
@@ -100,26 +101,97 @@ public class XPBDGlobalManager : NetworkBehaviour
 
         _globalStates.Clear();
 
-        foreach (var ragdoll in registeredRagdolls)
+        foreach (XPBDPosAndRotSolver ragdoll in registeredRagdolls)
             ragdoll.InitializeStates(dt, _globalStates);
 
-        foreach (var joint in _hydratedTempJoints)
+        foreach (HydratedTempJoint joint in _hydratedTempJoints)
         {
             if (!joint.IsValid())
                 continue;
 
-            joint.parentState = GetOrInitializeTempState(joint.parentRb, joint.parentState, dt);
-            joint.childState = GetOrInitializeTempState(joint.childRb, joint.childState, dt);
+            joint.parentState = GetOrInitializeState(joint.parentRb, joint.parentState, dt);
+
+            joint.childState = GetOrInitializeState(joint.childRb, joint.childState, dt);
+
             joint.lambdaPosition = Vector3.zero;
             joint.lambdaRotation = Vector3.zero;
         }
 
-        for (int i = 0; i < iterations; i++)
+        foreach (CasterLinkController controller in _registeredLinkControllers)
         {
-            foreach (var ragdoll in registeredRagdolls)
+            for (int i = 0; i < CasterLinkController.MAX_LINKS; i++)
+            {
+                ActiveLinkState link = controller.ActiveLinks[i];
+                HydratedTetherLink hydratedLink = controller.HydratedLinks[i];
+
+                if (!link.IsActive)
+                {
+                    hydratedLink.Link = default;
+                    hydratedLink.BodyA = null;
+                    hydratedLink.BodyB = null;
+                    hydratedLink.StateA = null;
+                    hydratedLink.StateB = null;
+                    hydratedLink.Lambda = 0f;
+                    continue;
+                }
+
+                if (link.A.Kind == LinkEndpointKind.NetworkBody)
+                {
+                    if (hydratedLink.Link.A.ObjectId != link.A.ObjectId || hydratedLink.BodyA == null)
+                    {
+                        if (Runner.TryFindObject(link.A.ObjectId, out NetworkObject objectA))
+                            hydratedLink.BodyA = objectA.GetComponent<Rigidbody>();
+                        else
+                            hydratedLink.BodyA = null;
+
+                        hydratedLink.StateA = null;
+                    }
+                }
+                else
+                {
+                    hydratedLink.BodyA = null;
+                    hydratedLink.StateA = null;
+                }
+
+                if (link.B.Kind == LinkEndpointKind.NetworkBody)
+                {
+                    if (hydratedLink.Link.B.ObjectId != link.B.ObjectId || hydratedLink.BodyB == null)
+                    {
+                        if (Runner.TryFindObject(link.B.ObjectId, out NetworkObject objectB))
+                            hydratedLink.BodyB = objectB.GetComponent<Rigidbody>();
+                        else
+                            hydratedLink.BodyB = null;
+
+                        hydratedLink.StateB = null;
+                    }
+                }
+                else
+                {
+                    hydratedLink.BodyB = null;
+                    hydratedLink.StateB = null;
+                }
+
+                hydratedLink.Link = link;
+
+                if (link.A.Kind == LinkEndpointKind.NetworkBody && hydratedLink.BodyA == null) continue;
+                if (link.B.Kind == LinkEndpointKind.NetworkBody && hydratedLink.BodyB == null) continue;
+
+                if (link.A.Kind == LinkEndpointKind.NetworkBody)
+                    hydratedLink.StateA = GetOrInitializeState(hydratedLink.BodyA, hydratedLink.StateA, dt);
+
+                if (link.B.Kind == LinkEndpointKind.NetworkBody)
+                    hydratedLink.StateB = GetOrInitializeState(hydratedLink.BodyB, hydratedLink.StateB, dt);
+
+                hydratedLink.Lambda = 0f;
+            }
+        }
+
+        for (int iteration = 0; iteration < iterations; iteration++)
+        {
+            foreach (XPBDPosAndRotSolver ragdoll in registeredRagdolls)
                 ragdoll.SolveConstraints(dt);
 
-            foreach (var joint in _hydratedTempJoints)
+            foreach (HydratedTempJoint joint in _hydratedTempJoints)
             {
                 if (!joint.IsValid())
                     continue;
@@ -127,14 +199,26 @@ public class XPBDGlobalManager : NetworkBehaviour
                 SolveTempDistance(joint, dt);
                 SolveTempRotation(joint, dt);
             }
+
+            foreach (CasterLinkController controller in _registeredLinkControllers)
+            {
+                for (int i = 0; i < CasterLinkController.MAX_LINKS; i++)
+                {
+                    HydratedTetherLink link = controller.HydratedLinks[i];
+
+                    if (!link.Link.IsActive) continue;
+                    if (link.Link.A.Kind == LinkEndpointKind.NetworkBody && link.StateA == null) continue;
+                    if (link.Link.B.Kind == LinkEndpointKind.NetworkBody && link.StateB == null) continue;
+
+                    SolveTetherLink(link, dt);
+                }
+            }
         }
 
         DeriveAllVelocities(dt);
 
         foreach (XPBDPosAndRotSolver ragdoll in registeredRagdolls)
-        {
             ragdoll.ApplyRagdollPassiveResistance(dt);
-        }
 
         ApplyAllVelocities();
     }
@@ -414,7 +498,7 @@ public class XPBDGlobalManager : NetworkBehaviour
         }
     }
 
-    private XPBDState GetOrInitializeTempState(Rigidbody rb, XPBDState cachedState, float dt)
+    private XPBDState GetOrInitializeState(Rigidbody rb, XPBDState cachedState, float dt)
     {
         if (rb == null) return null;
         if (_globalStates.TryGetValue(rb, out XPBDState existingState)) return existingState;
@@ -494,6 +578,80 @@ public class XPBDGlobalManager : NetworkBehaviour
         float gamma = (alpha * (0.5f * dt * grab.networkedData.muscleDamping)) / dt;
 
         XPBDMath.SolveSphericalRotation(pState, cState, rotationError, alpha, gamma, ref grab.lambdaRotation);
+    }
+
+    private void SolveTetherLink(HydratedTetherLink link, float dt)
+    {
+        XPBDState stateA = link.StateA;
+        XPBDState stateB = link.StateB;
+
+        bool worldA = link.Link.A.Kind == LinkEndpointKind.WorldPoint;
+        bool worldB = link.Link.B.Kind == LinkEndpointKind.WorldPoint;
+
+        bool fixedA = worldA || stateA.isKinematic;
+        bool fixedB = worldB || stateB.isKinematic;
+
+        if (fixedA && fixedB) return;
+
+        Vector3 armA = worldA ? Vector3.zero : stateA.q * (link.Link.A.Anchor - stateA.centerOfMassOffsetLocal);
+        Vector3 armB = worldB ? Vector3.zero : stateB.q * (link.Link.B.Anchor - stateB.centerOfMassOffsetLocal);
+
+        Vector3 pointA = worldA ? link.Link.A.Anchor : stateA.p + armA;
+        Vector3 pointB = worldB ? link.Link.B.Anchor : stateB.p + armB;
+
+        Vector3 offset = pointB - pointA;
+        float distance = offset.magnitude;
+
+        if (distance < 0.0001f) return;
+
+        Vector3 direction = offset / distance;
+        float constraintError = distance - link.Link.MaximumLength;
+
+        if (constraintError <= 0f && link.Lambda >= 0f) return;
+
+        Vector3 previousPointA = worldA ? link.Link.A.Anchor : stateA.p_prev + stateA.q_prev * (link.Link.A.Anchor - stateA.centerOfMassOffsetLocal);
+        Vector3 previousPointB = worldB ? link.Link.B.Anchor : stateB.p_prev + stateB.q_prev * (link.Link.B.Anchor - stateB.centerOfMassOffsetLocal);
+
+        Vector3 displacementA = pointA - previousPointA;
+        Vector3 displacementB = pointB - previousPointB;
+        float radialDisplacement = Vector3.Dot(displacementB - displacementA, direction);
+
+        Vector3 positionGradientA = -direction;
+        Vector3 positionGradientB = direction;
+
+        Vector3 rotationGradientA = Vector3.Cross(armA, positionGradientA);
+        Vector3 rotationGradientB = Vector3.Cross(armB, positionGradientB);
+
+        Vector3 inverseInertiaGradientA = fixedA ? Vector3.zero : XPBDMath.ApplyInvInertiaWorld(rotationGradientA, stateA.q, stateA.qInertia, stateA.invInertiaLocal);
+        Vector3 inverseInertiaGradientB = fixedB ? Vector3.zero : XPBDMath.ApplyInvInertiaWorld(rotationGradientB, stateB.q, stateB.qInertia, stateB.invInertiaLocal);
+
+        float inverseMassA = fixedA ? 0f : stateA.invMass + Vector3.Dot(rotationGradientA, inverseInertiaGradientA);
+        float inverseMassB = fixedB ? 0f : stateB.invMass + Vector3.Dot(rotationGradientB, inverseInertiaGradientB);
+        float effectiveInverseMass = inverseMassA + inverseMassB;
+
+        if (effectiveInverseMass < 0.000001f) return;
+
+        float alpha = link.Link.Compliance / (dt * dt);
+        float gamma = (alpha * (0.5f * dt * link.Link.Damping)) / dt;
+        float deltaLambda = -(constraintError + alpha * link.Lambda + gamma * radialDisplacement) / ((1f + gamma) * effectiveInverseMass + alpha);
+
+        float previousLambda = link.Lambda;
+        float newLambda = Mathf.Min(0f, previousLambda + deltaLambda);
+        float appliedDeltaLambda = newLambda - previousLambda;
+
+        if (!fixedA)
+        {
+            stateA.p += stateA.invMass * appliedDeltaLambda * positionGradientA;
+            XPBDMath.ApplyDeltaRotation(stateA, inverseInertiaGradientA * appliedDeltaLambda);
+        }
+
+        if (!fixedB)
+        {
+            stateB.p += stateB.invMass * appliedDeltaLambda * positionGradientB;
+            XPBDMath.ApplyDeltaRotation(stateB, inverseInertiaGradientB * appliedDeltaLambda);
+        }
+
+        link.Lambda = newLambda;
     }
 
     private void SolvePostPhysicsGrabPosition(HydratedGrabJoint grab, float dt)
@@ -667,7 +825,20 @@ public class XPBDGlobalManager : NetworkBehaviour
         registeredRagdolls.Remove(solver);
     }
 
+    public void RegisterLinkController(CasterLinkController controller)
+    {
+        if (_registeredLinkControllers.Contains(controller))
+            return;
 
+        _registeredLinkControllers.Add(controller);
+
+        _registeredLinkControllers.Sort((a, b) => a.Object.Id.Raw.CompareTo(b.Object.Id.Raw));
+    }
+
+    public void UnregisterLinkController(CasterLinkController controller)
+    {
+        _registeredLinkControllers.Remove(controller);
+    }
 
     public bool AddTempJoint(NetworkTempJoint newJoint)
     {

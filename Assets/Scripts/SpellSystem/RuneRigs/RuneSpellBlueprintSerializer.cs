@@ -9,8 +9,7 @@ public static class RuneSpellHydrator
         RuneRigData blueprintRig = new RuneRigData(blueprint.CreateNodeCopy());
         RuneRigValidationResult validation = RuneRigValidator.Validate(blueprintRig, RuneRigRootMode.Blueprint);
 
-        if (!validation.IsValid)
-            throw new InvalidOperationException($"Cannot hydrate invalid rune spell: {validation}");
+        if (!validation.IsValid) throw new InvalidOperationException($"Cannot hydrate invalid rune spell: {validation}");
 
         int nodeCount = blueprint.NodeCount;
         SpellNode[] definitions = new SpellNode[nodeCount];
@@ -19,9 +18,7 @@ public static class RuneSpellHydrator
 
         for (int i = 0; i < nodeCount; i++)
         {
-            if (!NodeRegistry.TryGetNodeTemplate(blueprint.GetNode(i).RuneDefinitionId, out definitions[i]))
-                throw new InvalidOperationException($"Rune definition {blueprint.GetNode(i).RuneDefinitionId} is not registered.");
-
+            if (!NodeRegistry.TryGetNodeTemplate(blueprint.GetNode(i).RuneDefinitionId, out definitions[i])) throw new InvalidOperationException($"Rune definition {blueprint.GetNode(i).RuneDefinitionId} is not registered.");
             downstreamDefinitions[i] = new List<SpellNode>();
         }
 
@@ -31,16 +28,14 @@ public static class RuneSpellHydrator
             downstreamDefinitions[node.ParentNodeIndex].Add(definitions[i]);
         }
 
-        SpellCompilationContext context = new SpellCompilationContext();
-        context.DownstreamNodeDefinitions = downstreamDefinitions;
+        SpellCompilationContext context = new SpellCompilationContext { DownstreamNodeDefinitions = downstreamDefinitions };
 
         for (int i = 0; i < nodeCount; i++)
         {
             context.CurrentNodeIndex = i;
             runtimeNodes[i] = definitions[i].CompileNode(context);
 
-            if (runtimeNodes[i] == null)
-                throw new InvalidOperationException($"Rune '{definitions[i].nodeName}' returned a null runtime node.");
+            if (runtimeNodes[i] == null) throw new InvalidOperationException($"Rune '{definitions[i].nodeName}' returned a null runtime node.");
         }
 
         for (int i = 1; i < nodeCount; i++)
@@ -49,15 +44,14 @@ public static class RuneSpellHydrator
             IRuntimeNode parent = runtimeNodes[node.ParentNodeIndex];
             IRuntimeNode child = runtimeNodes[i];
 
-            if (parent is IRuntimeCore behaviourCore && child is IBehaviour behaviour)
-                behaviourCore.AddBehaviour(behaviour);
-            else if (parent is IRuntimeCore triggerCore && child is ITrigger trigger)
-                triggerCore.AddTrigger(trigger);
-            else if (parent is ITrigger outcomeTrigger && (child is IEffect || child is IRuntimeCore))
-                outcomeTrigger.AddOutcome(child);
-            else
-                throw new InvalidOperationException($"Cannot connect '{definitions[i].nodeName}' to parent '{definitions[node.ParentNodeIndex].nodeName}'.");
+            if (parent is IRuntimeCore behaviourCore && child is IBehaviour behaviour) behaviourCore.AddBehaviour(behaviour);
+            else if (parent is IRuntimeCore triggerCore && child is ITrigger trigger) triggerCore.AddTrigger(trigger);
+            else if (parent is ITrigger outcomeTrigger && (child is IEffect || child is IRuntimeCore)) outcomeTrigger.AddOutcome(child);
+            else if (parent is RuntimeLink runtimeLink && child is RuntimeLinkLaw linkLaw) runtimeLink.Law = linkLaw;
+            else throw new InvalidOperationException($"Cannot connect '{definitions[i].nodeName}' to parent '{definitions[node.ParentNodeIndex].nodeName}'.");
         }
+
+        if (runtimeNodes[0] is RuntimeLink link && link.Law == null) throw new InvalidOperationException("A Link Knot must have a Link Law attached.");
 
         return runtimeNodes;
     }

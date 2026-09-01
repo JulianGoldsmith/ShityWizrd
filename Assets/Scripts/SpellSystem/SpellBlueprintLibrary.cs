@@ -234,71 +234,7 @@ public static class SpellBlueprintLibrary
 
     private static RuntimeSpell HydrateRuneRig(RuneSpellBlueprintData blueprint)
     {
-        RuneRigData blueprintRig = new RuneRigData(blueprint.CreateNodeCopy());
-        RuneRigValidationResult validation = RuneRigValidator.Validate(blueprintRig, RuneRigRootMode.Blueprint);
-
-        if (!validation.IsValid)
-            throw new InvalidOperationException($"Cannot hydrate invalid rune spell: {validation}");
-
-        int nodeCount = blueprint.NodeCount;
-        SpellNode[] definitions = new SpellNode[nodeCount];
-        IRuntimeNode[] runtimeNodes = new IRuntimeNode[nodeCount];
-        List<SpellNode>[] downstreamDefinitions = new List<SpellNode>[nodeCount];
-
-        for (int i = 0; i < nodeCount; i++)
-        {
-            ushort definitionID = blueprint.GetNode(i).RuneDefinitionId;
-
-            if (!NodeRegistry.TryGetNodeTemplate(definitionID, out definitions[i]))
-                throw new InvalidOperationException($"Rune definition {definitionID} is not registered.");
-
-            downstreamDefinitions[i] = new List<SpellNode>();
-        }
-
-        for (int i = 1; i < nodeCount; i++)
-        {
-            RuneNodeData node = blueprint.GetNode(i);
-            downstreamDefinitions[node.ParentNodeIndex].Add(definitions[i]);
-        }
-
-        SpellCompilationContext context = new SpellCompilationContext
-        {
-            DownstreamNodeDefinitions = downstreamDefinitions
-        };
-
-        for (int i = 0; i < nodeCount; i++)
-        {
-            context.CurrentNodeIndex = i;
-            runtimeNodes[i] = definitions[i].CompileNode(context);
-
-            if (runtimeNodes[i] == null)
-                throw new InvalidOperationException($"Rune '{definitions[i].nodeName}' compiled to null.");
-        }
-
-        for (int i = 1; i < nodeCount; i++)
-        {
-            RuneNodeData node = blueprint.GetNode(i);
-            IRuntimeNode parent = runtimeNodes[node.ParentNodeIndex];
-            IRuntimeNode child = runtimeNodes[i];
-
-            if (parent is IRuntimeCore behaviourCore && child is IBehaviour behaviour)
-            {
-                behaviourCore.AddBehaviour(behaviour);
-            }
-            else if (parent is IRuntimeCore triggerCore && child is ITrigger trigger)
-            {
-                triggerCore.AddTrigger(trigger);
-            }
-            else if (parent is ITrigger outcomeTrigger && (child is IEffect || child is IRuntimeCore))
-            {
-                outcomeTrigger.AddOutcome(child);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Cannot connect '{definitions[i].nodeName}' to '{definitions[node.ParentNodeIndex].nodeName}'.");
-            }
-        }
-
+        IRuntimeNode[] runtimeNodes = RuneSpellHydrator.Hydrate(blueprint);
         return BuildRuntimeSpell(SpellBlueprintFormat.RuneRig, runtimeNodes);
     }
 
@@ -314,26 +250,16 @@ public static class SpellBlueprintLibrary
             if (entryPoint.ConnectedLogic is IRuntimeCore) entryType = EntryPointType.SpawnCore;
             else if (entryPoint.ConnectedLogic is ITrigger) entryType = EntryPointType.Trigger;
             else if (entryPoint.ConnectedLogic is IEffect) entryType = EntryPointType.Effect;
+            else if (entryPoint.ConnectedLogic is RuntimeLink) entryType = EntryPointType.Link;
             else throw new InvalidOperationException("Legacy spell entry point has no valid connected node.");
 
             entryPoint.ExpectedType = entryType;
         }
-        else if (rootNode is IRuntimeCore)
-        {
-            entryType = EntryPointType.SpawnCore;
-        }
-        else if (rootNode is ITrigger)
-        {
-            entryType = EntryPointType.Trigger;
-        }
-        else if (rootNode is IEffect)
-        {
-            entryType = EntryPointType.Effect;
-        }
-        else
-        {
-            throw new InvalidOperationException($"Runtime root '{rootNode.GetType().Name}' is not a valid spell entry.");
-        }
+        else if (rootNode is IRuntimeCore) entryType = EntryPointType.SpawnCore;
+        else if (rootNode is ITrigger) entryType = EntryPointType.Trigger;
+        else if (rootNode is IEffect) entryType = EntryPointType.Effect;
+        else if (rootNode is RuntimeLink) entryType = EntryPointType.Link;
+        else throw new InvalidOperationException($"Runtime root '{rootNode.GetType().Name}' is not a valid spell entry.");
 
         return new RuntimeSpell(format, entryType, runtimeNodes);
     }

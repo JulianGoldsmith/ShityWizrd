@@ -402,7 +402,7 @@ public class EquipableItem : InteractableItem, IAfterRender
     public ItemAction GetAction(ItemActionChannel channel, int actionID)
     {
         if (channel == ItemActionChannel.Feed) return actionID == 0 ? feedActionRef : null;
-        if (actionID < 0 || actionID > (int)EntryPointType.Effect) return null;
+        if (actionID < 0 || actionID > (int)EntryPointType.Link) return null;
 
         EntryPointType entryPointType = (EntryPointType)actionID;
 

@@ -172,6 +172,7 @@ public class CastMethods
     public ItemAction SpawnCore;
     public ItemAction Trigger;
     public ItemAction Effect;
+    public ItemAction Link;
 
     public ItemAction GetAction(EntryPointType entryPointType)
     {
@@ -180,6 +181,7 @@ public class CastMethods
             case EntryPointType.SpawnCore: return SpawnCore;
             case EntryPointType.Trigger: return Trigger;
             case EntryPointType.Effect: return Effect;
+            case EntryPointType.Link: return Link;
             default: return null;
         }
     }
