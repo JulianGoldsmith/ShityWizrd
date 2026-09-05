@@ -43,7 +43,7 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
     public SpellRotation TriggerSpawnRotation = SpellRotation.CasterRotation;
 
 
-    
+
 
     /*public void InitialisePhysicsObjectOnSpawn(NetworkObject spellCore, SpellTriggerInfo triggerInfo)
     {
@@ -98,49 +98,58 @@ public class ObjectCore : CoreNode, IHasPrefabRefToBuffer
         //  $"CastPos={triggerInfo.State.CastPosition} Override?={triggerInfo.HasOverridePosition} " +
         //  $"TrigPos={triggerInfo.TriggerPoint} and spell core is {spellCore.transform.position}");*/
 
-        //AttatchBehavioursAndTriggers(spellCore.gameObject, triggerInfo);
+    //AttatchBehavioursAndTriggers(spellCore.gameObject, triggerInfo);
 
-        //if(physicsObject != null)
-        //{
-        //    // To catch initial momenta, etc.
-        //    physicsObject.InitialiseAfterBehavioursAndTriggers(this, triggerInfo.State);
-        //}*/
-   // }
+    //if(physicsObject != null)
+    //{
+    //    // To catch initial momenta, etc.
+    //    physicsObject.InitialiseAfterBehavioursAndTriggers(this, triggerInfo.State);
+    //}*/
+    // }
 
-    
+
 
     public override IRuntimeNode CompileNode(SpellCompilationContext context)
     {
-        var runtimeCore = new RuntimeObjectCore()
-        {
-            ArrayIndex = context.CurrentNodeIndex,
-            Template = this,
-            PrefabRef = this.corePrefabRef,
-            AttachedSpellComponentsPrefab = this.attachedSpellComponentsPrefab, // Pass it down!
-            CastSpawnPosition = this.CastSpawnPosition,
-            CastSpawnRotation = this.CastSpawnRotation,
-            TriggerSpawnPosition = this.TriggerSpawnPosition,
-            TriggerSpawnRotation = this.TriggerSpawnRotation,
-            OriginalTemplateGuid = this.InstanceGuid,
+        RuntimeObjectCore runtimeCore = CreateRuntimeCore();
 
-            lifetime = new RuntimeFloatProperty(this.lifetime),
-            size = new RuntimeFloatProperty(this.size),
-            material = new RuntimeMaterialProperty(this.material),
-        };
+        runtimeCore.ArrayIndex = context.CurrentNodeIndex;
+        runtimeCore.Template = this;
+        runtimeCore.PrefabRef = corePrefabRef;
+        runtimeCore.AttachedSpellComponentsPrefab = attachedSpellComponentsPrefab;
+        runtimeCore.CastSpawnPosition = CastSpawnPosition;
+        runtimeCore.CastSpawnRotation = CastSpawnRotation;
+        runtimeCore.TriggerSpawnPosition = TriggerSpawnPosition;
+        runtimeCore.TriggerSpawnRotation = TriggerSpawnRotation;
+        runtimeCore.OriginalTemplateGuid = InstanceGuid;
+        runtimeCore.lifetime = new RuntimeFloatProperty(lifetime);
+        runtimeCore.size = new RuntimeFloatProperty(size);
+        runtimeCore.material = new RuntimeMaterialProperty(material);
 
-        if (this.defaultBehaviourNodes != null)
+        if (defaultBehaviourNodes != null)
         {
-            foreach (var b in this.defaultBehaviourNodes)
-                if (b != null) runtimeCore.AddBehaviour((IBehaviour)b.CompileNode(context));
+            foreach (BehaviourNode behaviour in defaultBehaviourNodes)
+            {
+                if (behaviour != null)
+                    runtimeCore.AddBehaviour((IBehaviour)behaviour.CompileNode(context));
+            }
         }
 
-        if (this.defaultTriggerNodes != null)
+        if (defaultTriggerNodes != null)
         {
-            foreach (var t in this.defaultTriggerNodes)
-                if (t != null) runtimeCore.AddTrigger((ITrigger)t.CompileNode(context));
+            foreach (TriggerNode trigger in defaultTriggerNodes)
+            {
+                if (trigger != null)
+                    runtimeCore.AddTrigger((ITrigger)trigger.CompileNode(context));
+            }
         }
 
         return runtimeCore;
+    }
+
+    protected virtual RuntimeObjectCore CreateRuntimeCore()
+    {
+        return new RuntimeObjectCore();
     }
 }
 
@@ -155,52 +164,65 @@ public class RuntimeObjectCore : RuntimeCoreBase
     public SpellPosition TriggerSpawnPosition;
     public SpellRotation TriggerSpawnRotation;
     public string OriginalTemplateGuid;
-
+    public bool IsKinematic;
     public RuntimeFloatProperty lifetime;
     public RuntimeFloatProperty size;
     public RuntimeMaterialProperty material;
 
     public override void ExecuteCore(SpellTriggerInfo triggerInfo)
     {
-        Vector3 pos = SpellSystemHelpers.GetSpellPosition(triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
-        Quaternion rot = SpellSystemHelpers.GetSpellRotation(triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
+        SpawnCore(triggerInfo);
+    }
 
-        NetworkObject sourceObj = null;
+    public virtual void TickBeforePhysics(SpellCreatedCore core) { }
 
-        if (triggerInfo.Source != null) triggerInfo.Source.TryGetComponent(out sourceObj);
+    public virtual void TickAfterPhysics(SpellCreatedCore core) { }
 
-        // Route to the allocator!
-        ObjectBuffer myBuffer = null;
+    public virtual void AfterRender(SpellCreatedCore core) { }
+
+    protected SpellCreatedCore SpawnCore(SpellTriggerInfo triggerInfo)
+    {
+        Vector3 position = SpellSystemHelpers.GetSpellPosition(triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
+        Quaternion rotation = SpellSystemHelpers.GetSpellRotation(triggerInfo.IsCast ? CastSpawnRotation : TriggerSpawnRotation, triggerInfo.IsCast ? CastSpawnPosition : TriggerSpawnPosition, triggerInfo);
+
+        NetworkObject sourceObject = null;
+        NetworkId currentTarget = default;
+
+        if (triggerInfo.Source != null)
+            triggerInfo.Source.TryGetComponent(out sourceObject);
+
+        if (triggerInfo.HitObject != null && triggerInfo.HitObject.TryGetComponent(out NetworkObject targetObject))
+            currentTarget = targetObject.Id;
+
+        ObjectBuffer objectBuffer = null;
+
         if (ObjectBufferAllocator.Instance != null)
-        {
-            myBuffer = ObjectBufferAllocator.Instance.GetBufferForCaster(sourceObj);
-        }
+            objectBuffer = ObjectBufferAllocator.Instance.GetBufferForCaster(sourceObject);
 
-        NetworkObject spellCore = null;
+        NetworkObject spellCore;
         int localBufferIndex = -1;
 
-        if (myBuffer != null)
-        {
-            spellCore = myBuffer.GetBufferedObject(out localBufferIndex);
-        }
+        if (objectBuffer != null)
+            spellCore = objectBuffer.GetBufferedObject(out localBufferIndex);
         else
-        {
-            // Ultimate fallback
-            spellCore = BasicSpawner.Spawn(PrefabRef, pos, rot);
-        }
+            spellCore = BasicSpawner.Spawn(PrefabRef, position, rotation);
 
-        if (spellCore != null && spellCore.TryGetComponent<SpellCreatedCore>(out var lifecycleManager))
-        {
-            CoreContext context = new CoreContext()
-            {
-                SpawnPosition = pos,
-                CastChargeLevel = triggerInfo.State.CastChargeLevel,
-                TriggerVector = triggerInfo.TriggerVector,
-                BufferSourceID = default
-            };
+        if (spellCore == null || !spellCore.TryGetComponent(out SpellCreatedCore lifecycleManager))
+            return null;
 
-            // Pass 'ArrayIndex' (the Node index) so the core hydrates correctly
-            lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, context, ArrayIndex, localBufferIndex, pos, rot);
-        }
+        CoreContext context = new CoreContext
+        {
+            SpawnPosition = position,
+            CastChargeLevel = triggerInfo.State.CastChargeLevel,
+            TriggerVector = triggerInfo.TriggerVector,
+            BufferSourceID = default,
+            CurrentTarget = currentTarget
+        };
+
+        if (!lifecycleManager.Initialize(triggerInfo.State.ActiveCastID, triggerInfo.State.SpellGraphIdFrom, context, ArrayIndex, localBufferIndex, position, rotation, IsKinematic))
+            return null;
+
+        return lifecycleManager;
     }
+
 }

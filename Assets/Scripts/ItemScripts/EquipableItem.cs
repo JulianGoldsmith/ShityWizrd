@@ -43,7 +43,9 @@ public class EquipableItem : InteractableItem, IAfterRender
     public SpellGraph primaryActionSpell => SpellStateManager.instance.GetSpellGraph(PrimarySpellID);
     public SpellGraph secondaryActionSpell => SpellStateManager.instance.GetSpellGraph(SecondarySpellID);
 
-
+    [Header("Consumeable and editable")]
+    public bool allowSpellEditing = true;
+    public bool consumeOnSuccessfulUse;
 
     [Header("Item Actions")]
     public CastMethods PrimaryCastMethods = new CastMethods();
@@ -154,11 +156,12 @@ public class EquipableItem : InteractableItem, IAfterRender
     }
 
     #region Equipping & Communicating
-    public void EquipSpellToPrimary(SpellGraph graph)
+    public bool EquipSpellToPrimary(SpellGraph graph)
     {
-        //Debug.Log($"Sending '{graph.name}' to the Master Library...");
-        // Send it to the Host, and tell the Host to attach it to THIS weapon's Network ID!
-        SpellStateManager.instance.SubmitNewSpellToHost(graph, this.Object.Id);
+        if (!allowSpellEditing) return false;
+
+        SpellStateManager.instance.SubmitNewSpellToHost(graph, Object.Id);
+        return true;
     }
     public void OnPrimarySpellChanged()
     {
@@ -426,7 +429,7 @@ public class EquipableItem : InteractableItem, IAfterRender
 
     public bool TrySetEquippedSpellID(ItemActionChannel channel, SpellGraphId spellID)
     {
-        if (!HasStateAuthority) return false;
+        if (!HasStateAuthority || !allowSpellEditing) return false;
 
         switch (channel)
         {

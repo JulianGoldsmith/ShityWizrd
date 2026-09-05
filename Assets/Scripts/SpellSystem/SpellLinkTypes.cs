@@ -19,6 +19,7 @@ public struct LinkEndpoint : INetworkStruct
     public LinkEndpointKind Kind;
     public NetworkId ObjectId;
     public Vector3 Anchor;
+    public Quaternion AnchorRotation;
 }
 
 public struct ActiveLinkState : INetworkStruct

@@ -223,6 +223,14 @@ public static class SpellBlueprintLibrary
             {
                 outcomeTrigger.AddOutcome(target);
             }
+            else if (source is RuntimeLinkLaw linkLaw && target is RuntimeLinkCore linkCore)
+            {
+                linkCore.Law = linkLaw;
+            }
+            else if (source is RuntimeLinkLaw standaloneLinkLaw && target is RuntimeLink link)
+            {
+                link.Law = standaloneLinkLaw;
+            }
             else if (source is IRuntimeValueNode valueNode)
             {
                 InjectValueNode(data, wire, target, valueNode);

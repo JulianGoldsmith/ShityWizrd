@@ -48,10 +48,17 @@ public static class RuneSpellHydrator
             else if (parent is IRuntimeCore triggerCore && child is ITrigger trigger) triggerCore.AddTrigger(trigger);
             else if (parent is ITrigger outcomeTrigger && (child is IEffect || child is IRuntimeCore)) outcomeTrigger.AddOutcome(child);
             else if (parent is RuntimeLink runtimeLink && child is RuntimeLinkLaw linkLaw) runtimeLink.Law = linkLaw;
+            else if (parent is RuntimeLinkCore runtimeLinkCore && child is RuntimeLinkLaw coreLinkLaw) runtimeLinkCore.Law = coreLinkLaw;
             else throw new InvalidOperationException($"Cannot connect '{definitions[i].nodeName}' to parent '{definitions[node.ParentNodeIndex].nodeName}'.");
         }
 
         if (runtimeNodes[0] is RuntimeLink link && link.Law == null) throw new InvalidOperationException("A Link Knot must have a Link Law attached.");
+
+        for (int i = 0; i < runtimeNodes.Length; i++)
+        {
+            if (runtimeNodes[i] is RuntimeLinkCore linkCore && linkCore.Law == null)
+                throw new InvalidOperationException("A Link Core must have a Link Law attached.");
+        }
 
         return runtimeNodes;
     }

@@ -10,6 +10,10 @@ public class AttatchedSpellComponent : MonoBehaviour
     [Tooltip("If true, the core will overwrite the main Material. If false, the original Material is kept.")]
     public bool allowBaseMaterialOverride = true;
 
+    [Header("Authored Attachment Points")]
+    public Transform[] AttachmentPoints;
+    public Transform[] VisualAttachmentPoints;
+
     public Renderer[] GetAllRenderers()
     {
         if (VisualRoot != null)

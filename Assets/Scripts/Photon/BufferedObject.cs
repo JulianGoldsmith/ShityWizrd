@@ -11,7 +11,7 @@ public class BufferedObject : NetworkBehaviour
     [SerializeField] private Transform[] visualRoots;
 
     [Header("Awake Physics State")]
-    [SerializeField] private bool awakeIsKinematic;
+    [Networked] public NetworkBool AwakeIsKinematic { get; set; }
 
     [Networked] public int WakeTick { get; set; }
     [Networked] public int SleepTick { get; set; }
@@ -166,15 +166,17 @@ public class BufferedObject : NetworkBehaviour
 
     private void ApplyAwakePhysicsState()
     {
+        bool isKinematic = AwakeIsKinematic;
+
         if (_networkRigidbody != null)
-            _networkRigidbody.RBIsKinematic = awakeIsKinematic;
+            _networkRigidbody.RBIsKinematic = isKinematic;
 
         if (_rigidbody != null)
         {
-            _rigidbody.isKinematic = awakeIsKinematic;
+            _rigidbody.isKinematic = isKinematic;
             _rigidbody.detectCollisions = true;
 
-            if (!awakeIsKinematic)
+            if (!isKinematic)
                 _rigidbody.WakeUp();
         }
     }

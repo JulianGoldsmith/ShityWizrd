@@ -514,7 +514,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
             if (runeRig.HasRigData && runeRig.Object != null && runeRig.Object.IsValid)
             {
-                target = NetworkInteractionTarget.CreateRuneNode(runeRig.Object.Id, (byte)runeObject.NodeIndex, hit.point);
+                target = NetworkInteractionTarget.CreateRuneNode(runeRig.Object.Id, (byte)runeObject.NodeIndex, hit.point, hit.normal);
                 return true;
             }
         }
@@ -526,7 +526,7 @@ public class NetworkedInventoryManager : NetworkBehaviour
             if (interactableItem.Object == null || !interactableItem.Object.IsValid)
                 return false;
 
-            target = NetworkInteractionTarget.CreateItem(interactableItem.Object.Id, hit.point);
+            target = NetworkInteractionTarget.CreateItem(interactableItem.Object.Id, hit.point, hit.normal);
             return true;
         }
 
@@ -534,11 +534,11 @@ public class NetworkedInventoryManager : NetworkBehaviour
 
         if (targetBody != null && targetBody.TryGetComponent(out NetworkObject bodyObject) && bodyObject.IsValid)
         {
-            target = NetworkInteractionTarget.CreatePhysicsBody(bodyObject.Id, hit.point);
+            target = NetworkInteractionTarget.CreatePhysicsBody(bodyObject.Id, hit.point, hit.normal);
             return true;
         }
 
-        target = NetworkInteractionTarget.CreateWorldPoint(hit.point);
+        target = NetworkInteractionTarget.CreateWorldPoint(hit.point, hit.normal);
         return true;
     }
 

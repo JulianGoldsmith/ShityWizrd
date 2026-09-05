@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 
 [DefaultExecutionOrder(-4)]
-public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferableComponent
+public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferableComponent, IAfterRender
 {
     private const int IntMemoryCapacity = 8;
     private const int FloatMemoryCapacity = 8;
@@ -43,6 +43,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     private GameObject _attachedComponents;
     private GameObject _attachedVisual;
     private CoreExecutionPlan _myPlan;
+    private RuntimeObjectCore _runtimeCore;
     private GameObject _payloadPrefab;
     private SpellGraphId _payloadBlueprintId;
     private ActiveCastID _runtimeCastId;
@@ -66,7 +67,14 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
 
     public bool TryGetCoreComponent<T>(out T component) where T : class
     {
-        return TryGetComponent(out component);
+        if (TryGetComponent(out component))
+            return true;
+
+        if (_attachedComponents != null && _attachedComponents.TryGetComponent(out component))
+            return true;
+
+        component = null;
+        return false;
     }
 
     public override void Spawned()
@@ -98,6 +106,8 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
         foreach (IBehaviour behaviour in _myPlan.Behaviours)
             behaviour.Tick(this, Runner.DeltaTime);
 
+        _runtimeCore.TickBeforePhysics(this);
+
         TickContacts.Clear();
         _scheduledTriggerCastID = ActiveCastID;
         _scheduledTriggerBlueprintID = BlueprintID;
@@ -109,6 +119,10 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
     {
         if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
         if (!ActiveCastID.Equals(_scheduledTriggerCastID) || !BlueprintID.Equals(_scheduledTriggerBlueprintID) || NodeArrayIndex != _scheduledTriggerNodeIndex) return;
+
+        _runtimeCore.TickAfterPhysics(this);
+
+        if (!IsLocallyAwake) return;
 
         for (int i = _myPlan.Triggers.Count - 1; i >= 0; i--)
         {
@@ -138,7 +152,6 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
 
         TickContacts.Clear();
     }
-
     public override void Render()
     {
         if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
@@ -150,7 +163,14 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
             trigger.TickVFX(this);
     }
 
-    public bool Initialize(ActiveCastID castId, SpellGraphId blueprintId, CoreContext initialContext, int arrayIndex, int globalBufferIndex, Vector3 spawnPosition, Quaternion spawnRotation)
+    public void AfterRender()
+    {
+        if (!IsLocallyAwake || !_isInitialized || _myPlan == null) return;
+
+        _runtimeCore.AfterRender(this);
+    }
+
+    public bool Initialize(ActiveCastID castId, SpellGraphId blueprintId, CoreContext initialContext, int arrayIndex, int globalBufferIndex, Vector3 spawnPosition, Quaternion spawnRotation, bool isKinematic)
     {
         if (Object == null || !Object.IsValid) return false;
 
@@ -167,6 +187,16 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
         Context = initialContext;
         SpawnTick = Runner.Tick;
         NetworkVelocity = Vector3.zero;
+
+        if (_bufferedObject != null)
+        {
+            _bufferedObject.AwakeIsKinematic = isKinematic;
+        }
+        else
+        {
+            if (_networkRigidbody != null) _networkRigidbody.RBIsKinematic = isKinematic;
+            if (_rigidbody != null) _rigidbody.isKinematic = isKinematic;
+        }
 
         PreparePose(spawnPosition, spawnRotation);
         ResetActivationMemory();
@@ -226,6 +256,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
         TickContacts.Add(new PendingContact
         {
             Target = hitObject,
+            Collider = collision.collider,
             Point = collision.contacts[0].point,
             Normal = collision.contacts[0].normal
         });
@@ -252,6 +283,7 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
         TickContacts.Add(new PendingContact
         {
             Target = SpellSystemHelpers.GetHitGameObject(other),
+            Collider = other,
             Point = hitPoint,
             Normal = hitNormal
         });
@@ -315,7 +347,9 @@ public class SpellCreatedCore : NetworkBehaviour, ISpellExecutionCore, IBufferab
         if (runtimeSpell == null) return false;
 
         IRuntimeNode runtimeNode = runtimeSpell.GetNode(NodeArrayIndex);
+
         if (runtimeNode is not RuntimeObjectCore runtimeCore) return false;
+        _runtimeCore = runtimeCore;
 
         bool payloadMissing = runtimeCore.AttachedSpellComponentsPrefab != null && _attachedComponents == null;
         bool payloadChanged = _myPlan == null || !_payloadBlueprintId.Equals(BlueprintID) || _payloadNodeArrayIndex != NodeArrayIndex || _payloadPrefab != runtimeCore.AttachedSpellComponentsPrefab || payloadMissing;
@@ -577,6 +611,7 @@ public class SpellCompilationContext
 public struct PendingContact
 {
     public GameObject Target;
+    public Collider Collider;
     public Vector3 Point;
     public Vector3 Normal;
 }

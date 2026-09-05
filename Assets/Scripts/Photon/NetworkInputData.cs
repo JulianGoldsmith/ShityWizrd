@@ -67,44 +67,46 @@ public struct NetworkInteractionTarget : INetworkStruct
     public NetworkId ObjectId;
     public uint PackedData;
     public Vector3 HitPoint;
+    public Vector3 HitNormal;
 
     public InteractionTargetType Type => (InteractionTargetType)((PackedData >> TypeShift) & TypeMask);
     public byte PartIndex => (byte)((PackedData >> PartShift) & PartMask);
     public byte BayIndex => (byte)((PackedData >> BayShift) & BayMask);
     public bool IsValid => Type == InteractionTargetType.WorldPoint || (ObjectId.IsValid && Type != InteractionTargetType.None);
 
-    public static NetworkInteractionTarget CreateItem(NetworkId objectId, Vector3 hitPoint)
+    public static NetworkInteractionTarget CreateItem(NetworkId objectId, Vector3 hitPoint, Vector3 hitNormal)
     {
-        return Create(objectId, InteractionTargetType.Item, 0, 0, hitPoint);
+        return Create(objectId, InteractionTargetType.Item, 0, 0, hitPoint, hitNormal);
     }
 
-    public static NetworkInteractionTarget CreateRuneNode(NetworkId objectId, byte nodeIndex, Vector3 hitPoint)
+    public static NetworkInteractionTarget CreateRuneNode(NetworkId objectId, byte nodeIndex, Vector3 hitPoint, Vector3 hitNormal)
     {
-        return Create(objectId, InteractionTargetType.RuneNode, nodeIndex, 0, hitPoint);
+        return Create(objectId, InteractionTargetType.RuneNode, nodeIndex, 0, hitPoint, hitNormal);
     }
 
     public static NetworkInteractionTarget CreateRuneBay(NetworkId objectId, byte nodeIndex, byte bayIndex)
     {
-        return Create(objectId, InteractionTargetType.RuneBay, nodeIndex, bayIndex, default);
+        return Create(objectId, InteractionTargetType.RuneBay, nodeIndex, bayIndex, default, default);
     }
 
-    public static NetworkInteractionTarget CreatePhysicsBody(NetworkId objectId, Vector3 hitPoint)
+    public static NetworkInteractionTarget CreatePhysicsBody(NetworkId objectId, Vector3 hitPoint, Vector3 hitNormal)
     {
-        return Create(objectId, InteractionTargetType.PhysicsBody, 0, 0, hitPoint);
+        return Create(objectId, InteractionTargetType.PhysicsBody, 0, 0, hitPoint, hitNormal);
     }
 
-    private static NetworkInteractionTarget Create(NetworkId objectId, InteractionTargetType type, byte partIndex, byte bayIndex, Vector3 hitPoint)
+    public static NetworkInteractionTarget CreateWorldPoint(Vector3 hitPoint, Vector3 hitNormal)
+    {
+        return Create(default, InteractionTargetType.WorldPoint, 0, 0, hitPoint, hitNormal);
+    }
+
+    private static NetworkInteractionTarget Create(NetworkId objectId, InteractionTargetType type, byte partIndex, byte bayIndex, Vector3 hitPoint, Vector3 hitNormal)
     {
         return new NetworkInteractionTarget
         {
             ObjectId = objectId,
             PackedData = ((uint)type << TypeShift) | ((uint)partIndex << PartShift) | ((uint)bayIndex << BayShift),
-            HitPoint = hitPoint
+            HitPoint = hitPoint,
+            HitNormal = hitNormal
         };
-    }
-
-    public static NetworkInteractionTarget CreateWorldPoint(Vector3 hitPoint)
-    {
-        return Create(default, InteractionTargetType.WorldPoint, 0, 0, hitPoint);
     }
 }
